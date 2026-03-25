@@ -33,6 +33,13 @@ function escapeHtml(value) {
     .replace(/>/g, "&gt;");
 }
 
+function trimText(value, maxLength = 220) {
+  return String(value || "")
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, maxLength);
+}
+
 function getAgentName() {
   return String(process.env.AGENT_NAME || "Salesforce Job Radar Agent").trim();
 }
@@ -280,15 +287,65 @@ async function notifyAll({ telegramText, emailSubject, emailText, emailHtml }) {
     telegramResult.status === "fulfilled" && telegramResult.value === true;
   const emailOk =
     emailResult.status === "fulfilled" && emailResult.value === true;
+  const telegramError = telegramOk
+    ? ""
+    : trimText(
+      telegramResult.status === "rejected"
+        ? telegramResult.reason?.message || telegramResult.reason || "unknown telegram error"
+        : "telegram returned false",
+      260
+    );
+  const emailError = emailOk
+    ? ""
+    : trimText(
+      emailResult.status === "rejected"
+        ? emailResult.reason?.message || emailResult.reason || "unknown email error"
+        : "email returned false",
+      260
+    );
 
   return {
     telegramOk,
     emailOk,
-    anyOk: telegramOk || emailOk
+    anyOk: telegramOk || emailOk,
+    telegramError,
+    emailError
   };
 }
 
-async function processPendingAlertsCloud(agentName) {
+function recordNotificationAttempt(runDetails, kind, notifyResult, extra = {}) {
+  if (!runDetails || typeof runDetails !== "object" || !notifyResult) {
+    return;
+  }
+
+  const attempts = Array.isArray(runDetails.notificationAttempts)
+    ? runDetails.notificationAttempts.slice(-9)
+    : [];
+  const entry = {
+    kind: trimText(kind, 80),
+    at: new Date().toISOString(),
+    telegramOk: notifyResult.telegramOk === true,
+    emailOk: notifyResult.emailOk === true,
+    anyOk: notifyResult.anyOk === true,
+    telegramError: trimText(notifyResult.telegramError, 260),
+    emailError: trimText(notifyResult.emailError, 260)
+  };
+
+  for (const [key, value] of Object.entries(extra || {})) {
+    if (value === undefined || value === null || value === "") {
+      continue;
+    }
+    entry[key] = typeof value === "string"
+      ? trimText(value, 180)
+      : value;
+  }
+
+  attempts.push(entry);
+  runDetails.notificationAttempts = attempts;
+  runDetails.lastNotification = entry;
+}
+
+async function processPendingAlertsCloud(agentName, runDetails) {
   const pendingCount = await getPendingAlertCount();
   if (pendingCount === 0) {
     return {
@@ -326,12 +383,18 @@ async function processPendingAlertsCloud(agentName) {
     emailText: emailPayload.text,
     emailHtml: emailPayload.html
   });
+  recordNotificationAttempt(runDetails, "job_alert", notifyResult, {
+    subject: emailPayload.subject,
+    pendingCount,
+    alertedCount: jobsToAlert.length
+  });
 
   if (!notifyResult.anyOk) {
     return {
       pendingCount,
       alertedCount: 0,
-      notified: false
+      notified: false,
+      notifyResult
     };
   }
 
@@ -344,11 +407,13 @@ async function processPendingAlertsCloud(agentName) {
   return {
     pendingCount,
     alertedCount: jobsToAlert.length,
-    notified: true
+    notified: true,
+    notifyResult
   };
 }
 
 async function maybeSendDailySummaryCloud({
+  runDetails,
   agentName,
   fetchedCount,
   salesforceCount,
@@ -372,12 +437,24 @@ async function maybeSendDailySummaryCloud({
   });
 
   const result = await notifyAll(messages);
+  recordNotificationAttempt(runDetails, "daily_summary", result, {
+    subject: messages.emailSubject,
+    dateKey: check.dateKey
+  });
   if (result.anyOk) {
     await markDailySummarySent(check.dateKey);
-    return true;
+    return {
+      attempted: true,
+      sent: true,
+      notifyResult: result
+    };
   }
 
-  return false;
+  return {
+    attempted: true,
+    sent: false,
+    notifyResult: result
+  };
 }
 
 export async function runSupabaseCloudAgent() {
@@ -462,7 +539,7 @@ export async function runSupabaseCloudAgent() {
       await enqueuePendingAlerts(pendingPayload);
     }
 
-    const pendingResult = await processPendingAlertsCloud(agentName);
+    const pendingResult = await processPendingAlertsCloud(agentName, runDetails);
     runPendingCount = pendingResult.pendingCount;
     runAlertsSentCount = pendingResult.alertedCount;
 
@@ -478,10 +555,16 @@ export async function runSupabaseCloudAgent() {
           ? "No new jobs after dedupe in this run."
           : "Run completed without sending alert notifications."
       });
-      await notifyAll(messages);
+      const heartbeatResult = await notifyAll(messages);
+      recordNotificationAttempt(runDetails, "heartbeat", heartbeatResult, {
+        subject: messages.emailSubject,
+        pendingCount: runPendingCount,
+        newJobsCount: runNewJobsCount
+      });
     }
 
     await maybeSendDailySummaryCloud({
+      runDetails,
       agentName,
       fetchedCount: runFetchedCount,
       salesforceCount: runSalesforceCount,
@@ -514,11 +597,14 @@ export async function runSupabaseCloudAgent() {
     runErrorMessage = String(error?.message || error || "unknown error");
     runNote = `Failed: ${runErrorMessage}`;
 
-    await notifyAll({
+    const failureNotifyResult = await notifyAll({
       telegramText: `${agentName} failed.\n\nError:\n${runErrorMessage}`,
       emailSubject: `${agentName} failed`,
       emailText: `${agentName} failed.\n\nError:\n${runErrorMessage}`,
       emailHtml: `<p>${escapeHtml(agentName)} failed.</p><pre>${escapeHtml(runErrorMessage)}</pre>`
+    });
+    recordNotificationAttempt(runDetails, "failure", failureNotifyResult, {
+      subject: `${agentName} failed`
     });
 
     return {

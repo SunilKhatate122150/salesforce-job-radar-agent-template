@@ -122,18 +122,29 @@ function getProviderOrder() {
   return providers.length > 0 ? providers : ["resend", "smtp"];
 }
 
-function createTransport(config) {
-  return import("nodemailer").then(module =>
-    module.default.createTransport({
-      host: config.host,
-      port: config.port,
-      secure: config.secure,
-      auth: {
-        user: config.user,
-        pass: config.pass
-      }
-    })
-  );
+async function loadNodemailer() {
+  try {
+    return await import("nodemailer");
+  } catch (nodeError) {
+    try {
+      return await import("npm:nodemailer");
+    } catch (npmError) {
+      throw nodeError instanceof Error ? nodeError : npmError;
+    }
+  }
+}
+
+async function createTransport(config) {
+  const module = await loadNodemailer();
+  return module.default.createTransport({
+    host: config.host,
+    port: config.port,
+    secure: config.secure,
+    auth: {
+      user: config.user,
+      pass: config.pass
+    }
+  });
 }
 
 async function loadResendAttachments(attachments) {
