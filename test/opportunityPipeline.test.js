@@ -364,6 +364,63 @@ test("selectHiringPostReviewJobs keeps strong post leads outside the instant que
   assert.equal(digest.summary.by_kind.post, 1);
 });
 
+test("selectHiringPostReviewJobs prefers fresher recruiter posts and drops older weak ones", () =>
+  withEnv(
+    {
+      POST_REVIEW_MAX_POSTED_HOURS: "120",
+      POST_REVIEW_WEAK_MAX_POSTED_HOURS: "48"
+    },
+    () => {
+      const digest = selectHiringPostReviewJobs(
+        prepareOpportunities([
+          {
+            title: "Salesforce Hiring Post",
+            company: "Fresh Recruiter Lead",
+            location: "India Remote",
+            post_url: "https://www.linkedin.com/posts/fresh-recruiter-salesforce-1",
+            apply_link: "https://www.linkedin.com/posts/fresh-recruiter-salesforce-1",
+            source_platform: "linkedin_posts",
+            post_author: "Asha Recruiter",
+            description: "We are hiring Salesforce Developer. Share your resume with recruiter@example.com",
+            posted_at: new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString()
+          },
+          {
+            title: "Salesforce Hiring Post",
+            company: "Older Strong Lead",
+            location: "India",
+            post_url: "https://www.linkedin.com/posts/older-recruiter-salesforce-2",
+            apply_link: "https://www.linkedin.com/posts/older-recruiter-salesforce-2",
+            source_platform: "linkedin_posts",
+            post_author: "Talent Acquisition",
+            description: "Urgent requirement for Salesforce LWC Developer in India.",
+            posted_at: new Date(Date.now() - 72 * 60 * 60 * 1000).toISOString()
+          },
+          {
+            title: "Salesforce Hiring Post",
+            company: "Old Weak Lead",
+            location: "India",
+            post_url: "https://www.linkedin.com/posts/old-weak-salesforce-3",
+            apply_link: "https://www.linkedin.com/posts/old-weak-salesforce-3",
+            source_platform: "linkedin_posts",
+            description: "Hiring Salesforce Developer in India.",
+            posted_at: new Date(Date.now() - 72 * 60 * 60 * 1000).toISOString()
+          }
+        ]).jobs,
+        {
+          maxItems: 5
+        }
+      );
+
+      assert.equal(digest.selected.length, 2);
+      assert.equal(digest.selected[0].company, "Fresh Recruiter Lead");
+      assert.equal(digest.selected[1].company, "Older Strong Lead");
+      assert.equal(
+        digest.selected.some(job => job.company === "Old Weak Lead"),
+        false
+      );
+    }
+  ));
+
 test("monitorCoverageHealth emits coverage alerts for repeated zero-post runs", { concurrency: false }, async () =>
   withEnv(
     {

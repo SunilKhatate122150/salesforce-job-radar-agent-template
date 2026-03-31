@@ -107,6 +107,23 @@ function extractEmail(text) {
   return match ? match[0] : "";
 }
 
+function getPostedDate(job) {
+  const value = [
+    job?.posted_at,
+    job?.postedAt,
+    job?.posted_date,
+    job?.date
+  ].find(Boolean);
+  if (!value) return null;
+
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) {
+    return null;
+  }
+
+  return parsed;
+}
+
 function extractRecruiterSignal(job, text) {
   const author = normalizeText(job?.post_author || "");
   if (author) {
@@ -375,6 +392,28 @@ function getKindRank(kind) {
 function getMatchRank(job) {
   const score = Number(job?.match_score);
   return Number.isFinite(score) ? score : 0;
+}
+
+function getOpportunityAgeHours(job) {
+  const postedDate = getPostedDate(job);
+  if (!postedDate) return Number.POSITIVE_INFINITY;
+
+  return Math.max(0, (Date.now() - postedDate.getTime()) / (1000 * 60 * 60));
+}
+
+function getRecruiterEvidenceStrength(job) {
+  const text = getOpportunityText(job);
+  let strength = 0;
+
+  if (normalizeDisplay(job?.post_author)) strength += 2;
+  if (extractRecruiterSignal(job, text)) strength += 2;
+  if (normalizeDisplay(job?.source_evidence?.contact_email || extractEmail(text))) {
+    strength += 2;
+  }
+  if (normalizeApplyLink(job?.post_url || job?.apply_link)) strength += 1;
+  if (inferLocationScope(job) === "remote") strength += 1;
+
+  return strength;
 }
 
 function sortOpportunities(jobs) {
@@ -654,6 +693,57 @@ export function selectOpportunitiesForAlerts(
   };
 }
 
+function getReviewMaxPostedHours() {
+  const configured = Number(process.env.POST_REVIEW_MAX_POSTED_HOURS || 120);
+  return Number.isFinite(configured) && configured > 0 ? configured : 120;
+}
+
+function getWeakReviewMaxPostedHours() {
+  const configured = Number(process.env.POST_REVIEW_WEAK_MAX_POSTED_HOURS || 48);
+  return Number.isFinite(configured) && configured > 0 ? configured : 48;
+}
+
+function isStrongReviewPostLead(job) {
+  return getRecruiterEvidenceStrength(job) >= 3;
+}
+
+function isReviewDigestEligiblePost(job) {
+  const ageHours = getOpportunityAgeHours(job);
+  if (Number.isFinite(ageHours) && ageHours > getReviewMaxPostedHours()) {
+    return false;
+  }
+
+  if (
+    Number.isFinite(ageHours) &&
+    ageHours > getWeakReviewMaxPostedHours() &&
+    !isStrongReviewPostLead(job)
+  ) {
+    return false;
+  }
+
+  return true;
+}
+
+function sortHiringPostReviewJobs(jobs) {
+  return [...(Array.isArray(jobs) ? jobs : [])].sort((left, right) => {
+    const confidenceDiff =
+      getConfidenceRank(right.confidence_tier) - getConfidenceRank(left.confidence_tier);
+    if (confidenceDiff !== 0) return confidenceDiff;
+
+    const recruiterDiff =
+      getRecruiterEvidenceStrength(right) - getRecruiterEvidenceStrength(left);
+    if (recruiterDiff !== 0) return recruiterDiff;
+
+    const ageDiff = getOpportunityAgeHours(left) - getOpportunityAgeHours(right);
+    if (ageDiff !== 0) return ageDiff;
+
+    const matchDiff = getMatchRank(right) - getMatchRank(left);
+    if (matchDiff !== 0) return matchDiff;
+
+    return normalizeDisplay(left?.title).localeCompare(normalizeDisplay(right?.title));
+  });
+}
+
 export function selectHiringPostReviewJobs(
   jobs,
   {
@@ -672,14 +762,15 @@ export function selectHiringPostReviewJobs(
   const selected = [];
   const selectedKeys = new Set();
 
-  const candidates = sortOpportunities(Array.isArray(jobs) ? jobs : [])
+  const candidates = sortHiringPostReviewJobs(Array.isArray(jobs) ? jobs : [])
     .filter(job => inferOpportunityKind(job) === "post")
     .filter(job => {
       const confidence = normalizeText(
         job?.confidence_tier || inferConfidenceTier(job)
       );
       return confidence === "high" || confidence === "medium";
-    });
+    })
+    .filter(job => isReviewDigestEligiblePost(job));
 
   for (const job of candidates) {
     const key = getOpportunitySelectionKey(job);
