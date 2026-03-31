@@ -173,6 +173,23 @@ function inferSourcePlatform(job) {
   return "other";
 }
 
+function inferSourceQualityTier(job) {
+  const explicit = normalizeText(job?.source_quality_tier);
+  if (["ats", "board", "post"].includes(explicit)) {
+    return explicit;
+  }
+
+  const sourcePlatform = inferSourcePlatform(job);
+  if (["greenhouse", "lever", "ashby"].includes(sourcePlatform)) {
+    return "ats";
+  }
+  if (sourcePlatform === "linkedin_posts") {
+    return "post";
+  }
+
+  return "board";
+}
+
 function inferOpportunityKind(job) {
   const explicit = normalizeText(job?.opportunity_kind);
   if (explicit === "listing" || explicit === "post") {
@@ -394,6 +411,13 @@ function getKindRank(kind) {
   return kind === "listing" ? 2 : 1;
 }
 
+function getSourceQualityRank(tier) {
+  if (tier === "ats") return 3;
+  if (tier === "board") return 2;
+  if (tier === "post") return 1;
+  return 0;
+}
+
 function getMatchRank(job) {
   const score = Number(job?.match_score);
   return Number.isFinite(score) ? score : 0;
@@ -428,6 +452,10 @@ function sortOpportunities(jobs) {
       getConfidenceRank(right.confidence_tier) - getConfidenceRank(left.confidence_tier);
     if (confidenceDiff !== 0) return confidenceDiff;
 
+    const sourceQualityDiff =
+      getSourceQualityRank(inferSourceQualityTier(right)) - getSourceQualityRank(inferSourceQualityTier(left));
+    if (sourceQualityDiff !== 0) return sourceQualityDiff;
+
     const kindDiff = getKindRank(right.opportunity_kind) - getKindRank(left.opportunity_kind);
     if (kindDiff !== 0) return kindDiff;
 
@@ -441,6 +469,17 @@ function sortOpportunities(jobs) {
 function mergeEvidenceRecords(records) {
   const mergedSources = [...new Set(records.map(record => inferSourcePlatform(record)).filter(Boolean))];
   const mergedKinds = [...new Set(records.map(record => inferOpportunityKind(record)).filter(Boolean))];
+  const mergedSourceUrls = [
+    ...new Set(
+      records
+        .flatMap(record => [
+          normalizeDisplay(record?.canonical_apply_url || record?.apply_link),
+          normalizeDisplay(record?.post_url),
+          ...(Array.isArray(record?.source_urls) ? record.source_urls : [])
+        ])
+        .filter(Boolean)
+    )
+  ];
   const postUrls = [...new Set(records.map(record => normalizeDisplay(record?.post_url)).filter(Boolean))];
   const applyLinks = [...new Set(records.map(record => normalizeDisplay(record?.apply_link)).filter(Boolean))];
   const evidenceItems = records
@@ -454,6 +493,7 @@ function mergeEvidenceRecords(records) {
     merged_count: records.length,
     post_urls: postUrls,
     apply_links: applyLinks,
+    source_urls: mergedSourceUrls,
     items: evidenceItems.slice(0, 6)
   };
 }
@@ -471,6 +511,7 @@ export function normalizeOpportunity(job) {
   const postUrl = normalizeDisplay(job?.post_url);
   const confidenceTier = inferConfidenceTier(job);
   const locationScope = inferLocationScope(job);
+  const sourceQualityTier = inferSourceQualityTier(job);
   const sourceEvidence = {
     snippet: normalizeDisplay(job?.source_evidence?.snippet || job?.description).slice(0, 320),
     matched_signals: {
@@ -487,11 +528,23 @@ export function normalizeOpportunity(job) {
     source_platform: sourcePlatform,
     opportunity_kind: opportunityKind,
     confidence_tier: confidenceTier,
+    source_quality_tier: sourceQualityTier,
     canonical_apply_url: canonicalApplyUrl,
     canonical_company: canonicalCompany,
     canonical_role: canonicalRole,
+    ats_provider: normalizeDisplay(
+      job?.ats_provider || (sourceQualityTier === "ats" ? sourcePlatform : "")
+    ),
+    ats_board_key: normalizeDisplay(job?.ats_board_key),
     post_author: normalizeDisplay(job?.post_author),
     post_url: postUrl,
+    source_urls: [...new Set(
+      [
+        canonicalApplyUrl,
+        postUrl,
+        ...(Array.isArray(job?.source_urls) ? job.source_urls : [])
+      ].filter(Boolean)
+    )],
     source_evidence: {
       ...(typeof job?.source_evidence === "object" && job?.source_evidence !== null
         ? safeJsonClone(job.source_evidence)
@@ -535,7 +588,8 @@ export function prepareOpportunities(jobs) {
         ...mergedEvidence
       },
       related_post_urls: mergedEvidence.post_urls,
-      related_sources: mergedEvidence.merged_sources
+      related_sources: mergedEvidence.merged_sources,
+      source_urls: mergedEvidence.source_urls
     };
 
     if (records.length > 1) {
@@ -571,14 +625,17 @@ export function buildOpportunitySummary(jobs, extra = {}) {
   const byKind = { listing: 0, post: 0 };
   const byConfidence = { high: 0, medium: 0, low: 0 };
   const bySource = {};
+  const bySourceQuality = { ats: 0, board: 0, post: 0 };
 
   for (const job of list) {
     const kind = inferOpportunityKind(job);
     const confidence = normalizeText(job?.confidence_tier || inferConfidenceTier(job));
     const source = inferSourcePlatform(job);
+    const sourceQuality = inferSourceQualityTier(job);
     byKind[kind] = (byKind[kind] || 0) + 1;
     byConfidence[confidence] = (byConfidence[confidence] || 0) + 1;
     bySource[source] = (bySource[source] || 0) + 1;
+    bySourceQuality[sourceQuality] = (bySourceQuality[sourceQuality] || 0) + 1;
   }
 
   return {
@@ -587,7 +644,8 @@ export function buildOpportunitySummary(jobs, extra = {}) {
     merged_duplicate_count: Number(extra.mergedDuplicateCount || 0),
     by_kind: byKind,
     by_confidence: byConfidence,
-    by_source: bySource
+    by_source: bySource,
+    by_source_quality: bySourceQuality
   };
 }
 
@@ -881,6 +939,7 @@ export function buildCoverageHealth(fetchReport, summary = {}) {
     provider_count: providers.length,
     paused_providers: pausedProviders,
     zero_result_providers: zeroResultProviders,
+    ats_coverage: fetchReport?.totals?.ats_coverage || null,
     listing_count: Number(summary?.by_kind?.listing || 0),
     post_count: Number(summary?.by_kind?.post || 0),
     medium_count: Number(summary?.by_confidence?.medium || 0),

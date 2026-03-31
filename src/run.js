@@ -50,6 +50,13 @@ import {
   buildCoverageAlertMessages,
   monitorCoverageHealth
 } from "./jobs/coverageMonitor.js";
+import {
+  ACTION_CARD_RENDERER_VERSION,
+  buildActionCardDailySummaryMessages,
+  buildActionCardHeartbeatMessages,
+  buildActionCardHiringPostReviewMessages,
+  buildActionCardJobAlertMessages
+} from "./notify/actionCards.js";
 
 const AGENT_NAME = String(process.env.AGENT_NAME || "Salesforce Job Radar Agent").trim();
 
@@ -103,12 +110,37 @@ function shouldForceExitAfterRun() {
   return isTruthy(process.env.GITHUB_ACTIONS);
 }
 
+function isActionCardRendererEnabled() {
+  return isTruthy(process.env.ACTION_CARD_RENDERER_ENABLED || "true");
+}
+
+function buildActionCardExtraSections({
+  telegram = "",
+  emailText = "",
+  emailHtml = ""
+} = {}) {
+  return {
+    telegram: String(telegram || "").trim(),
+    emailText: String(emailText || "").trim(),
+    emailHtml: String(emailHtml || "").trim()
+  };
+}
+
 function inferJobSource(job) {
   const sourcePlatform = String(job?.source_platform || "").trim().toLowerCase();
   const sourceId = String(job?.source_job_id || "").trim().toLowerCase();
   const link = String(job?.apply_link || "").trim().toLowerCase();
   const postUrl = String(job?.post_url || "").trim().toLowerCase();
 
+  if (sourcePlatform === "greenhouse" || sourceId.startsWith("greenhouse:")) {
+    return "Greenhouse";
+  }
+  if (sourcePlatform === "lever" || sourceId.startsWith("lever:")) {
+    return "Lever";
+  }
+  if (sourcePlatform === "ashby" || sourceId.startsWith("ashby:")) {
+    return "Ashby";
+  }
   if (
     sourcePlatform === "linkedin_posts" ||
     sourceId.startsWith("linkedin_post:") ||
@@ -157,6 +189,10 @@ function getSourceCounts(jobs) {
   const counts = {
     Naukri: 0,
     LinkedIn: 0,
+    "LinkedIn Posts": 0,
+    Greenhouse: 0,
+    Lever: 0,
+    Ashby: 0,
     Arbeitnow: 0,
     Adzuna: 0,
     Other: 0
@@ -1555,6 +1591,61 @@ async function writeAlertReport(jobs, options = {}) {
 }
 
 function buildJobMessages(newJobs, options = {}) {
+  if (isActionCardRendererEnabled()) {
+    const reviewPostJobs = Array.isArray(options.reviewPostJobs)
+      ? options.reviewPostJobs
+      : [];
+    const topPackJobs = Array.isArray(options.topPackJobs)
+      ? options.topPackJobs
+      : [];
+    const messageBlocks = options.messageBlocks || emptyMessageBlocks();
+    const reportAttachment = options.reportAttachment;
+    const extraSections = buildActionCardExtraSections({
+      telegram: [
+        String(messageBlocks.telegramBlock || "").trim(),
+        reportAttachment
+          ? `Full report attached: ${String(reportAttachment.filename || "").trim()}`
+          : ""
+      ].filter(Boolean).join("\n\n"),
+      emailText: [
+        String(messageBlocks.emailTextBlock || "").trim(),
+        reportAttachment
+          ? `Full report attached: ${String(reportAttachment.filename || "").trim()}`
+          : ""
+      ].filter(Boolean).join("\n\n"),
+      emailHtml: [
+        String(messageBlocks.emailHtmlBlock || "").trim(),
+        reportAttachment
+          ? renderEmailPanel({
+              title: "Full report",
+              body: `Full report attached: ${escapeHtml(
+                String(reportAttachment.filename || "").trim()
+              )}`
+            })
+          : ""
+      ].filter(Boolean).join("")
+    });
+    const sourceSummary = buildSourceSummary([
+      ...(Array.isArray(newJobs) ? newJobs : []),
+      ...reviewPostJobs
+    ]);
+    const payload = buildActionCardJobAlertMessages({
+      agentName: AGENT_NAME,
+      jobs: newJobs,
+      sourceSummary,
+      reviewPostJobs,
+      topPackJobs,
+      extraSections
+    });
+
+    return {
+      telegramBody: payload.telegram,
+      emailText: payload.text,
+      emailHtml: payload.html,
+      emailSubject: payload.subject
+    };
+  }
+
   const reviewPostJobs = Array.isArray(options.reviewPostJobs)
     ? options.reviewPostJobs
     : [];
@@ -1794,6 +1885,28 @@ function buildJobMessages(newJobs, options = {}) {
 }
 
 function buildHiringPostReviewMessages(reviewJobs, options = {}) {
+  if (isActionCardRendererEnabled()) {
+    const messageBlocks = options.messageBlocks || emptyMessageBlocks();
+    const sourceSummary = buildSourceSummary(Array.isArray(reviewJobs) ? reviewJobs : []);
+    const payload = buildActionCardHiringPostReviewMessages({
+      agentName: AGENT_NAME,
+      jobs: reviewJobs,
+      sourceSummary,
+      extraSections: buildActionCardExtraSections({
+        telegram: messageBlocks.telegramBlock,
+        emailText: messageBlocks.emailTextBlock,
+        emailHtml: messageBlocks.emailHtmlBlock
+      })
+    });
+
+    return {
+      telegramText: payload.telegram,
+      emailSubject: payload.subject,
+      emailText: payload.text,
+      emailHtml: payload.html
+    };
+  }
+
   const reviewList = Array.isArray(reviewJobs) ? reviewJobs : [];
   const sourceSummary = buildSourceSummary(reviewList);
   const sections = buildOpportunitySections([], { reviewPostJobs: reviewList });
@@ -1890,6 +2003,7 @@ function buildDailySummaryMessages({
   fetchedCount,
   salesforceJobs,
   scoredNewJobs,
+  pendingCount = 0,
   sourceSummary,
   messageBlocks
 }) {
@@ -1923,6 +2037,43 @@ function buildDailySummaryMessages({
     "No missing-skills trend (no scored new jobs)"
   );
   const opportunitySections = buildOpportunitySections(scoredNewJobs);
+
+  if (isActionCardRendererEnabled()) {
+    const payload = buildActionCardDailySummaryMessages({
+      agentName: AGENT_NAME,
+      dateKey,
+      fetchedCount,
+      salesforceCount: Array.isArray(salesforceJobs) ? salesforceJobs.length : 0,
+      newCount: Array.isArray(scoredNewJobs) ? scoredNewJobs.length : 0,
+      pendingCount,
+      sourceSummary,
+      classificationSummary: buildOpportunitySummary(salesforceJobs, {
+        rawCount: fetchedCount,
+        mergedDuplicateCount: 0
+      }),
+      newJobs: scoredNewJobs,
+      trendSections: {
+        companiesText: companyText,
+        companiesHtml: companyHtml,
+        locationsText: locationText,
+        locationsHtml: locationHtml,
+        missingSkillsText: missingSkillsText,
+        missingSkillsHtml: missingSkillsHtml
+      },
+      extraSections: buildActionCardExtraSections({
+        telegram: messageBlocks.telegramBlock,
+        emailText: messageBlocks.emailTextBlock,
+        emailHtml: messageBlocks.emailHtmlBlock
+      })
+    });
+
+    return {
+      telegramText: payload.telegram,
+      emailSubject: payload.subject,
+      emailText: payload.text,
+      emailHtml: payload.html
+    };
+  }
 
   const telegramText =
     `📊 <b>${AGENT_NAME} Daily Summary (${dateKey})</b>\n\n` +
@@ -2120,6 +2271,45 @@ async function sendRunSummary({
   const diagnosticsTelegram = String(messageBlocks.heartbeatTelegramBlock || "").trim();
   const diagnosticsText = String(messageBlocks.heartbeatTextBlock || "").trim();
   const diagnosticsHtml = String(messageBlocks.heartbeatHtmlBlock || "").trim();
+  if (isActionCardRendererEnabled()) {
+    const payload = buildActionCardHeartbeatMessages({
+      agentName: AGENT_NAME,
+      timeLabel,
+      fetchedCount,
+      salesforceCount,
+      newCount,
+      pendingCount,
+      sourceSummary,
+      note,
+      classificationSummary: runDetails?.classificationSummary || null,
+      extraSections: buildActionCardExtraSections({
+        telegram: diagnosticsTelegram,
+        emailText: diagnosticsText,
+        emailHtml: diagnosticsHtml
+      })
+    });
+    const result = await notifyAll({
+      telegramText: payload.telegram,
+      emailSubject: payload.subject,
+      emailText: payload.text,
+      emailHtml: payload.html
+    });
+    recordNotificationAttempt(runDetails, "heartbeat", result, {
+      subject: payload.subject,
+      fetchedCount,
+      salesforceCount,
+      newCount,
+      pendingCount
+    });
+
+    if (result.anyOk) {
+      console.log("ðŸ“£ Heartbeat summary sent");
+    } else {
+      console.log("âš ï¸ Heartbeat summary failed on all channels");
+    }
+    return;
+  }
+
   const telegramText =
     `ℹ️ <b>${escapeTelegramHtml(AGENT_NAME)} Heartbeat</b>\n\n` +
     `📥 Fetched: <b>${fetchedCount}</b>\n` +
@@ -2201,18 +2391,19 @@ async function maybeSendDailySummary({
     fetchedCount,
     salesforceJobs,
     scoredNewJobs,
+    pendingCount: await getPendingAlertCount(),
     sourceSummary,
     messageBlocks
   });
 
   const result = await notifyAll({
     telegramText: messages.telegramText,
-    emailSubject: `${AGENT_NAME} daily summary (${check.dateKey})`,
+    emailSubject: messages.emailSubject || `${AGENT_NAME} daily summary (${check.dateKey})`,
     emailText: messages.emailText,
     emailHtml: messages.emailHtml
   });
   recordNotificationAttempt(runDetails, "daily_summary", result, {
-    subject: `${AGENT_NAME} daily summary (${check.dateKey})`,
+    subject: messages.emailSubject || `${AGENT_NAME} daily summary (${check.dateKey})`,
     dateKey: check.dateKey,
     newCount: Array.isArray(scoredNewJobs) ? scoredNewJobs.length : 0
   });
@@ -2426,6 +2617,9 @@ async function processPendingAlerts(alertBatchLimit, options = {}) {
     fullPackJobs: resumePackJobs,
     attachmentsEnabled
   });
+  const resumePackKeys = new Set(
+    resumePackJobs.map(job => getOpportunitySelectionKey(job))
+  );
   const alertedJobsWithResumeSupport = jobsWithResumeSupport.filter(job =>
     alertKeys.has(getOpportunitySelectionKey(job))
   );
@@ -2433,18 +2627,31 @@ async function processPendingAlerts(alertBatchLimit, options = {}) {
     reviewKeys.has(getOpportunitySelectionKey(job)) &&
     !alertKeys.has(getOpportunitySelectionKey(job))
   );
+  const topPackJobsWithResumeSupport = jobsWithResumeSupport.filter(job =>
+    resumePackKeys.has(getOpportunitySelectionKey(job))
+  );
+  if (runDetails && typeof runDetails === "object") {
+    runDetails.applyPackJobs = topPackJobsWithResumeSupport.map(job => ({
+      key: getOpportunitySelectionKey(job),
+      title: normalizeInlineText(job?.title, "Untitled role"),
+      company: normalizeInlineText(job?.company, ""),
+      kind: String(job?.opportunity_kind || "").trim(),
+      matchScore: Number(job?.match_score || 0)
+    }));
+  }
   const reportAttachment = compact
     && attachmentsEnabled
     ? await writeAlertReport(alertedJobsWithResumeSupport, { name: "job-alert" })
     : null;
 
-  const { telegramBody, emailText, emailHtml } = buildJobMessages(
+  const { telegramBody, emailText, emailHtml, emailSubject } = buildJobMessages(
     alertedJobsWithResumeSupport,
     {
       messageBlocks,
       compact,
       reportAttachment,
-      reviewPostJobs: reviewJobsWithResumeSupport
+      reviewPostJobs: reviewJobsWithResumeSupport,
+      topPackJobs: topPackJobsWithResumeSupport
     }
   );
 
@@ -2467,21 +2674,23 @@ async function processPendingAlerts(alertBatchLimit, options = {}) {
 
   const notifyResult = await notifyAll({
     telegramText: telegramBody,
-    emailSubject: `${AGENT_NAME}: ${jobsToAlert.length} new jobs | ${buildSourceSummary(jobsWithResumeSupport)}`,
+    emailSubject: emailSubject || `${AGENT_NAME}: ${jobsToAlert.length} new jobs | ${buildSourceSummary(jobsWithResumeSupport)}`,
     emailText,
     emailHtml,
     attachments
   });
   recordNotificationAttempt(runDetails, "job_alert", notifyResult, {
-    subject: `${AGENT_NAME}: ${jobsToAlert.length} new jobs | ${buildSourceSummary(jobsWithResumeSupport)}`,
+    subject: emailSubject || `${AGENT_NAME}: ${jobsToAlert.length} new jobs | ${buildSourceSummary(jobsWithResumeSupport)}`,
     alertedCount: jobsToAlert.length,
     pendingCount,
     highListings: selectedHigh.filter(job => String(job?.opportunity_kind || "").toLowerCase() !== "post").length,
     highPosts: selectedHigh.filter(job => String(job?.opportunity_kind || "").toLowerCase() === "post").length,
     mediumReviewCount: mediumReviewJobs.length,
     reviewDigestCount: reviewJobsWithResumeSupport.length,
+    topPackCount: topPackJobsWithResumeSupport.length,
     suppressedByPolicyCount: selection.suppressedByPolicy.length,
-    postAlertPolicy: selection.postPolicy
+    postAlertPolicy: selection.postPolicy,
+    rendererVersion: runDetails?.rendererVersion || ""
   });
 
   if (notifyResult.anyOk) {
@@ -2562,7 +2771,10 @@ async function run() {
     stateBackend: getStateBackend(),
     notifyEveryRun,
     alertBatchLimit: alertBatchLabel,
-    attachmentsEnabled
+    attachmentsEnabled,
+    rendererVersion: isActionCardRendererEnabled()
+      ? ACTION_CARD_RENDERER_VERSION
+      : "legacy"
   };
   const runHistory = await startRunHistory({
     source: runSource,
@@ -2704,7 +2916,9 @@ async function run() {
       mergedCount: opportunitySummary.merged_count,
       mergedDuplicateCount: opportunitySummary.merged_duplicate_count
     };
+    runDetails.dedupeSources = opportunitySummary.by_source || {};
     runDetails.providerCoverage = buildCoverageHealth(fetchReport, opportunitySummary);
+    runDetails.atsCoverage = runDetails.providerCoverage?.ats_coverage || null;
     runDetails.sourceSummary = sourceSummary;
     const coverageMonitor = await monitorCoverageHealth(runDetails.providerCoverage, {
       runSource

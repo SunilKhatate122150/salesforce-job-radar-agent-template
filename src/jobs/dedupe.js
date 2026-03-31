@@ -93,6 +93,9 @@ function buildJobRecord(job) {
     apply_link: canonicalLink || job.apply_link || null,
     source_job_id: sourceJobId || null,
     source_platform: normalizeText(job.source_platform || "") || null,
+    source_quality_tier: normalizeText(job.source_quality_tier || "") || null,
+    ats_provider: normalizeText(job.ats_provider || "") || null,
+    ats_board_key: normalizeText(job.ats_board_key || "") || null,
     opportunity_kind: opportunityKind || "listing",
     confidence_tier: normalizeText(job.confidence_tier || "") || null,
     canonical_apply_url: canonicalLink || null,
@@ -100,6 +103,7 @@ function buildJobRecord(job) {
     canonical_role: canonicalRole || null,
     post_author: String(job.post_author || "").trim() || null,
     post_url: normalizeApplyLink(job.post_url) || null,
+    source_urls: Array.isArray(job.source_urls) ? job.source_urls.filter(Boolean) : null,
     source_evidence:
       job.source_evidence && typeof job.source_evidence === "object"
         ? job.source_evidence
@@ -196,6 +200,9 @@ async function upsertJobPayload(payload) {
         "source_job_id",
         "last_seen_at",
         "source_platform",
+        "source_quality_tier",
+        "ats_provider",
+        "ats_board_key",
         "opportunity_kind",
         "confidence_tier",
         "canonical_apply_url",
@@ -203,6 +210,7 @@ async function upsertJobPayload(payload) {
         "canonical_role",
         "post_author",
         "post_url",
+        "source_urls",
         "source_evidence"
       ]) {
         if (isMissingColumnError(lastError, columnName) && columnName in fallbackPayload) {

@@ -2,7 +2,10 @@ import { fetchNaukriJobs, getLastNaukriFetchReport } from "../jobs/fetchNaukri.j
 import { filterSalesforceJobs } from "../jobs/filterSalesforceJobs.js";
 import { applyPrecisionFilters } from "../jobs/precisionFilters.js";
 import { enrichJobsWithResumeMatch } from "../resume/matchResume.js";
-import { annotateJobsWithResumeSupport } from "../resume/generateTailoredResume.js";
+import {
+  annotateJobsWithResumeSupport,
+  selectTopResumePackJobs
+} from "../resume/generateTailoredResume.js";
 import { generateJobHash, getNewJobs, saveJobs } from "../jobs/dedupe.js";
 import {
   acknowledgePendingAlerts,
@@ -19,6 +22,13 @@ import { startRunHistory } from "../db/runHistory.js";
 import { markDailySummarySent, shouldSendDailySummary } from "../notify/dailySummary.js";
 import { sendEmailMessage } from "../notify/email.js";
 import { sendTelegramMessage } from "../notify/telegram.js";
+import {
+  ACTION_CARD_RENDERER_VERSION,
+  buildActionCardDailySummaryMessages,
+  buildActionCardHeartbeatMessages,
+  buildActionCardHiringPostReviewMessages,
+  buildActionCardJobAlertMessages
+} from "../notify/actionCards.js";
 import { getStateBackend } from "../db/stateStore.js";
 import {
   buildCoverageHealth,
@@ -40,6 +50,10 @@ function isTruthy(value) {
   return ["1", "true", "yes", "on"].includes(
     String(value || "").trim().toLowerCase()
   );
+}
+
+function isActionCardRendererEnabled() {
+  return isTruthy(process.env.ACTION_CARD_RENDERER_ENABLED || "true");
 }
 
 function escapeHtml(value) {
@@ -84,6 +98,15 @@ function inferJobSource(job) {
   const link = String(job?.apply_link || "").trim().toLowerCase();
   const postUrl = String(job?.post_url || "").trim().toLowerCase();
 
+  if (sourcePlatform === "greenhouse" || sourceId.startsWith("greenhouse:")) {
+    return "Greenhouse";
+  }
+  if (sourcePlatform === "lever" || sourceId.startsWith("lever:")) {
+    return "Lever";
+  }
+  if (sourcePlatform === "ashby" || sourceId.startsWith("ashby:")) {
+    return "Ashby";
+  }
   if (
     sourcePlatform === "linkedin_posts" ||
     sourceId.startsWith("linkedin_post:") ||
@@ -338,7 +361,23 @@ function buildOpportunitySections(jobs, { reviewPostJobs = [] } = {}) {
   ]);
 }
 
-function buildJobAlertMessages(agentName, jobs, sourceSummary, { reviewPostJobs = [] } = {}) {
+function buildJobAlertMessages(
+  agentName,
+  jobs,
+  sourceSummary,
+  { reviewPostJobs = [], topPackJobs = [], extraSections = {} } = {}
+) {
+  if (isActionCardRendererEnabled()) {
+    return buildActionCardJobAlertMessages({
+      agentName,
+      jobs,
+      sourceSummary,
+      reviewPostJobs,
+      topPackJobs,
+      extraSections
+    });
+  }
+
   const primaryJobs = Array.isArray(jobs) ? jobs : [];
   const reviewJobs = Array.isArray(reviewPostJobs) ? reviewPostJobs : [];
   const summary = buildOpportunitySummary([...primaryJobs, ...reviewJobs]);
@@ -384,7 +423,16 @@ function buildJobAlertMessages(agentName, jobs, sourceSummary, { reviewPostJobs 
   return { subject, text, html, telegram };
 }
 
-function buildHiringPostReviewMessages(agentName, jobs, sourceSummary) {
+function buildHiringPostReviewMessages(agentName, jobs, sourceSummary, { extraSections = {} } = {}) {
+  if (isActionCardRendererEnabled()) {
+    return buildActionCardHiringPostReviewMessages({
+      agentName,
+      jobs,
+      sourceSummary,
+      extraSections
+    });
+  }
+
   const reviewJobs = Array.isArray(jobs) ? jobs : [];
   const summary = buildOpportunitySummary(reviewJobs);
   const sections = buildOpportunitySections([], { reviewPostJobs: reviewJobs });
@@ -455,6 +503,26 @@ function buildHeartbeatMessages({
   classificationSummary = null
 }) {
   const timeLabel = getNotificationTimeLabel();
+  if (isActionCardRendererEnabled()) {
+    const actionCard = buildActionCardHeartbeatMessages({
+      agentName,
+      timeLabel,
+      fetchedCount,
+      salesforceCount,
+      newCount,
+      pendingCount,
+      sourceSummary,
+      note,
+      classificationSummary
+    });
+    return {
+      telegramText: actionCard.telegram,
+      emailSubject: actionCard.subject,
+      emailText: actionCard.text,
+      emailHtml: actionCard.html
+    };
+  }
+
   const listingCount = Number(classificationSummary?.by_kind?.listing || 0);
   const postCount = Number(classificationSummary?.by_kind?.post || 0);
   const reviewCount = Number(classificationSummary?.by_confidence?.medium || 0);
@@ -507,6 +575,26 @@ function buildDailySummaryMessages({
   classificationSummary = null,
   newJobs = []
 }) {
+  if (isActionCardRendererEnabled()) {
+    const actionCard = buildActionCardDailySummaryMessages({
+      agentName,
+      dateKey,
+      fetchedCount,
+      salesforceCount,
+      newCount,
+      pendingCount,
+      sourceSummary,
+      classificationSummary,
+      newJobs
+    });
+    return {
+      telegramText: actionCard.telegram,
+      emailSubject: actionCard.subject,
+      emailText: actionCard.text,
+      emailHtml: actionCard.html
+    };
+  }
+
   const listingCount = Number(classificationSummary?.by_kind?.listing || 0);
   const postCount = Number(classificationSummary?.by_kind?.post || 0);
   const reviewCount = Number(classificationSummary?.by_confidence?.medium || 0);
@@ -794,10 +882,14 @@ async function processPendingAlertsCloud(agentName, runDetails, options = {}) {
       return key && !alertKeys.has(key);
     })
   ];
+  const resumePackJobs = selectTopResumePackJobs(selectedHigh);
   const jobsWithResumeSupport = await annotateJobsWithResumeSupport(jobsForNotification, {
-    fullPackJobs: selectedHigh,
+    fullPackJobs: resumePackJobs,
     attachmentsEnabled: false
   });
+  const resumePackKeys = new Set(
+    resumePackJobs.map(job => getOpportunitySelectionKey(job))
+  );
   const alertedJobsWithResumeSupport = jobsWithResumeSupport.filter(job =>
     alertKeys.has(getOpportunitySelectionKey(job))
   );
@@ -805,12 +897,27 @@ async function processPendingAlertsCloud(agentName, runDetails, options = {}) {
     reviewKeys.has(getOpportunitySelectionKey(job)) &&
     !alertKeys.has(getOpportunitySelectionKey(job))
   );
+  const topPackJobsWithResumeSupport = jobsWithResumeSupport.filter(job =>
+    resumePackKeys.has(getOpportunitySelectionKey(job))
+  );
+  if (runDetails && typeof runDetails === "object") {
+    runDetails.applyPackJobs = topPackJobsWithResumeSupport.map(job => ({
+      key: getOpportunitySelectionKey(job),
+      title: trimText(job?.title, 120),
+      company: trimText(job?.company, 120),
+      kind: String(job?.opportunity_kind || ""),
+      matchScore: Number(job?.match_score || 0)
+    }));
+  }
   const sourceSummary = buildSourceSummary(jobsWithResumeSupport);
   const messagePayload = buildJobAlertMessages(
     agentName,
     alertedJobsWithResumeSupport,
     sourceSummary,
-    { reviewPostJobs: reviewJobsWithResumeSupport }
+    {
+      reviewPostJobs: reviewJobsWithResumeSupport,
+      topPackJobs: topPackJobsWithResumeSupport
+    }
   );
   const notifyResult = await notifyAll({
     telegramText: messagePayload.telegram,
@@ -826,8 +933,10 @@ async function processPendingAlertsCloud(agentName, runDetails, options = {}) {
     highPosts: selection.effectiveHighPosts.length,
     mediumReviewCount: mediumQueue.length,
     reviewDigestCount: reviewJobsWithResumeSupport.length,
+    topPackCount: topPackJobsWithResumeSupport.length,
     suppressedByPolicyCount: selection.suppressedByPolicy.length,
-    postAlertPolicy: selection.postPolicy
+    postAlertPolicy: selection.postPolicy,
+    rendererVersion: runDetails?.rendererVersion || ""
   });
 
   if (!notifyResult.anyOk) {
@@ -923,7 +1032,10 @@ export async function runSupabaseCloudAgent() {
     agentName,
     runSource,
     runtimeTarget: "supabase_edge",
-    stateBackend: getStateBackend()
+    stateBackend: getStateBackend(),
+    rendererVersion: isActionCardRendererEnabled()
+      ? ACTION_CARD_RENDERER_VERSION
+      : "legacy"
   };
   const runHistory = await startRunHistory({
     source: runSource,
@@ -978,10 +1090,12 @@ export async function runSupabaseCloudAgent() {
       mergedCount: preparedOpportunities.summary.merged_count,
       mergedDuplicateCount: preparedOpportunities.summary.merged_duplicate_count
     };
+    runDetails.dedupeSources = preparedOpportunities.summary.by_source || {};
     runDetails.providerCoverage = buildCoverageHealth(
       fetchReport,
       preparedOpportunities.summary
     );
+    runDetails.atsCoverage = runDetails.providerCoverage?.ats_coverage || null;
     const coverageMonitor = await monitorCoverageHealth(runDetails.providerCoverage, {
       runSource
     });

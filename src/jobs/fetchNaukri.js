@@ -4,9 +4,21 @@ import { fetchNaukriJobsDirect } from "./fetchNaukriDirect.js";
 import { fetchNaukriJobsViaReader } from "./fetchNaukriReader.js";
 import { fetchArbeitnowJobs } from "./fetchArbeitnow.js";
 import { fetchAdzunaJobs } from "./fetchAdzuna.js";
+import { fetchAshbyJobs } from "./fetchAshby.js";
 import { filterSalesforceJobs } from "./filterSalesforceJobs.js";
+import { fetchGreenhouseJobs } from "./fetchGreenhouse.js";
 import { fetchLinkedInJobs } from "./fetchLinkedIn.js";
 import { fetchLinkedInPosts } from "./fetchLinkedInPosts.js";
+import { fetchLeverJobs } from "./fetchLever.js";
+import {
+  buildAtsCoverageSummary,
+  getAtsProviderBoardLimit,
+  getAtsProviderMode,
+  getEnabledAtsProviders,
+  groupAtsBoardsByProvider,
+  isAtsEnabled,
+  loadAtsBoardRegistry
+} from "./atsRegistry.js";
 import {
   buildPauseReason,
   getProviderGate,
@@ -27,6 +39,9 @@ const PROVIDER_META = {
   naukri_reader: { cost: "free", healthKey: "naukri_reader" },
   linkedin: { cost: "free", healthKey: "linkedin" },
   linkedin_posts: { cost: "free", healthKey: "linkedin_posts" },
+  greenhouse: { cost: "free", healthKey: "greenhouse" },
+  lever: { cost: "free", healthKey: "lever" },
+  ashby: { cost: "free", healthKey: "ashby" },
   direct: { cost: "free", healthKey: "naukri_direct" },
   arbeitnow: { cost: "free", healthKey: "arbeitnow" },
   adzuna: { cost: "free", healthKey: "adzuna" }
@@ -248,6 +263,20 @@ function getPostProviders() {
     .split(",")
     .map(provider => provider.trim().toLowerCase())
     .filter(Boolean);
+}
+
+function getAtsProviders() {
+  return isAtsEnabled() ? getEnabledAtsProviders() : [];
+}
+
+function buildEmptyAtsCoverage() {
+  return {
+    mode: getAtsProviderMode(),
+    total_board_count: 0,
+    raw_count: 0,
+    salesforce_count: 0,
+    providers: {}
+  };
 }
 
 function getPrimaryKeyword(plan) {
@@ -479,6 +508,15 @@ function inferJobSource(job) {
   const link = String(job?.apply_link || "").toLowerCase();
   const postUrl = String(job?.post_url || "").toLowerCase();
 
+  if (sourcePlatform === "greenhouse" || sourceId.startsWith("greenhouse:")) {
+    return "Greenhouse";
+  }
+  if (sourcePlatform === "lever" || sourceId.startsWith("lever:")) {
+    return "Lever";
+  }
+  if (sourcePlatform === "ashby" || sourceId.startsWith("ashby:")) {
+    return "Ashby";
+  }
   if (
     sourcePlatform === "linkedin_posts" ||
     sourceId.startsWith("linkedin_post:") ||
@@ -507,6 +545,9 @@ function getSourceCounts(jobs) {
     Naukri: 0,
     LinkedIn: 0,
     "LinkedIn Posts": 0,
+    Greenhouse: 0,
+    Lever: 0,
+    Ashby: 0,
     Arbeitnow: 0,
     Adzuna: 0,
     Other: 0
@@ -539,19 +580,29 @@ export async function fetchNaukriJobs() {
   );
   const plans = await getPlansForThisRun();
   const searchKeywords = getSearchKeywords(plans);
+  const atsMode = getAtsProviderMode();
+  const atsRegistry = await loadAtsBoardRegistry();
+  const atsBoardsByProvider = groupAtsBoardsByProvider(atsRegistry);
+  const atsBoardLimit = getAtsProviderBoardLimit();
   const providers = prioritizeProviders([
-    ...getFetchProviders(),
-    ...getPostProviders()
+    ...new Set([
+      ...getFetchProviders(),
+      ...getPostProviders(),
+      ...getAtsProviders()
+    ])
   ]);
   const uniqueJobs = new Map();
   const hasApifyToken = Boolean(process.env.APIFY_TOKEN);
   const fetchAllProviders = isTruthy(process.env.FETCH_ALL_PROVIDERS || "true");
   const paidFallbackOnly = shouldUsePaidOnlyWhenNeeded();
   const providerReports = [];
+  const atsCoverageEntries = [];
 
   lastFetchReport = {
     started_at: new Date().toISOString(),
-    providers: providerReports
+    providers: providerReports,
+    atsMode,
+    atsRegistryCount: atsRegistry.length
   };
 
   if (!hasApifyToken && providers.includes("apify")) {
@@ -644,6 +695,34 @@ export async function fetchNaukriJobs() {
           location: DEFAULT_LOCATION,
           maxUniqueResults: maxUniqueResults - uniqueJobs.size
         });
+      } else if (provider === "greenhouse" || provider === "lever" || provider === "ashby") {
+        const providerBoards = (atsBoardsByProvider.get(provider) || []).slice(
+          0,
+          atsBoardLimit
+        );
+        providerReport.board_count = providerBoards.length;
+        providerReport.ats_mode = atsMode;
+
+        if (providerBoards.length === 0) {
+          providerReport.status = "skipped";
+          providerReport.reason = "No active ATS boards";
+          continue;
+        }
+
+        const fetcher =
+          provider === "greenhouse"
+            ? fetchGreenhouseJobs
+            : provider === "lever"
+              ? fetchLeverJobs
+              : fetchAshbyJobs;
+        const atsResult = await fetcher({
+          boards: providerBoards,
+          maxUniqueResults: Math.max(1, maxUniqueResults - uniqueJobs.size)
+        });
+        providerJobs = Array.isArray(atsResult?.jobs) ? atsResult.jobs : [];
+        if (Array.isArray(atsResult?.coverage)) {
+          atsCoverageEntries.push(...atsResult.coverage);
+        }
       } else {
         console.log(`⚠️ Unknown provider '${provider}' skipped`);
         providerReport.status = "skipped";
@@ -671,16 +750,47 @@ export async function fetchNaukriJobs() {
     }
 
     const providerSalesforceJobs = filterSalesforceJobs(providerJobs);
+    if (provider === "greenhouse" || provider === "lever" || provider === "ashby") {
+      const salesforceCountByBoard = new Map();
+      for (const job of providerSalesforceJobs) {
+        const boardKey = String(job?.ats_board_key || "").trim();
+        if (!boardKey) continue;
+        salesforceCountByBoard.set(
+          boardKey,
+          (salesforceCountByBoard.get(boardKey) || 0) + 1
+        );
+      }
+
+      for (const entry of atsCoverageEntries) {
+        if (String(entry?.provider || "").trim() !== provider) continue;
+        const boardKey = String(entry?.board_key || "").trim();
+        entry.salesforce_count = salesforceCountByBoard.get(boardKey) || 0;
+      }
+    }
     providerReport.raw_count = providerJobs.length;
     providerReport.salesforce_count = providerSalesforceJobs.length;
-    const added = mergeUniqueJobs(
-      uniqueJobs,
-      providerSalesforceJobs,
-      maxUniqueResults
-    );
+    const added =
+      (provider === "greenhouse" || provider === "lever" || provider === "ashby") &&
+      atsMode === "shadow"
+        ? 0
+        : mergeUniqueJobs(
+            uniqueJobs,
+            providerSalesforceJobs,
+            maxUniqueResults
+          );
     providerReport.contributed_count = added;
+    if (
+      (provider === "greenhouse" || provider === "lever" || provider === "ashby") &&
+      atsMode === "shadow"
+    ) {
+      providerReport.shadow_contributed_count = providerSalesforceJobs.length;
+      providerReport.reason =
+        providerSalesforceJobs.length > 0
+          ? `ATS shadow mode captured ${providerSalesforceJobs.length} Salesforce job(s)`
+          : "ATS shadow mode recorded coverage only";
+    }
     if (providerJobs.length === 0) {
-      providerReport.reason = "No results returned";
+      providerReport.reason = providerReport.reason || "No results returned";
     }
     console.log(
       `📦 Provider '${provider}': raw=${providerJobs.length}, salesforce=${providerSalesforceJobs.length}, contributed=${added}. Total: ${uniqueJobs.size}`
@@ -705,7 +815,8 @@ export async function fetchNaukriJobs() {
       kind_counts: {
         listing: jobs.filter(job => String(job?.opportunity_kind || "listing").toLowerCase() === "listing").length,
         post: jobs.filter(job => String(job?.opportunity_kind || "").toLowerCase() === "post").length
-      }
+      },
+      ats_coverage: buildAtsCoverageSummary(atsCoverageEntries)
     }
   };
   console.log(`✅ Total unique jobs collected this run: ${jobs.length}`);

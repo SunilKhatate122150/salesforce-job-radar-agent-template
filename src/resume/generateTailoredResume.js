@@ -128,7 +128,7 @@ function getTopResumePackLimit() {
     0,
     toFiniteNumber(
       process.env.RESUME_TOP_OPPORTUNITY_LIMIT,
-      process.env.RESUME_ATTACHMENT_MAX_FILES || 1
+      process.env.RESUME_ATTACHMENT_MAX_FILES || 3
     )
   );
 }
@@ -860,7 +860,7 @@ export async function createResumeAttachments(jobs) {
 
   const maxTailoredFiles = Math.max(
     0,
-    toFiniteNumber(process.env.RESUME_ATTACHMENT_MAX_FILES, 1)
+    toFiniteNumber(process.env.RESUME_ATTACHMENT_MAX_FILES, 3)
   );
   const applyPackEnabled = isTruthy(process.env.APPLY_PACK_ENABLED || "true");
   const maxApplyPackFiles = Math.max(
