@@ -97,3 +97,32 @@ test("applyPrecisionFilters still removes stale old hiring posts", () =>
       assert.equal(result.report.removed.stale_posted, 1);
     }
   ));
+
+test("applyPrecisionFilters keeps strong hiring posts even without contact email", () =>
+  withEnv(
+    {
+      PRECISION_PROFILE: "balanced",
+      PRECISION_KEEP_HIGH_SIGNAL_POSTS: "true"
+    },
+    () => {
+      const result = applyPrecisionFilters([
+        {
+          opportunity_kind: "post",
+          source_platform: "linkedin_posts",
+          title: "Salesforce Developer Hiring Post",
+          company: "Acme",
+          location: "Remote India",
+          description:
+            "We are hiring a Salesforce Developer for India remote work. Apply now.",
+          post_author: "",
+          post_url:
+            "https://www.linkedin.com/posts/acme_salesforce-hiring-activity-456/",
+          apply_link:
+            "https://www.linkedin.com/posts/acme_salesforce-hiring-activity-456/"
+        }
+      ]);
+
+      assert.equal(result.jobs.length, 1);
+      assert.equal(result.jobs[0].precision_override, "high_signal_post");
+    }
+  ));

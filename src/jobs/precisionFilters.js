@@ -248,8 +248,8 @@ function shouldKeepHighSignalPost(job, text) {
 
   return (
     hasSalesforceSignal &&
-    (hasHiringSignal || hasRecruiterSignal || Boolean(contactEmail)) &&
-    (hasRoleSignal || Boolean(contactEmail)) &&
+    (hasHiringSignal || hasRecruiterSignal || Boolean(contactEmail) || hasPostLink) &&
+    (hasRoleSignal || Boolean(contactEmail) || hasRecruiterSignal || hasPostLink) &&
     (hasPostLink || Boolean(contactEmail) || Boolean(author))
   );
 }
