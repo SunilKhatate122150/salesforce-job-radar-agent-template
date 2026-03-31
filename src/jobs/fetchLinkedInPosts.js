@@ -1,4 +1,5 @@
 const DUCKDUCKGO_HTML = "https://html.duckduckgo.com/html/";
+const BRAVE_SEARCH_URL = "https://search.brave.com/search";
 
 const DEFAULT_LOCATION =
   process.env.LINKEDIN_LOCATION || process.env.NAUKRI_LOCATION || "India";
@@ -43,7 +44,9 @@ const QUERY_SUFFIXES = [
   "\"we are hiring\"",
   "\"job opening\"",
   "\"looking for\"",
-  "\"share your resume\""
+  "\"share your resume\"",
+  "\"immediate joiner\"",
+  "\"talent acquisition\""
 ];
 
 const QUERY_SITE_TARGETS = [
@@ -130,7 +133,6 @@ export function buildSearchQueries(plans) {
     1,
     Number(process.env.LINKEDIN_POSTS_QUERIES_PER_RUN || 6)
   );
-  const queries = new Set();
   const planKeywords = [];
 
   for (const plan of Array.isArray(plans) ? plans : []) {
@@ -139,18 +141,40 @@ export function buildSearchQueries(plans) {
 
   const keywords = [...new Set([...planKeywords, ...QUERY_ROLE_SEEDS])];
   const locations = [DEFAULT_LOCATION, "remote", "india remote"];
+  const queries = [];
+  const seen = new Set();
+  const keywordSitePairs = [];
 
   for (const keyword of keywords) {
-    for (const suffix of QUERY_SUFFIXES) {
-      for (const location of locations) {
-        for (const siteTarget of QUERY_SITE_TARGETS) {
-          queries.add(`${siteTarget} "${keyword}" ${suffix} "${location}"`);
-        }
-      }
+    for (const siteTarget of QUERY_SITE_TARGETS) {
+      keywordSitePairs.push({ keyword, siteTarget });
     }
   }
 
-  return [...queries].slice(0, maxQueries);
+  let cycle = 0;
+  const maxCycles = QUERY_SUFFIXES.length * locations.length;
+  while (queries.length < maxQueries && cycle < maxCycles) {
+    for (let pairIndex = 0; pairIndex < keywordSitePairs.length; pairIndex += 1) {
+      const pair = keywordSitePairs[pairIndex];
+      const suffix =
+        QUERY_SUFFIXES[(pairIndex + cycle) % QUERY_SUFFIXES.length];
+      const location = locations[(pairIndex + cycle) % locations.length];
+      const query = `${pair.siteTarget} "${pair.keyword}" ${suffix} "${location}"`;
+      if (seen.has(query)) {
+        continue;
+      }
+
+      seen.add(query);
+      queries.push(query);
+      if (queries.length >= maxQueries) {
+        break;
+      }
+    }
+
+    cycle += 1;
+  }
+
+  return queries;
 }
 
 function decodeDuckDuckGoUrl(rawHref) {
@@ -199,12 +223,17 @@ function hasHiringSignals(text) {
   const normalized = normalizeText(text);
   return (
     normalized.includes("hiring") ||
+    normalized.includes("#hiring") ||
     normalized.includes("looking for") ||
     normalized.includes("job opening") ||
     normalized.includes("opening") ||
     normalized.includes("apply now") ||
     normalized.includes("vacancy") ||
-    normalized.includes("share your resume")
+    normalized.includes("share your resume") ||
+    normalized.includes("send your cv") ||
+    normalized.includes("send your resume") ||
+    normalized.includes("talent acquisition") ||
+    normalized.includes("immediate joiner")
   );
 }
 
@@ -243,6 +272,25 @@ function extractPostedAt(text) {
     if (pattern.unit === "days") date.setDate(date.getDate() - value);
     if (pattern.unit === "weeks") date.setDate(date.getDate() - (value * 7));
     return date.toISOString();
+  }
+
+  const absolutePatterns = [
+    /\b(\d{1,2})\s+(january|february|march|april|may|june|july|august|september|october|november|december)\s+(\d{4})\b/i,
+    /\b(january|february|march|april|may|june|july|august|september|october|november|december)\s+(\d{1,2}),\s*(\d{4})\b/i
+  ];
+
+  for (const pattern of absolutePatterns) {
+    const match = raw.match(pattern);
+    if (!match) continue;
+
+    const monthFirst = Number.isNaN(Number(match[1]));
+    const monthName = monthFirst ? match[1] : match[2];
+    const day = Number(monthFirst ? match[2] : match[1]);
+    const year = Number(match[3]);
+    const date = new Date(`${monthName} ${day}, ${year} 00:00:00 GMT`);
+    if (!Number.isNaN(date.getTime())) {
+      return date.toISOString();
+    }
   }
 
   return null;
@@ -377,19 +425,29 @@ export function createPostRecord(result, query, details = null) {
     details?.bodyText
   ].filter(Boolean).join(" ");
 
-  if (!hasHiringSignals(combinedText) || !hasSalesforceSignals(combinedText)) {
-    return null;
-  }
-
+  const author =
+    extractAuthor(details?.title || result.title) ||
+    trimText(details?.author || "", 80);
+  const recruiterSignal = /\b(recruiter|talent acquisition|hiring manager|hr)\b/i.test(
+    `${author} ${combinedText}`
+  );
+  const contactEmail = extractEmail(combinedText);
   const role =
     extractRole(combinedText) ||
     inferRoleFromSignals(combinedText) ||
     "Salesforce Hiring Post";
+
+  if (!hasSalesforceSignals(combinedText)) {
+    return null;
+  }
+
+  if (!(hasHiringSignals(combinedText) || contactEmail || recruiterSignal)) {
+    return null;
+  }
+
   const company = extractCompany(combinedText);
-  const author = extractAuthor(details?.title || result.title) || trimText(details?.author || "", 80);
   const location = extractLocation(combinedText) || DEFAULT_LOCATION;
   const postedAt = details?.postedAt || extractPostedAt(`${result.title} ${result.snippet}`);
-  const contactEmail = extractEmail(combinedText);
 
   return {
     source_platform: "linkedin_posts",
@@ -417,6 +475,19 @@ export function createPostRecord(result, query, details = null) {
 }
 
 async function fetchSearchPage(query, page = 0) {
+  return fetchDuckDuckGoSearchPage(query, page);
+}
+
+function isDuckDuckGoBlocked(response, html) {
+  return (
+    response.status === 202 ||
+    /anomaly\.js/i.test(String(html || "")) ||
+    /botnet/i.test(String(html || "")) ||
+    /verify you are human/i.test(String(html || ""))
+  );
+}
+
+async function fetchDuckDuckGoSearchPage(query, page = 0) {
   const url = new URL(DUCKDUCKGO_HTML);
   url.searchParams.set("q", query);
   if (page > 0) {
@@ -430,11 +501,83 @@ async function fetchSearchPage(query, page = 0) {
     }
   });
 
+  const html = await response.text();
+
+  if (isDuckDuckGoBlocked(response, html)) {
+    throw new Error("DuckDuckGo search blocked by anomaly protection");
+  }
+
   if (!response.ok) {
     throw new Error(`LinkedIn posts search failed with status ${response.status}`);
   }
 
-  return response.text();
+  return html;
+}
+
+export function parseBraveSearchResults(html) {
+  const results = [];
+  const regex =
+    /<a href="(https:\/\/www\.linkedin\.com\/(?:posts|feed\/update)[^"]+)"[\s\S]*?<div class="title[^"]*"[^>]*(?:title="([^"]+)")?[^>]*>([\s\S]*?)<\/div>[\s\S]*?<div class="content[^"]*">([\s\S]*?)<\/div>/gi;
+
+  for (const match of String(html || "").matchAll(regex)) {
+    const href = normalizeApplyLink(match[1]);
+    const title = stripHtml(match[2] || match[3] || "");
+    const snippet = stripHtml(match[4] || "");
+    if (!href || !title) continue;
+    results.push({ href, title, snippet });
+  }
+
+  return results;
+}
+
+async function fetchBraveSearchPage(query, page = 0) {
+  const url = new URL(BRAVE_SEARCH_URL);
+  url.searchParams.set("q", query);
+  url.searchParams.set("source", "web");
+  if (page > 0) {
+    url.searchParams.set("offset", String(page * 10));
+  }
+
+  const response = await fetch(url, {
+    headers: {
+      "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36",
+      "accept-language": "en-IN,en;q=0.9"
+    }
+  });
+
+  const html = await response.text();
+  if (response.status === 429) {
+    throw new Error("Brave Search rate limited the request");
+  }
+
+  if (!response.ok) {
+    throw new Error(`Brave search failed with status ${response.status}`);
+  }
+
+  return html;
+}
+
+function getSearchProviders() {
+  return String(
+    process.env.LINKEDIN_POSTS_SEARCH_PROVIDERS || "duckduckgo,brave"
+  )
+    .split(",")
+    .map(value => value.trim().toLowerCase())
+    .filter(Boolean);
+}
+
+async function fetchSearchResults(query, page, provider) {
+  if (provider === "duckduckgo") {
+    const html = await fetchDuckDuckGoSearchPage(query, page);
+    return parseSearchResults(html).filter(result => isLikelyLinkedInPost(result.href));
+  }
+
+  if (provider === "brave") {
+    const html = await fetchBraveSearchPage(query, page);
+    return parseBraveSearchResults(html).filter(result => isLikelyLinkedInPost(result.href));
+  }
+
+  throw new Error(`Unknown LinkedIn post search provider: ${provider}`);
 }
 
 export async function fetchLinkedInPosts({
@@ -449,6 +592,8 @@ export async function fetchLinkedInPosts({
   const queries = buildSearchQueries(plans);
   const unique = new Map();
   const detailsEnabled = isTruthy(process.env.LINKEDIN_POSTS_FETCH_DETAILS || "true");
+  const searchProviders = getSearchProviders();
+  const blockedProviders = new Set();
   const maxPagesPerQuery = Math.max(
     1,
     Number(process.env.LINKEDIN_POSTS_PAGES_PER_QUERY || 2)
@@ -466,9 +611,26 @@ export async function fetchLinkedInPosts({
       if (unique.size >= maxUniqueResults) break;
 
       try {
-        const html = await fetchSearchPage(query, page);
-        const results = parseSearchResults(html)
-          .filter(result => isLikelyLinkedInPost(result.href));
+        let results = [];
+        for (const provider of searchProviders) {
+          if (blockedProviders.has(provider)) {
+            continue;
+          }
+
+          try {
+            results = await fetchSearchResults(query, page, provider);
+            if (results.length > 0) {
+              break;
+            }
+          } catch (error) {
+            if (/blocked|rate limited/i.test(String(error?.message || ""))) {
+              blockedProviders.add(provider);
+            }
+            console.log(
+              `WARN LinkedIn posts search provider failed (${provider}, ${query}, page ${page + 1}): ${error.message}`
+            );
+          }
+        }
 
         for (const result of results) {
           if (unique.size >= maxUniqueResults) break;
@@ -487,10 +649,27 @@ export async function fetchLinkedInPosts({
           if (!record) continue;
           unique.set(record.post_url, record);
         }
+
+        if (blockedProviders.size >= searchProviders.length) {
+          console.log(
+            "WARN LinkedIn posts provider exhausted all search providers for this run"
+          );
+          break;
+        }
       } catch (error) {
         console.log(`WARN LinkedIn posts query failed (${query}, page ${page + 1}): ${error.message}`);
       }
     }
+
+    if (blockedProviders.size >= searchProviders.length) {
+      break;
+    }
+  }
+
+  if (unique.size === 0 && blockedProviders.size >= searchProviders.length) {
+    throw new Error(
+      "All LinkedIn post search providers were blocked or rate limited"
+    );
   }
 
   const jobs = [...unique.values()];

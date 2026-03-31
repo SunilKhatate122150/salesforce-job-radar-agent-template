@@ -3,7 +3,8 @@ import assert from "node:assert/strict";
 
 import {
   buildSearchQueries,
-  createPostRecord
+  createPostRecord,
+  parseBraveSearchResults
 } from "../src/jobs/fetchLinkedInPosts.js";
 
 function withEnv(overrides, fn) {
@@ -48,7 +49,37 @@ test("buildSearchQueries expands LinkedIn post coverage with feed and remote var
     assert.ok(queries.some(query => query.includes("site:linkedin.com/posts")));
     assert.ok(queries.some(query => query.includes("site:linkedin.com/feed/update")));
     assert.ok(queries.some(query => query.toLowerCase().includes("remote")));
+    assert.ok(queries.some(query => query.includes("\"Apex Developer\"")));
+    assert.ok(queries.some(query => query.toLowerCase().includes("\"we are hiring\"")));
   }));
+
+test("parseBraveSearchResults extracts LinkedIn post cards from Brave HTML", () => {
+  const html = `
+    <div class="snippet  svelte-jmfu5f" data-pos="1" data-type="web" data-keynav="true">
+      <div class="result-wrapper">
+        <div class="result-content">
+          <a href="https://www.linkedin.com/posts/rjain13_nagarro-hiring-salesforce-activity-6849597937698312192-FlFB" target="_self" class="l1">
+            <div class="title search-snippet-title line-clamp-1" title="Rahul Jain on LinkedIn: #nagarro #hiring #salesforce #salesforcejobs | 15 comments">
+              Rahul Jain on LinkedIn: #nagarro #hiring #salesforce #salesforcejobs | 15 comments
+            </div>
+          </a>
+          <div class="generic-snippet">
+            <div class="content desktop-default-regular t-primary line-clamp-dynamic">
+              <span class="t-secondary">1 October 2021 -</span>
+              <strong>Nagarro is hiring for multiple Salesforce technical positions</strong> in India.
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+
+  const results = parseBraveSearchResults(html);
+  assert.equal(results.length, 1);
+  assert.match(results[0].href, /linkedin\.com\/posts\/rjain13/i);
+  assert.match(results[0].title, /Rahul Jain on LinkedIn/i);
+  assert.match(results[0].snippet, /Nagarro is hiring/i);
+});
 
 test("createPostRecord keeps Salesforce hiring posts with recruiter evidence", () => {
   const record = createPostRecord(
@@ -73,5 +104,27 @@ test("createPostRecord keeps Salesforce hiring posts with recruiter evidence", (
   assert.equal(record.title, "Salesforce Developer");
   assert.equal(record.post_author, "Asha Recruiter");
   assert.equal(record.posted_at, "2026-03-31T06:00:00.000Z");
+  assert.equal(record.source_evidence.contact_email, "jobs@acme.com");
+});
+
+test("createPostRecord keeps recruiter-led Salesforce posts even when hiring word is missing", () => {
+  const record = createPostRecord(
+    {
+      href: "https://www.linkedin.com/posts/asha-recruiter_salesforce-opportunity-456/",
+      title: "Asha Recruiter on LinkedIn: Salesforce LWC opening",
+      snippet: "Send your resume to jobs@acme.com for the Salesforce LWC opportunity in Pune."
+    },
+    'site:linkedin.com/posts "LWC Developer" "share your resume" "India"',
+    {
+      title: "Asha Recruiter on LinkedIn: Salesforce LWC opening",
+      description: "Salesforce LWC role for Acme in Pune. Send your resume to jobs@acme.com",
+      author: "Asha Recruiter",
+      bodyText: "Salesforce LWC role for Acme in Pune. Send your resume to jobs@acme.com."
+    }
+  );
+
+  assert.ok(record);
+  assert.equal(record.title, "LWC Developer");
+  assert.equal(record.post_author, "Asha Recruiter");
   assert.equal(record.source_evidence.contact_email, "jobs@acme.com");
 });
