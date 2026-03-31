@@ -92,6 +92,15 @@ function areCloudAttachmentsEnabled() {
   return runtimeTarget !== "supabase_edge" && !isTruthy(process.env.SUPABASE_CLOUD_MODE);
 }
 
+function shouldForceExitAfterRun() {
+  const configured = String(process.env.FORCE_EXIT_AFTER_RUN || "").trim();
+  if (configured) {
+    return isTruthy(configured);
+  }
+
+  return isTruthy(process.env.GITHUB_ACTIONS);
+}
+
 function inferJobSource(job) {
   const sourcePlatform = String(job?.source_platform || "").trim().toLowerCase();
   const sourceId = String(job?.source_job_id || "").trim().toLowerCase();
@@ -2809,4 +2818,18 @@ ${runErrorMessage}`,
   }
 }
 
-run();
+run()
+  .then(() => {
+    if (!shouldForceExitAfterRun()) {
+      return;
+    }
+
+    // GitHub-hosted runners can keep the process alive on open handles even
+    // after the agent has finished its work. Exit explicitly once all awaited
+    // cleanup is done so scheduled runs do not get stuck in-progress.
+    setImmediate(() => process.exit(process.exitCode || 0));
+  })
+  .catch(error => {
+    console.error("Unhandled agent runner failure:", error);
+    process.exit(1);
+  });
