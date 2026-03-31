@@ -30,6 +30,10 @@ import {
 const APIFY_BASE = "https://api.apify.com/v2";
 const sleep = (ms) => new Promise(r => setTimeout(r, ms));
 const DEFAULT_LOCATION = process.env.NAUKRI_LOCATION || "India";
+const ATS_MIN_INSPECTION_PER_BOARD = Math.max(
+  50,
+  Number(process.env.ATS_MIN_INSPECTION_PER_BOARD || 250) || 250
+);
 const DEFAULT_ACTOR_SOURCES = [
   { id: "nuclear_quietude~naukri-job-scraper", mode: "search_keywords" },
   { id: "techupservices~naukri-job-scraper", mode: "query_location" },
@@ -722,9 +726,14 @@ export async function fetchNaukriJobs() {
             : provider === "lever"
               ? fetchLeverJobs
               : fetchAshbyJobs;
+        const atsInspectionLimit = Math.max(
+          1,
+          maxUniqueResults - uniqueJobs.size,
+          providerBoards.length * ATS_MIN_INSPECTION_PER_BOARD
+        );
         const atsResult = await fetcher({
           boards: providerBoards,
-          maxUniqueResults: Math.max(1, maxUniqueResults - uniqueJobs.size)
+          maxUniqueResults: atsInspectionLimit
         });
         providerJobs = Array.isArray(atsResult?.jobs) ? atsResult.jobs : [];
         if (Array.isArray(atsResult?.coverage)) {

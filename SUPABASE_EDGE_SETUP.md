@@ -54,6 +54,7 @@ ENABLE_ATS_PROVIDERS=true
 ATS_PROVIDER_MODE=shadow
 ATS_FETCH_PROVIDERS=greenhouse,lever,ashby
 ATS_MAX_BOARDS_PER_PROVIDER=6
+ATS_MIN_INSPECTION_PER_BOARD=250
 ATS_DERIVE_FROM_JOB_ALERTS=true
 ATS_DERIVE_LIMIT=180
 ATS_BOARD_REGISTRY_JSON=
@@ -102,6 +103,7 @@ Notes:
 - `CLOUD_ATTACHMENTS_ENABLED=false` keeps the cloud path away from PDF/ZIP/file attachment generation while still sending inline ATS/tailoring previews in alerts.
 - `ACTION_CARD_RENDERER_ENABLED=true` turns on the shared action-card UI for email and Telegram while still letting you fall back to legacy formatting if needed.
 - `ATS_PROVIDER_MODE=shadow` keeps Greenhouse / Lever / Ashby in coverage-only mode first so they can prove themselves before they join the live alert path.
+- `ATS_MIN_INSPECTION_PER_BOARD=250` keeps ATS board coverage honest even when the main run is near its unique-job cap, so promotion decisions are based on fuller board signal.
 - `ATS_BOARD_REGISTRY_JSON` is optional. If you want fast seeding without SQL, provide a JSON array of `{ provider, company, board_key, careers_url, priority, mode }` rows.
 - `ENABLE_POST_PROVIDERS=true` enables the public hiring-post pipeline. Today that starts with `linkedin_posts`.
 - `POST_ALERT_POLICY` lets you tune whether post-based opportunities are disabled, included only when high-confidence, or included in both the high-confidence and review digest sections.
