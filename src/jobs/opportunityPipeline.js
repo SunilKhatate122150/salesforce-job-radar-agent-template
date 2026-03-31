@@ -67,6 +67,9 @@ const ROLE_PATTERNS = [
   /salesforce\s+business\s+analyst/i
 ];
 
+const RECRUITER_SIGNAL_PATTERN =
+  /\b(recruiter|talent acquisition|hiring manager|technical recruiter|talent partner|staffing|hr)\b/i;
+
 function normalizeText(value) {
   return String(value || "")
     .toLowerCase()
@@ -107,6 +110,10 @@ function extractEmail(text) {
   return match ? match[0] : "";
 }
 
+function hasRecruiterKeyword(text) {
+  return RECRUITER_SIGNAL_PATTERN.test(String(text || ""));
+}
+
 function getPostedDate(job) {
   const value = [
     job?.posted_at,
@@ -125,15 +132,13 @@ function getPostedDate(job) {
 }
 
 function extractRecruiterSignal(job, text) {
-  const author = normalizeText(job?.post_author || "");
-  if (author) {
-    return author;
+  const author = normalizeDisplay(job?.post_author || "");
+  if (author && hasRecruiterKeyword(author)) {
+    return normalizeText(author);
   }
 
-  const recruiterMatch = String(text || "").match(
-    /\b(recruiter|talent acquisition|hiring manager|hr)\b/i
-  );
-  return recruiterMatch ? recruiterMatch[0].toLowerCase() : "";
+  const recruiterMatch = String(text || "").match(RECRUITER_SIGNAL_PATTERN);
+  return recruiterMatch ? normalizeText(recruiterMatch[0]) : "";
 }
 
 function hashValue(value) {
@@ -405,8 +410,9 @@ function getRecruiterEvidenceStrength(job) {
   const text = getOpportunityText(job);
   let strength = 0;
 
-  if (normalizeDisplay(job?.post_author)) strength += 2;
+  if (normalizeDisplay(job?.post_author)) strength += 1;
   if (extractRecruiterSignal(job, text)) strength += 2;
+  if (inferCanonicalCompany(job)) strength += 1;
   if (normalizeDisplay(job?.source_evidence?.contact_email || extractEmail(text))) {
     strength += 2;
   }
@@ -703,12 +709,54 @@ function getWeakReviewMaxPostedHours() {
   return Number.isFinite(configured) && configured > 0 ? configured : 48;
 }
 
+function getReviewMinimumEvidenceScore() {
+  const configured = Number(process.env.POST_REVIEW_MIN_EVIDENCE_SCORE || 4);
+  return Number.isFinite(configured) && configured > 0 ? configured : 4;
+}
+
+function hasDirectResponseSignal(job) {
+  return Boolean(
+    normalizeDisplay(job?.source_evidence?.contact_email) ||
+    extractEmail(getOpportunityText(job))
+  );
+}
+
+function hasExternalApplySignal(job) {
+  const canonicalApplyUrl = buildCanonicalApplyUrl(job);
+  return Boolean(canonicalApplyUrl) && !canonicalApplyUrl.includes("linkedin.com");
+}
+
+function isGenericPostRole(job) {
+  const role = normalizeText(inferCanonicalRole(job));
+  return !role || role === "salesforce hiring post";
+}
+
+function getReviewEvidenceStrength(job) {
+  const text = getOpportunityText(job);
+  let strength = 0;
+
+  if (inferCanonicalCompany(job)) strength += 2;
+  if (normalizeDisplay(job?.post_author)) strength += 1;
+  if (extractRecruiterSignal(job, text)) strength += 2;
+  if (hasDirectResponseSignal(job)) strength += 2;
+  if (hasExternalApplySignal(job)) strength += 2;
+  if (!isGenericPostRole(job)) strength += 1;
+  if (inferLocationScope(job) !== "other") strength += 1;
+
+  return strength;
+}
+
 function isStrongReviewPostLead(job) {
-  return getRecruiterEvidenceStrength(job) >= 3;
+  return getRecruiterEvidenceStrength(job) >= 4;
 }
 
 function isReviewDigestEligiblePost(job) {
   const ageHours = getOpportunityAgeHours(job);
+  const recruiterSignal = extractRecruiterSignal(job, getOpportunityText(job));
+  const hasCompany = Boolean(inferCanonicalCompany(job));
+  const hasDirectResponse = hasDirectResponseSignal(job);
+  const reviewEvidenceStrength = getReviewEvidenceStrength(job);
+
   if (Number.isFinite(ageHours) && ageHours > getReviewMaxPostedHours()) {
     return false;
   }
@@ -718,6 +766,18 @@ function isReviewDigestEligiblePost(job) {
     ageHours > getWeakReviewMaxPostedHours() &&
     !isStrongReviewPostLead(job)
   ) {
+    return false;
+  }
+
+  if (reviewEvidenceStrength < getReviewMinimumEvidenceScore()) {
+    return false;
+  }
+
+  if (!hasCompany && !hasDirectResponse && !recruiterSignal) {
+    return false;
+  }
+
+  if (isGenericPostRole(job) && !hasCompany && !hasDirectResponse) {
     return false;
   }
 

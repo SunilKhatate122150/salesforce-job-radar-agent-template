@@ -421,6 +421,55 @@ test("selectHiringPostReviewJobs prefers fresher recruiter posts and drops older
     }
   ));
 
+test("selectHiringPostReviewJobs suppresses generic author-only post noise", () =>
+  withEnv(
+    {
+      POST_REVIEW_MIN_EVIDENCE_SCORE: "4"
+    },
+    () => {
+      const digest = selectHiringPostReviewJobs(
+        prepareOpportunities([
+          {
+            title: "Salesforce Developer",
+            company: "",
+            location: "India Remote",
+            post_url: "https://www.linkedin.com/posts/rahuljain_salesforce-hiring-1",
+            apply_link: "https://www.linkedin.com/posts/rahuljain_salesforce-hiring-1",
+            source_platform: "linkedin_posts",
+            post_author: "Rahul Jain",
+            description: "Hiring Salesforce Developer in India remote. Please DM for details.",
+            posted_at: new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString()
+          },
+          {
+            title: "Salesforce Developer",
+            company: "Acme",
+            location: "India Remote",
+            post_url: "https://www.linkedin.com/posts/acme-salesforce-hiring-2",
+            apply_link: "https://www.linkedin.com/posts/acme-salesforce-hiring-2",
+            source_platform: "linkedin_posts",
+            post_author: "Asha Recruiter",
+            description:
+              "We are hiring Salesforce Developer for Acme. Share your resume at jobs@acme.com",
+            source_evidence: {
+              contact_email: "jobs@acme.com"
+            },
+            posted_at: new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString()
+          }
+        ]).jobs,
+        {
+          maxItems: 5
+        }
+      );
+
+      assert.equal(digest.selected.length, 1);
+      assert.equal(digest.selected[0].company, "Acme");
+      assert.equal(
+        digest.selected.some(job => job.post_author === "Rahul Jain"),
+        false
+      );
+    }
+  ));
+
 test("monitorCoverageHealth emits coverage alerts for repeated zero-post runs", { concurrency: false }, async () =>
   withEnv(
     {
