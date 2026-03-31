@@ -1,8 +1,6 @@
 import fs from "fs/promises";
 import path from "path";
 import { fileURLToPath } from "url";
-import { mdToPdf } from "md-to-pdf";
-import { createZipArchive } from "../utils/zip.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -59,12 +57,29 @@ function truncate(value, maxLength = 1200) {
   return `${text.slice(0, maxLength)}...`;
 }
 
+async function loadMdToPdf() {
+  try {
+    return await import("md-to-pdf");
+  } catch (nodeError) {
+    try {
+      return await import("npm:md-to-pdf");
+    } catch {
+      throw nodeError;
+    }
+  }
+}
+
+async function loadZipArchiveHelper() {
+  return import("../utils/zip.js");
+}
+
 async function convertMarkdownToPdf(inputPath, outputPath) {
   if (!isTruthy(process.env.RESUME_PDF_ENABLED || "true")) {
     return null;
   }
 
   try {
+    const { mdToPdf } = await loadMdToPdf();
     await mdToPdf({ path: inputPath }, { dest: outputPath });
     return outputPath;
   } catch (error) {
@@ -717,6 +732,7 @@ async function createApplyBundle(job, index, fileAttachments = []) {
   }
 
   try {
+    const { createZipArchive } = await loadZipArchiveHelper();
     await createZipArchive(bundlePath, filePaths);
     return {
       filename,
