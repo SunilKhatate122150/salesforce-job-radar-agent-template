@@ -35,7 +35,10 @@ const HIRING_KEYWORDS = [
   "job opening",
   "vacancy",
   "apply now",
-  "join our team"
+  "join our team",
+  "share your resume",
+  "immediate joiner",
+  "urgent requirement"
 ];
 
 const SALESFORCE_POST_KEYWORDS = [
@@ -59,7 +62,9 @@ const ROLE_PATTERNS = [
   /lwc\s+developer/i,
   /lightning\s+developer/i,
   /sfdc\s+developer/i,
-  /salesforce\s+administrator/i
+  /salesforce\s+administrator/i,
+  /salesforce\s+architect/i,
+  /salesforce\s+business\s+analyst/i
 ];
 
 function normalizeText(value) {
@@ -100,6 +105,18 @@ function safeJsonClone(value) {
 function extractEmail(text) {
   const match = String(text || "").match(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i);
   return match ? match[0] : "";
+}
+
+function extractRecruiterSignal(job, text) {
+  const author = normalizeText(job?.post_author || "");
+  if (author) {
+    return author;
+  }
+
+  const recruiterMatch = String(text || "").match(
+    /\b(recruiter|talent acquisition|hiring manager|hr)\b/i
+  );
+  return recruiterMatch ? recruiterMatch[0].toLowerCase() : "";
 }
 
 function hashValue(value) {
@@ -226,11 +243,13 @@ function inferConfidenceTier(job) {
   const text = getOpportunityText(job);
   const hasRole = Boolean(inferCanonicalRole(job));
   const hasCompany = Boolean(inferCanonicalCompany(job));
+  const hasAuthor = Boolean(normalizeDisplay(job?.post_author));
   const hasLocation = Boolean(normalizeDisplay(job?.location));
   const applyLink = normalizeApplyLink(job?.apply_link);
   const postUrl = normalizeApplyLink(job?.post_url);
   const email = extractEmail(text);
   const hasContactSignal = Boolean(email);
+  const recruiterSignal = extractRecruiterSignal(job, text);
   const hiringSignals = HIRING_KEYWORDS.filter(keyword => text.includes(keyword));
   const salesforceSignals = SALESFORCE_POST_KEYWORDS.filter(keyword => text.includes(keyword));
 
@@ -247,8 +266,8 @@ function inferConfidenceTier(job) {
     hiringSignals.length >= 1 &&
     salesforceSignals.length >= 1 &&
     hasRole &&
-    hasCompany &&
-    (hasPostLink || hasContactSignal)
+    (hasCompany || hasAuthor) &&
+    (hasPostLink || hasContactSignal || recruiterSignal)
   ) {
     return "high";
   }
@@ -256,8 +275,8 @@ function inferConfidenceTier(job) {
   if (
     hiringSignals.length >= 1 &&
     salesforceSignals.length >= 1 &&
-    hasRole &&
-    (hasCompany || hasLocation || hasPostLink)
+    (hasRole || hasPostLink) &&
+    (hasCompany || hasAuthor || hasLocation || hasContactSignal || recruiterSignal)
   ) {
     return "medium";
   }
@@ -379,6 +398,7 @@ export function normalizeOpportunity(job) {
       hiring: HIRING_KEYWORDS.filter(keyword => getOpportunityText(job).includes(keyword)).slice(0, 4),
       salesforce: SALESFORCE_POST_KEYWORDS.filter(keyword => getOpportunityText(job).includes(keyword)).slice(0, 4)
     },
+    contact_email: normalizeDisplay(job?.source_evidence?.contact_email),
     location_scope: locationScope,
     provider: sourcePlatform
   };

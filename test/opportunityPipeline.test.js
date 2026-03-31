@@ -9,6 +9,7 @@ import {
 } from "../src/jobs/opportunityPipeline.js";
 import {
   annotateJobsWithResumeSupport,
+  buildResumePreview,
   selectTopResumePackJobs
 } from "../src/resume/generateTailoredResume.js";
 import {
@@ -175,7 +176,32 @@ test("annotateJobsWithResumeSupport marks listing packs and post previews separa
     assert.equal(postAnnotated.resume_support.mode, "preview_only");
     assert.ok(Array.isArray(listingAnnotated.resume_support.preview.atsKeywords));
     assert.match(postAnnotated.resume_support.preview.draftSubject, /Application for/i);
+    assert.ok(Array.isArray(postAnnotated.resume_support.preview.whyMatched));
+    assert.ok(Array.isArray(postAnnotated.resume_support.preview.checklist));
   }));
+
+test("buildResumePreview includes ATS summary and apply guidance", async () => {
+  const preview = await buildResumePreview({
+    title: "Salesforce Developer",
+    company: "Acme",
+    match_score: 91,
+    match_level: "High",
+    apply_priority: "High",
+    matched_skills: ["Apex", "LWC"],
+    missing_skills: ["CPQ"],
+    top_missing_keywords: ["CPQ"],
+    why_matched: ["Matched skills: Apex, LWC."],
+    resume_actions: ["Add Apex integration project."],
+    resume_bullet_suggestions: ["Show measurable Apex delivery with user and automation metrics."]
+  });
+
+  assert.match(preview.atsSummary, /91% High/i);
+  assert.equal(preview.applyPriority, "High");
+  assert.ok(Array.isArray(preview.whyMatched));
+  assert.ok(Array.isArray(preview.missingKeywords));
+  assert.ok(Array.isArray(preview.checklist));
+  assert.match(preview.headline, /ATS 91%/i);
+});
 
 test("buildOpportunitySummary reports kind and confidence counts", () => {
   const summary = buildOpportunitySummary([

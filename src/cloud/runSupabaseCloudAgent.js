@@ -155,27 +155,69 @@ function getOpportunityEvidence(job) {
   return trimText(job?.source_evidence?.snippet || job?.description || "", 200);
 }
 
+function getPreviewList(job, key, fallback = []) {
+  return Array.isArray(job?.resume_support?.preview?.[key])
+    ? job.resume_support.preview[key].filter(Boolean)
+    : fallback;
+}
+
+function getPreviewValue(job, key, fallback = "") {
+  return trimText(job?.resume_support?.preview?.[key] || fallback, 160);
+}
+
+function getPostedLabel(job) {
+  const value = String(job?.posted_at || "").trim();
+  if (!value) return "Recent";
+
+  const postedAt = new Date(value);
+  if (Number.isNaN(postedAt.getTime())) return trimText(value, 40);
+
+  const diffMs = Math.max(0, Date.now() - postedAt.getTime());
+  const diffHours = Math.round(diffMs / 3600000);
+  if (diffHours < 1) return "Under 1h ago";
+  if (diffHours < 24) return `${diffHours}h ago`;
+  const diffDays = Math.round(diffMs / 86400000);
+  return `${diffDays}d ago`;
+}
+
+function getOpportunityMetaLine(job) {
+  const company = trimText(job?.company || "Unknown company", 60);
+  const location = trimText(job?.location || "Location unknown", 60);
+  return `${company} | ${location} | ${getPostedLabel(job)}`;
+}
+
 function buildTelegramOpportunityCard(job, index) {
   const actionUrl = getOpportunityActionUrl(job);
-  const resumePreview = getResumePreview(job);
   const evidence = getOpportunityEvidence(job);
+  const whyMatched = getPreviewList(job, "whyMatched");
+  const missingKeywords = getPreviewList(job, "missingKeywords");
+  const bulletSuggestions = getPreviewList(job, "bulletSuggestions");
+  const atsSummary = getPreviewValue(job, "atsSummary");
+  const headline = getPreviewValue(job, "headline");
   const lines = [
     `<b>${index}. ${escapeHtml(job?.title || "Unknown title")}</b>`,
-    `${escapeHtml(job?.company || "Unknown company")}${job?.location ? ` | ${escapeHtml(job.location)}` : ""}`,
+    `${escapeHtml(getOpportunityMetaLine(job))}`,
     `<b>${escapeHtml(getOpportunityKindLabel(job))}</b> | ${escapeHtml(getOpportunityConfidenceLabel(job))} | ${escapeHtml(inferJobSource(job))}`,
-    `Match: <b>${escapeHtml(String(job?.match_score ?? "n/a"))}</b>`
+    `Match: <b>${escapeHtml(String(job?.match_score ?? "n/a"))}</b>${atsSummary ? ` | ${escapeHtml(atsSummary)}` : ""}`
   ];
 
   const resumeSupport = getResumeSupportLabel(job);
   if (resumeSupport) lines.push(`Tailored support: ${escapeHtml(resumeSupport)}`);
-  if (resumePreview?.atsKeywords?.length) {
-    lines.push(`ATS keywords: ${escapeHtml(formatListValue(resumePreview.atsKeywords, 5))}`);
+  if (headline) lines.push(`Resume headline: ${escapeHtml(headline)}`);
+  if (getPreviewList(job, "atsKeywords").length > 0) {
+    lines.push(`ATS keywords: ${escapeHtml(formatListValue(getPreviewList(job, "atsKeywords"), 5))}`);
   }
-  if (resumePreview?.draftSubject) {
-    lines.push(`Draft subject: ${escapeHtml(trimText(resumePreview.draftSubject, 120))}`);
+  if (whyMatched.length > 0) {
+    lines.push(`Why matched: ${escapeHtml(formatListValue(whyMatched, 2))}`);
   }
-  if (job?.missing_skills?.length) {
-    lines.push(`Missing: ${escapeHtml(formatListValue(job.missing_skills, 4))}`);
+  if (missingKeywords.length > 0) {
+    lines.push(`Missing: ${escapeHtml(formatListValue(missingKeywords, 4))}`);
+  }
+  if (bulletSuggestions.length > 0) {
+    lines.push(`Resume bullets: ${escapeHtml(formatListValue(bulletSuggestions, 2))}`);
+  }
+  if (getPreviewValue(job, "draftSubject")) {
+    lines.push(`Draft subject: ${escapeHtml(getPreviewValue(job, "draftSubject"))}`);
   }
   if (evidence) lines.push(`Evidence: ${escapeHtml(evidence)}`);
   lines.push(actionUrl ? `<a href="${escapeHtml(actionUrl)}">${escapeHtml(getOpportunityActionLabel(job))}</a>` : "Link unavailable");
@@ -184,24 +226,35 @@ function buildTelegramOpportunityCard(job, index) {
 
 function buildEmailTextOpportunityCard(job, index) {
   const actionUrl = getOpportunityActionUrl(job);
-  const resumePreview = getResumePreview(job);
   const evidence = getOpportunityEvidence(job);
+  const whyMatched = getPreviewList(job, "whyMatched");
+  const missingKeywords = getPreviewList(job, "missingKeywords");
+  const bulletSuggestions = getPreviewList(job, "bulletSuggestions");
   const lines = [
     `${index}. ${trimText(job?.title || "Unknown title", 140)}`,
-    `${trimText(job?.company || "Unknown company", 120)}${job?.location ? ` | ${trimText(job.location, 80)}` : ""}`,
+    `${getOpportunityMetaLine(job)}`,
     `Type: ${getOpportunityKindLabel(job)} | Confidence: ${getOpportunityConfidenceLabel(job)} | Source: ${inferJobSource(job)}`,
-    `Match: ${String(job?.match_score ?? "n/a")}`
+    `Match: ${String(job?.match_score ?? "n/a")}${getPreviewValue(job, "atsSummary") ? ` | ${getPreviewValue(job, "atsSummary")}` : ""}`
   ];
   const resumeSupport = getResumeSupportLabel(job);
   if (resumeSupport) lines.push(`Tailored support: ${resumeSupport}`);
-  if (resumePreview?.atsKeywords?.length) {
-    lines.push(`ATS keywords: ${formatListValue(resumePreview.atsKeywords, 5)}`);
+  if (getPreviewValue(job, "headline")) {
+    lines.push(`Resume headline: ${getPreviewValue(job, "headline")}`);
   }
-  if (resumePreview?.draftSubject) {
-    lines.push(`Draft subject: ${trimText(resumePreview.draftSubject, 120)}`);
+  if (getPreviewList(job, "atsKeywords").length > 0) {
+    lines.push(`ATS keywords: ${formatListValue(getPreviewList(job, "atsKeywords"), 5)}`);
   }
-  if (job?.missing_skills?.length) {
-    lines.push(`Missing: ${formatListValue(job.missing_skills, 4)}`);
+  if (whyMatched.length > 0) {
+    lines.push(`Why matched: ${formatListValue(whyMatched, 2)}`);
+  }
+  if (missingKeywords.length > 0) {
+    lines.push(`Missing: ${formatListValue(missingKeywords, 4)}`);
+  }
+  if (bulletSuggestions.length > 0) {
+    lines.push(`Resume bullets: ${formatListValue(bulletSuggestions, 2)}`);
+  }
+  if (getPreviewValue(job, "draftSubject")) {
+    lines.push(`Draft subject: ${getPreviewValue(job, "draftSubject")}`);
   }
   if (evidence) lines.push(`Evidence: ${evidence}`);
   lines.push(`${getOpportunityActionLabel(job)}: ${actionUrl || "Link unavailable"}`);
@@ -210,27 +263,35 @@ function buildEmailTextOpportunityCard(job, index) {
 
 function buildEmailHtmlOpportunityCard(job, index) {
   const actionUrl = getOpportunityActionUrl(job);
-  const resumePreview = getResumePreview(job);
   const evidence = getOpportunityEvidence(job);
   const resumeSupport = getResumeSupportLabel(job);
+  const whyMatched = getPreviewList(job, "whyMatched");
+  const missingKeywords = getPreviewList(job, "missingKeywords");
+  const bulletSuggestions = getPreviewList(job, "bulletSuggestions");
   const chips = [
-    `<span style="display:inline-block;margin:0 6px 6px 0;padding:5px 10px;border-radius:999px;background:#eff6ff;color:#1d4ed8;font-size:12px;font-weight:700;">${escapeHtml(getOpportunityKindLabel(job))}</span>`,
-    `<span style="display:inline-block;margin:0 6px 6px 0;padding:5px 10px;border-radius:999px;background:#ecfeff;color:#0f766e;font-size:12px;font-weight:700;">${escapeHtml(getOpportunityConfidenceLabel(job))}</span>`,
-    `<span style="display:inline-block;margin:0 6px 6px 0;padding:5px 10px;border-radius:999px;background:#f8fafc;color:#334155;font-size:12px;font-weight:700;">${escapeHtml(inferJobSource(job))}</span>`,
-    `<span style="display:inline-block;margin:0 6px 6px 0;padding:5px 10px;border-radius:999px;background:#fef3c7;color:#92400e;font-size:12px;font-weight:700;">Match ${escapeHtml(String(job?.match_score ?? "n/a"))}</span>`
+    `<span style="display:inline-block;margin:0 6px 6px 0;padding:6px 12px;border-radius:999px;background:#dbeafe;color:#1d4ed8;font-size:12px;font-weight:800;">${escapeHtml(getOpportunityKindLabel(job))}</span>`,
+    `<span style="display:inline-block;margin:0 6px 6px 0;padding:6px 12px;border-radius:999px;background:#dcfce7;color:#166534;font-size:12px;font-weight:800;">${escapeHtml(getOpportunityConfidenceLabel(job))}</span>`,
+    `<span style="display:inline-block;margin:0 6px 6px 0;padding:6px 12px;border-radius:999px;background:#f8fafc;color:#334155;font-size:12px;font-weight:800;">${escapeHtml(inferJobSource(job))}</span>`,
+    `<span style="display:inline-block;margin:0 6px 6px 0;padding:6px 12px;border-radius:999px;background:#fef3c7;color:#92400e;font-size:12px;font-weight:800;">Match ${escapeHtml(String(job?.match_score ?? "n/a"))}</span>`
   ];
+  if (getPreviewValue(job, "atsSummary")) {
+    chips.push(`<span style="display:inline-block;margin:0 6px 6px 0;padding:6px 12px;border-radius:999px;background:#ede9fe;color:#6d28d9;font-size:12px;font-weight:800;">${escapeHtml(getPreviewValue(job, "atsSummary"))}</span>`);
+  }
   return (
-    `<div style="margin:0 0 16px 0;padding:18px;border:1px solid #dbe3ea;border-radius:16px;background:#ffffff;">` +
-    `<div style="font-size:16px;font-weight:800;color:#0f172a;margin-bottom:8px;">${escapeHtml(index)}. ${escapeHtml(job?.title || "Unknown title")}</div>` +
-    `<div style="font-size:14px;color:#334155;margin-bottom:10px;">${escapeHtml(job?.company || "Unknown company")}${job?.location ? ` | ${escapeHtml(job.location)}` : ""}</div>` +
-    `<div style="margin-bottom:8px;">${chips.join("")}</div>` +
+    `<div style="margin:0 0 18px 0;padding:22px;border:1px solid #dbe3ea;border-radius:18px;background:linear-gradient(180deg,#ffffff 0%,#f8fafc 100%);box-shadow:0 8px 18px rgba(15,23,42,0.05);">` +
+    `<div style="font-size:17px;font-weight:900;color:#0f172a;margin-bottom:8px;">${escapeHtml(index)}. ${escapeHtml(job?.title || "Unknown title")}</div>` +
+    `<div style="font-size:14px;color:#475569;margin-bottom:12px;">${escapeHtml(getOpportunityMetaLine(job))}</div>` +
+    `<div style="margin-bottom:10px;">${chips.join("")}</div>` +
     `${resumeSupport ? `<div style="margin:6px 0;"><strong>Tailored support:</strong> ${escapeHtml(resumeSupport)}</div>` : ""}` +
-    `${resumePreview?.atsKeywords?.length ? `<div style="margin:6px 0;"><strong>ATS keywords:</strong> ${escapeHtml(formatListValue(resumePreview.atsKeywords, 5))}</div>` : ""}` +
-    `${resumePreview?.draftSubject ? `<div style="margin:6px 0;"><strong>Draft subject:</strong> ${escapeHtml(trimText(resumePreview.draftSubject, 120))}</div>` : ""}` +
-    `${job?.missing_skills?.length ? `<div style="margin:6px 0;"><strong>Missing:</strong> ${escapeHtml(formatListValue(job.missing_skills, 4))}</div>` : ""}` +
+    `${getPreviewValue(job, "headline") ? `<div style="margin:6px 0;"><strong>Resume headline:</strong> ${escapeHtml(getPreviewValue(job, "headline"))}</div>` : ""}` +
+    `${getPreviewList(job, "atsKeywords").length ? `<div style="margin:6px 0;"><strong>ATS keywords:</strong> ${escapeHtml(formatListValue(getPreviewList(job, "atsKeywords"), 5))}</div>` : ""}` +
+    `${whyMatched.length ? `<div style="margin:6px 0;"><strong>Why matched:</strong> ${escapeHtml(formatListValue(whyMatched, 2))}</div>` : ""}` +
+    `${missingKeywords.length ? `<div style="margin:6px 0;"><strong>Missing:</strong> ${escapeHtml(formatListValue(missingKeywords, 4))}</div>` : ""}` +
+    `${bulletSuggestions.length ? `<div style="margin:6px 0;"><strong>Resume bullets:</strong> ${escapeHtml(formatListValue(bulletSuggestions, 2))}</div>` : ""}` +
+    `${getPreviewValue(job, "draftSubject") ? `<div style="margin:6px 0;"><strong>Draft subject:</strong> ${escapeHtml(getPreviewValue(job, "draftSubject"))}</div>` : ""}` +
     `${evidence ? `<div style="margin:6px 0;"><strong>Evidence:</strong> ${escapeHtml(evidence)}</div>` : ""}` +
     `${actionUrl
-      ? `<div style="margin-top:12px;"><a href="${escapeHtml(actionUrl)}" style="display:inline-block;padding:8px 12px;border-radius:10px;background:#0f172a;color:#ffffff;text-decoration:none;font-weight:700;">${escapeHtml(getOpportunityActionLabel(job))}</a></div>`
+      ? `<div style="margin-top:14px;"><a href="${escapeHtml(actionUrl)}" style="display:inline-block;padding:10px 16px;border-radius:12px;background:#0f172a;color:#ffffff;text-decoration:none;font-weight:800;">${escapeHtml(getOpportunityActionLabel(job))}</a></div>`
       : `<div style="margin-top:12px;color:#6b7280;">Link unavailable</div>`}` +
     `</div>`
   );
@@ -266,7 +327,8 @@ function buildOpportunitySections(jobs) {
 function buildJobAlertMessages(agentName, jobs, sourceSummary) {
   const summary = buildOpportunitySummary(jobs);
   const sections = buildOpportunitySections(jobs);
-  const subject = `${agentName}: ${jobs.length} opportunities | Listings ${summary.by_kind?.listing || 0} | Posts ${summary.by_kind?.post || 0}`;
+  const topRole = trimText(jobs[0]?.title || "Opportunity update", 70);
+  const subject = `${agentName}: ${jobs.length} opportunities | ${topRole}`;
   const text = [
     `${agentName}` ,
     "",
@@ -277,13 +339,13 @@ function buildJobAlertMessages(agentName, jobs, sourceSummary) {
     sections.emailText
   ].filter(Boolean).join("\n");
   const html =
-    `<!doctype html><html><body style="margin:0;padding:24px;background:#f3f4f6;font-family:Arial,sans-serif;color:#111827;">` +
+    `<!doctype html><html><body style="margin:0;padding:24px;background:radial-gradient(circle at top,#e0f2fe 0%,#f8fafc 42%,#eef2ff 100%);font-family:Segoe UI,Arial,sans-serif;color:#111827;">` +
     `<div style="max-width:780px;margin:0 auto;">` +
-    `<div style="padding:24px;border-radius:20px;background:#0f172a;color:#ffffff;">` +
-    `<div style="font-size:28px;font-weight:800;margin-bottom:8px;">${escapeHtml(agentName)}</div>` +
-    `<div style="font-size:16px;line-height:1.7;">${jobs.length} opportunity(ies) ready to review</div>` +
-    `${sourceSummary ? `<div style="margin-top:8px;font-size:14px;opacity:0.88;">Source mix: ${escapeHtml(sourceSummary)}</div>` : ""}` +
-    `<div style="margin-top:12px;font-size:14px;opacity:0.88;">Listings: ${summary.by_kind?.listing || 0} | Posts: ${summary.by_kind?.post || 0} | Review: ${summary.by_confidence?.medium || 0}</div>` +
+    `<div style="padding:28px;border-radius:24px;background:linear-gradient(135deg,#0f172a 0%,#1e293b 45%,#1d4ed8 100%);color:#ffffff;box-shadow:0 18px 34px rgba(15,23,42,0.22);">` +
+    `<div style="font-size:30px;font-weight:900;margin-bottom:8px;letter-spacing:-0.02em;">${escapeHtml(agentName)}</div>` +
+    `<div style="font-size:17px;line-height:1.7;">${jobs.length} opportunity(ies) ready to review</div>` +
+    `${sourceSummary ? `<div style="margin-top:8px;font-size:14px;opacity:0.9;">Source mix: ${escapeHtml(sourceSummary)}</div>` : ""}` +
+    `<div style="margin-top:14px;font-size:14px;opacity:0.95;">Listings: ${summary.by_kind?.listing || 0} | Posts: ${summary.by_kind?.post || 0} | Review: ${summary.by_confidence?.medium || 0}</div>` +
     `</div>` +
     sections.emailHtml +
     `</div></body></html>`;

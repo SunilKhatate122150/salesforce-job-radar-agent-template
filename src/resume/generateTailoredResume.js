@@ -137,20 +137,85 @@ function shouldUseFullApplyPack(job) {
   return String(job?.opportunity_kind || "listing").trim().toLowerCase() !== "post";
 }
 
+function getMatchedSkills(job) {
+  return Array.isArray(job?.matched_skills) ? job.matched_skills.filter(Boolean) : [];
+}
+
+function getMissingSkills(job) {
+  return Array.isArray(job?.missing_skills) ? job.missing_skills.filter(Boolean) : [];
+}
+
+function getResumeActions(job) {
+  return Array.isArray(job?.resume_actions) ? job.resume_actions.filter(Boolean) : [];
+}
+
+function getWhyMatched(job) {
+  return Array.isArray(job?.why_matched) ? job.why_matched.filter(Boolean) : [];
+}
+
+function getBulletSuggestions(job) {
+  return Array.isArray(job?.resume_bullet_suggestions)
+    ? job.resume_bullet_suggestions.filter(Boolean)
+    : [];
+}
+
+function getTopMissingKeywords(job) {
+  return Array.isArray(job?.top_missing_keywords) && job.top_missing_keywords.length > 0
+    ? job.top_missing_keywords.filter(Boolean)
+    : getMissingSkills(job);
+}
+
+function buildAtsSnapshot(job) {
+  const matchScore = Number(job?.match_score || 0);
+  const matchLevel = normalize(job?.match_level || "N/A");
+  const matchedSkills = getMatchedSkills(job);
+  const missingSkills = getMissingSkills(job);
+  const atsKeywords = inferKeywordList(job);
+  const applyPriority = normalize(job?.apply_priority || "Medium");
+
+  return {
+    matchScore,
+    matchLevel,
+    matchedSkills,
+    missingSkills,
+    atsKeywords,
+    applyPriority,
+    missingText: missingSkills.length > 0
+      ? missingSkills.slice(0, 5).join(", ")
+      : "No major gaps detected"
+  };
+}
+
+function buildResumeHeadline(job, profile, snapshot) {
+  const role = normalize(job?.title || profile.targetRole || "Salesforce Developer");
+  const matchedSkillText = snapshot.matchedSkills.slice(0, 4).join(", ");
+  return `${role} | ATS ${snapshot.matchScore}% | ${matchedSkillText || "Salesforce, Apex, LWC, integrations"}`;
+}
+
+function buildTailoringChecklist(job) {
+  const missingKeywords = getTopMissingKeywords(job).slice(0, 3);
+  const checklist = [
+    "Keep the resume title aligned with the target role.",
+    "Lead with one project that proves Salesforce delivery impact using numbers.",
+    "Mirror job-specific keywords in the summary and project bullets."
+  ];
+
+  if (missingKeywords.length > 0) {
+    checklist.push(`If accurate, add proof points for ${missingKeywords.join(", ")}.`);
+  }
+
+  return checklist.slice(0, 4);
+}
+
 function buildBasicTailoredResume(job) {
   const profile = getCandidateProfile();
-  const matchScore = Number(job.match_score || 0);
-  const matchLevel = normalize(job.match_level || "N/A");
-  const matchedSkills = Array.isArray(job.matched_skills) ? job.matched_skills : [];
-  const missingSkills = Array.isArray(job.missing_skills) ? job.missing_skills : [];
-  const actions = Array.isArray(job.resume_actions) ? job.resume_actions : [];
-  const atsKeywords = inferKeywordList(job);
-
-  const coreSkills = [...new Set([...matchedSkills, ...profile.profileSkills])].slice(0, 16);
+  const snapshot = buildAtsSnapshot(job);
+  const actions = getResumeActions(job);
+  const whyMatched = getWhyMatched(job);
+  const bulletSuggestions = getBulletSuggestions(job);
+  const coreSkills = [...new Set([...snapshot.matchedSkills, ...profile.profileSkills])].slice(0, 16);
   const summarySkills = coreSkills.slice(0, 6).join(", ");
-  const missingText = missingSkills.length > 0
-    ? missingSkills.slice(0, 5).join(", ")
-    : "No major gaps detected";
+  const tailoringChecklist = buildTailoringChecklist(job);
 
   const lines = [];
   lines.push(`# ${profile.name}`);
@@ -158,15 +223,19 @@ function buildBasicTailoredResume(job) {
     lines.push(`${[profile.email, profile.phone].filter(Boolean).join(" | ")}`);
   }
   lines.push("");
+  lines.push(`## Resume Headline`);
+  lines.push(buildResumeHeadline(job, profile, snapshot));
+  lines.push("");
   lines.push(`## Target Role`);
   lines.push(`${profile.targetRole}`);
   lines.push("");
-  lines.push(`## Job Alignment Snapshot`);
-  lines.push(`- Match Score: ${matchScore}% (${matchLevel})`);
+  lines.push(`## ATS Match Snapshot`);
+  lines.push(`- Match Score: ${snapshot.matchScore}% (${snapshot.matchLevel})`);
   lines.push(`- Job: ${normalize(job.title)} at ${normalize(job.company)}`);
   lines.push(`- Location: ${normalize(job.location) || "N/A"}`);
   lines.push(`- Apply Link: ${normalize(job.apply_link) || "N/A"}`);
-  lines.push(`- Missing Skills: ${missingText}`);
+  lines.push(`- Apply Priority: ${snapshot.applyPriority}`);
+  lines.push(`- Missing Skills: ${snapshot.missingText}`);
   lines.push("");
   lines.push(`## Professional Summary`);
   lines.push(
@@ -188,10 +257,20 @@ function buildBasicTailoredResume(job) {
   }
   lines.push("");
   lines.push(`## ATS Keywords For This Job`);
-  if (atsKeywords.length > 0) {
-    lines.push(`- ${atsKeywords.join(", ")}`);
+  if (snapshot.atsKeywords.length > 0) {
+    lines.push(`- ${snapshot.atsKeywords.join(", ")}`);
   } else {
     lines.push("- Salesforce, Apex, LWC, Integration, CRM");
+  }
+  lines.push("");
+  lines.push(`## Why This Role Matches`);
+  if (whyMatched.length > 0) {
+    for (const reason of whyMatched.slice(0, 3)) {
+      lines.push(`- ${reason}`);
+    }
+  } else {
+    lines.push("- Role/title alignment is strong for Salesforce development work.");
+    lines.push("- Core Salesforce platform skills are already present.");
   }
   lines.push("");
   lines.push(`## Resume Optimization Actions`);
@@ -214,6 +293,14 @@ function buildBasicTailoredResume(job) {
   lines.push(
     "- Add one automation project (Flows/Triggers) and quantifiable outcome."
   );
+  for (const suggestion of bulletSuggestions.slice(0, 2)) {
+    lines.push(`- ${suggestion}`);
+  }
+  lines.push("");
+  lines.push(`## Tailoring Checklist`);
+  for (const item of tailoringChecklist) {
+    lines.push(`- [ ] ${item}`);
+  }
   lines.push("");
   lines.push(
     "_Generated automatically by Naukri + LinkedIn Job Agent. Review and edit before final submission._"
@@ -286,35 +373,39 @@ async function buildAiTailoredResume(job, basicResumeText) {
 
 function buildBasicApplyPack(job) {
   const profile = getCandidateProfile();
-  const matchedSkills = Array.isArray(job.matched_skills)
-    ? job.matched_skills
-    : [];
-  const missingSkills = Array.isArray(job.missing_skills)
-    ? job.missing_skills
-    : [];
-  const resumeActions = Array.isArray(job.resume_actions)
-    ? job.resume_actions
-    : [];
-  const keywordList = inferKeywordList(job);
+  const snapshot = buildAtsSnapshot(job);
+  const matchedSkills = snapshot.matchedSkills;
+  const missingSkills = snapshot.missingSkills;
+  const resumeActions = getResumeActions(job);
+  const whyMatched = getWhyMatched(job);
+  const bulletSuggestions = getBulletSuggestions(job);
+  const keywordList = snapshot.atsKeywords;
   const jobTitle = normalize(job.title) || "Salesforce Developer";
   const company = normalize(job.company) || "Hiring Team";
   const location = normalize(job.location) || "N/A";
   const applyLink = normalize(job.apply_link) || "N/A";
-  const score = toFiniteNumber(job.match_score, 0);
-  const level = normalize(job.match_level || "N/A");
+  const score = snapshot.matchScore;
+  const level = snapshot.matchLevel;
 
   const lines = [];
   lines.push(`# Apply Pack - ${jobTitle} @ ${company}`);
   lines.push("");
-  lines.push("## Job Snapshot");
+  lines.push("## ATS Snapshot");
   lines.push(`- Job: ${jobTitle}`);
   lines.push(`- Company: ${company}`);
   lines.push(`- Location: ${location}`);
   lines.push(`- Match Score: ${score}% (${level})`);
+  lines.push(`- Apply Priority: ${snapshot.applyPriority}`);
   lines.push(`- Apply Link: ${applyLink}`);
   lines.push(
     `- Missing Skills: ${missingSkills.length > 0 ? missingSkills.slice(0, 5).join(", ") : "No major gaps"}`
   );
+  lines.push(`- ATS Keywords: ${keywordList.length > 0 ? keywordList.slice(0, 8).join(", ") : "Salesforce, Apex, LWC, Integration"}`);
+  lines.push("");
+  lines.push("## Why This Opportunity Is Worth Applying To");
+  for (const reason of (whyMatched.length > 0 ? whyMatched : ["Role/title fit is strong for Salesforce delivery work."]).slice(0, 3)) {
+    lines.push(`- ${reason}`);
+  }
   lines.push("");
   lines.push("## Tailored Cover Letter");
   lines.push(`Dear Hiring Manager at ${company},`);
@@ -339,6 +430,13 @@ function buildBasicApplyPack(job) {
   if (profile.email || profile.phone) {
     lines.push([profile.email, profile.phone].filter(Boolean).join(" | "));
   }
+  lines.push("");
+  lines.push("## Recruiter Outreach Draft");
+  lines.push(`Hello ${company} team,`);
+  lines.push("");
+  lines.push(
+    `I noticed the ${jobTitle} opportunity and it lines up well with my Salesforce delivery background in ${matchedSkills.slice(0, 4).join(", ") || "Salesforce platform engineering"}. I would be glad to share a tailored resume and discuss how quickly I can contribute.`
+  );
   lines.push("");
   lines.push("## Interview Q&A Prep");
   lines.push("1. **Q:** How would you design a scalable Salesforce data model for this role?");
@@ -375,6 +473,7 @@ function buildBasicApplyPack(job) {
   lines.push("- [ ] Add follow-up note and follow-up date.");
   lines.push("- [ ] Prepare 3 role-specific interview stories (impact, approach, outcome).");
   lines.push("- [ ] Save this opportunity in your application tracker with final status.");
+  lines.push("- [ ] Send a short recruiter follow-up if this came from a hiring post or recruiter contact.");
   lines.push("");
   lines.push("## Tracker Commands");
   lines.push("- `npm run tracker -- summary`");
@@ -390,6 +489,9 @@ function buildBasicApplyPack(job) {
   } else {
     lines.push("- Add quantifiable impact bullets relevant to this role.");
   }
+  for (const suggestion of bulletSuggestions.slice(0, 3)) {
+    lines.push(`- ${suggestion}`);
+  }
   lines.push("");
   lines.push(
     "_Generated by Salesforce Job Radar Agent. Review and edit before final submission._"
@@ -400,8 +502,10 @@ function buildBasicApplyPack(job) {
 
 async function buildApplyEmailDraft(job) {
   const profile = getCandidateProfile();
-  const subject = `Application for ${normalize(job.title) || "Salesforce Developer"}`;
-  const intro = `Hello Hiring Team,\n\nI am applying for the ${normalize(job.title)} role at ${normalize(job.company)}. I have strong experience with Salesforce platform development, and I believe my background aligns well with the role requirements. Please find my resume and apply bundle attached.`;
+  const role = normalize(job.title) || "Salesforce Developer";
+  const company = normalize(job.company) || "your team";
+  const subject = `Application for ${role} | ${company}`;
+  const intro = `Hello Hiring Team,\n\nI am applying for the ${role} role at ${company}. I have strong experience with Salesforce platform development, including ${getMatchedSkills(job).slice(0, 4).join(", ") || "Apex, LWC, SOQL, and integrations"}, and I believe my background aligns well with the role requirements. Please find my resume and apply bundle attached.`;
   const body = `${intro}\n\nBest regards,\n${profile.name || "Candidate"}\n${profile.email || ""}${profile.phone ? ` | ${profile.phone}` : ""}`;
 
   return { subject, body };
@@ -419,20 +523,24 @@ export function selectTopResumePackJobs(jobs) {
 
 export async function buildResumePreview(job) {
   const profile = getCandidateProfile();
-  const keywords = inferKeywordList(job).slice(0, 8);
-  const resumeActions = Array.isArray(job?.resume_actions)
-    ? job.resume_actions.slice(0, 3)
-    : [];
-  const bulletSuggestions = Array.isArray(job?.resume_bullet_suggestions)
-    ? job.resume_bullet_suggestions.slice(0, 3)
-    : [];
+  const snapshot = buildAtsSnapshot(job);
+  const resumeActions = getResumeActions(job).slice(0, 3);
+  const bulletSuggestions = getBulletSuggestions(job).slice(0, 3);
+  const whyMatched = getWhyMatched(job).slice(0, 3);
   const draft = await buildApplyEmailDraft(job);
 
   return {
     candidateName: profile.name,
-    atsKeywords: keywords,
+    atsKeywords: snapshot.atsKeywords.slice(0, 8),
+    atsSummary: `${snapshot.matchScore}% ${snapshot.matchLevel} | Priority ${snapshot.applyPriority}`,
+    matchScore: snapshot.matchScore,
+    applyPriority: snapshot.applyPriority,
+    whyMatched,
+    missingKeywords: getTopMissingKeywords(job).slice(0, 5),
     resumeActions,
     bulletSuggestions,
+    headline: buildResumeHeadline(job, profile, snapshot),
+    checklist: buildTailoringChecklist(job),
     draftSubject: draft.subject,
     draftBody: draft.body
   };
