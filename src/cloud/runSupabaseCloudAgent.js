@@ -23,9 +23,11 @@ import { getStateBackend } from "../db/stateStore.js";
 import {
   buildCoverageHealth,
   buildOpportunitySummary,
+  getOpportunitySelectionKey,
   getOpportunityConfidenceLabel,
   getOpportunityKindLabel,
   prepareOpportunities,
+  selectHiringPostReviewJobs,
   selectOpportunitiesForAlerts,
   splitOpportunitiesForAlerts
 } from "../jobs/opportunityPipeline.js";
@@ -297,44 +299,64 @@ function buildEmailHtmlOpportunityCard(job, index) {
   );
 }
 
-function buildOpportunitySections(jobs) {
-  const split = splitOpportunitiesForAlerts(jobs);
-  const sections = [
-    { title: "High-confidence listings", jobs: split.highListings },
-    { title: "High-confidence hiring posts", jobs: split.highPosts },
-    { title: "Medium-confidence review queue", jobs: split.mediumQueue }
-  ].filter(section => Array.isArray(section.jobs) && section.jobs.length > 0);
+function buildOpportunitySectionsFromDefinitions(definitions) {
+  const sections = (Array.isArray(definitions) ? definitions : [])
+    .filter(section => Array.isArray(section.jobs) && section.jobs.length > 0);
 
   return {
     telegram: sections.map(section =>
       `<b>${escapeHtml(section.title)} (${section.jobs.length})</b>
 
 ` +
+      `${section.description ? `<i>${escapeHtml(section.description)}</i>\n\n` : ""}` +
       section.jobs.map((job, index) => buildTelegramOpportunityCard(job, index + 1)).join("\n\n")
     ).join("\n\n"),
     emailText: sections.map(section =>
-      `${section.title} (${section.jobs.length})
+      `${section.title} (${section.jobs.length})${section.description ? `\n${section.description}` : ""}
 
 ` +
       section.jobs.map((job, index) => buildEmailTextOpportunityCard(job, index + 1)).join("\n\n")
     ).join("\n\n"),
     emailHtml: sections.map(section =>
-      `<div style="margin-top:22px;"><h3 style="margin:0 0 12px 0;color:#0f172a;">${escapeHtml(section.title)} (${section.jobs.length})</h3>${section.jobs.map((job, index) => buildEmailHtmlOpportunityCard(job, index + 1)).join("")}</div>`
+      `<div style="margin-top:22px;"><h3 style="margin:0 0 12px 0;color:#0f172a;">${escapeHtml(section.title)} (${section.jobs.length})</h3>${section.description ? `<div style="margin:0 0 12px 0;color:#475569;font-size:14px;line-height:1.6;">${escapeHtml(section.description)}</div>` : ""}${section.jobs.map((job, index) => buildEmailHtmlOpportunityCard(job, index + 1)).join("")}</div>`
     ).join("")
   };
 }
 
-function buildJobAlertMessages(agentName, jobs, sourceSummary) {
-  const summary = buildOpportunitySummary(jobs);
-  const sections = buildOpportunitySections(jobs);
-  const topRole = trimText(jobs[0]?.title || "Opportunity update", 70);
-  const subject = `${agentName}: ${jobs.length} opportunities | ${topRole}`;
+function buildOpportunitySections(jobs, { reviewPostJobs = [] } = {}) {
+  const split = splitOpportunitiesForAlerts(jobs);
+  return buildOpportunitySectionsFromDefinitions([
+    { title: "High-confidence listings", jobs: split.highListings },
+    { title: "High-confidence hiring posts", jobs: split.highPosts },
+    { title: "Medium-confidence review queue", jobs: split.mediumQueue },
+    {
+      title: "Hiring post review",
+      description:
+        "Strong public hiring posts that stayed outside the instant ATS path. Review manually before applying.",
+      jobs: Array.isArray(reviewPostJobs) ? reviewPostJobs : []
+    }
+  ]);
+}
+
+function buildJobAlertMessages(agentName, jobs, sourceSummary, { reviewPostJobs = [] } = {}) {
+  const primaryJobs = Array.isArray(jobs) ? jobs : [];
+  const reviewJobs = Array.isArray(reviewPostJobs) ? reviewPostJobs : [];
+  const summary = buildOpportunitySummary([...primaryJobs, ...reviewJobs]);
+  const sections = buildOpportunitySections(primaryJobs, { reviewPostJobs: reviewJobs });
+  const topRole = trimText(primaryJobs[0]?.title || reviewJobs[0]?.title || "Opportunity update", 70);
+  const reviewLine = reviewJobs.length > 0
+    ? `Hiring post review leads: ${reviewJobs.length}`
+    : "";
+  const subject = reviewJobs.length > 0
+    ? `${agentName}: ${primaryJobs.length} opportunities + ${reviewJobs.length} post review lead(s) | ${topRole}`
+    : `${agentName}: ${primaryJobs.length} opportunities | ${topRole}`;
   const text = [
     `${agentName}` ,
     "",
-    `${jobs.length} opportunity(ies) ready to review`,
+    `${primaryJobs.length} opportunity(ies) ready to review`,
     sourceSummary ? `Source mix: ${sourceSummary}` : "",
     `Listings: ${summary.by_kind?.listing || 0} | Posts: ${summary.by_kind?.post || 0} | Review: ${summary.by_confidence?.medium || 0}` ,
+    reviewLine,
     "",
     sections.emailText
   ].filter(Boolean).join("\n");
@@ -343,17 +365,57 @@ function buildJobAlertMessages(agentName, jobs, sourceSummary) {
     `<div style="max-width:780px;margin:0 auto;">` +
     `<div style="padding:28px;border-radius:24px;background:linear-gradient(135deg,#0f172a 0%,#1e293b 45%,#1d4ed8 100%);color:#ffffff;box-shadow:0 18px 34px rgba(15,23,42,0.22);">` +
     `<div style="font-size:30px;font-weight:900;margin-bottom:8px;letter-spacing:-0.02em;">${escapeHtml(agentName)}</div>` +
-    `<div style="font-size:17px;line-height:1.7;">${jobs.length} opportunity(ies) ready to review</div>` +
+    `<div style="font-size:17px;line-height:1.7;">${primaryJobs.length} opportunity(ies) ready to review</div>` +
     `${sourceSummary ? `<div style="margin-top:8px;font-size:14px;opacity:0.9;">Source mix: ${escapeHtml(sourceSummary)}</div>` : ""}` +
     `<div style="margin-top:14px;font-size:14px;opacity:0.95;">Listings: ${summary.by_kind?.listing || 0} | Posts: ${summary.by_kind?.post || 0} | Review: ${summary.by_confidence?.medium || 0}</div>` +
+    `${reviewLine ? `<div style="margin-top:8px;font-size:14px;opacity:0.95;">${escapeHtml(reviewLine)}</div>` : ""}` +
     `</div>` +
     sections.emailHtml +
     `</div></body></html>`;
   const telegram = [
     `<b>${escapeHtml(agentName)}</b>`,
-    `${jobs.length} opportunity(ies) ready to review`,
+    `${primaryJobs.length} opportunity(ies) ready to review`,
     sourceSummary ? `${escapeHtml(sourceSummary)}` : "",
     `Listings: ${summary.by_kind?.listing || 0} | Posts: ${summary.by_kind?.post || 0} | Review: ${summary.by_confidence?.medium || 0}` ,
+    reviewLine ? escapeHtml(reviewLine) : "",
+    "",
+    sections.telegram
+  ].filter(Boolean).join("\n");
+  return { subject, text, html, telegram };
+}
+
+function buildHiringPostReviewMessages(agentName, jobs, sourceSummary) {
+  const reviewJobs = Array.isArray(jobs) ? jobs : [];
+  const summary = buildOpportunitySummary(reviewJobs);
+  const sections = buildOpportunitySections([], { reviewPostJobs: reviewJobs });
+  const subject = `${agentName}: ${reviewJobs.length} hiring post review lead(s)`;
+  const intro = "Strong public hiring posts surfaced below the instant ATS threshold. Review them manually so we do not miss recruiter-led opportunities.";
+  const text = [
+    `${agentName}`,
+    "",
+    `${reviewJobs.length} hiring post review lead(s)`,
+    intro,
+    sourceSummary ? `Source mix: ${sourceSummary}` : "",
+    `Posts: ${summary.by_kind?.post || 0} | Review: ${summary.by_confidence?.medium || 0}`,
+    "",
+    sections.emailText
+  ].filter(Boolean).join("\n");
+  const html =
+    `<!doctype html><html><body style="margin:0;padding:24px;background:radial-gradient(circle at top,#ecfeff 0%,#f8fafc 48%,#fef3c7 100%);font-family:Segoe UI,Arial,sans-serif;color:#111827;">` +
+    `<div style="max-width:780px;margin:0 auto;">` +
+    `<div style="padding:28px;border-radius:24px;background:linear-gradient(135deg,#0f172a 0%,#14532d 45%,#0f766e 100%);color:#ffffff;box-shadow:0 18px 34px rgba(15,23,42,0.22);">` +
+    `<div style="font-size:30px;font-weight:900;margin-bottom:8px;letter-spacing:-0.02em;">${escapeHtml(agentName)}</div>` +
+    `<div style="font-size:17px;line-height:1.7;">${reviewJobs.length} hiring post review lead(s)</div>` +
+    `<div style="margin-top:8px;font-size:14px;opacity:0.95;">${escapeHtml(intro)}</div>` +
+    `${sourceSummary ? `<div style="margin-top:8px;font-size:14px;opacity:0.9;">Source mix: ${escapeHtml(sourceSummary)}</div>` : ""}` +
+    `</div>` +
+    sections.emailHtml +
+    `</div></body></html>`;
+  const telegram = [
+    `<b>${escapeHtml(agentName)}</b>`,
+    `${reviewJobs.length} hiring post review lead(s)`,
+    escapeHtml(intro),
+    sourceSummary ? `${escapeHtml(sourceSummary)}` : "",
     "",
     sections.telegram
   ].filter(Boolean).join("\n");
@@ -560,13 +622,67 @@ function recordNotificationAttempt(runDetails, kind, notifyResult, extra = {}) {
   runDetails.lastNotification = entry;
 }
 
-async function processPendingAlertsCloud(agentName, runDetails) {
+async function sendHiringPostReviewDigestCloud(agentName, runDetails, reviewJobs) {
+  const reviewList = Array.isArray(reviewJobs) ? reviewJobs : [];
+  if (reviewList.length === 0) {
+    return {
+      notified: false,
+      reviewDigestCount: 0
+    };
+  }
+
+  const reviewedJobs = await annotateJobsWithResumeSupport(reviewList, {
+    fullPackJobs: [],
+    attachmentsEnabled: false
+  });
+  const sourceSummary = buildSourceSummary(reviewedJobs);
+  const messagePayload = buildHiringPostReviewMessages(
+    agentName,
+    reviewedJobs,
+    sourceSummary
+  );
+  const notifyResult = await notifyAll({
+    telegramText: messagePayload.telegram,
+    emailSubject: messagePayload.subject,
+    emailText: messagePayload.text,
+    emailHtml: messagePayload.html
+  });
+  recordNotificationAttempt(runDetails, "post_review_digest", notifyResult, {
+    subject: messagePayload.subject,
+    reviewDigestCount: reviewedJobs.length
+  });
+
+  return {
+    notified: notifyResult.anyOk,
+    notifyResult,
+    reviewDigestCount: reviewedJobs.length
+  };
+}
+
+async function processPendingAlertsCloud(agentName, runDetails, options = {}) {
+  const reviewDigestJobs = Array.isArray(options.reviewDigestJobs)
+    ? options.reviewDigestJobs
+    : [];
   const pendingCount = await getPendingAlertCount();
-  if (pendingCount === 0) {
+  if (pendingCount === 0 && reviewDigestJobs.length === 0) {
     return {
       pendingCount: 0,
       alertedCount: 0,
       notified: false
+    };
+  }
+
+  if (pendingCount === 0) {
+    const reviewResult = await sendHiringPostReviewDigestCloud(
+      agentName,
+      runDetails,
+      reviewDigestJobs
+    );
+    return {
+      pendingCount: 0,
+      alertedCount: 0,
+      notified: reviewResult.notified,
+      reviewDigestCount: reviewResult.reviewDigestCount
     };
   }
 
@@ -578,6 +694,20 @@ async function processPendingAlertsCloud(agentName, runDetails) {
   });
 
   if (eligibleQueue.length === 0) {
+    if (reviewDigestJobs.length > 0) {
+      const reviewResult = await sendHiringPostReviewDigestCloud(
+        agentName,
+        runDetails,
+        reviewDigestJobs
+      );
+      return {
+        pendingCount,
+        alertedCount: 0,
+        notified: reviewResult.notified,
+        reviewDigestCount: reviewResult.reviewDigestCount
+      };
+    }
+
     return {
       pendingCount,
       alertedCount: 0,
@@ -596,6 +726,20 @@ async function processPendingAlertsCloud(agentName, runDetails) {
     job => String(job?.alert_bucket || "").toLowerCase() !== "suppress"
   );
   if (actionableQueue.length === 0) {
+    if (reviewDigestJobs.length > 0) {
+      const reviewResult = await sendHiringPostReviewDigestCloud(
+        agentName,
+        runDetails,
+        reviewDigestJobs
+      );
+      return {
+        pendingCount: await getPendingAlertCount(),
+        alertedCount: 0,
+        notified: reviewResult.notified,
+        reviewDigestCount: reviewResult.reviewDigestCount
+      };
+    }
+
     return {
       pendingCount: await getPendingAlertCount(),
       alertedCount: 0,
@@ -616,6 +760,20 @@ async function processPendingAlertsCloud(agentName, runDetails) {
   const mediumQueue = selection.selectedMedium;
   const jobsToAlert = selection.jobsToAlert;
   if (jobsToAlert.length === 0) {
+    if (reviewDigestJobs.length > 0) {
+      const reviewResult = await sendHiringPostReviewDigestCloud(
+        agentName,
+        runDetails,
+        reviewDigestJobs
+      );
+      return {
+        pendingCount: await getPendingAlertCount(),
+        alertedCount: 0,
+        notified: reviewResult.notified,
+        reviewDigestCount: reviewResult.reviewDigestCount
+      };
+    }
+
     return {
       pendingCount: await getPendingAlertCount(),
       alertedCount: 0,
@@ -623,15 +781,36 @@ async function processPendingAlertsCloud(agentName, runDetails) {
     };
   }
 
-  const jobsWithResumeSupport = await annotateJobsWithResumeSupport(jobsToAlert, {
+  const alertKeys = new Set(
+    jobsToAlert.map(job => getOpportunitySelectionKey(job))
+  );
+  const reviewKeys = new Set(
+    reviewDigestJobs.map(job => getOpportunitySelectionKey(job))
+  );
+  const jobsForNotification = [
+    ...jobsToAlert,
+    ...reviewDigestJobs.filter(job => {
+      const key = getOpportunitySelectionKey(job);
+      return key && !alertKeys.has(key);
+    })
+  ];
+  const jobsWithResumeSupport = await annotateJobsWithResumeSupport(jobsForNotification, {
     fullPackJobs: selectedHigh,
     attachmentsEnabled: false
   });
+  const alertedJobsWithResumeSupport = jobsWithResumeSupport.filter(job =>
+    alertKeys.has(getOpportunitySelectionKey(job))
+  );
+  const reviewJobsWithResumeSupport = jobsWithResumeSupport.filter(job =>
+    reviewKeys.has(getOpportunitySelectionKey(job)) &&
+    !alertKeys.has(getOpportunitySelectionKey(job))
+  );
   const sourceSummary = buildSourceSummary(jobsWithResumeSupport);
   const messagePayload = buildJobAlertMessages(
     agentName,
-    jobsWithResumeSupport,
-    sourceSummary
+    alertedJobsWithResumeSupport,
+    sourceSummary,
+    { reviewPostJobs: reviewJobsWithResumeSupport }
   );
   const notifyResult = await notifyAll({
     telegramText: messagePayload.telegram,
@@ -646,6 +825,7 @@ async function processPendingAlertsCloud(agentName, runDetails) {
     highListings: split.highListings.length,
     highPosts: selection.effectiveHighPosts.length,
     mediumReviewCount: mediumQueue.length,
+    reviewDigestCount: reviewJobsWithResumeSupport.length,
     suppressedByPolicyCount: selection.suppressedByPolicy.length,
     postAlertPolicy: selection.postPolicy
   });
@@ -660,7 +840,7 @@ async function processPendingAlertsCloud(agentName, runDetails) {
   }
 
   await acknowledgePendingAlerts(jobsToAlert.map(job => job.job_hash));
-  await registerApplicationJobs(jobsWithResumeSupport, {
+  await registerApplicationJobs(alertedJobsWithResumeSupport, {
     event: "alerted",
     defaultStatus: "new"
   });
@@ -669,6 +849,7 @@ async function processPendingAlertsCloud(agentName, runDetails) {
     pendingCount,
     alertedCount: jobsToAlert.length,
     notified: true,
+    reviewDigestCount: reviewJobsWithResumeSupport.length,
     notifyResult
   };
 }
@@ -815,6 +996,12 @@ export async function runSupabaseCloudAgent() {
     });
 
     let scoredNewJobs = [];
+    let reviewDigestSelection = {
+      selected: [],
+      selectedCount: 0,
+      candidateCount: 0,
+      summary: buildOpportunitySummary([])
+    };
     if (newJobs.length > 0) {
       scoredNewJobs = await enrichJobsWithResumeMatch(newJobs);
       await saveJobs(scoredNewJobs);
@@ -834,6 +1021,10 @@ export async function runSupabaseCloudAgent() {
         rawCount: scoredNewJobs.length,
         mergedDuplicateCount: 0
       });
+      reviewDigestSelection = selectHiringPostReviewJobs(scoredNewJobs, {
+        excludeKeys: pendingPayload.map(job => getOpportunitySelectionKey(job))
+      });
+      runDetails.postReviewDigestSummary = reviewDigestSelection.summary;
 
       await enqueuePendingAlerts(pendingPayload);
     }
@@ -852,7 +1043,9 @@ export async function runSupabaseCloudAgent() {
       });
     }
 
-    const pendingResult = await processPendingAlertsCloud(agentName, runDetails);
+    const pendingResult = await processPendingAlertsCloud(agentName, runDetails, {
+      reviewDigestJobs: reviewDigestSelection.selected
+    });
     runPendingCount = pendingResult.pendingCount;
     runAlertsSentCount = pendingResult.alertedCount;
 
@@ -889,8 +1082,10 @@ export async function runSupabaseCloudAgent() {
       newJobs: scoredNewJobs
     });
 
-    if (pendingResult.notified) {
+    if (pendingResult.notified && Number(pendingResult.alertedCount || 0) > 0) {
       runNote = `Alerted ${pendingResult.alertedCount} queued job(s).`;
+    } else if (pendingResult.notified && Number(pendingResult.reviewDigestCount || 0) > 0) {
+      runNote = `Sent hiring post review digest for ${pendingResult.reviewDigestCount} lead(s).`;
     } else if (runNewJobsCount === 0) {
       runNote = "No new jobs after dedupe in this run.";
     } else {

@@ -4,6 +4,7 @@ import assert from "node:assert/strict";
 import {
   buildOpportunitySummary,
   prepareOpportunities,
+  selectHiringPostReviewJobs,
   selectOpportunitiesForAlerts,
   splitOpportunitiesForAlerts
 } from "../src/jobs/opportunityPipeline.js";
@@ -321,6 +322,47 @@ test("selectOpportunitiesForAlerts respects post alert policy", { concurrency: f
       );
     }
   ));
+
+test("selectHiringPostReviewJobs keeps strong post leads outside the instant queue", () => {
+  const digest = selectHiringPostReviewJobs(
+    prepareOpportunities([
+      {
+        title: "Salesforce Hiring Post",
+        company: "Acme",
+        location: "India Remote",
+        post_url: "https://www.linkedin.com/posts/acme_hiring-post-1",
+        apply_link: "https://www.linkedin.com/posts/acme_hiring-post-1",
+        source_platform: "linkedin_posts",
+        description: "We are hiring Salesforce Developer in India. Share your resume."
+      },
+      {
+        title: "Salesforce Hiring Post",
+        company: "Beta",
+        location: "India",
+        post_url: "https://www.linkedin.com/posts/beta_hiring-post-2",
+        apply_link: "https://www.linkedin.com/posts/beta_hiring-post-2",
+        source_platform: "linkedin_posts",
+        description: "Urgent requirement for Salesforce LWC Developer in India."
+      },
+      {
+        title: "Salesforce Developer",
+        company: "Gamma",
+        location: "Remote",
+        apply_link: "https://jobs.gamma.com/salesforce-dev"
+      }
+    ]).jobs,
+    {
+      excludeKeys: ["https://www.linkedin.com/posts/acme_hiring-post-1"],
+      maxItems: 5
+    }
+  );
+
+  assert.equal(digest.candidateCount, 2);
+  assert.equal(digest.selected.length, 1);
+  assert.equal(digest.selected[0].post_url, "https://www.linkedin.com/posts/beta_hiring-post-2");
+  assert.equal(digest.selected[0].review_bucket, "hiring_post_review");
+  assert.equal(digest.summary.by_kind.post, 1);
+});
 
 test("monitorCoverageHealth emits coverage alerts for repeated zero-post runs", { concurrency: false }, async () =>
   withEnv(

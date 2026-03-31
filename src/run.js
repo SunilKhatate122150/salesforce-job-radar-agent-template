@@ -38,9 +38,11 @@ import { getStateBackend } from "./db/stateStore.js";
 import {
   buildCoverageHealth,
   buildOpportunitySummary,
+  getOpportunitySelectionKey,
   getOpportunityConfidenceLabel,
   getOpportunityKindLabel,
   prepareOpportunities,
+  selectHiringPostReviewJobs,
   selectOpportunitiesForAlerts,
   splitOpportunitiesForAlerts
 } from "./jobs/opportunityPipeline.js";
@@ -1129,32 +1131,41 @@ function buildSourceHighlightBlocks(jobs) {
   };
 }
 
-function buildOpportunitySections(jobs) {
+function buildOpportunitySections(jobs, { reviewPostJobs = [] } = {}) {
   const split = splitOpportunitiesForAlerts(jobs);
   const sections = [
     {
       title: "High-confidence listings",
-      emoji: "🧾",
+      emoji: "[LISTING]",
       tone: "source",
       jobs: sortJobsForAlerts(split.highListings)
     },
     {
       title: "High-confidence hiring posts",
-      emoji: "📣",
+      emoji: "[POST]",
       tone: "urgency",
       jobs: sortJobsForAlerts(split.highPosts)
     },
     {
       title: "Medium-confidence review queue",
-      emoji: "📝",
+      emoji: "[REVIEW]",
       tone: "age",
       jobs: sortJobsForAlerts(split.mediumQueue)
+    },
+    {
+      title: "Hiring post review",
+      description:
+        "Strong public hiring posts that stayed outside the instant ATS path. Review manually before applying.",
+      emoji: "[POST REVIEW]",
+      tone: "priority",
+      jobs: sortJobsForAlerts(Array.isArray(reviewPostJobs) ? reviewPostJobs : [])
     }
   ].filter(section => section.jobs.length > 0);
 
   const telegram = sections
     .map(section =>
-      `${section.emoji} <b>${escapeTelegramHtml(section.title)} (${section.jobs.length})</b>\n\n` +
+      `${section.emoji} <b>${escapeTelegramHtml(section.title)} (${section.jobs.length})</b>\n` +
+      `${section.description ? `${escapeTelegramHtml(section.description)}\n\n` : `\n`}` +
       section.jobs
         .map((job, idx) => buildTelegramJobLine(job, { index: idx + 1 }))
         .join("\n\n")
@@ -1163,7 +1174,7 @@ function buildOpportunitySections(jobs) {
 
   const emailText = sections
     .map(section =>
-      `${section.title} (${section.jobs.length})\n\n` +
+      `${section.title} (${section.jobs.length})${section.description ? `\n${section.description}` : ""}\n\n` +
       section.jobs
         .map((job, idx) => buildEmailTextJobLine(job, { index: idx + 1 }))
         .join("\n\n")
@@ -1174,6 +1185,7 @@ function buildOpportunitySections(jobs) {
     .map(section =>
       `<div style="margin-top:22px;">` +
       `<h3 style="margin:0 0 12px 0;color:#0f172a;">${escapeHtml(section.title)} (${section.jobs.length})</h3>` +
+      `${section.description ? `<div style="margin:0 0 12px 0;color:#475569;font-size:14px;line-height:1.6;">${escapeHtml(section.description)}</div>` : ""}` +
       `<div style="margin:0 0 10px 0;">${renderEmailChip(`Count ${section.jobs.length}`, section.tone)}</div>` +
       section.jobs
         .map((job, idx) => buildEmailHtmlJobLine(job, { index: idx + 1 }))
@@ -1543,14 +1555,18 @@ async function writeAlertReport(jobs, options = {}) {
 }
 
 function buildJobMessages(newJobs, options = {}) {
+  const reviewPostJobs = Array.isArray(options.reviewPostJobs)
+    ? options.reviewPostJobs
+    : [];
   const compact = options.compact ?? isTruthy(process.env.ALERT_COMPACT || "true");
   const sourceOrder = ["Naukri", "LinkedIn", "LinkedIn Posts", "Arbeitnow", "Adzuna", "Other"];
   const groups = buildSourceGroups(newJobs);
-  const sourceSummary = buildSourceSummary(newJobs);
+  const allNotificationJobs = [...(Array.isArray(newJobs) ? newJobs : []), ...reviewPostJobs];
+  const sourceSummary = buildSourceSummary(allNotificationJobs);
   const messageBlocks = options.messageBlocks || emptyMessageBlocks();
-  const opportunitySummary = buildOpportunitySummary(newJobs);
-  const opportunitySections = buildOpportunitySections(newJobs);
-  const sourceHighlights = buildSourceHighlightBlocks(newJobs);
+  const opportunitySummary = buildOpportunitySummary(allNotificationJobs);
+  const opportunitySections = buildOpportunitySections(newJobs, { reviewPostJobs });
+  const sourceHighlights = buildSourceHighlightBlocks(allNotificationJobs);
   const prioritySections = buildPrioritySections(newJobs);
   const topPicks = getTopPicks(newJobs);
   const mustApplyJobs = sortJobsForAlerts(
@@ -1558,6 +1574,9 @@ function buildJobMessages(newJobs, options = {}) {
   ).slice(0, 5);
   const orderedSources = [...sourceOrder, ...[...groups.keys()].filter(source => !sourceOrder.includes(source))];
   const minMatchScore = getMinMatchScore();
+  const reviewLeadLine = reviewPostJobs.length > 0
+    ? `Hiring post review leads: ${reviewPostJobs.length}\n\n`
+    : "";
 
   const topPicksTelegram = topPicks.length > 0
     ? (
@@ -1736,6 +1755,7 @@ function buildJobMessages(newJobs, options = {}) {
     `<div><strong>Filter:</strong> match &gt;= ${minMatchScore}%</div>` +
     `<div><strong>Source mix:</strong> ${escapeHtml(sourceSummary)}</div>` +
     `<div><strong>Listings:</strong> ${opportunitySummary.by_kind?.listing || 0} | <strong>Posts:</strong> ${opportunitySummary.by_kind?.post || 0} | <strong>Review:</strong> ${opportunitySummary.by_confidence?.medium || 0}</div>` +
+    `${reviewPostJobs.length > 0 ? `<div><strong>Hiring post review leads:</strong> ${reviewPostJobs.length}</div>` : ""}` +
     `</div>` +
     `</div>` +
     summaryCardHtml +
@@ -1771,6 +1791,53 @@ function buildJobMessages(newJobs, options = {}) {
     `</body></html>`;
 
   return { telegramBody, emailText, emailHtml };
+}
+
+function buildHiringPostReviewMessages(reviewJobs, options = {}) {
+  const reviewList = Array.isArray(reviewJobs) ? reviewJobs : [];
+  const sourceSummary = buildSourceSummary(reviewList);
+  const sections = buildOpportunitySections([], { reviewPostJobs: reviewList });
+  const messageBlocks = options.messageBlocks || emptyMessageBlocks();
+  const textIntro =
+    "Strong public hiring posts surfaced below the instant ATS threshold. Review them manually so we do not miss recruiter-led opportunities.";
+  const telegramText =
+    `🧭 <b>${escapeTelegramHtml(AGENT_NAME)}</b>\n` +
+    `📣 <b>${reviewList.length} hiring post review lead(s)</b>\n` +
+    `🧭 ${escapeTelegramHtml(textIntro)}\n` +
+    `${sourceSummary ? `🧪 Source mix: ${escapeTelegramHtml(sourceSummary)}\n\n` : `\n`}` +
+    messageBlocks.telegramBlock +
+    sections.telegram;
+
+  const emailText =
+    `${AGENT_NAME}\n` +
+    `${reviewList.length} hiring post review lead(s)\n` +
+    `${textIntro}\n` +
+    `${sourceSummary ? `Source mix: ${sourceSummary}\n\n` : `\n`}` +
+    messageBlocks.emailTextBlock +
+    sections.emailText;
+
+  const emailHtml =
+    `<!doctype html><html><body style="margin:0;padding:24px;background:#f3f4f6;font-family:Arial,sans-serif;color:#111827;">` +
+    `<div style="max-width:860px;margin:0 auto;">` +
+    `<div style="padding:24px;border-radius:18px;background:#0f172a;color:#ffffff;">` +
+    `<div style="font-size:24px;font-weight:800;margin-bottom:8px;">${escapeHtml(AGENT_NAME)}</div>` +
+    `<div style="font-size:18px;font-weight:700;margin-bottom:10px;">${reviewList.length} hiring post review lead(s)</div>` +
+    `<div style="font-size:14px;line-height:1.7;">${escapeHtml(textIntro)}</div>` +
+    `${sourceSummary ? `<div style="margin-top:8px;font-size:14px;line-height:1.6;"><strong>Source mix:</strong> ${escapeHtml(sourceSummary)}</div>` : ""}` +
+    `</div>` +
+    `<div style="padding:20px 0 0 0;">` +
+    messageBlocks.emailHtmlBlock +
+    sections.emailHtml +
+    `</div>` +
+    `</div>` +
+    `</body></html>`;
+
+  return {
+    telegramText,
+    emailSubject: `${AGENT_NAME}: ${reviewList.length} hiring post review lead(s)`,
+    emailText,
+    emailHtml
+  };
 }
 
 function buildTopCounts(values, limit = 5) {
@@ -2160,18 +2227,67 @@ async function maybeSendDailySummary({
   return false;
 }
 
+async function sendHiringPostReviewDigest(reviewJobs, options = {}) {
+  const reviewList = Array.isArray(reviewJobs) ? reviewJobs : [];
+  if (reviewList.length === 0) {
+    return {
+      notified: false,
+      reviewDigestCount: 0
+    };
+  }
+
+  const messageBlocks = options.messageBlocks || emptyMessageBlocks();
+  const reviewedJobs = await annotateJobsWithResumeSupport(reviewList, {
+    fullPackJobs: [],
+    attachmentsEnabled: false
+  });
+  const messages = buildHiringPostReviewMessages(reviewedJobs, { messageBlocks });
+  const result = await notifyAll({
+    telegramText: messages.telegramText,
+    emailSubject: messages.emailSubject,
+    emailText: messages.emailText,
+    emailHtml: messages.emailHtml
+  });
+  recordNotificationAttempt(options.runDetails, "post_review_digest", result, {
+    subject: messages.emailSubject,
+    reviewDigestCount: reviewedJobs.length
+  });
+
+  return {
+    notified: result.anyOk,
+    reviewDigestCount: reviewedJobs.length,
+    notifyResult: result
+  };
+}
+
 async function processPendingAlerts(alertBatchLimit, options = {}) {
   const baseMessageBlocks = options.messageBlocks || emptyMessageBlocks();
   const runDetails = options.runDetails || null;
+  const reviewDigestJobs = Array.isArray(options.reviewDigestJobs)
+    ? options.reviewDigestJobs
+    : [];
   const pendingCount = await getPendingAlertCount();
   console.log(`📦 Pending alerts in queue: ${pendingCount}`);
 
-  if (pendingCount === 0) {
+  if (pendingCount === 0 && reviewDigestJobs.length === 0) {
     console.log("♻️ No new pending jobs to alert");
     return {
       pendingCount: 0,
       alertedCount: 0,
       notified: false
+    };
+  }
+
+  if (pendingCount === 0) {
+    const reviewResult = await sendHiringPostReviewDigest(reviewDigestJobs, {
+      messageBlocks: baseMessageBlocks,
+      runDetails
+    });
+    return {
+      pendingCount: 0,
+      alertedCount: 0,
+      notified: reviewResult.notified,
+      reviewDigestCount: reviewResult.reviewDigestCount
     };
   }
 
@@ -2207,6 +2323,18 @@ async function processPendingAlerts(alertBatchLimit, options = {}) {
     console.log(
       `ℹ️ No queued jobs meet ALERT_MIN_MATCH_SCORE=${minMatchScore}`
     );
+    if (reviewDigestJobs.length > 0) {
+      const reviewResult = await sendHiringPostReviewDigest(reviewDigestJobs, {
+        messageBlocks: baseMessageBlocks,
+        runDetails
+      });
+      return {
+        pendingCount: remaining,
+        alertedCount: 0,
+        notified: reviewResult.notified,
+        reviewDigestCount: reviewResult.reviewDigestCount
+      };
+    }
     return {
       pendingCount: remaining,
       alertedCount: 0,
@@ -2239,6 +2367,18 @@ async function processPendingAlerts(alertBatchLimit, options = {}) {
   if (jobsToAlert.length === 0) {
     const remaining = await getPendingAlertCount();
     console.log("ℹ️ No actionable high/medium confidence opportunities are ready to alert");
+    if (reviewDigestJobs.length > 0) {
+      const reviewResult = await sendHiringPostReviewDigest(reviewDigestJobs, {
+        messageBlocks: baseMessageBlocks,
+        runDetails
+      });
+      return {
+        pendingCount: remaining,
+        alertedCount: 0,
+        notified: reviewResult.notified,
+        reviewDigestCount: reviewResult.reviewDigestCount
+      };
+    }
     return {
       pendingCount: remaining,
       alertedCount: 0,
@@ -2269,21 +2409,42 @@ async function processPendingAlerts(alertBatchLimit, options = {}) {
   const compact = isTruthy(process.env.ALERT_COMPACT || "true");
   const attachmentsEnabled = areCloudAttachmentsEnabled();
   const resumePackJobs = selectTopResumePackJobs(selectedHigh);
-  const jobsWithResumeSupport = await annotateJobsWithResumeSupport(jobsToAlert, {
+  const alertKeys = new Set(
+    jobsToAlert.map(job => getOpportunitySelectionKey(job))
+  );
+  const reviewKeys = new Set(
+    reviewDigestJobs.map(job => getOpportunitySelectionKey(job))
+  );
+  const jobsForNotification = [
+    ...jobsToAlert,
+    ...reviewDigestJobs.filter(job => {
+      const key = getOpportunitySelectionKey(job);
+      return key && !alertKeys.has(key);
+    })
+  ];
+  const jobsWithResumeSupport = await annotateJobsWithResumeSupport(jobsForNotification, {
     fullPackJobs: resumePackJobs,
     attachmentsEnabled
   });
+  const alertedJobsWithResumeSupport = jobsWithResumeSupport.filter(job =>
+    alertKeys.has(getOpportunitySelectionKey(job))
+  );
+  const reviewJobsWithResumeSupport = jobsWithResumeSupport.filter(job =>
+    reviewKeys.has(getOpportunitySelectionKey(job)) &&
+    !alertKeys.has(getOpportunitySelectionKey(job))
+  );
   const reportAttachment = compact
     && attachmentsEnabled
-    ? await writeAlertReport(jobsWithResumeSupport, { name: "job-alert" })
+    ? await writeAlertReport(alertedJobsWithResumeSupport, { name: "job-alert" })
     : null;
 
   const { telegramBody, emailText, emailHtml } = buildJobMessages(
-    jobsWithResumeSupport,
+    alertedJobsWithResumeSupport,
     {
       messageBlocks,
       compact,
-      reportAttachment
+      reportAttachment,
+      reviewPostJobs: reviewJobsWithResumeSupport
     }
   );
 
@@ -2306,18 +2467,19 @@ async function processPendingAlerts(alertBatchLimit, options = {}) {
 
   const notifyResult = await notifyAll({
     telegramText: telegramBody,
-    emailSubject: `${AGENT_NAME}: ${jobsToAlert.length} new jobs | ${buildSourceSummary(jobsToAlert)}`,
+    emailSubject: `${AGENT_NAME}: ${jobsToAlert.length} new jobs | ${buildSourceSummary(jobsWithResumeSupport)}`,
     emailText,
     emailHtml,
     attachments
   });
   recordNotificationAttempt(runDetails, "job_alert", notifyResult, {
-    subject: `${AGENT_NAME}: ${jobsToAlert.length} new jobs | ${buildSourceSummary(jobsToAlert)}`,
+    subject: `${AGENT_NAME}: ${jobsToAlert.length} new jobs | ${buildSourceSummary(jobsWithResumeSupport)}`,
     alertedCount: jobsToAlert.length,
     pendingCount,
     highListings: selectedHigh.filter(job => String(job?.opportunity_kind || "").toLowerCase() !== "post").length,
     highPosts: selectedHigh.filter(job => String(job?.opportunity_kind || "").toLowerCase() === "post").length,
     mediumReviewCount: mediumReviewJobs.length,
+    reviewDigestCount: reviewJobsWithResumeSupport.length,
     suppressedByPolicyCount: selection.suppressedByPolicy.length,
     postAlertPolicy: selection.postPolicy
   });
@@ -2343,7 +2505,8 @@ async function processPendingAlerts(alertBatchLimit, options = {}) {
     return {
       pendingCount,
       alertedCount: jobsToAlert.length,
-      notified: true
+      notified: true,
+      reviewDigestCount: reviewJobsWithResumeSupport.length
     };
   } else {
     console.log("⚠️ Notifications failed on all channels. Pending queue retained.");
@@ -2682,6 +2845,12 @@ async function run() {
     console.log(`Newly discovered jobs this run: ${newJobs.length}`);
     let alertableJobsCount = 0;
     let scoredNewJobs = [];
+    let reviewDigestSelection = {
+      selected: [],
+      selectedCount: 0,
+      candidateCount: 0,
+      summary: buildOpportunitySummary([])
+    };
 
     if (newJobs.length > 0) {
       scoredNewJobs = await enrichJobsWithResumeMatch(newJobs);
@@ -2709,18 +2878,22 @@ async function run() {
         rawCount: scoredNewJobs.length,
         mergedDuplicateCount: 0
       });
-
       const pendingPayload = alertableJobs.map(job => ({
         ...job,
         job_hash: generateJobHash(job)
       }));
+      reviewDigestSelection = selectHiringPostReviewJobs(scoredNewJobs, {
+        excludeKeys: pendingPayload.map(job => getOpportunitySelectionKey(job))
+      });
+      runDetails.postReviewDigestSummary = reviewDigestSelection.summary;
       const addedCount = await enqueuePendingAlerts(pendingPayload);
       console.log(`📥 Added to pending alert queue: ${addedCount}`);
     }
 
     const pendingResult = await processPendingAlerts(alertBatchLimit, {
       messageBlocks: runMessageBlocks,
-      runDetails
+      runDetails,
+      reviewDigestJobs: reviewDigestSelection.selected
     });
     runPendingCount = pendingResult.pendingCount;
     runAlertsSentCount = pendingResult.alertedCount;
@@ -2768,9 +2941,12 @@ async function run() {
       runDetails
     });
 
-    if (pendingResult.notified) {
+    if (pendingResult.notified && Number(pendingResult.alertedCount || 0) > 0) {
       runNote = `Alerted ${pendingResult.alertedCount} queued job(s).`;
       runDetails.summaryReason = "alerts_sent";
+    } else if (pendingResult.notified && Number(pendingResult.reviewDigestCount || 0) > 0) {
+      runNote = `Sent hiring post review digest for ${pendingResult.reviewDigestCount} lead(s).`;
+      runDetails.summaryReason = "post_review_digest_sent";
     } else if (runNote === "Agent run completed" && newJobs.length > 0) {
       runNote = "Run completed without sending new alerts.";
       runDetails.summaryReason = "completed_without_alerts";

@@ -573,6 +573,27 @@ export function splitOpportunitiesForAlerts(jobs) {
   };
 }
 
+export function getOpportunitySelectionKey(job) {
+  const explicitKey = String(
+    job?.job_hash || job?.source_job_id || ""
+  ).trim();
+  if (explicitKey) {
+    return explicitKey;
+  }
+
+  const canonicalApplyUrl = buildCanonicalApplyUrl(job);
+  if (canonicalApplyUrl) {
+    return canonicalApplyUrl;
+  }
+
+  const postUrl = normalizeApplyLink(job?.post_url);
+  if (postUrl) {
+    return postUrl;
+  }
+
+  return buildMergeKey(job);
+}
+
 export function getPostAlertPolicy() {
   const policy = normalizeText(process.env.POST_ALERT_POLICY || "high_and_medium");
   if (["off", "disabled", "none"].includes(policy)) {
@@ -607,15 +628,11 @@ export function selectOpportunitiesForAlerts(
     ? prioritizedHigh.slice(0, Math.max(0, Math.floor(Number(maxItems))))
     : prioritizedHigh;
   const selectedHighKeys = new Set(
-    selectedHigh.map(job =>
-      String(job?.job_hash || job?.source_job_id || buildMergeKey(job)).trim()
-    )
+    selectedHigh.map(job => getOpportunitySelectionKey(job))
   );
   const selectedMedium = sortOpportunities(effectiveMediumQueue)
     .filter(job => {
-      const key = String(
-        job?.job_hash || job?.source_job_id || buildMergeKey(job)
-      ).trim();
+      const key = getOpportunitySelectionKey(job);
       return !selectedHighKeys.has(key);
     })
     .slice(0, Math.max(0, Number(mediumLimit || 0)));
@@ -634,6 +651,62 @@ export function selectOpportunitiesForAlerts(
     effectiveHighPosts,
     effectiveMediumQueue,
     suppressedByPolicy
+  };
+}
+
+export function selectHiringPostReviewJobs(
+  jobs,
+  {
+    excludeKeys = [],
+    maxItems = Number(process.env.POST_REVIEW_DIGEST_MAX_ITEMS || 3)
+  } = {}
+) {
+  const excludedKeys = new Set(
+    (Array.isArray(excludeKeys) ? excludeKeys : [excludeKeys])
+      .map(value => String(value || "").trim())
+      .filter(Boolean)
+  );
+  const limit = Number.isFinite(Number(maxItems))
+    ? Math.max(0, Math.floor(Number(maxItems)))
+    : Number.POSITIVE_INFINITY;
+  const selected = [];
+  const selectedKeys = new Set();
+
+  const candidates = sortOpportunities(Array.isArray(jobs) ? jobs : [])
+    .filter(job => inferOpportunityKind(job) === "post")
+    .filter(job => {
+      const confidence = normalizeText(
+        job?.confidence_tier || inferConfidenceTier(job)
+      );
+      return confidence === "high" || confidence === "medium";
+    });
+
+  for (const job of candidates) {
+    const key = getOpportunitySelectionKey(job);
+    if (!key || excludedKeys.has(key) || selectedKeys.has(key)) {
+      continue;
+    }
+
+    selected.push({
+      ...job,
+      review_bucket: "hiring_post_review"
+    });
+    selectedKeys.add(key);
+
+    if (selected.length >= limit) {
+      break;
+    }
+  }
+
+  return {
+    selected,
+    candidateCount: candidates.length,
+    selectedCount: selected.length,
+    truncatedCount: Math.max(0, candidates.length - excludedKeys.size - selected.length),
+    summary: buildOpportunitySummary(selected, {
+      rawCount: candidates.length,
+      mergedDuplicateCount: 0
+    })
   };
 }
 
