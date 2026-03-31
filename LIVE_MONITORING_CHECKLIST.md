@@ -15,6 +15,17 @@ That prints recent health for:
 - `supabase-edge`
 - `github-actions`
 
+For ATS board promotion review, run:
+
+```powershell
+npm run ats:live
+```
+
+That prints recent board-by-board ATS performance for:
+
+- `supabase-edge`
+- `github-actions`
+
 ## What healthy looks like
 
 - `succeeded` runs
@@ -37,6 +48,13 @@ That prints recent health for:
 - `coverage alerts seen`
 - long zero-post streaks if they continue over many runs
 - total listing volume dropping abnormally for multiple cycles
+
+## ATS promotion checks
+
+- `review_for_live` means a shadow board is repeatedly surfacing Salesforce roles and is worth manual promotion review before moving to `live`
+- `keep_live` means a live board is still earning its place
+- `review_live` means a live board has gone quiet and may need to move back to `shadow`
+- `investigate` means a board is erroring repeatedly and should be checked before trusting it
 
 ## Gmail checks
 
