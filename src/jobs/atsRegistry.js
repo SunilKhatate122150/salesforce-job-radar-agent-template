@@ -50,6 +50,13 @@ function normalizeProvider(value) {
   return "";
 }
 
+function normalizeBoardMode(value, fallback = "shadow") {
+  const mode = normalizeText(value || fallback);
+  if (mode === "live") return "live";
+  if (["off", "disabled", "none"].includes(mode)) return "disabled";
+  return "shadow";
+}
+
 function parseBoardUrl(value) {
   const url = normalizeUrl(value);
   if (!url) return null;
@@ -134,6 +141,8 @@ function normalizeRegistryEntry(entry, source = "registry") {
     return null;
   }
 
+  const defaultBoardMode = getRegistryMode() === "live" ? "live" : "shadow";
+
   return {
     provider,
     board_key: boardKey,
@@ -142,6 +151,7 @@ function normalizeRegistryEntry(entry, source = "registry") {
     geo_scope: normalizeGeoScope(entry?.geo_scope),
     priority: toNumber(entry?.priority, 50),
     active: entry?.active === undefined ? true : Boolean(entry.active),
+    mode: normalizeBoardMode(entry?.mode, defaultBoardMode),
     source,
     metadata: entry?.metadata && typeof entry.metadata === "object" ? entry.metadata : {}
   };
@@ -214,6 +224,7 @@ function deriveEntriesFromRows(rows) {
       geo_scope: "india_remote",
       priority: 60,
       active: true,
+      mode: "shadow",
       metadata: {
         derived_from: "job_alerts",
         last_seen_at: normalize(row?.last_seen_at)
@@ -229,7 +240,7 @@ function mergeRegistryEntries(entries) {
 
   for (const entry of entries) {
     const normalized = normalizeRegistryEntry(entry, entry?.source || "registry");
-    if (!normalized || !normalized.active) {
+    if (!normalized || !normalized.active || normalized.mode === "disabled") {
       continue;
     }
 
@@ -295,6 +306,8 @@ export function buildAtsCoverageSummary(coverageEntries) {
   const entries = Array.isArray(coverageEntries) ? coverageEntries : [];
   const providers = {};
   let totalBoards = 0;
+  let totalLiveBoards = 0;
+  let totalShadowBoards = 0;
   let totalRaw = 0;
   let totalSalesforce = 0;
 
@@ -304,6 +317,8 @@ export function buildAtsCoverageSummary(coverageEntries) {
     if (!providers[provider]) {
       providers[provider] = {
         board_count: 0,
+        live_board_count: 0,
+        shadow_board_count: 0,
         raw_count: 0,
         salesforce_count: 0,
         boards: []
@@ -311,11 +326,19 @@ export function buildAtsCoverageSummary(coverageEntries) {
     }
 
     providers[provider].board_count += 1;
+    if (normalizeBoardMode(entry?.mode) === "live") {
+      providers[provider].live_board_count += 1;
+      totalLiveBoards += 1;
+    } else {
+      providers[provider].shadow_board_count += 1;
+      totalShadowBoards += 1;
+    }
     providers[provider].raw_count += toNumber(entry?.raw_count);
     providers[provider].salesforce_count += toNumber(entry?.salesforce_count);
     providers[provider].boards.push({
       board_key: normalize(entry?.board_key),
       company: normalize(entry?.company),
+      mode: normalizeBoardMode(entry?.mode),
       raw_count: toNumber(entry?.raw_count),
       salesforce_count: toNumber(entry?.salesforce_count),
       error: normalize(entry?.error)
@@ -329,6 +352,8 @@ export function buildAtsCoverageSummary(coverageEntries) {
   return {
     mode: getAtsProviderMode(),
     total_board_count: totalBoards,
+    live_board_count: totalLiveBoards,
+    shadow_board_count: totalShadowBoards,
     raw_count: totalRaw,
     salesforce_count: totalSalesforce,
     providers

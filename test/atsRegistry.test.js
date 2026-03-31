@@ -50,6 +50,7 @@ test("loadAtsBoardRegistry accepts env registry JSON and dedupes by provider/boa
           company: "Acme",
           careers_url: "https://boards.greenhouse.io/acme",
           priority: 55,
+          mode: "shadow",
           active: true
         },
         {
@@ -58,6 +59,7 @@ test("loadAtsBoardRegistry accepts env registry JSON and dedupes by provider/boa
           company: "Acme override",
           careers_url: "https://boards.greenhouse.io/acme",
           priority: 90,
+          mode: "live",
           active: true
         },
         {
@@ -66,6 +68,7 @@ test("loadAtsBoardRegistry accepts env registry JSON and dedupes by provider/boa
           company: "Beta",
           careers_url: "https://jobs.lever.co/beta",
           priority: 40,
+          mode: "shadow",
           active: true
         },
         {
@@ -86,6 +89,8 @@ test("loadAtsBoardRegistry accepts env registry JSON and dedupes by provider/boa
         ["greenhouse:acme", "lever:beta"]
       );
       assert.equal(registry[0].company, "Acme override");
+      assert.equal(registry[0].mode, "live");
+      assert.equal(registry[1].mode, "shadow");
 
       const grouped = groupAtsBoardsByProvider(registry);
       assert.equal(grouped.get("greenhouse").length, 1);
@@ -106,5 +111,26 @@ test("loadAtsBoardRegistry returns empty list when ATS mode is off", () =>
     async () => {
       const registry = await loadAtsBoardRegistry();
       assert.deepEqual(registry, []);
+    }
+  ));
+
+test("loadAtsBoardRegistry defaults board mode from global live mode", () =>
+  withEnv(
+    {
+      ENABLE_ATS_PROVIDERS: "true",
+      ATS_PROVIDER_MODE: "live",
+      ATS_FETCH_PROVIDERS: "greenhouse",
+      ATS_BOARD_REGISTRY_JSON: JSON.stringify([
+        {
+          provider: "greenhouse",
+          board_key: "acme",
+          company: "Acme"
+        }
+      ])
+    },
+    async () => {
+      const registry = await loadAtsBoardRegistry();
+      assert.equal(registry.length, 1);
+      assert.equal(registry[0].mode, "live");
     }
   ));

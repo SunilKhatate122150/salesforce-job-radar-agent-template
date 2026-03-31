@@ -702,6 +702,12 @@ export async function fetchNaukriJobs() {
         );
         providerReport.board_count = providerBoards.length;
         providerReport.ats_mode = atsMode;
+        providerReport.live_board_count = providerBoards.filter(
+          board => String(board?.mode || "shadow").trim().toLowerCase() === "live"
+        ).length;
+        providerReport.shadow_board_count = providerBoards.filter(
+          board => String(board?.mode || "shadow").trim().toLowerCase() !== "live"
+        ).length;
 
         if (providerBoards.length === 0) {
           providerReport.status = "skipped";
@@ -751,6 +757,15 @@ export async function fetchNaukriJobs() {
 
     const providerSalesforceJobs = filterSalesforceJobs(providerJobs);
     if (provider === "greenhouse" || provider === "lever" || provider === "ashby") {
+      const boardModeMap = new Map(
+        ((atsBoardsByProvider.get(provider) || []).slice(0, atsBoardLimit))
+          .map(board => [
+            String(board?.board_key || "").trim(),
+            String(board?.mode || "shadow").trim().toLowerCase() === "live"
+              ? "live"
+              : "shadow"
+          ])
+      );
       const salesforceCountByBoard = new Map();
       for (const job of providerSalesforceJobs) {
         const boardKey = String(job?.ats_board_key || "").trim();
@@ -765,30 +780,54 @@ export async function fetchNaukriJobs() {
         if (String(entry?.provider || "").trim() !== provider) continue;
         const boardKey = String(entry?.board_key || "").trim();
         entry.salesforce_count = salesforceCountByBoard.get(boardKey) || 0;
+        entry.mode = boardModeMap.get(boardKey) || "shadow";
       }
+
+      const liveProviderSalesforceJobs = providerSalesforceJobs.filter(job =>
+        (boardModeMap.get(String(job?.ats_board_key || "").trim()) || "shadow") === "live"
+      );
+      const shadowProviderSalesforceJobs = providerSalesforceJobs.filter(job =>
+        (boardModeMap.get(String(job?.ats_board_key || "").trim()) || "shadow") !== "live"
+      );
+      providerReport.live_salesforce_count = liveProviderSalesforceJobs.length;
+      providerReport.shadow_salesforce_count = shadowProviderSalesforceJobs.length;
+      providerReport.raw_count = providerJobs.length;
+      providerReport.salesforce_count = providerSalesforceJobs.length;
+      const added = mergeUniqueJobs(
+        uniqueJobs,
+        liveProviderSalesforceJobs,
+        maxUniqueResults
+      );
+      providerReport.contributed_count = added;
+      if (shadowProviderSalesforceJobs.length > 0 && liveProviderSalesforceJobs.length === 0) {
+        providerReport.reason =
+          `ATS shadow mode captured ${shadowProviderSalesforceJobs.length} Salesforce job(s)`;
+      } else if (shadowProviderSalesforceJobs.length > 0) {
+        providerReport.reason =
+          `Live ATS contributed ${liveProviderSalesforceJobs.length}; shadow ATS captured ${shadowProviderSalesforceJobs.length}`;
+      } else if (providerJobs.length === 0) {
+        providerReport.reason = providerReport.reason || "No results returned";
+      }
+      console.log(
+        `ðŸ“¦ Provider '${provider}': raw=${providerJobs.length}, salesforce=${providerSalesforceJobs.length}, live=${liveProviderSalesforceJobs.length}, shadow=${shadowProviderSalesforceJobs.length}, contributed=${added}. Total: ${uniqueJobs.size}`
+      );
+
+      if (
+        !fetchAllProviders &&
+        uniqueJobs.size >= Math.min(maxUniqueResults, minTargetResults)
+      ) {
+        break;
+      }
+      continue;
     }
     providerReport.raw_count = providerJobs.length;
     providerReport.salesforce_count = providerSalesforceJobs.length;
-    const added =
-      (provider === "greenhouse" || provider === "lever" || provider === "ashby") &&
-      atsMode === "shadow"
-        ? 0
-        : mergeUniqueJobs(
-            uniqueJobs,
-            providerSalesforceJobs,
-            maxUniqueResults
-          );
+    const added = mergeUniqueJobs(
+      uniqueJobs,
+      providerSalesforceJobs,
+      maxUniqueResults
+    );
     providerReport.contributed_count = added;
-    if (
-      (provider === "greenhouse" || provider === "lever" || provider === "ashby") &&
-      atsMode === "shadow"
-    ) {
-      providerReport.shadow_contributed_count = providerSalesforceJobs.length;
-      providerReport.reason =
-        providerSalesforceJobs.length > 0
-          ? `ATS shadow mode captured ${providerSalesforceJobs.length} Salesforce job(s)`
-          : "ATS shadow mode recorded coverage only";
-    }
     if (providerJobs.length === 0) {
       providerReport.reason = providerReport.reason || "No results returned";
     }
