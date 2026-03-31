@@ -4,7 +4,8 @@ import assert from "node:assert/strict";
 import {
   getAtsProviderMode,
   groupAtsBoardsByProvider,
-  loadAtsBoardRegistry
+  loadAtsBoardRegistry,
+  selectAtsBoardsForProvider
 } from "../src/jobs/atsRegistry.js";
 
 function withEnv(overrides, fn) {
@@ -134,3 +135,19 @@ test("loadAtsBoardRegistry defaults board mode from global live mode", () =>
       assert.equal(registry[0].mode, "live");
     }
   ));
+
+test("selectAtsBoardsForProvider prioritizes live boards before higher-priority shadow boards", () => {
+  const selected = selectAtsBoardsForProvider(
+    [
+      { provider: "greenhouse", board_key: "shadow-high", company: "Shadow High", priority: 90, mode: "shadow" },
+      { provider: "greenhouse", board_key: "live-low", company: "Live Low", priority: 10, mode: "live" },
+      { provider: "greenhouse", board_key: "shadow-mid", company: "Shadow Mid", priority: 70, mode: "shadow" }
+    ],
+    2
+  );
+
+  assert.deepEqual(
+    selected.map(entry => entry.board_key),
+    ["live-low", "shadow-high"]
+  );
+});

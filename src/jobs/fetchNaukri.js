@@ -17,7 +17,8 @@ import {
   getEnabledAtsProviders,
   groupAtsBoardsByProvider,
   isAtsEnabled,
-  loadAtsBoardRegistry
+  loadAtsBoardRegistry,
+  selectAtsBoardsForProvider
 } from "./atsRegistry.js";
 import {
   buildPauseReason,
@@ -696,8 +697,8 @@ export async function fetchNaukriJobs() {
           maxUniqueResults: maxUniqueResults - uniqueJobs.size
         });
       } else if (provider === "greenhouse" || provider === "lever" || provider === "ashby") {
-        const providerBoards = (atsBoardsByProvider.get(provider) || []).slice(
-          0,
+        const providerBoards = selectAtsBoardsForProvider(
+          atsBoardsByProvider.get(provider) || [],
           atsBoardLimit
         );
         providerReport.board_count = providerBoards.length;
@@ -758,7 +759,10 @@ export async function fetchNaukriJobs() {
     const providerSalesforceJobs = filterSalesforceJobs(providerJobs);
     if (provider === "greenhouse" || provider === "lever" || provider === "ashby") {
       const boardModeMap = new Map(
-        ((atsBoardsByProvider.get(provider) || []).slice(0, atsBoardLimit))
+        selectAtsBoardsForProvider(
+          atsBoardsByProvider.get(provider) || [],
+          atsBoardLimit
+        )
           .map(board => [
             String(board?.board_key || "").trim(),
             String(board?.mode || "shadow").trim().toLowerCase() === "live"

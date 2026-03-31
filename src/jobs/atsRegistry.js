@@ -302,6 +302,25 @@ export function groupAtsBoardsByProvider(entries) {
   return groups;
 }
 
+export function selectAtsBoardsForProvider(entries, limit = 6) {
+  const max = Math.max(1, toNumber(limit, 6));
+  return (Array.isArray(entries) ? entries : [])
+    .slice()
+    .sort((left, right) => {
+      const leftMode = normalizeBoardMode(left?.mode);
+      const rightMode = normalizeBoardMode(right?.mode);
+      if (leftMode !== rightMode) {
+        return leftMode === "live" ? -1 : 1;
+      }
+      return (
+        toNumber(right?.priority, 0) - toNumber(left?.priority, 0) ||
+        normalize(left?.company).localeCompare(normalize(right?.company)) ||
+        normalize(left?.board_key).localeCompare(normalize(right?.board_key))
+      );
+    })
+    .slice(0, max);
+}
+
 export function buildAtsCoverageSummary(coverageEntries) {
   const entries = Array.isArray(coverageEntries) ? coverageEntries : [];
   const providers = {};
