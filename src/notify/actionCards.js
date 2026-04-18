@@ -60,8 +60,8 @@ function getPostedLabel(job) {
 
   const diffMs = Math.max(0, Date.now() - postedAt.getTime());
   const diffHours = Math.round(diffMs / 3600000);
-  if (diffHours < 1) return "Under 1h ago";
-  if (diffHours < 24) return `${diffHours}h ago`;
+  if (diffHours < 1) return "🚨 UNDER 1h AGO";
+  if (diffHours < 24) return `⚡ ${diffHours}h ago`;
   const diffDays = Math.round(diffMs / 86400000);
   return `${diffDays}d ago`;
 }
