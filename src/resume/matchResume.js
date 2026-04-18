@@ -1,31 +1,26 @@
 const SKILL_ALIASES = {
-  apex: ["apex", "apex class"],
+  apex: ["apex", "apex class", "apex trigger", "soql", "sosl", "asynchronous apex"],
   lwc: [
     "lwc",
     "lightning web component",
-    "lightning web components"
+    "lightning web components",
+    "lightning component",
+    "aura"
   ],
-  visualforce: ["visualforce", "vf page"],
-  soql: ["soql"],
-  sosl: ["sosl"],
-  flows: ["flow", "flows", "salesforce flow"],
-  triggers: ["trigger", "triggers", "apex trigger"],
-  integration: ["integration", "integrations", "rest api", "soap api"],
-  cpq: ["cpq", "salesforce cpq"],
-  salesCloud: ["sales cloud"],
-  serviceCloud: ["service cloud"],
-  experienceCloud: ["experience cloud", "community cloud"],
-  commerceCloud: ["commerce cloud"],
-  fieldService: ["field service", "field service lightning", "fsl"],
-  admin: ["salesforce admin", "administrator"],
-  devops: ["devops", "copado", "gearset", "ci/cd", "ci cd"],
-  git: ["git", "github", "gitlab", "bitbucket"],
-  javascript: ["javascript", "js", "ecmascript"],
-  htmlCss: ["html", "css"],
-  aura: ["aura", "lightning component"],
-  omniStudio: ["omnistudio", "vlocity"],
-  dataMigration: ["data migration", "dataloader", "data loader"],
-  sfdc: ["sfdc", "salesforce"]
+  flows: ["flow", "flows", "salesforce flow", "flow builder", "screen flow", "record-triggered flow"],
+  integration: ["integration", "integrations", "rest api", "soap api", "web service", "middleware", "mulesoft", "mule", "anypoint"],
+  dataCloud: ["data cloud", "genie", "cdp", "customer data platform"],
+  agentforce: ["agentforce", "einstein agent", "copilot", "prompt builder", "model builder", "generative ai", "llm"],
+  cpq: ["cpq", "salesforce cpq", "steelbrick", "revenue cloud"],
+  omniStudio: ["omnistudio", "vlocity", "flexcards", "omniscript", "data raptor", "integration procedure"],
+  experienceCloud: ["experience cloud", "community cloud", "communities", "digital experiences"],
+  serviceCloud: ["service cloud", "omni-channel", "case management", "field service", "fsl"],
+  salesCloud: ["sales cloud", "opportunity management", "lead management", "forecast"],
+  commerceCloud: ["commerce cloud", "b2b commerce", "b2c commerce"],
+  devops: ["devops", "copado", "gearset", "ci/cd", "ci cd", "sf-dx", "sfdx", "git", "github", "gitlab", "bitbucket"],
+  javascript: ["javascript", "js", "ecmascript", "node.js", "node"],
+  slack: ["slack", "slack integration", "bolt"],
+  sfdc: ["sfdc", "salesforce", "force.com", "lightning platform"]
 };
 
 const ROLE_KEYWORDS = [
@@ -128,20 +123,30 @@ function parseExperienceRange(experienceText) {
 }
 
 function scoreExperience(profileYears, experienceRange) {
-  if (!Number.isFinite(profileYears) || !experienceRange) return 10;
+  // Give stronger weight to explicit experience matches so a 4-year profile
+  // is prioritized when the job specifies a matching range.
+  if (!Number.isFinite(profileYears)) return 10;
 
-  if (profileYears >= experienceRange.min && profileYears <= experienceRange.max) {
-    return 15;
+  // If job doesn't specify experience, give a modest positive score.
+  if (!experienceRange) return 12;
+
+  const min = Number(experienceRange.min || 0);
+  const max = Number(experienceRange.max || 0);
+
+  if (Number.isFinite(min) && Number.isFinite(max)) {
+    if (profileYears >= min && profileYears <= max) {
+      return 30; // strong exact fit
+    }
+
+    // distance outside the desired range
+    const distance = Math.max(0, min - profileYears, profileYears - max);
+    if (distance <= 1) return 20;
+    if (distance <= 2) return 12;
+    if (distance <= 3) return 8;
+    return 3;
   }
 
-  const distance = Math.min(
-    Math.abs(profileYears - experienceRange.min),
-    Math.abs(profileYears - experienceRange.max)
-  );
-
-  if (distance <= 1) return 10;
-  if (distance <= 2) return 7;
-  return 3;
+  return 10;
 }
 
 function scoreRole(profileRole, job) {
@@ -165,13 +170,28 @@ function scoreRole(profileRole, job) {
   return 8;
 }
 
+const CRITICAL_SKILLS = new Set(["apex", "lwc", "integration", "flows", "agentforce", "dataCloud"]);
+
 function scoreSkills(profileSkills, jobSkills) {
   if (jobSkills.length === 0) return { score: 30, matched: [], missing: [] };
 
   const profileSet = new Set(profileSkills);
   const matched = jobSkills.filter(skill => profileSet.has(skill));
   const missing = jobSkills.filter(skill => !profileSet.has(skill));
-  const coverage = matched.length / jobSkills.length;
+
+  // Critical Skill Weighting
+  let weightSum = 0;
+  let matchSum = 0;
+
+  for (const skill of jobSkills) {
+    const weight = CRITICAL_SKILLS.has(skill) ? 3 : 1;
+    weightSum += weight;
+    if (profileSet.has(skill)) {
+      matchSum += weight;
+    }
+  }
+
+  const coverage = weightSum > 0 ? matchSum / weightSum : 0;
   const score = Math.round(coverage * 60);
 
   return {
