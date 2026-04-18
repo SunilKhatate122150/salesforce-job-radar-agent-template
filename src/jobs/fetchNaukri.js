@@ -60,7 +60,8 @@ const SEARCH_PLANS = [
       "Salesforce Developer",
       "SFDC Developer",
       "Apex Developer",
-      "LWC Developer"
+      "LWC Developer",
+      "Hiring Salesforce"
     ],
     jobAge: 1
   },
@@ -70,9 +71,10 @@ const SEARCH_PLANS = [
       "Salesforce Engineer",
       "Salesforce Platform Developer",
       "Lightning Developer",
-      "Salesforce Integration Developer"
+      "Salesforce Integration Developer",
+      "Urgent Salesforce"
     ],
-    jobAge: 2
+    jobAge: 1
   },
   {
     name: "specialized-clouds",
@@ -82,7 +84,7 @@ const SEARCH_PLANS = [
       "Salesforce Commerce Cloud Developer",
       "Apex LWC Developer"
     ],
-    jobAge: 3
+    jobAge: 1
   }
 ];
 

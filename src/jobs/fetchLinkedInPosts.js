@@ -46,7 +46,9 @@ const QUERY_SUFFIXES = [
   "\"looking for\"",
   "\"share your resume\"",
   "\"immediate joiner\"",
-  "\"talent acquisition\""
+  "\"talent acquisition\"",
+  "\"urgently hiring\"",
+  "\"urgent requirement\""
 ];
 
 const QUERY_SITE_TARGETS = [
