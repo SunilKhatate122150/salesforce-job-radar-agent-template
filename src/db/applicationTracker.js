@@ -290,12 +290,13 @@ export async function registerApplicationJobs(jobs, options = {}) {
   }
 
   const nextRecords = [...byHash.values()];
-  await writeTrackerState({ records: nextRecords });
+  const truncated = sortByRecent(nextRecords).slice(0, 5000);
+  await writeTrackerState({ records: truncated });
 
   return {
     added,
     updated,
-    total: nextRecords.length
+    total: truncated.length
   };
 }
 

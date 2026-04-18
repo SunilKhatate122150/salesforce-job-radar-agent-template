@@ -1,6 +1,6 @@
 import crypto from "node:crypto";
 import { supabase, isSupabaseEnabled } from "../db/supabase.js";
-import { hasLocalHash, saveLocalHash } from "../db/localDedupeStore.js";
+import { hasLocalHash, saveLocalHash, flushStore } from "../db/localDedupeStore.js";
 import {
   flushJobOutbox,
   outboxHasHash,
@@ -363,6 +363,7 @@ export async function saveJobs(jobs) {
     await queueJobForSync(record.payload);
   }
 
+  await flushStore();
   await syncOutboxIfPossible({ force: true });
 }
 
