@@ -188,6 +188,7 @@ function buildLinkedInSearchUrl({ keyword, location, jobAgeDays }) {
   const boundedDays = Math.max(1, Math.min(30, Number(jobAgeDays || 1)));
   const seconds = boundedDays * 24 * 60 * 60;
   url.searchParams.set("f_TPR", `r${seconds}`);
+  url.searchParams.set("sortBy", "DD");
 
   return url.toString();
 }
@@ -468,6 +469,7 @@ async function fetchLinkedInGuestPage({ keyword, location, start, jobAgeDays }) 
   const boundedDays = Math.max(1, Math.min(30, Number(jobAgeDays || 1)));
   const seconds = boundedDays * 24 * 60 * 60;
   url.searchParams.set("f_TPR", `r${seconds}`);
+  url.searchParams.set("sortBy", "DD");
 
   const response = await fetch(url.toString(), {
     method: "GET",

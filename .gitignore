@@ -10,3 +10,6 @@ package.json.save
 
 # Temp files created during automation
 test-create.txt
+
+.codex
+.vscode/

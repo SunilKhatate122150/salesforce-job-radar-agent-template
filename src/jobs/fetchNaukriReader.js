@@ -41,7 +41,7 @@ function getCanonicalKey(job) {
 }
 
 function buildSearchUrl(keyword, location) {
-  return `http://www.naukri.com/${slugify(keyword)}-jobs-in-${slugify(location)}?k=${encodeURIComponent(keyword)}&l=${encodeURIComponent(location)}`;
+  return `http://www.naukri.com/${slugify(keyword)}-jobs-in-${slugify(location)}?k=${encodeURIComponent(keyword)}&l=${encodeURIComponent(location)}&sort=date`;
 }
 
 async function fetchReaderMarkdown(searchUrl) {

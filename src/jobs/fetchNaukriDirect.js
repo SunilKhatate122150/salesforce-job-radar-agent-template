@@ -91,6 +91,7 @@ function buildSearchUrl({ keyword, location, pageNo, noOfResults }) {
   url.searchParams.set("k", keyword);
   url.searchParams.set("l", location);
   url.searchParams.set("location", location);
+  url.searchParams.set("sortType", "2"); // 2 = Date Descending
   url.searchParams.set("nignbevent_src", "jobsearchDeskGNB");
   return url.toString();
 }
