@@ -135,6 +135,11 @@ function buildTelegramCard(job, index) {
   if (trimText(job?.source_evidence?.snippet || job?.description, 180)) {
     lines.push(`Evidence: ${escapeHtml(trimText(job?.source_evidence?.snippet || job?.description, 180))}`);
   }
+  const resumeBullets = Array.isArray(job?.resume_bullet_suggestions) ? job.resume_bullet_suggestions : [];
+  if (resumeBullets.length > 0) {
+    lines.push(`💡 <b>Resume Tip:</b> ${escapeHtml(resumeBullets[0])}`);
+  }
+
   lines.push(
     actionUrl
       ? `<a href="${escapeHtml(actionUrl)}">${escapeHtml(getActionLabel(job))}</a>`

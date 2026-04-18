@@ -56,6 +56,7 @@ let lastFetchReport = null;
 const SEARCH_PLANS = [
   {
     name: "core-dev",
+    priority: "high",
     keywords: [
       "Salesforce Developer",
       "SFDC Developer",
@@ -67,6 +68,7 @@ const SEARCH_PLANS = [
   },
   {
     name: "platform-dev",
+    priority: "high",
     keywords: [
       "Salesforce Engineer",
       "Salesforce Platform Developer",
@@ -77,12 +79,24 @@ const SEARCH_PLANS = [
     jobAge: 1
   },
   {
+    name: "ai-data-cloud",
+    priority: "high",
+    keywords: [
+      "Agentforce Developer",
+      "Salesforce Data Cloud",
+      "Einstein Copilot",
+      "Salesforce AI",
+      "OmniStudio Developer"
+    ],
+    jobAge: 1
+  },
+  {
     name: "specialized-clouds",
     keywords: [
       "Salesforce CPQ Developer",
       "Field Service Lightning Developer",
       "Salesforce Commerce Cloud Developer",
-      "Apex LWC Developer"
+      "MuleSoft Developer"
     ],
     jobAge: 1
   }
@@ -329,21 +343,25 @@ function buildActorInput(plan, mode, maxItemsPerPlan) {
   };
 }
 
-function getPlansForThisRun() {
-  const planCount = SEARCH_PLANS.length;
-  const plansPerRun = Math.min(
-    planCount,
-    Math.max(1, Number(process.env.NAUKRI_PLANS_PER_RUN || 1))
-  );
+async function getPlansForThisRun() {
+  const highPriority = SEARCH_PLANS.filter(p => p.priority === "high");
+  const lowPriority = SEARCH_PLANS.filter(p => p.priority !== "high");
+  const plansPerRun = Math.max(1, Number(process.env.NAUKRI_PLANS_PER_RUN || 1));
 
-  return getNextPlanStartIndex(planCount).then(startIndex => {
-    const plans = [];
-    for (let i = 0; i < plansPerRun; i++) {
-      const index = (startIndex + i) % planCount;
-      plans.push(SEARCH_PLANS[index]);
+  // High priority plans are always included
+  const plans = [...highPriority];
+
+  // Rotate through low priority plans
+  if (lowPriority.length > 0) {
+    const startIndex = await getNextPlanStartIndex(lowPriority.length);
+    const lowSlots = Math.max(1, plansPerRun - highPriority.length);
+    for (let i = 0; i < lowSlots; i++) {
+      const index = (startIndex + i) % lowPriority.length;
+      plans.push(lowPriority[index]);
     }
-    return plans;
-  });
+  }
+
+  return plans;
 }
 
 async function runActorSearchPlan(source, plan) {
@@ -616,7 +634,59 @@ export async function fetchNaukriJobs() {
     console.log("⚠️ APIFY_TOKEN missing; skipping apify provider");
   }
 
-  for (const provider of providers) {
+  const freeProviders = providers.filter(p => getProviderMeta(p).cost === "free");
+  const paidProviders = providers.filter(p => getProviderMeta(p).cost !== "free");
+
+  const freeResults = await Promise.allSettled(freeProviders.map(async provider => {
+    const meta = getProviderMeta(provider);
+    const gate = await getProviderGate(meta.healthKey);
+    if (gate.shouldSkip) return { provider, jobs: [], skipped: true, reason: "gate" };
+
+    try {
+      let jobs = [];
+      if (provider === "direct") {
+        jobs = await fetchNaukriJobsDirect({ plans, location: DEFAULT_LOCATION, maxUniqueResults });
+      } else if (provider === "naukri_reader") {
+        jobs = await fetchNaukriJobsViaReader({ plans, location: DEFAULT_LOCATION, maxUniqueResults });
+      } else if (provider === "arbeitnow") {
+        jobs = await fetchArbeitnowJobs({ keywords: searchKeywords, maxUniqueResults });
+      } else if (provider === "adzuna") {
+        jobs = await fetchAdzunaJobs({ keywords: searchKeywords, location: DEFAULT_LOCATION, maxUniqueResults });
+      } else if (provider === "linkedin_posts") {
+        jobs = await fetchLinkedInPosts({ plans, maxUniqueResults });
+      }
+      return { provider, jobs, status: "success" };
+    } catch (error) {
+      return { provider, jobs: [], status: "failed", error };
+    }
+  }));
+
+  for (const result of freeResults) {
+    if (result.status === "rejected" || result.value?.status === "failed") continue;
+    if (result.value?.skipped) continue;
+    const { provider, jobs } = result.value;
+    const meta = getProviderMeta(provider);
+    const providerReport = {
+      provider,
+      status: "success",
+      cost_tier: "free",
+      health_key: meta.healthKey,
+      raw_count: jobs.length,
+      salesforce_count: 0,
+      contributed_count: 0,
+      reason: "",
+      error: "",
+      failure_kind: "",
+      disabled_until: ""
+    };
+    providerReports.push(providerReport);
+    const filtered = filterSalesforceJobs(jobs);
+    providerReport.salesforce_count = filtered.length;
+    providerReport.contributed_count = mergeUniqueJobs(uniqueJobs, filtered, maxUniqueResults);
+    await markProviderSuccess(meta.healthKey, { note: `${jobs.length} jobs fetched` });
+  }
+
+  for (const provider of paidProviders) {
     if (uniqueJobs.size >= maxUniqueResults) break;
     const meta = getProviderMeta(provider);
 
@@ -672,34 +742,6 @@ export async function fetchNaukriJobs() {
       } else if (provider === "linkedin") {
         providerJobs = await fetchLinkedInJobs({
           plans,
-          maxUniqueResults: maxUniqueResults - uniqueJobs.size
-        });
-      } else if (provider === "linkedin_posts") {
-        providerJobs = await fetchLinkedInPosts({
-          plans,
-          maxUniqueResults: maxUniqueResults - uniqueJobs.size
-        });
-      } else if (provider === "direct") {
-        providerJobs = await fetchNaukriJobsDirect({
-          plans,
-          location: DEFAULT_LOCATION,
-          maxUniqueResults: maxUniqueResults - uniqueJobs.size
-        });
-      } else if (provider === "naukri_reader") {
-        providerJobs = await fetchNaukriJobsViaReader({
-          plans,
-          location: DEFAULT_LOCATION,
-          maxUniqueResults: maxUniqueResults - uniqueJobs.size
-        });
-      } else if (provider === "arbeitnow") {
-        providerJobs = await fetchArbeitnowJobs({
-          keywords: searchKeywords,
-          maxUniqueResults: maxUniqueResults - uniqueJobs.size
-        });
-      } else if (provider === "adzuna") {
-        providerJobs = await fetchAdzunaJobs({
-          keywords: searchKeywords,
-          location: DEFAULT_LOCATION,
           maxUniqueResults: maxUniqueResults - uniqueJobs.size
         });
       } else if (provider === "greenhouse" || provider === "lever" || provider === "ashby") {
