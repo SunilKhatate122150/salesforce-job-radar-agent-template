@@ -102,11 +102,14 @@ async function getStudyData() {
 
     const topics = {};
     (sessions || []).forEach(s => {
-      const tid = s.topic || s.topicId; // Handle both variants
+      const tid = s.topic || s.topicId;
       if (!tid) return;
       
       const duration = Number(s.duration || 0);
-      if (!topics[tid]) topics[tid] = { totalSeconds: 0, sessions: 0, lastStudied: null };
+      if (!topics[tid]) {
+        topics[tid] = { totalSeconds: 0, sessions: 0, lastStudied: null };
+        console.log(`[Cloud] Match Check: Found topic "${tid}" - In Config? ${!!topicConfig[tid]}`);
+      }
       
       topics[tid].totalSeconds += duration;
       topics[tid].sessions += 1;
