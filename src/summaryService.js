@@ -14,13 +14,17 @@ export function generateDailySummary(providedSessions = null) {
   const studyPath = path.join(CACHE_DIR, 'study-tracker.json');
   
   let jobData = { records: [] };
-  if (fs.existsSync(jobPath)) jobData = JSON.parse(fs.readFileSync(jobPath, 'utf8'));
+  try {
+    if (fs.existsSync(jobPath)) jobData = JSON.parse(fs.readFileSync(jobPath, 'utf8'));
+  } catch (e) { console.warn('[SummaryService] Skipping local job data'); }
   
   let studyData = { sessions: [], topics: {} };
   if (providedSessions) {
     studyData.sessions = providedSessions;
-  } else if (fs.existsSync(studyPath)) {
-    studyData = JSON.parse(fs.readFileSync(studyPath, 'utf8'));
+  } else {
+    try {
+      if (fs.existsSync(studyPath)) studyData = JSON.parse(fs.readFileSync(studyPath, 'utf8'));
+    } catch (e) { console.warn('[SummaryService] Skipping local study data'); }
   }
 
   // Get ALL unique dates from sessions to rebuild everything correctly

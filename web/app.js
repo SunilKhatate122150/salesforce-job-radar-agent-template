@@ -342,8 +342,7 @@ function startFloatingTimerInterval() {
 
 async function updateCourseTargets() {
   try {
-    const res = await fetch('/api/study/data');
-    const data = await res.json();
+    const data = await getStudyData();
     
     let totalRecommendedMin = 0;
     for (let id in topicConfig) {
