@@ -42,6 +42,13 @@ export default async function handler(req, res) {
   const url = parsedUrl.pathname;
   const method = req.method;
 
+  // SILENT FAVICON (Prevents 404 errors in console)
+  if (url === '/favicon.ico') {
+    res.writeHead(204);
+    res.end();
+    return;
+  }
+
   // Static files
   if (method === 'GET' && !url.startsWith('/api')) {
     let filePath = path.join(WEB_DIR, url === '/' ? 'index.html' : url);
