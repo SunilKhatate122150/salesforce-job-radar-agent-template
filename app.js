@@ -33,6 +33,7 @@ window.handleCredentialResponse = async function(response) {
       console.log('Login Success! Showing Dashboard for:', currentUser.name);
       
       // Load data in background
+      renderUserProfile(currentUser);
       syncDashboard();
     } else {
       alert('Login failed: ' + data.error);
@@ -42,9 +43,26 @@ window.handleCredentialResponse = async function(response) {
   }
 };
 
+function renderUserProfile(user) {
+  if (!user) return;
+  document.getElementById('userProfile').style.display = 'block';
+  document.getElementById('userPicture').src = user.picture || 'https://ui-avatars.com/api/?name=' + encodeURIComponent(user.name);
+  document.getElementById('userName').textContent = user.name;
+  document.getElementById('userEmail').textContent = user.email;
+}
+
 function logout() {
   localStorage.removeItem('google_auth_token');
   location.reload();
+}
+
+async function apiFetch(url, options = {}) {
+  const token = localStorage.getItem('google_auth_token');
+  const headers = {
+    ...options.headers,
+    'Authorization': `Bearer ${token}`
+  };
+  return fetch(url, { ...options, headers });
 }
 
 async function checkAuth() {
@@ -63,6 +81,7 @@ async function checkAuth() {
     const data = await res.json();
     if (data.success) {
       currentUser = data.user;
+      renderUserProfile(currentUser);
       document.getElementById('loginOverlay').style.display = 'none';
       return true;
     }
@@ -547,7 +566,8 @@ async function fetchDailySummary() {
   if (!card || !content) return;
 
   try {
-    const response = await fetch('/api/summary/daily');
+    const response = await apiFetch('/api/summary/daily');
+    if (!response.ok) throw new Error('Unauthorized or missing');
     const summary = await response.json();
     
     if (summary) {
@@ -641,7 +661,8 @@ async function renderHistory() {
 
   try {
     const viewMode = currentHistoryTab;
-    const response = await fetch('/api/summary/all?cache_bust=' + Date.now());
+    const response = await apiFetch('/api/summary/all?cache_bust=' + Date.now());
+    if (!response.ok) throw new Error('Unauthorized');
     const histories = await response.json();
     
     const now = new Date();
@@ -1015,7 +1036,8 @@ async function resetTracker() {
 // =============================================
 async function fetchJobRadarSummary() {
   try {
-    const response = await fetch('/api/summary');
+    const response = await apiFetch('/api/summary');
+    if (!response.ok) throw new Error('Unauthorized');
     const data = await response.json();
     document.getElementById('dedupeCount').textContent = data.dedupeCount;
     document.getElementById('trackedCount').textContent = data.trackedCount;
@@ -1027,7 +1049,8 @@ async function fetchJobRadarSummary() {
 
 async function fetchJobsList() {
   try {
-    const response = await fetch('/api/jobs');
+    const response = await apiFetch('/api/jobs');
+    if (!response.ok) throw new Error('Unauthorized');
     const data = await response.json();
     renderJobsList(data.records);
   } catch (e) {
@@ -1064,7 +1087,7 @@ function renderJobsList(jobs) {
 
 async function updateJobStatus(hash, status) {
   try {
-    const response = await fetch(`/api/jobs/${hash}/status`, {
+    const response = await apiFetch(`/api/jobs/${hash}/status`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ status })

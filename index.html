@@ -43,6 +43,16 @@
 
 <!-- SIDEBAR -->
 <nav id="sidebar">
+  <div id="userProfile" style="display:none; margin: 15px; padding: 15px; background: rgba(255,255,255,0.03); border-radius: 12px; border: 1px solid rgba(255,255,255,0.05); transition: all 0.3s ease;">
+    <div style="display:flex; align-items:center; gap:12px;">
+        <img id="userPicture" src="" style="width:40px; height:40px; border-radius:50%; border: 2px solid var(--blue); background: var(--card-bg);">
+        <div style="overflow:hidden;">
+            <div id="userName" style="font-weight:600; font-size:0.85rem; color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;"></div>
+            <div id="userEmail" style="font-size:0.65rem; color:var(--muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;"></div>
+        </div>
+    </div>
+    <button onclick="logout()" style="width:100%; margin-top:12px; padding:6px; font-size:0.7rem; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); border-radius:6px; color:var(--text); cursor:pointer; transition: background 0.2s;">Sign Out</button>
+  </div>
   <div class="sidebar-header">
     <div style="font-size:0.6rem; color:var(--blue); font-family:'IBM Plex Mono',monospace; margin-bottom:0.5rem; letter-spacing:2px; text-transform:uppercase;">Agent Dashboard</div>
     <h2>Salesforce & FDE<br>Master Prep Guide</h2>
