@@ -945,7 +945,7 @@ function renderJobsList(jobs) {
   const container = document.getElementById('jobsListContainer');
   if (!container) return;
   
-  if (!jobs.length) {
+  if (!jobs || !jobs.length) {
     container.innerHTML = '<p style="color:var(--muted);padding:2rem;text-align:center;">No jobs tracked yet.</p>';
     return;
   }
@@ -1239,14 +1239,11 @@ function goToResult(pageId, idx) {
 let cachedHistories = {};
 
 async function showHistoryModal(date) {
-  console.log('[HistoryModal] Attempting to open for date:', date);
   const h = cachedHistories[date];
   if (!h) {
-    console.error('[HistoryModal] No cached data found for date:', date);
     alert('No data found for this date. Please click Sync Dashboard first.');
     return;
   }
-  console.log('[HistoryModal] Cached Data:', JSON.stringify(h, null, 2));
 
   const modal = document.getElementById('historyModal');
   const dateEl = document.getElementById('modalDate');

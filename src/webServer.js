@@ -131,12 +131,17 @@ export default async function handler(req, res) {
 
   if (url === '/api/jobs' && method === 'GET') {
     try {
-      const tracker = JSON.parse(fs.readFileSync(path.join(CACHE_DIR, 'application-tracker.json'), 'utf8'));
-      res.writeHead(200, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify(tracker));
+      if (isMongoConnected) {
+        const records = await JobRecord.find().sort({ createdAt: -1 }).lean();
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ records }));
+      } else {
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ records: [] }));
+      }
     } catch (e) {
       res.writeHead(500);
-      res.end(JSON.stringify({ error: 'Failed to read tracker' }));
+      res.end(JSON.stringify({ error: 'Failed to fetch jobs' }));
     }
     return;
   }
