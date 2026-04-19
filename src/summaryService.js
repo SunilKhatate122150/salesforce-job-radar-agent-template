@@ -32,7 +32,7 @@ export function generateDailySummary(providedSessions = null) {
   
   allDates.forEach(dateStr => {
     if (!dateStr) return;
-    const trimmedDate = dateStr.trim();
+    const trimmedDate = String(dateStr).trim();
     // Ensure we are working with a clean YYYY-MM-DD string
     const match = trimmedDate.match(/\d{4}-\d{2}-\d{2}/);
     if (!match) return;

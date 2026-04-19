@@ -78,22 +78,46 @@ export default async function handler(req, res) {
   }
 
   // API Endpoints
-  if (url.includes('summary') && method === 'GET') {
+  if (url === '/api/job-radar/summary' && method === 'GET') {
     try {
-      const hashes = JSON.parse(fs.readFileSync(path.join(CACHE_DIR, 'job-hashes.json'), 'utf8'));
-      const tracker = JSON.parse(fs.readFileSync(path.join(CACHE_DIR, 'application-tracker.json'), 'utf8'));
+      const hashesPath = path.join(CACHE_DIR, 'job-hashes.json');
+      const trackerPath = path.join(CACHE_DIR, 'application-tracker.json');
       
-      const summary = {
-        dedupeCount: hashes.length || 0,
-        trackedCount: tracker.length || 0,
-        appliedCount: tracker.filter(j => j.status === 'applied').length
-      };
+      let dedupeCount = 0;
+      let trackedCount = 0;
+      let appliedCount = 0;
+
+      if (fs.existsSync(hashesPath)) {
+        dedupeCount = JSON.parse(fs.readFileSync(hashesPath, 'utf8')).length;
+      }
+      if (fs.existsSync(trackerPath)) {
+        const tracker = JSON.parse(fs.readFileSync(trackerPath, 'utf8'));
+        trackedCount = tracker.length;
+        appliedCount = tracker.filter(j => j.status === 'applied').length;
+      }
       
       res.writeHead(200, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify(summary));
+      res.end(JSON.stringify({ dedupeCount, trackedCount, appliedCount }));
+    } catch (e) {
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ dedupeCount: 0, trackedCount: 0, appliedCount: 0 }));
+    }
+    return;
+  }
+
+  if (url.includes('study/history') && method === 'GET') {
+    try {
+      if (isMongoConnected) {
+        const sessions = await StudySession.find().sort({ startTime: -1 }).limit(1000).lean();
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify(sessions));
+      } else {
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify([]));
+      }
     } catch (e) {
       res.writeHead(500);
-      res.end(JSON.stringify({ error: 'Failed to read data' }));
+      res.end(JSON.stringify({ error: 'Failed to fetch sessions' }));
     }
     return;
   }
