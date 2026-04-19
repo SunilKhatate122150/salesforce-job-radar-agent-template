@@ -90,6 +90,23 @@ var topicConfig = {
 };
 
 // =============================================
+// UTILS
+// =============================================
+async function fetchWithTimeout(resource, options = {}) {
+  const { timeout = 10000 } = options;
+  const controller = new AbortController();
+  const id = setTimeout(() => controller.abort(), timeout);
+  try {
+    const response = await fetch(resource, { ...options, signal: controller.signal });
+    clearTimeout(id);
+    return response;
+  } catch (e) {
+    clearTimeout(id);
+    throw e;
+  }
+}
+
+// =============================================
 // DATA LAYER (Server-side API)
 // =============================================
 async function getStudyData(force = false) {
@@ -101,8 +118,8 @@ async function getStudyData(force = false) {
   try {
     lastFetchTime = now;
     const [historyRes, tasksRes] = await Promise.all([
-      fetch('/api/study/history?cb=' + Date.now()),
-      fetch('/api/study/tasks?cb=' + Date.now())
+      fetchWithTimeout('/api/study/history?cb=' + Date.now()),
+      fetchWithTimeout('/api/study/tasks?cb=' + Date.now())
     ]);
     const sessions = await historyRes.json();
     const { completedTasks } = await tasksRes.json();
@@ -126,7 +143,7 @@ async function getStudyData(force = false) {
 
 async function saveSession(session) {
   try {
-    await fetch('/api/study/session', {
+    await fetchWithTimeout('/api/study/session', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(session)
@@ -255,6 +272,10 @@ async function stopTracking() {
   if (activeEl) activeEl.textContent = '—';
   if (lightEl) lightEl.style.display = 'none';
   if (timerEl) timerEl.style.display = 'none';
+  if (floatingTimerInterval) {
+    clearInterval(floatingTimerInterval);
+    floatingTimerInterval = null;
+  }
 }
 
 function getCurrentElapsed() {
