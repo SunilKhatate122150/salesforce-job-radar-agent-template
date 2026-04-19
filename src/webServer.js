@@ -13,7 +13,7 @@ const __dirname = path.dirname(__filename);
 
 const PORT = process.env.PORT || 3000;
 const CACHE_DIR = path.join(process.cwd(), '.cache');
-const WEB_DIR = path.join(process.cwd(), 'web');
+const WEB_DIR = process.cwd();
 
 const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
