@@ -101,11 +101,11 @@ async function getStudyData() {
     const topics = {};
     const sessions = [];
     Object.values(histories).forEach(h => {
-      if (h.study && h.study.topicBreakdown) {
-         Object.keys(h.study.topicBreakdown).forEach(tid => {
+      if (h.study && h.study.breakdown) {
+         Object.keys(h.study.breakdown).forEach(tid => {
            if (!topics[tid]) topics[tid] = { totalSeconds: 0, sessions: 0, lastStudied: null };
-           topics[tid].totalSeconds += h.study.topicBreakdown[tid].totalSeconds;
-           topics[tid].sessions += h.study.topicBreakdown[tid].sessions || 1;
+           topics[tid].totalSeconds += h.study.breakdown[tid].totalSeconds;
+           topics[tid].sessions += h.study.breakdown[tid].sessions || 1;
          });
       }
     });
