@@ -1339,9 +1339,21 @@ document.addEventListener('visibilitychange', function() {
 });
 
 // Boot
-const lastTab = localStorage.getItem('last_active_tab') || 'schedule';
-showPage(lastTab);
-fetchJobRadarSummary();
+(async () => {
+  const lastTab = localStorage.getItem('last_active_tab') || 'schedule';
+  
+  // Load UI
+  showPage(lastTab);
+  
+  // Background Pre-load all cloud data
+  try {
+    await Promise.all([
+      fetchJobRadarSummary(),
+      fetchJobsList(),
+      renderHistory()
+    ]);
+  } catch(e) { console.warn('Background preload partially failed', e); }
+})();
 // AI INTERVIEW SYSTEM
 let interviewMessages = [];
 
