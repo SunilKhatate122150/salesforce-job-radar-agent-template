@@ -28,8 +28,12 @@ window.handleCredentialResponse = async function(response) {
     const data = await res.json();
     if (data.success) {
       currentUser = data.user;
+      // Force hide the overlay immediately
       document.getElementById('loginOverlay').style.display = 'none';
-      await syncDashboard();
+      console.log('Login Success! Showing Dashboard for:', currentUser.name);
+      
+      // Load data in background
+      syncDashboard();
     } else {
       alert('Login failed: ' + data.error);
     }
