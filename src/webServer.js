@@ -78,7 +78,7 @@ export default async function handler(req, res) {
   }
 
   // API Endpoints
-  if (url === '/api/summary' && method === 'GET') {
+  if (url.includes('summary') && method === 'GET') {
     try {
       const hashes = JSON.parse(fs.readFileSync(path.join(CACHE_DIR, 'job-hashes.json'), 'utf8'));
       const tracker = JSON.parse(fs.readFileSync(path.join(CACHE_DIR, 'application-tracker.json'), 'utf8'));
@@ -151,7 +151,7 @@ export default async function handler(req, res) {
     return;
   }
 
-  if (url === '/api/study/session' && method === 'POST') {
+  if (url.includes('study/session') && method === 'POST') {
     let body = '';
     req.on('data', chunk => { body += chunk; });
     req.on('end', async () => {
@@ -183,7 +183,7 @@ export default async function handler(req, res) {
     return;
   }
 
-  if (url === '/api/study/toggle-task' && method === 'POST') {
+  if (url.includes('study/toggle-task') && method === 'POST') {
     let body = '';
     req.on('data', chunk => { body += chunk; });
     req.on('end', async () => {
@@ -212,7 +212,7 @@ export default async function handler(req, res) {
     return;
   }
 
-  if (url === '/api/study/tasks' && method === 'GET') {
+  if (url.includes('study/tasks') && method === 'GET') {
     if (isMongoConnected) {
       const completed = await TaskStatus.find({ completed: true }).lean();
       res.writeHead(200, { 'Content-Type': 'application/json' });
@@ -224,7 +224,7 @@ export default async function handler(req, res) {
     return;
   }
 
-  if (url === '/api/summary/daily' && method === 'GET') {
+  if (url.includes('summary/daily') && method === 'GET') {
     try {
       let sessions = null;
       if (isMongoConnected) {
@@ -242,7 +242,7 @@ export default async function handler(req, res) {
     return;
   }
 
-  if (url === '/api/summary/all' && method === 'GET') {
+  if (url.includes('summary/all') && method === 'GET') {
     try {
       let sessions = null;
       if (isMongoConnected) {
@@ -258,7 +258,7 @@ export default async function handler(req, res) {
     return;
   }
 
-  if (url === '/api/ai/interview' && method === 'POST') {
+  if (url.includes('ai/interview') && method === 'POST') {
     let body = '';
     req.on('data', chunk => body += chunk);
     req.on('end', async () => {
