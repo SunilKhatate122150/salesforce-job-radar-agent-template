@@ -92,12 +92,14 @@ var topicConfig = {
 async function getStudyData() {
   try {
     const [historyRes, tasksRes] = await Promise.all([
-      fetch('/api/summary/all'),
-      fetch('/api/study/tasks')
+      fetch('/api/summary/all?cb=' + Date.now()),
+      fetch('/api/study/tasks?cb=' + Date.now())
     ]);
     const histories = await historyRes.json();
     const { completedTasks } = await tasksRes.json();
     
+    console.log('[Cloud] Data Received:', { histories, completedTasks });
+
     const topics = {};
     const sessions = [];
     Object.values(histories).forEach(h => {
@@ -110,6 +112,7 @@ async function getStudyData() {
       }
     });
     
+    console.log('[Cloud] Mapped Topics:', topics);
     return { topics, sessions, completedTasks };
   } catch(e) { 
     console.error('[Cloud] Sync Error:', e);
