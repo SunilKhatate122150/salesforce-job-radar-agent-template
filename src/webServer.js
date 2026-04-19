@@ -5,7 +5,8 @@ import { fileURLToPath } from 'url';
 import { generateDailySummary } from './summaryService.js';
 import mongoose from 'mongoose';
 import 'dotenv/config';
-import { StudySession, TaskStatus } from './models/models.js';
+import { StudySession, TaskStatus, User, JobRecord } from './models/models.js';
+import { OAuth2Client } from 'google-auth-library';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -13,6 +14,24 @@ const __dirname = path.dirname(__filename);
 const PORT = process.env.PORT || 3000;
 const CACHE_DIR = path.join(process.cwd(), '.cache');
 const WEB_DIR = path.join(process.cwd(), 'web');
+
+const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+
+async function getUserId(req) {
+  const authHeader = req.headers.authorization;
+  if (!authHeader || !authHeader.startsWith('Bearer ')) return null;
+  const token = authHeader.split(' ')[1];
+  try {
+    const ticket = await client.verifyIdToken({
+      idToken: token,
+      audience: process.env.GOOGLE_CLIENT_ID,
+    });
+    const payload = ticket.getPayload();
+    return payload['sub']; 
+  } catch (e) {
+    return null;
+  }
+}
 
 // MongoDB Connection
 let cachedDb = null;
@@ -84,178 +103,87 @@ export default async function handler(req, res) {
     return;
   }
 
-  // API Endpoints
-  if (url === '/api/job-radar/summary' && method === 'GET') {
-    try {
-      const hashesPath = path.join(CACHE_DIR, 'job-hashes.json');
-      const trackerPath = path.join(CACHE_DIR, 'application-tracker.json');
-      
-      let dedupeCount = 0;
-      let trackedCount = 0;
-      let appliedCount = 0;
-
-      if (fs.existsSync(hashesPath)) {
-        dedupeCount = JSON.parse(fs.readFileSync(hashesPath, 'utf8')).length;
+  // API ENDPOINTS (Scoped by User)
+  if (url.startsWith('/api/')) {
+    const userId = await getUserId(req);
+    
+    // Auth Endpoint - Does NOT require userId
+    if (url === '/api/auth/google' && method === 'POST') {
+      try {
+        let body = '';
+        for await (const chunk of req) body += chunk;
+        const { token } = JSON.parse(body);
+        
+        const ticket = await client.verifyIdToken({
+          idToken: token, audience: process.env.GOOGLE_CLIENT_ID
+        });
+        const payload = ticket.getPayload();
+        const googleId = payload['sub'];
+        
+        const user = await User.findOneAndUpdate(
+          { googleId },
+          { 
+            googleId,
+            email: payload['email'],
+            name: payload['name'],
+            picture: payload['picture'],
+            lastLogin: new Date()
+          },
+          { upsert: true, new: true }
+        );
+        
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: true, user }));
+      } catch (e) {
+        res.writeHead(401);
+        res.end(JSON.stringify({ error: 'Invalid token' }));
       }
-      if (fs.existsSync(trackerPath)) {
-        const tracker = JSON.parse(fs.readFileSync(trackerPath, 'utf8'));
-        trackedCount = tracker.length;
-        appliedCount = tracker.filter(j => j.status === 'applied').length;
-      }
-      
-      res.writeHead(200, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ dedupeCount, trackedCount, appliedCount }));
-    } catch (e) {
-      res.writeHead(200, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ dedupeCount: 0, trackedCount: 0, appliedCount: 0 }));
+      return;
     }
-    return;
-  }
 
-  if (url.includes('study/history') && method === 'GET') {
+    if (!userId) {
+      res.writeHead(401);
+      res.end(JSON.stringify({ error: 'Unauthorized' }));
+      return;
+    }
+
     try {
-      if (isMongoConnected) {
-        const sessions = await StudySession.find().sort({ startTime: -1 }).limit(1000).lean();
+      if (url === '/api/study/history' && method === 'GET') {
+        const sessions = await StudySession.find({ userId }).sort({ startTime: -1 }).limit(100).lean();
         res.writeHead(200, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify(sessions));
-      } else {
-        res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify([]));
+      } 
+      else if (url === '/api/study/session' && method === 'POST') {
+        let body = '';
+        for await (const chunk of req) body += chunk;
+        const sessionData = JSON.parse(body);
+        const session = new StudySession({ ...sessionData, userId });
+        await session.save();
+        res.writeHead(201, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: true }));
       }
-    } catch (e) {
-      res.writeHead(500);
-      res.end(JSON.stringify({ error: 'Failed to fetch sessions' }));
-    }
-    return;
-  }
-
-  if (url === '/api/jobs' && method === 'GET') {
-    try {
-      if (isMongoConnected) {
-        const records = await JobRecord.find().sort({ createdAt: -1 }).lean();
+      else if (url === '/api/study/tasks' && method === 'GET') {
+        const tasks = await TaskStatus.find({ userId }).lean();
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ completedTasks: tasks }));
+      }
+      else if (url === '/api/jobs' && method === 'GET') {
+        const records = await JobRecord.find({ userId }).sort({ createdAt: -1 }).lean();
         res.writeHead(200, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ records }));
-      } else {
+      }
+      else if (url.includes('summary/all')) {
+        const result = await generateDailySummary(userId);
         res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ records: [] }));
+        res.end(JSON.stringify(result));
+      }
+      else {
+        res.writeHead(404);
+        res.end('Not Found');
       }
     } catch (e) {
       res.writeHead(500);
-      res.end(JSON.stringify({ error: 'Failed to fetch jobs' }));
-    }
-    return;
-  }
-
-  if (url.startsWith('/api/jobs/') && url.endsWith('/status') && method === 'POST') {
-    const hash = url.split('/')[3];
-    let body = '';
-    req.on('data', chunk => { body += chunk; });
-    req.on('end', () => {
-      try {
-        const { status } = JSON.parse(body);
-        const trackerPath = path.join(CACHE_DIR, 'application-tracker.json');
-        const tracker = JSON.parse(fs.readFileSync(trackerPath, 'utf8'));
-        
-        const jobIndex = tracker.findIndex(j => j.job_hash === hash);
-        if (jobIndex !== -1) {
-          tracker[jobIndex].status = status;
-          tracker[jobIndex].updated_at = new Date().toISOString();
-          fs.writeFileSync(trackerPath, JSON.stringify(tracker, null, 2));
-          res.writeHead(200);
-          res.end(JSON.stringify({ success: true }));
-        } else {
-          res.writeHead(404);
-          res.end(JSON.stringify({ error: 'Job not found' }));
-        }
-      } catch (e) {
-        res.writeHead(400);
-        res.end(JSON.stringify({ error: 'Invalid request' }));
-      }
-    });
-    return;
-  }
-
-  if (url === '/api/study/data' && method === 'GET') {
-    try {
-      const data = JSON.parse(fs.readFileSync(path.join(CACHE_DIR, 'study-tracker.json'), 'utf8'));
-      res.writeHead(200, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify(data));
-    } catch (e) {
-      res.writeHead(500);
-      res.end(JSON.stringify({ error: 'Failed to read study data' }));
-    }
-    return;
-  }
-
-  if (url.includes('study/session') && method === 'POST') {
-    let body = '';
-    req.on('data', chunk => { body += chunk; });
-    req.on('end', async () => {
-      try {
-        const session = JSON.parse(body);
-        
-        // SAVE ONLY TO CLOUD
-        if (isMongoConnected) {
-          try {
-            const cloudSession = new StudySession(session);
-            await cloudSession.save();
-            console.log('[DB] Session saved to Cloud');
-            res.writeHead(200);
-            res.end(JSON.stringify({ success: true, cloud: true }));
-          } catch (dbErr) {
-            console.error('[DB] Failed to save session to cloud:', dbErr);
-            res.writeHead(500);
-            res.end(JSON.stringify({ error: 'Database save failed' }));
-          }
-        } else {
-          res.writeHead(503);
-          res.end(JSON.stringify({ error: 'Database not connected' }));
-        }
-      } catch (e) {
-        res.writeHead(400);
-        res.end(JSON.stringify({ error: 'Invalid request' }));
-      }
-    });
-    return;
-  }
-
-  if (url.includes('study/toggle-task') && method === 'POST') {
-    let body = '';
-    req.on('data', chunk => { body += chunk; });
-    req.on('end', async () => {
-      try {
-        const { index } = JSON.parse(body);
-        if (isMongoConnected) {
-          const status = await TaskStatus.findOne({ index });
-          if (status) {
-            status.completed = !status.completed;
-            status.updatedAt = Date.now();
-            await status.save();
-          } else {
-            await TaskStatus.create({ index, completed: true });
-          }
-          res.writeHead(200);
-          res.end(JSON.stringify({ success: true }));
-        } else {
-          res.writeHead(503);
-          res.end(JSON.stringify({ error: 'Database not connected' }));
-        }
-      } catch (e) {
-        res.writeHead(400);
-        res.end(JSON.stringify({ error: 'Invalid request' }));
-      }
-    });
-    return;
-  }
-
-  if (url.includes('study/tasks') && method === 'GET') {
-    if (isMongoConnected) {
-      const completed = await TaskStatus.find({ completed: true }).lean();
-      res.writeHead(200, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ completedTasks: completed.map(t => t.index) }));
-    } else {
-      res.writeHead(200, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ completedTasks: [] }));
+      res.end(JSON.stringify({ error: e.message }));
     }
     return;
   }

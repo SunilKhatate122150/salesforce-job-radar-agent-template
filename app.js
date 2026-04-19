@@ -7,9 +7,68 @@ var trackingStartTime = null;
 var trackingInterval = null;
 var isPaused = false;
 var pausedElapsed = 0;
-let globalStudyData = { topics: {}, sessions: [], completedTasks: [] }; // GLOBAL CACHE FOR LIVE UPDATES
+let globalStudyData = { topics: {}, sessions: [], completedTasks: [] };
 let lastFetchTime = 0;
-const MIN_FETCH_INTERVAL = 60000; // 1 minute throttle
+const MIN_FETCH_INTERVAL = 60000;
+let currentUser = null;
+
+// =============================================
+// AUTHENTICATION (Google OAuth2)
+// =============================================
+window.handleCredentialResponse = async function(response) {
+  const token = response.credential;
+  localStorage.setItem('google_auth_token', token);
+  
+  try {
+    const res = await fetch('/api/auth/google', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ token })
+    });
+    const data = await res.json();
+    if (data.success) {
+      currentUser = data.user;
+      document.getElementById('loginOverlay').style.display = 'none';
+      await syncDashboard();
+    } else {
+      alert('Login failed: ' + data.error);
+    }
+  } catch (e) {
+    console.error('Auth Error:', e);
+  }
+};
+
+function logout() {
+  localStorage.removeItem('google_auth_token');
+  location.reload();
+}
+
+async function checkAuth() {
+  const token = localStorage.getItem('google_auth_token');
+  if (!token) {
+    document.getElementById('loginOverlay').style.display = 'flex';
+    return false;
+  }
+  
+  try {
+    const res = await fetch('/api/auth/google', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ token })
+    });
+    const data = await res.json();
+    if (data.success) {
+      currentUser = data.user;
+      document.getElementById('loginOverlay').style.display = 'none';
+      return true;
+    }
+  } catch (e) {
+    console.warn('Auth check failed, showing login');
+  }
+  
+  document.getElementById('loginOverlay').style.display = 'flex';
+  return false;
+}
 var floatingTimerInterval = null;
 
 // ALL topic IDs mapped - no duplicates
@@ -94,10 +153,17 @@ var topicConfig = {
 // =============================================
 async function fetchWithTimeout(resource, options = {}) {
   const { timeout = 10000 } = options;
+  const token = localStorage.getItem('google_auth_token');
+  
+  const headers = {
+    ...options.headers,
+    'Authorization': token ? `Bearer ${token}` : ''
+  };
+
   const controller = new AbortController();
   const id = setTimeout(() => controller.abort(), timeout);
   try {
-    const response = await fetch(resource, { ...options, signal: controller.signal });
+    const response = await fetch(resource, { ...options, headers, signal: controller.signal });
     clearTimeout(id);
     return response;
   } catch (e) {
@@ -507,6 +573,17 @@ function switchHistoryTab(mode) {
     if (btn.getAttribute('onclick').includes(mode)) btn.classList.add('active');
   });
   renderHistory();
+}
+
+async function syncDashboard() {
+  try {
+    await Promise.all([
+      updateTrackerUI(),
+      fetchDailySummary(),
+      fetchJobsList(),
+      renderHistory()
+    ]);
+  } catch(e) { console.error('Dashboard sync failed', e); }
 }
 
 async function syncHistoryWithFeedback() {
@@ -1353,12 +1430,12 @@ document.addEventListener('visibilitychange', function() {
 
 // Boot
 (async () => {
+  const isAuthed = await checkAuth();
+  if (!isAuthed) return;
+
   const lastTab = localStorage.getItem('last_active_tab') || 'schedule';
-  
-  // Load UI
   showPage(lastTab);
   
-  // Background Pre-load all cloud data
   try {
     await Promise.all([
       fetchJobRadarSummary(),

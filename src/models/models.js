@@ -1,6 +1,17 @@
 import mongoose from 'mongoose';
 
+const userSchema = new mongoose.Schema({
+  googleId: { type: String, required: true, unique: true },
+  email: { type: String, required: true },
+  name: String,
+  picture: String,
+  lastLogin: { type: Date, default: Date.now }
+}, { timestamps: true });
+
+export const User = mongoose.models.User || mongoose.model('User', userSchema);
+
 const studySessionSchema = new mongoose.Schema({
+  userId: { type: String, required: true, index: true }, // Associated Google ID
   topic: { type: String, required: true },
   topicName: { type: String, required: true },
   duration: { type: Number, required: true },
@@ -13,6 +24,7 @@ const studySessionSchema = new mongoose.Schema({
 export const StudySession = mongoose.models.StudySession || mongoose.model('StudySession', studySessionSchema);
 
 const jobRecordSchema = new mongoose.Schema({
+  userId: { type: String, required: true, index: true },
   title: String,
   company: String,
   location: String,
@@ -24,9 +36,13 @@ const jobRecordSchema = new mongoose.Schema({
 export const JobRecord = mongoose.models.JobRecord || mongoose.model('JobRecord', jobRecordSchema);
 
 const taskStatusSchema = new mongoose.Schema({
-  index: { type: Number, required: true, unique: true },
+  userId: { type: String, required: true, index: true },
+  index: { type: Number, required: true }, // Index of the task in the config
   completed: { type: Boolean, default: false },
   updatedAt: { type: Date, default: Date.now }
 }, { timestamps: true });
+
+// Compound index to ensure one status per user per task
+taskStatusSchema.index({ userId: 1, index: 1 }, { unique: true });
 
 export const TaskStatus = mongoose.models.TaskStatus || mongoose.model('TaskStatus', taskStatusSchema);
