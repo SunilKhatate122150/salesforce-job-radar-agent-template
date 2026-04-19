@@ -28,6 +28,7 @@ export default async function handler(req, res) {
     const summaries = generateDailySummary(sessions);
     res.status(200).json(summaries);
   } catch (e) {
-    res.status(401).json({ error: 'Invalid token' });
+    console.error('Auth Error in All:', e.message);
+    res.status(401).json({ error: 'Invalid token', details: e.message });
   }
 }
