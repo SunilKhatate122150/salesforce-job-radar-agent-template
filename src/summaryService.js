@@ -3,7 +3,7 @@ import path from 'path';
 
 const CACHE_DIR = path.join(process.cwd(), '.cache');
 
-export function generateDailySummary() {
+export function generateDailySummary(providedSessions = null) {
   const summaryPath = path.join(CACHE_DIR, 'daily-summaries.json');
   
   // ALWAYS start from scratch to avoid stale data issues
@@ -17,7 +17,11 @@ export function generateDailySummary() {
   if (fs.existsSync(jobPath)) jobData = JSON.parse(fs.readFileSync(jobPath, 'utf8'));
   
   let studyData = { sessions: [], topics: {} };
-  if (fs.existsSync(studyPath)) studyData = JSON.parse(fs.readFileSync(studyPath, 'utf8'));
+  if (providedSessions) {
+    studyData.sessions = providedSessions;
+  } else if (fs.existsSync(studyPath)) {
+    studyData = JSON.parse(fs.readFileSync(studyPath, 'utf8'));
+  }
 
   // Get ALL unique dates from sessions to rebuild everything correctly
   const allDates = [...new Set(studyData.sessions.map(s => s.date))];

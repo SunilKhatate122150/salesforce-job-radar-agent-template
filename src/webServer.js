@@ -3,13 +3,27 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { generateDailySummary } from './summaryService.js';
+import mongoose from 'mongoose';
+import 'dotenv/config';
+import { StudySession } from './models/models.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
 const CACHE_DIR = path.join(process.cwd(), '.cache');
 const WEB_DIR = path.join(__dirname, '..', 'web');
+
+// MongoDB Connection
+let isMongoConnected = false;
+if (process.env.MONGODB_URI) {
+  mongoose.connect(process.env.MONGODB_URI)
+    .then(() => {
+      console.log('[DB] Connected to MongoDB Atlas');
+      isMongoConnected = true;
+    })
+    .catch(err => console.error('[DB] MongoDB Connection Error:', err));
+}
 
 const server = http.createServer(async (req, res) => {
   const parsedUrl = new URL(req.url, `http://${req.headers.host}`);
@@ -128,13 +142,28 @@ const server = http.createServer(async (req, res) => {
   if (url === '/api/study/session' && method === 'POST') {
     let body = '';
     req.on('data', chunk => { body += chunk; });
-    req.on('end', () => {
+    req.on('end', async () => {
       try {
         const session = JSON.parse(body);
-        const trackerPath = path.join(CACHE_DIR, 'study-tracker.json');
-        const data = JSON.parse(fs.readFileSync(trackerPath, 'utf8'));
         
-        // Add session
+        // 1. Save to MongoDB if connected
+        if (isMongoConnected) {
+          try {
+            const cloudSession = new StudySession(session);
+            await cloudSession.save();
+            console.log('[DB] Session saved to Cloud');
+          } catch (dbErr) {
+            console.error('[DB] Failed to save session to cloud:', dbErr);
+          }
+        }
+
+        // 2. Fallback: Save to Local JSON
+        const trackerPath = path.join(CACHE_DIR, 'study-tracker.json');
+        let data = { sessions: [], topics: {}, completedTasks: [] };
+        if (fs.existsSync(trackerPath)) {
+           data = JSON.parse(fs.readFileSync(trackerPath, 'utf8'));
+        }
+        
         data.sessions.push(session);
         if (data.sessions.length > 500) data.sessions = data.sessions.slice(-500);
         
@@ -149,7 +178,7 @@ const server = http.createServer(async (req, res) => {
         
         fs.writeFileSync(trackerPath, JSON.stringify(data, null, 2));
         res.writeHead(200);
-        res.end(JSON.stringify({ success: true }));
+        res.end(JSON.stringify({ success: true, cloud: isMongoConnected }));
       } catch (e) {
         res.writeHead(400);
         res.end(JSON.stringify({ error: 'Invalid request' }));
@@ -198,12 +227,19 @@ const server = http.createServer(async (req, res) => {
 
   if (url === '/api/summary/all' && method === 'GET') {
     try {
-      // Rebuild and return directly to avoid file-read race conditions
-      const summaries = generateDailySummary();
-      console.log('[API] Sending summaries for dates:', Object.keys(summaries));
-      if (summaries['2026-04-19']) {
-          console.log('[API] Today Study breakdown:', Object.keys(summaries['2026-04-19'].study.breakdown));
+      let sessions = null;
+      if (isMongoConnected) {
+        try {
+          // Fetch last 30 days from cloud
+          sessions = await StudySession.find().sort({ startTime: -1 }).limit(1000).lean();
+          console.log(`[DB] Fetched ${sessions.length} sessions from Cloud`);
+        } catch (dbErr) {
+          console.error('[DB] Cloud fetch failed, falling back to local:', dbErr);
+        }
       }
+
+      // Rebuild and return directly to avoid file-read race conditions
+      const summaries = generateDailySummary(sessions);
       res.writeHead(200, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify(summaries));
     } catch (e) {
