@@ -1075,6 +1075,33 @@ async function fetchJobsList() {
   }
 }
 
+async function fetchJobAnalytics() {
+  try {
+    const response = await apiFetch('/api/jobs/analytics');
+    if (!response.ok) return;
+    const data = await response.json();
+    
+    const matchedEl = document.getElementById('matchedSkillsTrends');
+    const missingEl = document.getElementById('missingSkillsTrends');
+    const companiesEl = document.getElementById('topCompaniesTrends');
+    
+    if (matchedEl && data.matched_skills) {
+      matchedEl.innerHTML = data.matched_skills.length ? data.matched_skills.map(s => `<div style="display:flex; justify-content:space-between; margin-bottom:5px; border-bottom:1px solid rgba(255,255,255,0.05); padding-bottom:5px;"><span>${s._id}</span> <span style="font-weight:700;">${s.count}</span></div>`).join('') : '<span style="color:var(--muted);">No data yet.</span>';
+    }
+    
+    if (missingEl && data.missing_skills) {
+      missingEl.innerHTML = data.missing_skills.length ? data.missing_skills.map(s => `<div style="display:flex; justify-content:space-between; margin-bottom:5px; border-bottom:1px solid rgba(255,255,255,0.05); padding-bottom:5px;"><span>${s._id}</span> <span style="font-weight:700;">${s.count}</span></div>`).join('') : '<span style="color:var(--muted);">No data yet.</span>';
+    }
+    
+    if (companiesEl && data.top_companies) {
+      companiesEl.innerHTML = data.top_companies.length ? data.top_companies.map(c => `<div style="display:flex; justify-content:space-between; margin-bottom:5px; border-bottom:1px solid rgba(255,255,255,0.05); padding-bottom:5px;"><span>${c._id}</span> <span style="font-weight:700;">${c.count}</span></div>`).join('') : '<span style="color:var(--muted);">No data yet.</span>';
+    }
+    
+  } catch (e) {
+    console.error('Failed to fetch analytics', e);
+  }
+}
+
 function renderJobsList(jobs) {
   const container = document.getElementById('jobsListContainer');
   if (!container) return;
@@ -1331,6 +1358,51 @@ function switchTrackerTab(tabId) {
 
   // Save preference
   localStorage.setItem('last_tracker_tab', tabId);
+  
+  if (tabId === 'tab_leaderboard') {
+    fetchLeaderboard();
+  }
+}
+
+async function fetchLeaderboard() {
+  const container = document.getElementById('leaderboardList');
+  if (!container) return;
+  container.innerHTML = '<span style="color:var(--muted); font-size:0.8rem;">Loading scholars...</span>';
+  
+  try {
+    const response = await apiFetch('/api/study/leaderboard');
+    if (!response.ok) throw new Error('Unauthorized');
+    const data = await response.json();
+    
+    if (!data.leaderboard || data.leaderboard.length === 0) {
+      container.innerHTML = '<span style="color:var(--muted); font-size:0.8rem;">No scholars found yet. Be the first!</span>';
+      return;
+    }
+    
+    container.innerHTML = data.leaderboard.map((user, index) => {
+      let medal = '';
+      if (index === 0) medal = '🥇';
+      else if (index === 1) medal = '🥈';
+      else if (index === 2) medal = '🥉';
+      else medal = `<span style="opacity:0.5;">#${index + 1}</span>`;
+      
+      const pic = user.picture ? `<img src="${user.picture}" style="width:32px; height:32px; border-radius:50%; border:2px solid var(--blue);">` : `<div style="width:32px; height:32px; border-radius:50%; background:var(--blue); color:white; display:flex; align-items:center; justify-content:center; font-weight:bold;">${user.name ? user.name.charAt(0) : '?'}</div>`;
+      
+      return `
+      <div style="display:flex; justify-content:space-between; align-items:center; background:rgba(255,255,255,0.02); padding:10px 15px; border-radius:10px; border:1px solid rgba(255,255,255,0.05);">
+        <div style="display:flex; align-items:center; gap:15px;">
+          <div style="font-size:1.2rem; min-width:30px; text-align:center;">${medal}</div>
+          ${pic}
+          <div style="font-weight:700; color:var(--text);">${user.name || 'Anonymous'}</div>
+        </div>
+        <div style="font-family:'IBM Plex Mono'; font-weight:700; color:var(--green);">${user.totalHours} hrs</div>
+      </div>
+      `;
+    }).join('');
+  } catch (e) {
+    container.innerHTML = '<span style="color:var(--red); font-size:0.8rem;">Failed to load leaderboard.</span>';
+    console.error(e);
+  }
 }
 
 // Update showPage to include timetable rendering
@@ -1361,6 +1433,7 @@ async function showPage(id) {
   if (id === 'job_radar') {
     fetchJobRadarSummary();
     fetchJobsList();
+    fetchJobAnalytics();
   }
   
   if (id === 'study_tracker') {

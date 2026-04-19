@@ -12326,6 +12326,7 @@ public class LoanStatusActionTest {
     <button class="tracker-tab" onclick="switchTrackerTab('tab_chart')">📊 Time Distribution</button>
     <button class="tracker-tab" onclick="switchTrackerTab('tab_topics')">🗂 Topic Master</button>
     <button class="tracker-tab" onclick="switchTrackerTab('tab_history')">📅 Session Log</button>
+    <button class="tracker-tab" style="color:var(--green);" onclick="switchTrackerTab('tab_leaderboard')">🏆 Global Leaderboard</button>
   </div>
 
   <div id="tab_suggestions" class="tracker-content" style="display:block;">
@@ -12349,6 +12350,18 @@ public class LoanStatusActionTest {
   <div id="tab_history" class="tracker-content" style="display:none;">
     <h3 style="font-size:1rem;font-weight:600;color:var(--text);margin-bottom:1rem;">📅 Recent Session History</h3>
     <div id="sessionHistory" style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:1rem;"></div>
+  </div>
+
+  <div id="tab_leaderboard" class="tracker-content" style="display:none;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.2rem;">
+      <h3 style="font-size:1rem;font-weight:600;color:var(--text);">🏆 Global Top Scholars</h3>
+      <button class="reset-btn" onclick="fetchLeaderboard()" style="color:var(--blue); border-color:var(--blue);">🔄 Refresh Ranks</button>
+    </div>
+    <div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:1.5rem;">
+      <div id="leaderboardList" style="display:flex; flex-direction:column; gap:10px;">
+        <span style="color:var(--muted); font-size:0.8rem;">Loading scholars...</span>
+      </div>
+    </div>
   </div>
 </div><!-- end study_tracker -->
 
@@ -12431,6 +12444,22 @@ public class LoanStatusActionTest {
     <div class="dash-card">
       <div class="dash-value" id="appliedCount">0</div>
       <div class="dash-label">Jobs Applied</div>
+    </div>
+  </div>
+
+  <h3 style="font-size:1rem;font-weight:600;color:var(--text);margin-bottom:1rem;margin-top:2rem;">📈 Salesforce Market Trends</h3>
+  <div style="display:flex; gap:15px; margin-bottom:2rem; overflow-x:auto; padding-bottom:10px;">
+    <div style="flex:1; min-width:300px; background:rgba(61,214,140,0.05); border:1px solid rgba(61,214,140,0.2); border-radius:12px; padding:1.2rem;">
+      <h4 style="font-size:0.85rem; color:var(--green); margin-bottom:10px; font-weight:700;">🔥 In-Demand Skills (You Have)</h4>
+      <div id="matchedSkillsTrends" style="font-size:0.8rem; color:var(--text); line-height:1.6;">Loading analytics...</div>
+    </div>
+    <div style="flex:1; min-width:300px; background:rgba(255,59,48,0.05); border:1px solid rgba(255,59,48,0.2); border-radius:12px; padding:1.2rem;">
+      <h4 style="font-size:0.85rem; color:var(--red); margin-bottom:10px; font-weight:700;">📉 Skill Gaps (To Learn)</h4>
+      <div id="missingSkillsTrends" style="font-size:0.8rem; color:var(--text); line-height:1.6;">Loading analytics...</div>
+    </div>
+    <div style="flex:1; min-width:300px; background:rgba(79,142,247,0.05); border:1px solid rgba(79,142,247,0.2); border-radius:12px; padding:1.2rem;">
+      <h4 style="font-size:0.85rem; color:var(--blue); margin-bottom:10px; font-weight:700;">🏢 Top Hiring Companies</h4>
+      <div id="topCompaniesTrends" style="font-size:0.8rem; color:var(--text); line-height:1.6;">Loading analytics...</div>
     </div>
   </div>
 
