@@ -350,6 +350,20 @@ async function stopTracking() {
   
   await saveSession(session);
   
+  // OPTIMISTIC UI UPDATE: Inject directly into global cache to prevent tracker display lag
+  if (typeof globalStudyData !== 'undefined' && globalStudyData) {
+    globalStudyData.sessions.push(session);
+    if (!globalStudyData.topics[session.topic]) {
+      globalStudyData.topics[session.topic] = { totalSeconds: 0, sessions: 0, lastStudied: null };
+    }
+    globalStudyData.topics[session.topic].totalSeconds += session.duration;
+    globalStudyData.topics[session.topic].sessions += 1;
+    globalStudyData.topics[session.topic].lastStudied = session.date;
+  }
+  
+  // Refresh the history timeline in the background
+  setTimeout(() => { if (typeof renderHistory === 'function') renderHistory(); }, 500);
+  
   currentTrackedPage = null;
   trackingStartTime = null;
   isPaused = false;
