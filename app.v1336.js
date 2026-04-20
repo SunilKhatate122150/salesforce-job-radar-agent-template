@@ -1,8 +1,8 @@
 // =============================================
 // STUDY TIME TRACKER - with Pause/Play
-// Version: 2026-04-20-T1639 (Surgical Profile Shift)
+// Version: 2026-04-20-T1656 (Auth Shield Mastery)
 // =============================================
-console.log('🚀 Dashboard Version: 2026-04-20-T1639 (v1335)');
+console.log('🚀 Dashboard Version: 2026-04-20-T1656 (v1336)');
 var TRACKER_KEY = 'sf_prep_study_tracker_v3';
 var currentTrackedPage = null;
 var trackingStartTime = null;
@@ -18,7 +18,7 @@ let GSI_TOKEN = localStorage.getItem('google_auth_token') || null;
 // =============================================
 // AUTHENTICATION (Google OAuth2)
 // =============================================
-window.handleCredentialResponse = async function(response) {
+window.processGAuth = async function(response) {
   const token = response.credential;
   localStorage.setItem('google_auth_token', token);
   GSI_TOKEN = token;
@@ -46,6 +46,11 @@ window.handleCredentialResponse = async function(response) {
     console.error('Auth Error:', e);
   }
 };
+
+// Check for pending auth from proxy
+if (window._pendingGAuth) {
+  window.processGAuth(window._pendingGAuth);
+}
 
 function renderUserProfile(user) {
   if (!user) return;

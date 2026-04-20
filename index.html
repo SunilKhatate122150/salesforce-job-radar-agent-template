@@ -9,6 +9,12 @@
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=Plus+Jakarta+Sans:wght@400;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css">
   <script src="https://accounts.google.com/gsi/client" async defer></script>
+  <script>
+    window.handleCredentialResponse = function(response) {
+      window._pendingGAuth = response;
+      if (typeof window.processGAuth === 'function') window.processGAuth(response);
+    };
+  </script>
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 </head>
 <body>
@@ -12817,6 +12823,6 @@ public class LoanStatusActionTest {
 
 </div><!-- end #main -->
 
-<script src="app.v1335.js"></script>
+<script src="app.v1336.js"></script>
 </body>
 </html>
