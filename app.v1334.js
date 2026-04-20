@@ -1,8 +1,8 @@
 // =============================================
 // STUDY TIME TRACKER - with Pause/Play
-// Version: 2026-04-20-T1618 (Auth Shield Mastery)
+// Version: 2026-04-20-T1635 (Stability Restore)
 // =============================================
-console.log('🚀 Dashboard Version: 2026-04-20-T1618 (v1332)');
+console.log('🚀 Dashboard Version: 2026-04-20-T1635 (v1334)');
 var TRACKER_KEY = 'sf_prep_study_tracker_v3';
 var currentTrackedPage = null;
 var trackingStartTime = null;
