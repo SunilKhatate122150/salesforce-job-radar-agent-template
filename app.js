@@ -837,9 +837,9 @@ async function fetchDailySummary() {
       
       const study = summary.study || {};
       const jobs = summary.jobs || {};
-      const totalSec = study.totalSeconds || 0;
+      const totalSec = (study && typeof study.totalSeconds !== 'undefined') ? study.totalSeconds : 0;
       const studyHrs = (totalSec / 3600).toFixed(1);
-      const topTopic = study.topTopic || 'None';
+      const topTopic = (study && study.topTopic) ? study.topTopic : 'None';
       const jobsCount = jobs.newCount || 0;
       const topMatches = jobs.topMatches || [];
       const topJob = topMatches.length > 0 && topMatches[0].title ? topMatches[0].title : 'Searching...';
@@ -968,11 +968,14 @@ async function renderHistory() {
       if (h.study && !h.study.topicList) {
         console.log('[Sync] Repairing topicList for:', date);
         const breakdown = h.study.breakdown || h.study.topicBreakdown || {};
-        h.study.topicList = Object.keys(breakdown).map(k => ({
-          id: k,
-          name: breakdown[k].name || k,
-          totalSeconds: breakdown[k].totalSeconds || 0
-        }));
+        h.study.topicList = Object.keys(breakdown).map(k => {
+          const item = breakdown[k] || {};
+          return {
+            id: k,
+            name: item.name || k,
+            totalSeconds: item.totalSeconds || 0
+          };
+        });
       }
     });
 
@@ -1036,7 +1039,7 @@ function renderTimelineView(container, dates, histories, todayStr, yestStr) {
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
           <div>
             <div style="font-size:0.75rem; color:var(--muted); text-transform:uppercase; letter-spacing:1px; margin-bottom:4px;">${isToday ? 'Today' : (isYesterday ? 'Yesterday' : date)}</div>
-            <div style="font-size:1.3rem; font-weight:700; color:var(--text); font-family:'IBM Plex Mono';">${formatTime(h.study.totalSeconds)}</div>
+            <div style="font-size:1.3rem; font-weight:700; color:var(--text); font-family:'IBM Plex Mono';">${formatTime((h.study && h.study.totalSeconds) ? h.study.totalSeconds : 0)}</div>
           </div>
           <button onclick="showHistoryModal('${date}')" style="background:${accent}22; color:${accent}; border:1px solid ${accent}44; padding:8px 15px; border-radius:8px; font-size:0.75rem; font-weight:700; cursor:pointer; transition:0.2s;">🔍 View Deep Info</button>
         </div>
