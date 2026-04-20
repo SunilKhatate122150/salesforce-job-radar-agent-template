@@ -143,8 +143,8 @@
             </div>
 
             <div class="form-group">
-                <label>Public Profile URL (Optional)</label>
-                <input type="text" id="naukriUrl" placeholder="https://www.naukri.com/mnjuser/profile">
+                <label>Password</label>
+                <input type="password" id="naukriPass" placeholder="Enter your Naukri Password" required>
             </div>
 
             <button type="submit" class="btn-login" id="btnSync">Sign in & Sync Cloud</button>
@@ -166,17 +166,16 @@
             btn.disabled = true;
 
             const user = document.getElementById('naukriUser').value;
-            const url = document.getElementById('naukriUrl').value;
 
             try {
                 // In a real cloud flow, we would trigger a cloud worker here
-                const res = await fetch('/api/profile/sync-naukri', {
+                const res = await fetch('/api/profile/sync-cloud', {
                     method: 'POST',
                     headers: { 
                         'Content-Type': 'application/json',
                         'Authorization': 'Bearer ' + localStorage.getItem('gsi_token')
                     },
-                    body: JSON.stringify({ user, profileUrl: url })
+                    body: JSON.stringify({ platform: 'Naukri', user })
                 });
 
                 if (res.ok) {

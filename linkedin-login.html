@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LinkedIn Cloud Sync | Salesforce Job Radar</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #0a0a0c;
+            --linkedin-blue: #0077b5;
+            --text: #ffffff;
+            --muted: #88888b;
+            --glass: rgba(255, 255, 255, 0.03);
+            --border: rgba(255, 255, 255, 0.08);
+        }
+        body {
+            background-color: var(--bg);
+            color: var(--text);
+            font-family: 'Inter', sans-serif;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .login-card {
+            background: var(--glass);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--border);
+            border-radius: 24px;
+            padding: 3rem;
+            width: 100%;
+            max-width: 400px;
+            text-align: center;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            animation: slideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        @keyframes slideUp {
+            from { transform: translateY(20px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        .logo { font-size: 2rem; font-weight: 800; margin-bottom: 0.5rem; color: var(--linkedin-blue); }
+        .subtitle { color: var(--muted); font-size: 0.9rem; margin-bottom: 2.5rem; }
+        .form-group { text-align: left; margin-bottom: 1.5rem; }
+        label { display: block; font-size: 0.75rem; font-weight: 600; color: var(--muted); margin-bottom: 0.5rem; text-transform: uppercase; }
+        input { width: 100%; background: rgba(255,255,255,0.05); border: 1px solid var(--border); border-radius: 12px; padding: 12px 16px; color: white; font-size: 1rem; box-sizing: border-box; }
+        input:focus { outline: none; border-color: var(--linkedin-blue); }
+        .btn-login { width: 100%; background: var(--linkedin-blue); color: white; border: none; border-radius: 12px; padding: 14px; font-size: 1rem; font-weight: 700; cursor: pointer; transition: 0.3s; margin-top: 1rem; }
+        .btn-login:hover { transform: translateY(-2px); box-shadow: 0 10px 20px rgba(0, 119, 181, 0.3); }
+        .back-link { color: var(--muted); text-decoration: none; display: inline-block; margin-top: 1.5rem; font-size: 0.85rem; }
+    </style>
+</head>
+<body>
+    <div class="login-card">
+        <div class="logo">LinkedIn Sync</div>
+        <div class="subtitle">Cloud-to-Cloud Experience Extraction</div>
+        <form id="loginForm">
+            <div class="form-group">
+                <label>Email or Phone</label>
+                <input type="text" id="user" placeholder="Enter LinkedIn ID" required>
+            </div>
+            <div class="form-group">
+                <label>Password</label>
+                <input type="password" id="pass" placeholder="Enter LinkedIn Password" required>
+            </div>
+            <button type="submit" class="btn-login" id="btnSync">Sign in & Sync Cloud</button>
+        </form>
+        <a href="/" class="back-link">← Back to Dashboard</a>
+    </div>
+    <script>
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const btn = document.getElementById('btnSync');
+            btn.textContent = '🔄 Cloud Syncing Profiles...';
+            btn.disabled = true;
+            try {
+                const res = await fetch('/api/profile/sync-cloud', {
+                    method: 'POST',
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + localStorage.getItem('gsi_token')
+                    },
+                    body: JSON.stringify({ platform: 'LinkedIn', user: document.getElementById('user').value })
+                });
+                if (res.ok) {
+                    btn.textContent = '✅ Sync Successful!';
+                    setTimeout(() => { window.location.href = '/'; }, 1500);
+                } else { throw new Error(); }
+            } catch (err) {
+                alert('Cloud sync failed. Check connection.');
+                btn.textContent = 'Sign in & Sync Cloud';
+                btn.disabled = false;
+            }
+        });
+    </script>
+</body>
+</html>

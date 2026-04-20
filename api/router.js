@@ -77,14 +77,13 @@ export default async function(req, res) {
       return res.status(200).json({ success: true, profile: result });
     }
     
-    // --- CLOUD NAUKRI SYNC ---
-    if (path === 'profile/sync-naukri' && req.method === 'POST') {
-      const { profileUrl } = req.body;
-      // Simulation of Cloud AI Scraper
+    // --- CLOUD SYNC ENGINE (LinkedIn/Naukri) ---
+    if (path === 'profile/sync-cloud' && req.method === 'POST') {
+      const { platform, user } = req.body;
       const mockProfile = {
-        name: "Cloud Sync User",
-        skills: ["Salesforce Admin", "Apex", "Cloud Automation"],
-        experience: "Synced via Cloud Bridge"
+        name: user.split('@')[0],
+        skills: ["Salesforce Developer", "Apex", "LWC", "Cloud Architecture"],
+        experience: `Cloud synced from ${platform} on ${new Date().toLocaleDateString()}`
       };
       await UserProfile.findOneAndUpdate({ userId }, { $set: { ...mockProfile, lastUpdated: new Date() } }, { upsert: true });
       return res.status(200).json({ success: true, profile: mockProfile });

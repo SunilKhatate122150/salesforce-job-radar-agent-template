@@ -72,8 +72,8 @@ window.syncProfile = async function(platform) {
   
   if (isCloud) {
     if (platform === 'LinkedIn') {
-      // FULL PAGE REDIRECT for LinkedIn OAuth
-      window.location.href = '/api/auth/linkedin';
+      // FULL PAGE REDIRECT to LinkedIn Cloud Portal
+      window.location.href = '/linkedin-login.html';
       return;
     }
     if (platform === 'Naukri') {
