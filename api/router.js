@@ -128,6 +128,11 @@ export default async function(req, res) {
       return res.status(200).json({ status: 'active', lastScan: new Date() });
     }
 
+    // 6. AUTOMATION (Local only info)
+    if (path === 'profile/sync' || path === 'jobs/scan' || path === 'jobs/apply') {
+      return res.status(200).json({ success: false, error: 'This action must be performed via the local agent. Please ensure your local server is running at http://localhost:3000' });
+    }
+
     return res.status(404).json({ error: `Path not found: ${path}` });
   } catch (err) {
     console.error('Master API Error:', err);

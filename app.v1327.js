@@ -79,9 +79,14 @@ window.syncProfile = async function(platform) {
 
   try {
     // Step 1: Trigger local sync (scrape + AI)
-    const syncRes = await apiFetch('/api/profile/sync', {
+    // NOTE: This MUST hit the local server because it spawns Puppeteer
+    const localBase = 'http://localhost:3000';
+    const syncRes = await fetch(localBase + '/api/profile/sync', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + GSI_TOKEN
+      },
       body: JSON.stringify({ platform })
     });
     const syncData = await syncRes.json();
@@ -1475,7 +1480,11 @@ async function triggerJobScan() {
   status.style.color = 'var(--blue)';
 
   try {
-    const res = await apiFetch('/api/jobs/scan', { method: 'POST' });
+    const localBase = 'http://localhost:3000';
+    const res = await fetch(localBase + '/api/jobs/scan', { 
+      method: 'POST',
+      headers: { 'Authorization': 'Bearer ' + GSI_TOKEN }
+    });
     const data = await res.json();
     if (data.success) {
       status.textContent = '⏳ Agent is running (Check console)';
@@ -1501,9 +1510,13 @@ async function smartApply(hash) {
   if (!confirm('This will launch a local browser to attempt automated "Easy Apply" using your active Chrome session. Continue?')) return;
   
   try {
-    const res = await apiFetch('/api/jobs/apply', {
+    const localBase = 'http://localhost:3000';
+    const res = await fetch(localBase + '/api/jobs/apply', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + GSI_TOKEN
+      },
       body: JSON.stringify({ hash })
     });
     const data = await res.json();
