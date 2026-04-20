@@ -12,40 +12,52 @@ async function connectDB() {
   return db;
 }
 
-export default async function(req, res) {
-  const { slug } = req.query; // slug is an array of path segments
-  const path = slug.join('/');
-  
+async function getUserId(req) {
   const authHeader = req.headers.authorization;
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return res.status(401).json({ error: 'Unauthorized' });
-  }
-  
+  if (!authHeader || !authHeader.startsWith('Bearer ')) return null;
   const token = authHeader.split(' ')[1];
-  let userId;
   try {
     const ticket = await client.verifyIdToken({
       idToken: token,
       audience: process.env.GOOGLE_CLIENT_ID
     });
-    userId = ticket.getPayload()['sub'];
+    return ticket.getPayload()['sub'];
   } catch (e) {
-    return res.status(401).json({ error: 'Invalid token' });
+    return null;
   }
+}
 
+export default async function(req, res) {
+  const { slug } = req.query;
+  const path = slug.join('/');
+  
   await connectDB();
 
   try {
-    // --- PROFILE ENDPOINTS ---
+    // 1. AUTH ENDPOINT (No Bearer Token yet)
+    if (path === 'auth/google' && req.method === 'POST') {
+      const { token } = req.body;
+      const ticket = await client.verifyIdToken({
+        idToken: token,
+        audience: process.env.GOOGLE_CLIENT_ID
+      });
+      const payload = ticket.getPayload();
+      return res.status(200).json({ success: true, user: { name: payload.name, email: payload.email, picture: payload.picture } });
+    }
+
+    // --- REQUIRE AUTH FOR ALL OTHER ROUTES ---
+    const userId = await getUserId(req);
+    if (!userId) return res.status(401).json({ error: 'Unauthorized' });
+
+    // 2. PROFILE ENDPOINTS
     if (path === 'profile/data') {
       const profile = await UserProfile.findOne({ userId }).lean();
       return res.status(200).json({ exists: !!profile, profile });
     }
     if (path === 'profile/save' && req.method === 'POST') {
-      const payload = req.body;
       const result = await UserProfile.findOneAndUpdate(
         { userId },
-        { $set: { ...payload, lastUpdated: new Date() } },
+        { $set: { ...req.body, lastUpdated: new Date() } },
         { upsert: true, new: true }
       );
       return res.status(200).json({ success: true, profile: result });
@@ -62,14 +74,13 @@ export default async function(req, res) {
       });
       const sortSkills = (obj) => Object.entries(obj).sort((a,b) => b[1] - a[1]).slice(0, 10).map(([k,v]) => ({ _id: k, count: v }));
       return res.status(200).json({
-        exists: !!profile,
-        profile,
+        exists: !!profile, profile,
         matched_skills: sortSkills(topMatchedSkills),
         missing_skills: sortSkills(topMissingSkills)
       });
     }
 
-    // --- STUDY ENDPOINTS ---
+    // 3. STUDY ENDPOINTS
     if (path === 'study/history') {
       const sessions = await StudySession.find({ userId }).sort({ startTime: -1 }).limit(100).lean();
       return res.status(200).json(sessions);
@@ -90,11 +101,10 @@ export default async function(req, res) {
       return res.status(200).json({ success: true });
     }
 
-    // --- SUMMARY ENDPOINTS ---
+    // 4. SUMMARY ENDPOINTS
     if (path === 'summary/daily') {
       const sessions = await StudySession.find({ userId }).sort({ startTime: -1 }).limit(500).lean();
       const todayStr = new Date().toISOString().split('T')[0];
-      // Simple aggregation logic (placeholder for actual generateDailySummary)
       const todaySessions = sessions.filter(s => s.date === todayStr);
       const totalSec = todaySessions.reduce((acc, s) => acc + (s.duration || 0), 0);
       return res.status(200).json({
@@ -104,7 +114,7 @@ export default async function(req, res) {
       });
     }
 
-    // --- JOBS ENDPOINTS ---
+    // 5. JOBS ENDPOINT
     if (path === 'jobs') {
       const jobs = await JobRecord.find({ userId }).sort({ createdAt: -1 }).limit(100).lean();
       return res.status(200).json({ records: jobs });
