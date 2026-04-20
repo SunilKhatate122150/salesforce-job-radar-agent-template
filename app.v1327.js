@@ -90,14 +90,25 @@ window.syncProfile = async function(platform) {
   
   if (platform === 'LinkedIn' && btnL) { btnL.innerHTML = '<span style="animation:spin 1s linear infinite;display:inline-block;">⟳</span> Syncing...'; btnL.style.opacity = '0.7'; }
   if (platform === 'Naukri' && btnN) { btnN.innerHTML = '<span style="animation:spin 1s linear infinite;display:inline-block;">⟳</span> Syncing...'; btnN.style.opacity = '0.7'; }
+
+  try {
+    const localBase = 'http://localhost:3000';
+    const syncRes = await fetch(localBase + '/api/profile/sync', {
+      method: 'POST',
+      headers: { 
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + GSI_TOKEN
+      },
+      body: JSON.stringify({ platform })
+    });
+    const syncData = await syncRes.json();
     
     if (syncData.success) {
-      // Step 2: Read cached profile and push to cloud
       let profilePayload = null;
       try {
         const cacheRes = await fetch('/.cache/profile-sync.json?cb=' + Date.now());
         if (cacheRes.ok) profilePayload = await cacheRes.json();
-      } catch(e) { /* cache may not exist */ }
+      } catch(e) {}
 
       if (profilePayload) {
         await apiFetch('/api/profile/save', {
@@ -107,22 +118,18 @@ window.syncProfile = async function(platform) {
         });
       }
 
-      // Show success
       if (statusEl) {
         statusEl.style.display = 'block';
         statusEl.innerHTML = '✓ ' + platform + ' profile synced & saved to cloud';
         setTimeout(function() { statusEl.style.display = 'none'; }, 8000);
       }
-      if (matchBtn) matchBtn.style.display = 'block';
-
-      // Reload profile data and render
       await loadUserProfile();
       showPage('profile_match');
     } else {
       alert('Sync Failed: ' + (syncData.error || 'Unknown error'));
     }
   } catch (e) {
-    alert('Error syncing profile. Make sure local server (npm run web) is running and Ollama is active.');
+    console.error('Local sync failed or timed out', e);
   }
   
   // Restore button states
