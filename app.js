@@ -1431,7 +1431,7 @@ async function showPage(id) {
   }
   
   if (id === 'job_radar') {
-    fetchJobRadarSummary();
+    updateJobRadarSummary();
     fetchJobsList();
     fetchJobAnalytics();
   }
