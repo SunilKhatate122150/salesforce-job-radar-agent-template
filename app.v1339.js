@@ -52,6 +52,35 @@ if (window._pendingGAuth) {
   window.processGAuth(window._pendingGAuth);
 }
 
+function generateInitialsAvatar(name) {
+  const canvas = document.createElement('canvas');
+  canvas.width = 120;
+  canvas.height = 120;
+  const ctx = canvas.getContext('2d');
+  
+  // Gradient background
+  const gradient = ctx.createLinearGradient(0, 0, 120, 120);
+  gradient.addColorStop(0, '#3b82f6');
+  gradient.addColorStop(1, '#8b5cf6');
+  ctx.fillStyle = gradient;
+  ctx.beginPath();
+  ctx.arc(60, 60, 60, 0, Math.PI * 2);
+  ctx.fill();
+  
+  // Initials text
+  const parts = name.trim().split(/\s+/);
+  const initials = parts.length >= 2 
+    ? (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
+    : parts[0].substring(0, 2).toUpperCase();
+  ctx.fillStyle = '#ffffff';
+  ctx.font = 'bold 48px "Plus Jakarta Sans", sans-serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(initials, 60, 62);
+  
+  return canvas.toDataURL('image/png');
+}
+
 function renderUserProfile(user) {
   if (!user) return;
   
@@ -65,14 +94,23 @@ function renderUserProfile(user) {
   // High-Res Image Logic: Ensure we use the largest available Google photo
   let profilePic = user.picture;
   if (profilePic && profilePic.includes('googleusercontent.com')) {
-    profilePic = profilePic.replace(/=s\d+-c/, '=s120-c'); // Force 120px high-res crop
+    profilePic = profilePic.replace(/=s\d+-c/, '=s120-c');
   }
 
   if (container) container.style.display = 'block';
   if (nameLabel) nameLabel.textContent = user.name.split(' ')[0]; 
   
   if (avatarImg) {
-    avatarImg.src = profilePic || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name)}&background=3b82f6&color=fff&bold=true`;
+    if (profilePic) {
+      avatarImg.src = profilePic;
+      // If Google photo fails to load, fall back to local initials
+      avatarImg.onerror = function() {
+        this.onerror = null;
+        this.src = generateInitialsAvatar(user.name);
+      };
+    } else {
+      avatarImg.src = generateInitialsAvatar(user.name);
+    }
     avatarImg.style.boxShadow = '0 0 10px rgba(59,130,246,0.5)';
   }
   
