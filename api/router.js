@@ -97,13 +97,23 @@ export default async function(req, res) {
     // --- CLOUD SYNC ENGINE (LinkedIn/Naukri) ---
     if (path === 'profile/sync-cloud' && req.method === 'POST') {
       const { platform, user } = req.body;
-      const mockProfile = {
-        name: user.split('@')[0],
-        skills: ["Salesforce Developer", "Apex", "LWC", "Cloud Architecture"],
-        experience: `Cloud synced from ${platform} on ${new Date().toLocaleDateString()}`
+      const isLI = platform.includes('LinkedIn');
+      const isNK = platform.includes('Naukri');
+      
+      const updateData = {
+        lastUpdated: new Date()
       };
-      await UserProfile.findOneAndUpdate({ userId }, { $set: { ...mockProfile, lastUpdated: new Date() } }, { upsert: true });
-      return res.status(200).json({ success: true, profile: mockProfile });
+      
+      if (isLI) updateData['platforms.linkedin'] = { synced: true, lastSync: new Date() };
+      if (isNK) updateData['platforms.naukri'] = { synced: true, lastSync: new Date() };
+
+      const result = await UserProfile.findOneAndUpdate(
+        { userId }, 
+        { $set: updateData }, 
+        { upsert: true, new: true }
+      );
+      
+      return res.status(200).json({ success: true, profile: result });
     }
 
     if (path === 'profile/match') {
