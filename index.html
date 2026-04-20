@@ -146,6 +146,13 @@
     <div class="nav-item" onclick="showPage('fde_dc_adv')">🔬 Data Cloud Advanced <span class="count">7 Q</span></div>
     <div class="nav-item" onclick="showPage('fde_cheat')">🏁 Cheat Sheet <span class="count">7 Q</span></div>
   </div>
+
+  <div style="margin: 20px 15px; padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.05);">
+    <button onclick="triggerJobScan()" id="btnScanJobs" style="width:100%; display:flex; align-items:center; justify-content:center; gap:10px; padding:12px; background:linear-gradient(135deg,rgba(59,130,246,0.1),rgba(139,92,246,0.1)); border:1px solid rgba(59,130,246,0.3); border-radius:12px; color:var(--blue); font-weight:700; font-size:0.75rem; cursor:pointer; transition:all 0.2s;" onmouseenter="this.style.background='linear-gradient(135deg,rgba(59,130,246,0.15),rgba(139,92,246,0.15))';this.style.transform='scale(1.02)'" onmouseleave="this.style.background='linear-gradient(135deg,rgba(59,130,246,0.1),rgba(139,92,246,0.1))';this.style.transform='scale(1)'">
+      <span style="font-size:1.1rem;">📡</span> INITIATE GLOBAL JOB SCAN
+    </button>
+    <div id="scanStatusText" style="font-size:0.6rem; color:var(--muted); text-align:center; margin-top:8px;">Ready to scan</div>
+  </div>
 </nav>
 
 <!-- FLOATING TIMER -->
@@ -209,15 +216,6 @@
   <div class="page-title">Search Results</div>
   <div class="page-sub">Click any result to see the full answer</div>
   <div id="searchResults"></div>
-</div>
-
-<!-- PROFILE MATCHING PAGE -->
-<div id="profile_match" class="page">
-  <div class="page-title">Profile Study Matching</div>
-  <div class="page-sub">Sync your LinkedIn or Naukri profile to generate a tailored AI study plan</div>
-  <div id="profileMatchContent" style="margin-top: 20px; line-height: 1.6; font-size: 0.95rem; background: var(--card-bg); padding: 20px; border-radius: 12px; border: 1px solid var(--border);">
-    <p style="color: var(--muted); text-align: center;">Click "Sync LinkedIn" or "Sync Naukri" in the sidebar to load your profile matches.</p>
-  </div>
 </div>
 
 <!-- SCHEDULE PAGE -->
@@ -12598,6 +12596,151 @@ public class LoanStatusActionTest {
       </div>
     </div>
   </div>
+</div>
+
+<!-- FDE PREP: AGENTFORCE CORE -->
+<div id="fde_ag_concept" class="page">
+  <div class="page-title">FDE Prep: Agentforce Core Concepts</div>
+  <div class="page-sub">Master the foundations of Salesforce AI Agents, Atlas Reasoning, and the Trust Layer</div>
+  <div class="qa-block">
+    <div class="qa-question" onclick="toggleQA(this)">
+      <span class="qa-q-text">What is Agentforce and how does it differ from Einstein Bots?</span>
+      <span class="qa-q-label lbl-fde">CORE</span>
+      <span class="qa-chevron">▼</span>
+    </div>
+    <div class="qa-answer">
+      <p class="ans-p">Agentforce is an evolution from intent-based bots to **autonomous agents**. Unlike bots that follow strict "If-Then" trees, Agentforce uses the **Atlas Reasoning Engine** to determine which "Action" to take based on the user's goal.</p>
+      <ul>
+        <li><b>Intent vs. Goal:</b> Bots respond to pre-defined intents; Agents pursue high-level goals.</li>
+        <li><b>Actions:</b> Agents can invoke Apex, Flows, and Prompt Templates autonomously.</li>
+        <li><b>Data:</b> Agents use real-time Data Cloud data for grounding without training the model.</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- FDE PREP: DATA CLOUD -->
+<div id="fde_dc_concept" class="page">
+  <div class="page-title">FDE Prep: Data Cloud Foundation</div>
+  <div class="page-sub">Understanding Ingestion, Modeling, Identity Resolution, and Calculated Insights</div>
+  <div class="qa-block">
+    <div class="qa-question" onclick="toggleQA(this)">
+      <span class="qa-q-text">Explain the Data Cloud "Ingest to Action" flow.</span>
+      <span class="qa-q-label lbl-fde">DATA CLOUD</span>
+      <span class="qa-chevron">▼</span>
+    </div>
+    <div class="qa-answer">
+      <ol>
+        <li><b>Ingest:</b> Connect data sources (Salesforce, S3, Snowflake, Web/Mobile).</li>
+        <li><b>Map:</b> Map Data Source Objects (DSO) to Data Model Objects (DMO) using the CIM (Cloud Information Model).</li>
+        <li><b>Unify:</b> Use Identity Resolution rules to create a "Unified Individual".</li>
+        <li><b>Insight:</b> Create Calculated Insights (SQL-based) or Streaming Insights.</li>
+        <li><b>Act:</b> Trigger Flows, send to Marketing Cloud, or ground Agentforce prompts.</li>
+      </ol>
+    </div>
+  </div>
+</div>
+
+<!-- FDE PREP: ATLAS & TRUST -->
+<div id="fde_atlas" class="page">
+  <div class="page-title">Atlas Reasoning & Trust Layer</div>
+  <div class="page-sub">The brain and the safety shield of Agentforce</div>
+  <div class="qa-block">
+    <div class="qa-question" onclick="toggleQA(this)">
+      <span class="qa-q-text">How does the Atlas Reasoning Engine work?</span>
+      <span class="qa-q-label lbl-fde">REASONING</span>
+      <span class="qa-chevron">▼</span>
+    </div>
+    <div class="qa-answer">
+      <p class="ans-p">Atlas works in a loop: **Query Analysis -> Plan Building -> Execution -> Result Evaluation**. It retrieves relevant metadata (Actions, Flows) and data (Data Cloud) to build a prompt, then interprets the LLM response to see if the goal is met or if more actions are needed.</p>
+    </div>
+  </div>
+</div>
+
+<!-- FDE PREP: TRUST LAYER -->
+<div id="fde_trust" class="page">
+  <div class="page-title">FDE Prep: Einstein Trust Layer</div>
+  <div class="page-sub">Security, Privacy, and Compliance in the Age of Generative AI</div>
+  <div class="qa-block">
+    <div class="qa-question" onclick="toggleQA(this)">
+      <span class="qa-q-text">What are the key features of the Einstein Trust Layer?</span>
+      <span class="qa-q-label lbl-fde">TRUST</span>
+      <span class="qa-chevron">▼</span>
+    </div>
+    <div class="qa-answer">
+      <p class="ans-p">The Trust Layer sits between the Agent and the LLM. It ensures:</p>
+      <ul>
+        <li><b>Dynamic Grounding:</b> Pulls real data from Salesforce/Data Cloud to give the LLM context.</li>
+        <li><b>Data Masking:</b> Replaces PII (email, phone, SSN) with placeholders before sending to the LLM.</li>
+        <li><b>Zero Retention:</b> LLM providers (OpenAI, etc.) agree not to store or use data for training.</li>
+        <li><b>Toxicity Detection:</b> Checks both input and output for offensive content.</li>
+        <li><b>Audit Trail:</b> Logs every interaction for compliance.</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- FDE PREP: DATA CLOUD ADVANCED -->
+<div id="fde_dc_adv" class="page">
+  <div class="page-title">FDE Prep: Advanced Data Cloud</div>
+  <div class="page-sub">Transformations, Insights, and Data Spaces</div>
+  <div class="qa-block">
+    <div class="qa-question" onclick="toggleQA(this)">
+      <span class="qa-q-text">What is the difference between Calculated Insights and Streaming Insights?</span>
+      <span class="qa-q-label lbl-fde">DATA CLOUD</span>
+      <span class="qa-chevron">▼</span>
+    </div>
+    <div class="qa-answer">
+      <table class="comparison-table">
+        <tr><th>Feature</th><th>Calculated Insights (CI)</th><th>Streaming Insights (SI)</th></tr>
+        <tr><td>Latency</td><td>Batch (every few hours)</td><td>Real-time (seconds/minutes)</td></tr>
+        <tr><td>Language</td><td>Standard SQL</td><td>Standard SQL</td></tr>
+        <tr><td>Use Case</td><td>LTV, CSAT, Total Spend</td><td>Next Best Action, Abandoned Cart</td></tr>
+        <tr><td>Windowing</td><td>N/A</td><td>Requires Windowing (e.g. 5 min)</td></tr>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- FDE PREP: CHEAT SHEET -->
+<div id="fde_cheat" class="page">
+  <div class="page-title">FDE Prep: Final Cheat Sheet</div>
+  <div class="page-sub">Key terms, limits, and "must-knows" for the exam</div>
+  <div class="qa-block">
+    <div class="qa-question" onclick="toggleQA(this)">
+      <span class="qa-q-text">Quick Fire: Must-Know FDE Limits & Terms</span>
+      <span class="qa-q-label lbl-fde-cheat">CHEAT SHEET</span>
+      <span class="qa-chevron">▼</span>
+    </div>
+    <div class="qa-answer">
+      <div class="fde-hero-box">
+        <h3>Key Terms to Remember:</h3>
+        <ul>
+          <li><b>CIM:</b> Cloud Information Model (The shared language of Data Cloud).</li>
+          <li><b>DSO -> DLO -> DMO:</b> Data Source -> Data Lake -> Data Model.</li>
+          <li><b>Identity Resolution:</b> Reconciliation Rules & Match Rules.</li>
+          <li><b>Prompt Template Types:</b> Sales, Field Service, Flex.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- DYNAMIC TOPIC VIEWER -->
+<div id="topic_viewer" class="page">
+  <div class="page-title" id="topicViewerTitle">Study Topic</div>
+  <div class="page-sub" id="topicViewerSub">AI-Powered deep dive into this technical subject</div>
+  
+  <div id="topicViewerContent" style="margin-top: 24px;">
+    <div style="background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.06); border-radius:16px; padding:40px; text-align:center;">
+      <div id="topicViewerIcon" style="font-size:3rem; margin-bottom:16px; opacity:0.3;">✨</div>
+      <div style="font-weight:600; font-size:1.1rem; color:var(--text); margin-bottom:8px;">Ready to generate Interview Questions?</div>
+      <p style="font-size:0.8rem; color:var(--muted); max-width:400px; margin:0 auto 24px;">Gemma 4 will analyze this topic and generate 5 high-impact interview questions with detailed answers tailored to your profile.</p>
+      <button id="btnGenerateTopicQA" style="padding:12px 28px; background:linear-gradient(135deg,var(--blue),var(--cyan)); border:none; border-radius:10px; color:white; font-weight:700; cursor:pointer; transition:all 0.2s;" onmouseenter="this.style.transform='scale(1.05)'" onmouseleave="this.style.transform='scale(1)'">Generate AI Interview Q&A</button>
+    </div>
+  </div>
+  
+  <div id="topicQAContainer" style="margin-top:24px; display:none;"></div>
 </div>
 
 </div><!-- end #main -->

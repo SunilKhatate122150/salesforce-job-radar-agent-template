@@ -76,36 +76,46 @@ window.syncProfile = async function(platform) {
   if (platform === 'Naukri' && btnN) { btnN.innerHTML = '<span style="animation:spin 1s linear infinite;display:inline-block;">⟳</span> Syncing...'; btnN.style.opacity = '0.7'; }
 
   try {
-    const res = await apiFetch('/api/profile/sync', {
+    // Step 1: Trigger local sync (scrape + AI)
+    const syncRes = await apiFetch('/api/profile/sync', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ platform })
     });
-    const data = await res.json();
-    if (data.success) {
-      // Update study plan content
-      const contentDiv = document.getElementById('profileMatchContent');
-      if (contentDiv && window.marked) {
-        contentDiv.innerHTML = marked.parse(data.studyPlan);
+    const syncData = await syncRes.json();
+    
+    if (syncData.success) {
+      // Step 2: Read cached profile and push to cloud
+      let profilePayload = null;
+      try {
+        const cacheRes = await fetch('/.cache/profile-sync.json?cb=' + Date.now());
+        if (cacheRes.ok) profilePayload = await cacheRes.json();
+      } catch(e) { /* cache may not exist */ }
+
+      if (profilePayload) {
+        await apiFetch('/api/profile/save', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(profilePayload)
+        });
       }
-      
-      // Show success status
+
+      // Show success
       if (statusEl) {
         statusEl.style.display = 'block';
-        statusEl.innerHTML = '✓ ' + platform + ' profile synced successfully';
-        setTimeout(() => { statusEl.style.display = 'none'; }, 8000);
+        statusEl.innerHTML = '✓ ' + platform + ' profile synced & saved to cloud';
+        setTimeout(function() { statusEl.style.display = 'none'; }, 8000);
       }
-      
-      // Show "View Study Plan" button
       if (matchBtn) matchBtn.style.display = 'block';
-      
-      // Navigate to profile match page
+
+      // Reload profile data and render
+      await loadUserProfile();
       showPage('profile_match');
     } else {
-      alert('Sync Failed: ' + data.error);
+      alert('Sync Failed: ' + (syncData.error || 'Unknown error'));
     }
   } catch (e) {
-    alert('Error syncing profile. Make sure the local server (npm run web) is running and Ollama is active.');
+    alert('Error syncing profile. Make sure local server (npm run web) is running and Ollama is active.');
   }
   
   // Restore button states
@@ -141,10 +151,11 @@ function renderProfileMatchPage(profile) {
   const missing = profile.missingSkills || [];
   const topics = profile.studyPlanTopics || [];
   const platforms = profile.platforms || {};
+  const strength = updateProfileStrengthMeter(skills.length, missing.length);
 
   var syncBadges = '';
   if (platforms.linkedin && platforms.linkedin.synced) {
-    syncBadges += '<span style="display:inline-flex;align-items:center;gap:4px;padding:4px 10px;background:rgba(0,119,181,0.12);border:1px solid rgba(0,119,181,0.25);border-radius:20px;font-size:0.68rem;color:#60a5fa;">in LinkedIn Synced</span> ';
+    syncBadges += '<span style="display:inline-flex;align-items:center;gap:4px;padding:4px 10px;background:rgba(0,119,181,0.12);border:1px solid rgba(0,119,181,0.25);border-radius:20px;font-size:0.68rem;color:#60a5fa;">LinkedIn Synced</span> ';
   }
   if (platforms.naukri && platforms.naukri.synced) {
     syncBadges += '<span style="display:inline-flex;align-items:center;gap:4px;padding:4px 10px;background:rgba(255,117,85,0.12);border:1px solid rgba(255,117,85,0.25);border-radius:20px;font-size:0.68rem;color:#fb923c;">Naukri Synced</span>';
@@ -152,8 +163,31 @@ function renderProfileMatchPage(profile) {
 
   var html = '';
 
+  // Strength Meter
+  html += `
+    <div style="display:flex; align-items:center; gap:25px; background:linear-gradient(135deg,rgba(139,92,246,0.1),rgba(59,130,246,0.05)); border:1px solid rgba(139,92,246,0.2); border-radius:16px; padding:20px; margin-bottom:24px;">
+      <div style="position:relative; width:80px; height:80px;">
+        <svg viewBox="0 0 36 36" style="width:100%; height:100%; transform: rotate(-90deg);">
+          <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="rgba(255,255,255,0.05)" stroke-width="3" />
+          <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="url(#strengthGradient)" stroke-width="3" stroke-dasharray="${strength}, 100" />
+          <defs>
+            <linearGradient id="strengthGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" style="stop-color:#8b5cf6" />
+              <stop offset="100%" style="stop-color:#3b82f6" />
+            </linearGradient>
+          </defs>
+        </svg>
+        <div style="position:absolute; top:50%; left:50%; transform:translate(-50%, -50%); font-weight:800; font-size:1.1rem; color:var(--text);">${strength}%</div>
+      </div>
+      <div>
+        <div style="font-weight:700; color:#c4b5fd; font-size:0.95rem; margin-bottom:4px;">Profile Readiness Score</div>
+        <div style="font-size:0.75rem; color:var(--muted); line-height:1.5;">Your profile is <b>${strength}%</b> ready for <b>${profile.targetRole || 'Salesforce Developer'}</b> roles. Complete study topics for your missing skills to increase your score.</div>
+      </div>
+    </div>
+  `;
+
   // Profile Summary Card
-  html += '<div style="background:linear-gradient(135deg,rgba(59,130,246,0.08),rgba(139,92,246,0.05));border:1px solid rgba(59,130,246,0.15);border-radius:16px;padding:20px;margin-bottom:20px;">';
+  html += '<div style="background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.08);border-radius:16px;padding:20px;margin-bottom:20px;">';
   html += '<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;">';
   html += '<div><div style="font-weight:700;font-size:1.1rem;color:var(--text);">' + (profile.currentRole || 'Salesforce Professional') + '</div>';
   html += '<div style="font-size:0.78rem;color:var(--muted);margin-top:4px;">' + (profile.experienceYears || 0) + ' years experience &bull; ' + skills.length + ' skills &bull; ' + certs.length + ' certifications</div>';
@@ -169,39 +203,31 @@ function renderProfileMatchPage(profile) {
   });
   html += '</div></div>';
 
-  // Certifications
-  if (certs.length > 0) {
-    html += '<div style="margin-bottom:20px;"><div style="font-weight:700;font-size:0.9rem;color:var(--text);margin-bottom:10px;">\ud83c\udfc5 Certifications (' + certs.length + ')</div><div style="display:flex;flex-wrap:wrap;gap:6px;">';
-    certs.forEach(function(c) {
-      html += '<span style="padding:5px 12px;background:rgba(34,197,94,0.1);border:1px solid rgba(34,197,94,0.2);border-radius:20px;font-size:0.72rem;color:#22c55e;font-weight:600;">\u2713 ' + c + '</span>';
-    });
-    html += '</div></div>';
-  }
-
   // Skill Gaps
   if (missing.length > 0) {
-    html += '<div style="margin-bottom:20px;"><div style="font-weight:700;font-size:0.9rem;color:var(--text);margin-bottom:10px;">\u26a1 Skill Gaps (' + missing.length + ')</div><div style="display:flex;flex-wrap:wrap;gap:6px;">';
+    html += '<div style="margin-bottom:20px;"><div style="font-weight:700;font-size:0.9rem;color:var(--text);margin-bottom:10px;">\u26a1 Identified Skill Gaps (' + missing.length + ')</div><div style="display:flex;flex-wrap:wrap;gap:6px;">';
     missing.forEach(function(s) {
       html += '<span style="padding:5px 12px;background:rgba(251,146,60,0.1);border:1px solid rgba(251,146,60,0.2);border-radius:20px;font-size:0.72rem;color:#fb923c;font-weight:500;">\u2b06 ' + s + '</span>';
     });
     html += '</div></div>';
   }
 
-  // Study Topics (Connected to Timer)
+  // Study Topics
   if (topics.length > 0) {
-    html += '<div style="margin-bottom:20px;"><div style="font-weight:700;font-size:0.9rem;color:var(--text);margin-bottom:10px;">\ud83d\udcd6 AI Study Topics (Click to start timer)</div>';
+    html += '<div style="margin-bottom:20px;"><div style="font-weight:700;font-size:0.9rem;color:var(--text);margin-bottom:10px;">\ud83d\udcd6 AI Recommended Study Topics</div>';
     html += '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px;">';
     topics.forEach(function(t) {
       var priorityColors = { critical: { bg: 'rgba(239,68,68,0.1)', border: 'rgba(239,68,68,0.2)', text: '#ef4444' }, high: { bg: 'rgba(251,146,60,0.1)', border: 'rgba(251,146,60,0.2)', text: '#fb923c' }, medium: { bg: 'rgba(59,130,246,0.1)', border: 'rgba(59,130,246,0.2)', text: '#60a5fa' } };
       var pc = priorityColors[t.priority] || priorityColors.medium;
       var topicId = t.topicId || t.topic.toLowerCase().replace(/\s+/g, '_');
-      var hasTimerPage = !!document.getElementById(topicId);
-      html += '<div onclick="' + (hasTimerPage ? "showPage('" + topicId + "')" : '') + '" style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px;cursor:' + (hasTimerPage ? 'pointer' : 'default') + ';transition:all 0.2s;position:relative;overflow:hidden;" onmouseenter="this.style.borderColor=\'var(--blue)\'" onmouseleave="this.style.borderColor=\'var(--border)\'">';
+      var hasTimerPage = !!document.getElementById(topicId) || !!topicConfig[topicId];
+      
+      html += '<div onclick="showPage(\'' + topicId + '\')" style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px;cursor:pointer;transition:all 0.2s;position:relative;overflow:hidden;" onmouseenter="this.style.borderColor=\'var(--blue)\'" onmouseleave="this.style.borderColor=\'var(--border)\'">';
       html += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;"><span style="font-weight:600;font-size:0.85rem;color:var(--text);">' + t.topic + '</span>';
       html += '<span style="font-size:0.6rem;padding:2px 8px;background:' + pc.bg + ';border:1px solid ' + pc.border + ';border-radius:12px;color:' + pc.text + ';font-weight:700;text-transform:uppercase;">' + t.priority + '</span></div>';
       html += '<div style="font-size:0.72rem;color:var(--muted);line-height:1.5;margin-bottom:8px;">' + (t.reason || '') + '</div>';
       html += '<div style="font-size:0.68rem;color:var(--dim);display:flex;justify-content:space-between;"><span>\u23f1 ' + (t.estimatedHours || 0) + 'h estimated</span>';
-      html += (hasTimerPage ? '<span style="color:var(--blue);">\u25b6 Start Study \u2192</span>' : '<span>\ud83d\udccb External Topic</span>') + '</div></div>';
+      html += '<span style="color:var(--blue);">\u25b6 Start Prep \u2192</span></div></div>';
     });
     html += '</div></div>';
   }
@@ -209,12 +235,78 @@ function renderProfileMatchPage(profile) {
   // AI Study Plan (Markdown)
   if (profile.studyPlan) {
     html += '<div style="margin-top:16px;background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.06);border-radius:16px;padding:24px;">';
-    html += '<div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;"><span style="font-size:1.1rem;">\ud83d\udccb</span><span style="font-weight:700;font-size:1rem;color:var(--text);">Full AI Study Plan</span>';
+    html += '<div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;"><span style="font-size:1.1rem;">\ud83d\udccb</span><span style="font-weight:700;font-size:1rem;color:var(--text);">Full AI Study Roadmap</span>';
     html += '<span style="font-size:0.6rem;padding:3px 8px;background:rgba(139,92,246,0.15);border:1px solid rgba(139,92,246,0.25);border-radius:20px;color:#c4b5fd;margin-left:auto;">Gemma 4</span></div>';
     html += '<div style="font-size:0.82rem;line-height:1.8;color:var(--muted);">' + (window.marked ? marked.parse(profile.studyPlan) : profile.studyPlan) + '</div></div>';
   }
 
   contentDiv.innerHTML = html;
+}
+
+function updateProfileStrengthMeter(skillCount, gapCount) {
+  if (skillCount === 0 && gapCount === 0) return 0;
+  const total = skillCount + gapCount;
+  return Math.round((skillCount / total) * 100);
+}
+
+async function generateDynamicQA(topicId) {
+  const btn = document.getElementById('btnGenerateTopicQA');
+  const content = document.getElementById('topicViewerContent');
+  const qaContainer = document.getElementById('topicQAContainer');
+  const topicName = topicConfig[topicId] ? topicConfig[topicId].name : topicId;
+
+  btn.disabled = true;
+  btn.textContent = '⏳ Gemma 4 is generating Q&A...';
+  
+  try {
+    const prompt = `You are a Senior Salesforce Interviewer. Generate 5 highly technical and scenario-based interview questions for the topic: "${topicName}". 
+For each question, provide a detailed "Master Answer" that would impress a hiring manager. 
+Format your response as a valid JSON array of objects: [{"question": "...", "answer": "..."}]. 
+Do not include any conversational text before or after the JSON.`;
+
+    const res = await fetch('http://localhost:11434/api/generate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'gemma4:e4b',
+        prompt: prompt,
+        stream: false
+      })
+    });
+    
+    if (!res.ok) throw new Error('Ollama not responding');
+    const data = await res.json();
+    
+    // Parse JSON from response
+    let qa = [];
+    try {
+      const jsonStr = data.response.substring(data.response.indexOf('['), data.response.lastIndexOf(']') + 1);
+      qa = JSON.parse(jsonStr);
+    } catch(e) {
+      // Fallback if not JSON
+      qa = [{ question: "Topic: " + topicName, answer: data.response }];
+    }
+
+    content.style.display = 'none';
+    qaContainer.style.display = 'block';
+    qaContainer.innerHTML = qa.map((item, idx) => `
+      <div class="qa-block" style="margin-bottom:15px; background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.05); border-radius:12px; overflow:hidden;">
+        <div class="qa-question" onclick="toggleQA(this)" style="padding:15px; cursor:pointer; display:flex; justify-content:space-between; align-items:center;">
+          <span class="qa-q-text" style="font-weight:700; font-size:0.9rem; color:var(--text);">${idx + 1}. ${item.question}</span>
+          <span class="qa-chevron">▼</span>
+        </div>
+        <div class="qa-answer" style="padding:0 15px 15px; font-size:0.85rem; color:rgba(255,255,255,0.8); line-height:1.6;">
+          ${item.answer.replace(/\n/g, '<br>')}
+        </div>
+      </div>
+    `).join('');
+    
+  } catch (e) {
+    alert('Failed to generate AI Q&A. Ensure Ollama is running.');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Generate AI Interview Q&A';
+  }
 }
 
 
@@ -1262,6 +1354,39 @@ async function fetchJobAnalytics() {
   }
 }
 
+async function fetchJobs() {
+  const container = document.getElementById('jobsListContainer');
+  if (!container) return;
+  
+  try {
+    const res = await apiFetch('/api/jobs');
+    const data = await res.json();
+    window.allJobRecords = data.records || [];
+    filterJobsList(); // Render with current filters
+  } catch (e) {
+    console.error('Failed to fetch jobs', e);
+  }
+}
+
+function filterJobsList() {
+  const minScore = parseInt(document.getElementById('matchFilter')?.value || '0');
+  const priority = document.getElementById('priorityFilter')?.value || 'all';
+  
+  let filtered = (window.allJobRecords || []);
+  
+  // Apply Match Score filter
+  filtered = filtered.filter(j => (j.match_score || 0) >= minScore);
+  
+  // Apply Priority filter
+  if (priority === 'high') {
+    filtered = filtered.filter(j => (j.match_score || 0) >= 75);
+  } else if (priority === 'must') {
+    filtered = filtered.filter(j => j.match_level === 'high' || (j.match_score || 0) >= 85);
+  }
+  
+  renderJobsList(filtered);
+}
+
 function renderJobsList(jobs) {
   const container = document.getElementById('jobsListContainer');
   if (!container) return;
@@ -1291,14 +1416,84 @@ function renderJobsList(jobs) {
       </div>
       ` : ''}
 
+      ${(job.matched_skills && job.matched_skills.length > 0) || (job.missing_skills && job.missing_skills.length > 0) ? `
+      <div style="margin-top: 1rem; display:flex; flex-direction:column; gap:8px;">
+        ${job.matched_skills && job.matched_skills.length > 0 ? `
+          <div style="display:flex; flex-wrap:wrap; gap:5px;">
+            <span style="font-size:0.65rem; color:var(--green); font-weight:700; width:100%; margin-bottom:2px;">STRENGTHS MATCHED:</span>
+            ${job.matched_skills.map(s => `<span style="font-size:0.62rem; padding:2px 8px; background:rgba(34,197,94,0.1); border:1px solid rgba(34,197,94,0.2); border-radius:4px; color:#4ade80;">✓ ${s}</span>`).join('')}
+          </div>
+        ` : ''}
+        ${job.missing_skills && job.missing_skills.length > 0 ? `
+          <div style="display:flex; flex-wrap:wrap; gap:5px;">
+            <span style="font-size:0.65rem; color:var(--amber); font-weight:700; width:100%; margin-bottom:2px;">GAPS TO STUDY:</span>
+            ${job.missing_skills.map(s => `<span style="font-size:0.62rem; padding:2px 8px; background:rgba(245,158,11,0.1); border:1px solid rgba(245,158,11,0.2); border-radius:4px; color:#fbbf24; cursor:pointer;" onclick="showPage('profile_match')">↗ ${s}</span>`).join('')}
+          </div>
+        ` : ''}
+      </div>
+      ` : ''}
+
       <div class="job-actions" style="margin-top: 1.2rem; display:flex; flex-wrap:wrap; gap: 10px;">
-        <button class="btn-action" onclick="window.open('${job.apply_link}', '_blank')" style="background: var(--blue); border: none; padding: 8px 16px; border-radius: 8px; color: white; cursor: pointer; font-weight: 600; font-size: 0.8rem;">Apply Now</button>
+        <button class="btn-action" onclick="window.open('${job.apply_link || job.url}', '_blank')" style="background: var(--blue); border: none; padding: 8px 16px; border-radius: 8px; color: white; cursor: pointer; font-weight: 600; font-size: 0.8rem;">Apply Now</button>
+        <button class="btn-action" onclick="smartApply('${job.job_hash}')" style="background: linear-gradient(135deg,#8b5cf6,#6d28d9); border: none; padding: 8px 16px; border-radius: 8px; color: white; cursor: pointer; font-weight: 700; font-size: 0.8rem; display:flex; align-items:center; gap:5px;">🚀 Smart Apply</button>
         <button class="btn-action" onclick="updateJobStatus('${job.job_hash}', 'applied')" style="background: transparent; border: 1px solid var(--blue); padding: 8px 16px; border-radius: 8px; color: var(--blue); cursor: pointer; font-weight: 600; font-size: 0.8rem;">Mark Applied</button>
         <button class="btn-action" onclick="generateCoverLetter('${job.job_hash}')" style="background: transparent; border: 1px solid var(--green); padding: 8px 16px; border-radius: 8px; color: var(--green); cursor: pointer; font-weight: 600; font-size: 0.8rem; display:flex; align-items:center; gap:5px;"><span id="cl_icon_${job.job_hash}">✨</span> Auto Cover Letter</button>
       </div>
       <div id="cl_output_${job.job_hash}" style="display:none; margin-top:1rem; padding:1rem; background:rgba(0,0,0,0.2); border-left:3px solid var(--green); border-radius:8px; font-size:0.8rem; color:var(--text); white-space:pre-wrap; line-height:1.5;"></div>
     </div>
   `).join('');
+}
+
+async function triggerJobScan() {
+  const btn = document.getElementById('btnScanJobs');
+  const status = document.getElementById('scanStatusText');
+  
+  btn.disabled = true;
+  btn.style.opacity = '0.5';
+  status.textContent = '📡 Global scan initiated...';
+  status.style.color = 'var(--blue)';
+
+  try {
+    const res = await apiFetch('/api/jobs/scan', { method: 'POST' });
+    const data = await res.json();
+    if (data.success) {
+      status.textContent = '⏳ Agent is running (Check console)';
+      setTimeout(() => {
+        status.textContent = '✅ Scan complete / Updated';
+        btn.disabled = false;
+        btn.style.opacity = '1';
+        fetchJobs(); // Refresh jobs list
+      }, 30000); // Approximate time
+    } else {
+      status.textContent = '❌ Scan failed to start';
+      btn.disabled = false;
+      btn.style.opacity = '1';
+    }
+  } catch (e) {
+    status.textContent = '❌ Connection error';
+    btn.disabled = false;
+    btn.style.opacity = '1';
+  }
+}
+
+async function smartApply(hash) {
+  if (!confirm('This will launch a local browser to attempt automated "Easy Apply" using your active Chrome session. Continue?')) return;
+  
+  try {
+    const res = await apiFetch('/api/jobs/apply', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ hash })
+    });
+    const data = await res.json();
+    if (data.success) {
+      alert('🚀 Automation launched! Look at your taskbar for a new Chrome window.');
+    } else {
+      alert('Failed to launch automation: ' + data.error);
+    }
+  } catch (e) {
+    alert('Error connecting to local automation agent.');
+  }
 }
 
 async function generateCoverLetter(hash) {
@@ -1572,6 +1767,16 @@ async function showPage(id) {
   document.querySelectorAll('.page').forEach(function(p) { p.classList.remove('active'); p.style.display = 'none'; });
   document.querySelectorAll('.nav-item').forEach(function(n) { n.classList.remove('active'); });
   var page = document.getElementById(id);
+  if (!page && topicConfig[id]) {
+    // Redirect to dynamic topic viewer
+    page = document.getElementById('topic_viewer');
+    document.getElementById('topicViewerTitle').textContent = topicConfig[id].name;
+    document.getElementById('topicViewerSub').textContent = 'AI Deep Dive: ' + topicConfig[id].name;
+    document.getElementById('topicViewerContent').style.display = 'block';
+    document.getElementById('topicQAContainer').style.display = 'none';
+    document.getElementById('btnGenerateTopicQA').onclick = () => generateDynamicQA(id);
+  }
+
   if (page) { page.classList.add('active'); page.style.display = 'block'; }
   document.querySelectorAll('.nav-item').forEach(function(n) {
     var oc = n.getAttribute('onclick');

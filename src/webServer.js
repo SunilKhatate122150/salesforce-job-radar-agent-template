@@ -7,6 +7,8 @@ import mongoose from 'mongoose';
 import 'dotenv/config';
 import { StudySession, TaskStatus, User, JobRecord, UserProfile } from './models/models.js';
 import { OAuth2Client } from 'google-auth-library';
+import { spawn } from 'child_process';
+import { attemptAutoApply } from './tools/autoApply.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -193,6 +195,51 @@ export default async function handler(req, res) {
         res.writeHead(200, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify(summary));
       }
+      else if (url === '/api/profile/sync' && method === 'POST') {
+        let body = '';
+        for await (const chunk of req) body += chunk;
+        const { platform } = JSON.parse(body);
+
+        console.log(`[Sync] Triggering local AI sync for ${platform}...`);
+        
+        // Spawn the sync script
+        const scriptPath = path.join(process.cwd(), 'src', 'tools', 'syncProfile.js');
+        const child = spawn('node', [scriptPath, platform], {
+          env: { ...process.env, GOOGLE_AUTH_TOKEN: token }
+        });
+
+        let output = '';
+        child.stdout.on('data', (data) => { output += data; console.log(`[Sync Script] ${data}`); });
+        child.stderr.on('data', (data) => { console.error(`[Sync Error] ${data}`); });
+
+        child.on('close', (code) => {
+          if (code === 0) {
+            res.writeHead(200, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ success: true, message: 'Sync completed successfully' }));
+          } else {
+            res.writeHead(500, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ success: false, error: 'Sync script failed' }));
+          }
+        });
+      }
+      else if (url === '/api/jobs/scan' && method === 'POST') {
+        console.log('[Radar] Triggering global job scan...');
+        
+        const scriptPath = path.join(process.cwd(), 'src', 'run.js');
+        const child = spawn('node', [scriptPath], {
+          env: { ...process.env, GOOGLE_AUTH_TOKEN: token }
+        });
+
+        child.stdout.on('data', (data) => console.log(`[Radar Script] ${data}`));
+        child.stderr.on('data', (data) => console.error(`[Radar Error] ${data}`));
+
+        child.on('close', (code) => {
+          console.log(`[Radar] Scan finished with code ${code}`);
+        });
+
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: true, message: 'Scan started in background' }));
+      }
       else if (url.includes('profile/save') && method === 'POST') {
         let body = '';
         for await (const chunk of req) body += chunk;
@@ -266,6 +313,26 @@ export default async function handler(req, res) {
           res.writeHead(200, { 'Content-Type': 'application/json' });
           res.end(JSON.stringify({ hasProfile: true, match: { strengths: [], gaps: (profile.missingSkills || []).map(s => ({ skill: s, demandCount: 0 })), topCompanies: [], totalJobsAnalyzed: 0, profileSkillCount: (profile.skills || []).length, certCount: (profile.certifications || []).length } }));
         }
+      }
+      else if (url === '/api/jobs/apply' && method === 'POST') {
+        let body = '';
+        for await (const chunk of req) body += chunk;
+        const { hash } = JSON.parse(body);
+        
+        const job = await JobRecord.findOne({ job_hash: hash, userId });
+        if (!job) {
+          res.writeHead(404);
+          res.end(JSON.stringify({ error: 'Job not found' }));
+          return;
+        }
+
+        console.log(`[AutoApply] Triggering automation for ${job.title} at ${job.company}`);
+        
+        // Run in background
+        attemptAutoApply(job).catch(e => console.error('[AutoApply Error]', e));
+
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: true, message: 'Automation launched' }));
       }
       else {
         res.writeHead(404);

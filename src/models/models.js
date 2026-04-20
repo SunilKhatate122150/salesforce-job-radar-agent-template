@@ -30,6 +30,13 @@ const jobRecordSchema = new mongoose.Schema({
   location: String,
   date_added: { type: String, index: true },
   match_score: Number,
+  match_level: String,
+  matched_skills: [String],
+  missing_skills: [String],
+  resume_actions: [String],
+  apply_link: String,
+  job_hash: { type: String, unique: true, index: true },
+  status: { type: String, default: 'new', enum: ['new', 'applied', 'ignored'] },
   url: String
 }, { timestamps: true });
 
