@@ -21,6 +21,7 @@ import {
   registerApplicationJobs
 } from "./db/applicationTracker.js";
 import { enrichJobsWithResumeMatch } from "./resume/matchResume.js";
+import { attemptAutoApply } from "./tools/autoApply.js";
 import {
   annotateJobsWithResumeSupport,
   createResumeAttachments,
@@ -3069,6 +3070,18 @@ async function run() {
     if (newJobs.length > 0) {
       scoredNewJobs = await enrichJobsWithResumeMatch(newJobs);
       await saveJobs(scoredNewJobs);
+
+      // --- AUTO-APPLY WEBHOOK ---
+      for (const job of scoredNewJobs) {
+        if (job.match_score >= 90) {
+          try {
+            await attemptAutoApply(job);
+          } catch (e) {
+            console.error("Auto-Apply Webhook Failed:", e.message);
+          }
+        }
+      }
+      // --------------------------
       const trackerResult = await registerApplicationJobs(scoredNewJobs, {
         event: "discovered",
         defaultStatus: "new"

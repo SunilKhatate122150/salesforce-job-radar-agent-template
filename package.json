@@ -54,6 +54,7 @@
     "node-fetch": "^3.3.2",
     "nodemailer": "^8.0.1",
     "pdf-parse": "^2.4.5",
-    "pdf2json": "^4.0.3"
+    "pdf2json": "^4.0.3",
+    "puppeteer": "^24.41.0"
   }
 }
