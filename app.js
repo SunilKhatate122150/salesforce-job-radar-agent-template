@@ -1,6 +1,8 @@
 // =============================================
 // STUDY TIME TRACKER - with Pause/Play
+// Version: 2026-04-20-T1327 (Consolidated API Fix)
 // =============================================
+console.log('🚀 Dashboard Version: 2026-04-20-T1327 (Consolidated API)');
 var TRACKER_KEY = 'sf_prep_study_tracker_v3';
 var currentTrackedPage = null;
 var trackingStartTime = null;
