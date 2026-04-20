@@ -46,3 +46,44 @@ const taskStatusSchema = new mongoose.Schema({
 taskStatusSchema.index({ userId: 1, index: 1 }, { unique: true });
 
 export const TaskStatus = mongoose.models.TaskStatus || mongoose.model('TaskStatus', taskStatusSchema);
+
+// ========================================
+// USER PROFILE (Merged LinkedIn + Naukri)
+// ========================================
+const studyTopicSchema = new mongoose.Schema({
+  topicId: String,             // Links to topicConfig in app.js timer system
+  topic: String,               // "Data Cloud"
+  priority: { type: String, enum: ['critical', 'high', 'medium'], default: 'medium' },
+  reason: String,              // "Required for FDE certification"
+  estimatedHours: Number,      // 10
+  completed: { type: Boolean, default: false }
+}, { _id: false });
+
+const userProfileSchema = new mongoose.Schema({
+  userId: { type: String, required: true, unique: true, index: true },
+  // Merged profile data from LinkedIn + Naukri
+  platforms: {
+    linkedin: { synced: Boolean, lastSync: Date },
+    naukri: { synced: Boolean, lastSync: Date }
+  },
+  // Core extracted data
+  skills: [String],                              // ["Salesforce", "Apex", "LWC", ...]
+  experienceYears: Number,                       // 4
+  currentRole: String,                           // "Salesforce Developer"
+  targetRole: String,                            // "Senior Salesforce Developer"
+  certifications: [String],                      // ["PD1", "Admin", "Data Cloud"]
+  // AI-identified gaps
+  missingSkills: [String],                       // Skills the AI found missing
+  // Study plan
+  studyPlan: String,                             // Full markdown study plan from Gemma 4
+  studyPlanTopics: [studyTopicSchema],           // Structured topics linked to timer
+  // Raw extraction log
+  rawExtraction: {
+    linkedinSkills: [String],
+    naukriSkills: [String],
+    linkedinCerts: [String],
+    naukriCerts: [String]
+  }
+}, { timestamps: true });
+
+export const UserProfile = mongoose.models.UserProfile || mongoose.model('UserProfile', userProfileSchema);

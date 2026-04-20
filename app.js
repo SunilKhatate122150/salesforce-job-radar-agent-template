@@ -113,6 +113,111 @@ window.syncProfile = async function(platform) {
   if (btnN) { btnN.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="white"><path d="M20 6H4c-1.1 0-2 .9-2 2v8c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm-8 9H8v-1h4v1zm6-3H8v-1h10v1zm0-3H8V8h10v1z"/></svg> Naukri'; btnN.style.opacity = '1'; }
 };
 
+// =============================================
+// PROFILE DATA MANAGEMENT
+// =============================================
+let cachedUserProfile = null;
+
+async function loadUserProfile() {
+  try {
+    const res = await apiFetch('/api/profile/data');
+    if (!res.ok) return;
+    const data = await res.json();
+    if (data.exists && data.profile) {
+      cachedUserProfile = data.profile;
+      const matchBtn = document.getElementById('btnViewProfileMatch');
+      if (matchBtn) matchBtn.style.display = 'block';
+      renderProfileMatchPage(data.profile);
+    }
+  } catch (e) { console.log('[Profile] No profile data available yet.'); }
+}
+
+function renderProfileMatchPage(profile) {
+  const contentDiv = document.getElementById('profileMatchContent');
+  if (!contentDiv) return;
+
+  const skills = profile.skills || [];
+  const certs = profile.certifications || [];
+  const missing = profile.missingSkills || [];
+  const topics = profile.studyPlanTopics || [];
+  const platforms = profile.platforms || {};
+
+  var syncBadges = '';
+  if (platforms.linkedin && platforms.linkedin.synced) {
+    syncBadges += '<span style="display:inline-flex;align-items:center;gap:4px;padding:4px 10px;background:rgba(0,119,181,0.12);border:1px solid rgba(0,119,181,0.25);border-radius:20px;font-size:0.68rem;color:#60a5fa;">in LinkedIn Synced</span> ';
+  }
+  if (platforms.naukri && platforms.naukri.synced) {
+    syncBadges += '<span style="display:inline-flex;align-items:center;gap:4px;padding:4px 10px;background:rgba(255,117,85,0.12);border:1px solid rgba(255,117,85,0.25);border-radius:20px;font-size:0.68rem;color:#fb923c;">Naukri Synced</span>';
+  }
+
+  var html = '';
+
+  // Profile Summary Card
+  html += '<div style="background:linear-gradient(135deg,rgba(59,130,246,0.08),rgba(139,92,246,0.05));border:1px solid rgba(59,130,246,0.15);border-radius:16px;padding:20px;margin-bottom:20px;">';
+  html += '<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;">';
+  html += '<div><div style="font-weight:700;font-size:1.1rem;color:var(--text);">' + (profile.currentRole || 'Salesforce Professional') + '</div>';
+  html += '<div style="font-size:0.78rem;color:var(--muted);margin-top:4px;">' + (profile.experienceYears || 0) + ' years experience &bull; ' + skills.length + ' skills &bull; ' + certs.length + ' certifications</div>';
+  html += '<div style="margin-top:8px;">' + syncBadges + '</div></div>';
+  html += '<div style="text-align:right;"><div style="font-size:0.65rem;color:var(--muted);">Target Role</div>';
+  html += '<div style="font-weight:600;font-size:0.9rem;color:var(--green);">' + (profile.targetRole || 'Senior Salesforce Developer') + '</div></div>';
+  html += '</div></div>';
+
+  // Skills Grid
+  html += '<div style="margin-bottom:20px;"><div style="font-weight:700;font-size:0.9rem;color:var(--text);margin-bottom:10px;">\ud83e\udde0 Your Skills (' + skills.length + ')</div><div style="display:flex;flex-wrap:wrap;gap:6px;">';
+  skills.forEach(function(s) {
+    html += '<span style="padding:5px 12px;background:rgba(59,130,246,0.1);border:1px solid rgba(59,130,246,0.2);border-radius:20px;font-size:0.72rem;color:#60a5fa;font-weight:500;">' + s + '</span>';
+  });
+  html += '</div></div>';
+
+  // Certifications
+  if (certs.length > 0) {
+    html += '<div style="margin-bottom:20px;"><div style="font-weight:700;font-size:0.9rem;color:var(--text);margin-bottom:10px;">\ud83c\udfc5 Certifications (' + certs.length + ')</div><div style="display:flex;flex-wrap:wrap;gap:6px;">';
+    certs.forEach(function(c) {
+      html += '<span style="padding:5px 12px;background:rgba(34,197,94,0.1);border:1px solid rgba(34,197,94,0.2);border-radius:20px;font-size:0.72rem;color:#22c55e;font-weight:600;">\u2713 ' + c + '</span>';
+    });
+    html += '</div></div>';
+  }
+
+  // Skill Gaps
+  if (missing.length > 0) {
+    html += '<div style="margin-bottom:20px;"><div style="font-weight:700;font-size:0.9rem;color:var(--text);margin-bottom:10px;">\u26a1 Skill Gaps (' + missing.length + ')</div><div style="display:flex;flex-wrap:wrap;gap:6px;">';
+    missing.forEach(function(s) {
+      html += '<span style="padding:5px 12px;background:rgba(251,146,60,0.1);border:1px solid rgba(251,146,60,0.2);border-radius:20px;font-size:0.72rem;color:#fb923c;font-weight:500;">\u2b06 ' + s + '</span>';
+    });
+    html += '</div></div>';
+  }
+
+  // Study Topics (Connected to Timer)
+  if (topics.length > 0) {
+    html += '<div style="margin-bottom:20px;"><div style="font-weight:700;font-size:0.9rem;color:var(--text);margin-bottom:10px;">\ud83d\udcd6 AI Study Topics (Click to start timer)</div>';
+    html += '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px;">';
+    topics.forEach(function(t) {
+      var priorityColors = { critical: { bg: 'rgba(239,68,68,0.1)', border: 'rgba(239,68,68,0.2)', text: '#ef4444' }, high: { bg: 'rgba(251,146,60,0.1)', border: 'rgba(251,146,60,0.2)', text: '#fb923c' }, medium: { bg: 'rgba(59,130,246,0.1)', border: 'rgba(59,130,246,0.2)', text: '#60a5fa' } };
+      var pc = priorityColors[t.priority] || priorityColors.medium;
+      var topicId = t.topicId || t.topic.toLowerCase().replace(/\s+/g, '_');
+      var hasTimerPage = !!document.getElementById(topicId);
+      html += '<div onclick="' + (hasTimerPage ? "showPage('" + topicId + "')" : '') + '" style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px;cursor:' + (hasTimerPage ? 'pointer' : 'default') + ';transition:all 0.2s;position:relative;overflow:hidden;" onmouseenter="this.style.borderColor=\'var(--blue)\'" onmouseleave="this.style.borderColor=\'var(--border)\'">';
+      html += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;"><span style="font-weight:600;font-size:0.85rem;color:var(--text);">' + t.topic + '</span>';
+      html += '<span style="font-size:0.6rem;padding:2px 8px;background:' + pc.bg + ';border:1px solid ' + pc.border + ';border-radius:12px;color:' + pc.text + ';font-weight:700;text-transform:uppercase;">' + t.priority + '</span></div>';
+      html += '<div style="font-size:0.72rem;color:var(--muted);line-height:1.5;margin-bottom:8px;">' + (t.reason || '') + '</div>';
+      html += '<div style="font-size:0.68rem;color:var(--dim);display:flex;justify-content:space-between;"><span>\u23f1 ' + (t.estimatedHours || 0) + 'h estimated</span>';
+      html += (hasTimerPage ? '<span style="color:var(--blue);">\u25b6 Start Study \u2192</span>' : '<span>\ud83d\udccb External Topic</span>') + '</div></div>';
+    });
+    html += '</div></div>';
+  }
+
+  // AI Study Plan (Markdown)
+  if (profile.studyPlan) {
+    html += '<div style="margin-top:16px;background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.06);border-radius:16px;padding:24px;">';
+    html += '<div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;"><span style="font-size:1.1rem;">\ud83d\udccb</span><span style="font-weight:700;font-size:1rem;color:var(--text);">Full AI Study Plan</span>';
+    html += '<span style="font-size:0.6rem;padding:3px 8px;background:rgba(139,92,246,0.15);border:1px solid rgba(139,92,246,0.25);border-radius:20px;color:#c4b5fd;margin-left:auto;">Gemma 4</span></div>';
+    html += '<div style="font-size:0.82rem;line-height:1.8;color:var(--muted);">' + (window.marked ? marked.parse(profile.studyPlan) : profile.studyPlan) + '</div></div>';
+  }
+
+  contentDiv.innerHTML = html;
+}
+
+
 async function checkAuth() {
   const token = localStorage.getItem('google_auth_token');
   if (!token) {
@@ -674,7 +779,8 @@ async function syncDashboard() {
       updateTrackerUI(),
       fetchDailySummary(),
       fetchJobsList(),
-      renderHistory()
+      renderHistory(),
+      loadUserProfile()
     ]);
   } catch(e) { console.error('Dashboard sync failed', e); }
 }
@@ -1488,6 +1594,14 @@ async function showPage(id) {
     updateJobRadarSummary();
     fetchJobsList();
     fetchJobAnalytics();
+  }
+  
+  if (id === 'profile_match') {
+    if (cachedUserProfile) {
+      renderProfileMatchPage(cachedUserProfile);
+    } else {
+      loadUserProfile();
+    }
   }
   
   if (id === 'study_tracker') {

@@ -5,7 +5,7 @@ import { fileURLToPath } from 'url';
 import { generateDailySummary } from './summaryService.js';
 import mongoose from 'mongoose';
 import 'dotenv/config';
-import { StudySession, TaskStatus, User, JobRecord } from './models/models.js';
+import { StudySession, TaskStatus, User, JobRecord, UserProfile } from './models/models.js';
 import { OAuth2Client } from 'google-auth-library';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -192,6 +192,80 @@ export default async function handler(req, res) {
         const summary = summaries[todayStr] || { date: todayStr, study: { totalSeconds: 0, topTopic: 'None', sessionsCount: 0, allTopics: [], topicBreakdown: {} }, jobs: { newCount: 0, topMatches: [] } };
         res.writeHead(200, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify(summary));
+      }
+      else if (url.includes('profile/save') && method === 'POST') {
+        let body = '';
+        for await (const chunk of req) body += chunk;
+        const profileData = JSON.parse(body);
+
+        // Fetch existing for merging
+        let existing = null;
+        if (isMongoConnected) {
+          existing = await UserProfile.findOne({ userId }).lean();
+        }
+
+        let mergedSkills = existing ? [...new Set([...existing.skills, ...(profileData.skills || [])])] : (profileData.skills || []);
+        let mergedCerts = existing ? [...new Set([...existing.certifications, ...(profileData.certifications || [])])] : (profileData.certifications || []);
+        let mergedMissing = existing ? [...new Set([...existing.missingSkills, ...(profileData.missingSkills || [])])] : (profileData.missingSkills || []);
+
+        let platforms = existing?.platforms || {};
+        if (profileData.platform === 'LinkedIn') platforms.linkedin = { synced: true, lastSync: new Date() };
+        if (profileData.platform === 'Naukri') platforms.naukri = { synced: true, lastSync: new Date() };
+
+        let rawExtraction = existing?.rawExtraction || {};
+        if (profileData.platform === 'LinkedIn') { rawExtraction.linkedinSkills = profileData.skills; rawExtraction.linkedinCerts = profileData.certifications; }
+        if (profileData.platform === 'Naukri') { rawExtraction.naukriSkills = profileData.skills; rawExtraction.naukriCerts = profileData.certifications; }
+
+        if (isMongoConnected) {
+          const profile = await UserProfile.findOneAndUpdate(
+            { userId },
+            { userId, platforms, skills: mergedSkills, experienceYears: Math.max(profileData.experienceYears || 0, existing?.experienceYears || 0), currentRole: profileData.currentRole || existing?.currentRole, targetRole: profileData.targetRole || existing?.targetRole, certifications: mergedCerts, missingSkills: mergedMissing, studyPlan: profileData.studyPlan || existing?.studyPlan, studyPlanTopics: (profileData.studyPlanTopics && profileData.studyPlanTopics.length > 0) ? profileData.studyPlanTopics : (existing?.studyPlanTopics || []), rawExtraction },
+            { upsert: true, new: true }
+          );
+          res.writeHead(200, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ success: true, profile }));
+        } else {
+          // Fallback: save to local cache
+          const cachePath = path.join(CACHE_DIR, 'profile-sync.json');
+          fs.mkdirSync(CACHE_DIR, { recursive: true });
+          fs.writeFileSync(cachePath, JSON.stringify({ ...profileData, skills: mergedSkills, certifications: mergedCerts, missingSkills: mergedMissing, platforms, rawExtraction }, null, 2));
+          res.writeHead(200, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ success: true, profile: profileData }));
+        }
+      }
+      else if (url.includes('profile/data') && method === 'GET') {
+        if (isMongoConnected) {
+          const profile = await UserProfile.findOne({ userId }).lean();
+          res.writeHead(200, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ exists: !!profile, profile }));
+        } else {
+          // Fallback: read from local cache
+          const cachePath = path.join(CACHE_DIR, 'profile-sync.json');
+          if (fs.existsSync(cachePath)) {
+            const data = JSON.parse(fs.readFileSync(cachePath, 'utf8'));
+            res.writeHead(200, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ exists: true, profile: data }));
+          } else {
+            res.writeHead(200, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ exists: false, profile: null }));
+          }
+        }
+      }
+      else if (url.includes('profile/match') && method === 'GET') {
+        let profile = null;
+        if (isMongoConnected) {
+          profile = await UserProfile.findOne({ userId }).lean();
+        } else {
+          const cachePath = path.join(CACHE_DIR, 'profile-sync.json');
+          if (fs.existsSync(cachePath)) profile = JSON.parse(fs.readFileSync(cachePath, 'utf8'));
+        }
+        if (!profile) {
+          res.writeHead(200, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ hasProfile: false, match: null }));
+        } else {
+          res.writeHead(200, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ hasProfile: true, match: { strengths: [], gaps: (profile.missingSkills || []).map(s => ({ skill: s, demandCount: 0 })), topCompanies: [], totalJobsAnalyzed: 0, profileSkillCount: (profile.skills || []).length, certCount: (profile.certifications || []).length } }));
+        }
       }
       else {
         res.writeHead(404);
