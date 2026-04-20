@@ -32,18 +32,21 @@ async function scrapeProfile(platform) {
   
   const homeDir = os.homedir();
   let chromePath = 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe';
-  let userDataDir = path.join(homeDir, 'AppData', 'Local', 'Google', 'Chrome', 'User Data');
+  if (!fs.existsSync(chromePath)) {
+     chromePath = 'C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe';
+  }
+  const AGENT_PROFILE_DIR = path.resolve(process.cwd(), '.agent_profile');
   
   let browser;
   try {
     browser = await puppeteer.launch({
       headless: false,
       executablePath: chromePath,
-      userDataDir: userDataDir,
+      userDataDir: AGENT_PROFILE_DIR,
       defaultViewport: null
     });
   } catch (e) {
-    console.error(`❌ Chrome is already running. Please close all Chrome windows and try again.`);
+    console.error(`❌ Chrome failed to launch. Error: ${e.message}`);
     process.exit(1);
   }
 
