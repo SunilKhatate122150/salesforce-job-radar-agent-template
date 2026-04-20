@@ -1,8 +1,8 @@
 // =============================================
 // STUDY TIME TRACKER - with Pause/Play
-// Version: 2026-04-20-T1635 (Stability Restore)
+// Version: 2026-04-20-T1639 (Surgical Profile Shift)
 // =============================================
-console.log('🚀 Dashboard Version: 2026-04-20-T1635 (v1334)');
+console.log('🚀 Dashboard Version: 2026-04-20-T1639 (v1335)');
 var TRACKER_KEY = 'sf_prep_study_tracker_v3';
 var currentTrackedPage = null;
 var trackingStartTime = null;
@@ -49,13 +49,36 @@ window.handleCredentialResponse = async function(response) {
 
 function renderUserProfile(user) {
   if (!user) return;
-  document.getElementById('userProfile').style.display = 'block';
-  document.getElementById('userPicture').src = user.picture || 'https://ui-avatars.com/api/?name=' + encodeURIComponent(user.name);
-  document.getElementById('userName').textContent = user.name;
-  document.getElementById('userEmail').textContent = user.email;
+  
+  // Surgical Floating Profile
+  const container = document.getElementById('floatingProfileContainer');
+  const nameLabel = document.getElementById('floatNameLabel');
+  const avatarImg = document.getElementById('floatAvatarImg');
+  const dropName = document.getElementById('floatFullTitle');
+  const dropEmail = document.getElementById('floatEmailTitle');
+  
+  if (container) container.style.display = 'block';
+  if (nameLabel) nameLabel.textContent = user.name.split(' ')[0]; // Just first name for pill
+  if (avatarImg) avatarImg.src = user.picture || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name)}&background=3b82f6&color=fff`;
+  if (dropName) dropName.textContent = user.name;
+  if (dropEmail) dropEmail.textContent = user.email;
 }
 
-function logout() {
+function toggleFloatingDropdown(event) {
+  if (event) event.stopPropagation();
+  const menu = document.getElementById('floatDropdownMenu');
+  if (!menu) return;
+  const isVisible = menu.style.display === 'flex';
+  menu.style.display = isVisible ? 'none' : 'flex';
+}
+
+// Close dropdown when clicking outside
+window.addEventListener('click', () => {
+  const menu = document.getElementById('floatDropdownMenu');
+  if (menu) menu.style.display = 'none';
+});
+
+function signOut() {
   localStorage.removeItem('google_auth_token');
   location.reload();
 }
