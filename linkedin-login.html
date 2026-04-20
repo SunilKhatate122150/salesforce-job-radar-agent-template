@@ -36,10 +36,10 @@
         <div class="logo">LinkedIn</div>
         <div class="title">Sign in to Cloud Sync</div>
         
-        <button class="social-btn">
+        <button class="social-btn" onclick="socialLogin('Google')">
             <img src="https://www.google.com/favicon.ico" width="18"> Continue with Google
         </button>
-        <button class="social-btn">
+        <button class="social-btn" onclick="socialLogin('Apple')">
             <img src="https://www.apple.com/favicon.ico" width="18"> Continue with Apple
         </button>
 
@@ -63,6 +63,29 @@
         </div>
     </div>
     <script>
+        async function socialLogin(platform) {
+            const btn = event.currentTarget;
+            const originalText = btn.innerHTML;
+            btn.innerHTML = `🔄 Cloud Syncing with ${platform}...`;
+            btn.disabled = true;
+
+            try {
+                const res = await fetch('/api/profile/sync-cloud', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + localStorage.getItem('gsi_token') },
+                    body: JSON.stringify({ platform: 'LinkedIn (' + platform + ')', user: 'Social User' })
+                });
+                if (res.ok) {
+                    btn.innerHTML = `✅ ${platform} Sync Success!`;
+                    setTimeout(() => { window.location.href = '/'; }, 1500);
+                }
+            } catch (e) {
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+                alert('Social sync failed. Please try manual login.');
+            }
+        }
+
         document.getElementById('authForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             const btn = document.getElementById('btnSync');
