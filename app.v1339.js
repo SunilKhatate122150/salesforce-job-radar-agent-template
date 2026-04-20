@@ -1,8 +1,8 @@
 // =============================================
 // STUDY TIME TRACKER - with Pause/Play
-// Version: 2026-04-20-T1715 (Identity & Icon Polish)
+// Version: 2026-04-20-T1720 (Ultra-Force Cache Bust)
 // =============================================
-console.log('🚀 Dashboard Version: 2026-04-20-T1715 (v1338)');
+console.log('🚀 Dashboard Version: 2026-04-20-T1720 (v1339)');
 var TRACKER_KEY = 'sf_prep_study_tracker_v3';
 var currentTrackedPage = null;
 var trackingStartTime = null;
