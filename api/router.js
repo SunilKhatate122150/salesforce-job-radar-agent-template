@@ -17,10 +17,19 @@ async function getUserId(req) {
   const authHeader = req.headers.authorization;
   if (!authHeader || !authHeader.startsWith('Bearer ')) return null;
   const token = authHeader.split(' ')[1];
+  if (!token || token === 'null' || token === 'undefined') return null;
+  
   try {
-    const ticket = await client.verifyIdToken({ idToken: token, audience: process.env.GOOGLE_CLIENT_ID });
-    return ticket.getPayload()['sub'];
-  } catch (e) { return null; }
+    const ticket = await client.verifyIdToken({ 
+      idToken: token, 
+      audience: process.env.GOOGLE_CLIENT_ID 
+    });
+    const payload = ticket.getPayload();
+    return payload['sub'];
+  } catch (e) { 
+    console.error('Auth verification failed:', e.message);
+    return null; 
+  }
 }
 
 export default async function(req, res) {
@@ -36,7 +45,6 @@ export default async function(req, res) {
     if (path === 'auth/google' && req.method === 'POST') {
       try {
         let body = req.body;
-        // Safety: Manual parse if Vercel body-parser is skipped
         if (typeof body === 'string') body = JSON.parse(body);
         
         const { token } = body;
@@ -49,11 +57,11 @@ export default async function(req, res) {
         const payload = ticket.getPayload();
         return res.status(200).json({ 
           success: true, 
-          user: { name: payload.name, email: payload.email, picture: payload.picture } 
+          user: { id: payload['sub'], email: payload['email'], name: payload['name'] } 
         });
-      } catch (authError) {
-        console.error('🔥 [Auth Error]:', authError.message);
-        return res.status(500).json({ success: false, error: 'Authentication failed: ' + authError.message });
+      } catch (e) { 
+        console.error('Login error:', e.message);
+        return res.status(401).json({ success: false, error: 'Session expired. Please re-login.' });
       }
     }
 

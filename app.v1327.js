@@ -380,10 +380,10 @@ async function checkAuth() {
       body: JSON.stringify({ token })
     });
     
-    if (res.status === 500) {
-      console.warn('⚠️ Server temporarily unavailable. Retrying in background...');
-      // Silent fallback: Allow UI to load if we have a token, sync will happen later
-      return true; 
+    if (res.status === 401) {
+      console.warn('🔑 Session expired. Showing login overlay.');
+      document.getElementById('loginOverlay').style.display = 'flex';
+      return false;
     }
 
     if (!res.ok) throw new Error('Auth failed');
