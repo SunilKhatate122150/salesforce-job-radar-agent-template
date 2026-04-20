@@ -1048,16 +1048,14 @@ async function resetTracker() {
 // =============================================
 // JOB RADAR INTEGRATION
 // =============================================
-async function fetchJobRadarSummary() {
+function updateJobRadarSummary() {
   try {
-    const response = await apiFetch('/api/summary');
-    if (!response.ok) throw new Error('Unauthorized');
-    const data = await response.json();
-    document.getElementById('dedupeCount').textContent = data.dedupeCount;
-    document.getElementById('trackedCount').textContent = data.trackedCount;
-    document.getElementById('appliedCount').textContent = data.appliedCount;
+    const jobs = window.allJobRecords || [];
+    document.getElementById('dedupeCount').textContent = jobs.length;
+    document.getElementById('trackedCount').textContent = jobs.length;
+    document.getElementById('appliedCount').textContent = jobs.filter(j => j.status === 'applied').length;
   } catch (e) {
-    console.error('Failed to fetch job summary', e);
+    console.error('Failed to update job summary', e);
   }
 }
 
@@ -1070,6 +1068,7 @@ async function fetchJobsList() {
     const data = await response.json();
     window.allJobRecords = data.records;
     renderJobsList(data.records);
+    updateJobRadarSummary();
   } catch (e) {
     console.error('Failed to fetch jobs', e);
   }
@@ -1606,7 +1605,6 @@ document.addEventListener('visibilitychange', function() {
   
   try {
     await Promise.all([
-      fetchJobRadarSummary(),
       fetchJobsList(),
       renderHistory()
     ]);
