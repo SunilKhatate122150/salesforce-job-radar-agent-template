@@ -972,17 +972,23 @@ async function renderHistory() {
   const container = document.getElementById('historyTimeline');
   if (!container) return;
 
+  const now = new Date();
+  const todayStr = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0') + '-' + String(now.getDate()).padStart(2,'0');
+  const yest = new Date(); yest.setDate(now.getDate() - 1);
+  const yestStr = yest.getFullYear() + '-' + String(yest.getMonth()+1).padStart(2,'0') + '-' + String(yest.getDate()).padStart(2,'0');
+
+  // STEP 1: INSTANT LOAD (If we have cache, show it immediately to avoid glitch)
+  if (Object.keys(cachedHistories).length > 0) {
+    renderHistoryUI(container, cachedHistories, todayStr, yestStr);
+  }
+
   try {
     const viewMode = currentHistoryTab;
+    // STEP 2: SILENT BACKGROUND SYNC
     const response = await apiFetch('/api/summary/all?cache_bust=' + Date.now());
     if (!response.ok) throw new Error('Unauthorized');
     const histories = await response.json();
     
-    const now = new Date();
-    const todayStr = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0') + '-' + String(now.getDate()).padStart(2,'0');
-    const yest = new Date(); yest.setDate(now.getDate() - 1);
-    const yestStr = yest.getFullYear() + '-' + String(yest.getMonth()+1).padStart(2,'0') + '-' + String(yest.getDate()).padStart(2,'0');
-
     // Virtual Today entry for real-time tracking
     if (currentTrackedPage) {
       const liveSecs = getCurrentElapsed();
@@ -1012,57 +1018,67 @@ async function renderHistory() {
     Object.keys(histories).forEach(date => {
       const h = histories[date];
       if (h.study && !h.study.topicList) {
-        console.log('[Sync] Repairing topicList for:', date);
         const breakdown = h.study.breakdown || h.study.topicBreakdown || {};
         h.study.topicList = Object.keys(breakdown).map(k => {
           const item = breakdown[k] || {};
-          return {
-            id: k,
-            name: item.name || k,
-            totalSeconds: item.totalSeconds || 0
-          };
+          return { id: k, name: item.name || k, totalSeconds: item.totalSeconds || 0 };
         });
       }
     });
 
-    // CRITICAL: Update global cache
+    // STEP 3: UPDATE CACHE & RE-RENDER SILENTLY
     cachedHistories = histories;
+    renderHistoryUI(container, histories, todayStr, yestStr);
 
-    const filter = document.getElementById('historyPeriodFilter') ? document.getElementById('historyPeriodFilter').value : 'current_month';
-    let dates = Object.keys(histories).sort().reverse();
-
-    if (filter === 'today') dates = dates.filter(d => d === todayStr);
-    else if (filter === 'yesterday') dates = dates.filter(d => d === yestStr);
-    else if (filter === 'current_month') {
-      const prefix = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0');
-      dates = dates.filter(d => d.startsWith(prefix));
+  } catch (e) { 
+    console.error('History Render Error:', e); 
+    if (Object.keys(cachedHistories).length === 0) {
+      container.innerHTML = '<div style="text-align:center; padding:2rem; color:var(--muted);">Cloud history currently unavailable. Check connection.</div>';
     }
+  }
+}
 
-    let totalSecs = 0, dayCount = 0;
-    dates.forEach(date => { 
-      if (histories[date] && histories[date].study && histories[date].study.totalSeconds > 0) {
-        totalSecs += histories[date].study.totalSeconds;
-        dayCount++;
-      }
-    });
+function renderHistoryUI(container, histories, todayStr, yestStr) {
+  const viewMode = currentHistoryTab;
+  const filter = document.getElementById('historyPeriodFilter') ? document.getElementById('historyPeriodFilter').value : 'current_month';
+  let dates = Object.keys(histories).sort().reverse();
 
-    if (viewMode === 'timeline') {
-      renderTimelineView(container, dates, histories, todayStr, yestStr);
-    } else if (viewMode === 'table') {
-      renderTableView(container, dates, histories);
-    } else if (viewMode === 'analytics') {
-      renderAnalyticsView(container, dates, histories);
+  if (filter === 'today') dates = dates.filter(d => d === todayStr);
+  else if (filter === 'yesterday') dates = dates.filter(d => d === yestStr);
+  else if (filter === 'current_month') {
+    const now = new Date();
+    const prefix = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0');
+    dates = dates.filter(d => d.startsWith(prefix));
+  }
+
+  let totalSecs = 0, dayCount = 0;
+  dates.forEach(date => { 
+    if (histories[date] && histories[date].study && histories[date].study.totalSeconds > 0) {
+      totalSecs += histories[date].study.totalSeconds;
+      dayCount++;
     }
+  });
 
-    // Update Stats
-    const totalEl = document.getElementById('historyTotalTime');
-    const countEl = document.getElementById('historyDayCount');
-    const avgEl = document.getElementById('historyAvgTime');
-    if (totalEl) totalEl.textContent = formatTimeFull(totalSecs);
-    if (countEl) countEl.textContent = dayCount;
-    if (avgEl) avgEl.textContent = formatTimeFull(dayCount > 0 ? totalSecs/dayCount : 0);
+  if (viewMode === 'timeline') {
+    renderTimelineView(container, dates, histories, todayStr, yestStr);
+  } else if (viewMode === 'table') {
+    renderTableView(container, dates, histories);
+  } else if (viewMode === 'analytics') {
+    renderAnalyticsView(container, dates, histories);
+  }
 
-  } catch (e) { console.error('History Render Error:', e); }
+  // Update Stats
+  const totalEl = document.getElementById('historyTotalTime');
+  const countEl = document.getElementById('historyDayCount');
+  const avgEl = document.getElementById('historyAvgTime');
+  if (totalEl) totalEl.textContent = formatTimeFull(totalSecs);
+  if (countEl) countEl.textContent = dayCount;
+  if (avgEl) avgEl.textContent = formatTimeFull(dayCount > 0 ? totalSecs/dayCount : 0);
+}
+
+  if (totalEl) totalEl.textContent = formatTimeFull(totalSecs);
+  if (countEl) countEl.textContent = dayCount;
+  if (avgEl) avgEl.textContent = formatTimeFull(dayCount > 0 ? totalSecs/dayCount : 0);
 }
 
 function renderTimelineView(container, dates, histories, todayStr, yestStr) {
