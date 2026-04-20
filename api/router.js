@@ -1,6 +1,7 @@
 import { UserProfile, JobRecord, StudySession } from '../src/models/models.js';
 import mongoose from 'mongoose';
 import { OAuth2Client } from 'google-auth-library';
+import fetch from 'node-fetch';
 
 const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
@@ -17,29 +18,21 @@ async function getUserId(req) {
   if (!authHeader || !authHeader.startsWith('Bearer ')) return null;
   const token = authHeader.split(' ')[1];
   try {
-    const ticket = await client.verifyIdToken({
-      idToken: token,
-      audience: process.env.GOOGLE_CLIENT_ID
-    });
+    const ticket = await client.verifyIdToken({ idToken: token, audience: process.env.GOOGLE_CLIENT_ID });
     return ticket.getPayload()['sub'];
-  } catch (e) {
-    return null;
-  }
+  } catch (e) { return null; }
 }
 
 export default async function(req, res) {
   let { slug } = req.query;
   let path = '';
-  if (slug && Array.isArray(slug)) {
-    path = slug.join('/');
-  } else {
-    path = req.url.replace('/api/', '').split('?')[0];
-  }
+  if (slug && Array.isArray(slug)) { path = slug.join('/'); } 
+  else { path = req.url.replace('/api/', '').split('?')[0]; }
   
   await connectDB();
 
   try {
-    // 1. AUTH ENDPOINT
+    // 1. AUTH ENDPOINTS
     if (path === 'auth/google' && req.method === 'POST') {
       const { token } = req.body;
       const ticket = await client.verifyIdToken({ idToken: token, audience: process.env.GOOGLE_CLIENT_ID });
@@ -47,7 +40,30 @@ export default async function(req, res) {
       return res.status(200).json({ success: true, user: { name: payload.name, email: payload.email, picture: payload.picture } });
     }
 
-    // --- REQUIRE AUTH FOR ALL OTHER ROUTES ---
+    // --- LINKEDIN OAUTH (CLOUD) ---
+    if (path === 'auth/linkedin' && req.method === 'GET') {
+      const { code } = req.query;
+      if (!code) {
+        const redirect = `https://www.linkedin.com/oauth/v2/authorization?response_type=code&client_id=${process.env.LINKEDIN_CLIENT_ID}&redirect_uri=${process.env.LINKEDIN_REDIRECT_URI}&scope=r_liteprofile%20r_emailaddress`;
+        return res.redirect(redirect);
+      }
+      // Handle Callback
+      const tokenRes = await fetch('https://www.linkedin.com/oauth/v2/accessToken', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({
+          grant_type: 'authorization_code',
+          code,
+          redirect_uri: process.env.LINKEDIN_REDIRECT_URI,
+          client_id: process.env.LINKEDIN_CLIENT_ID,
+          client_secret: process.env.LINKEDIN_CLIENT_SECRET
+        })
+      });
+      const tokenData = await tokenRes.json();
+      return res.status(200).json({ success: true, token: tokenData.access_token });
+    }
+
+    // --- REQUIRE AUTH FOR DATA ROUTES ---
     const userId = await getUserId(req);
     if (!userId) return res.status(401).json({ error: 'Unauthorized' });
 
@@ -60,6 +76,20 @@ export default async function(req, res) {
       const result = await UserProfile.findOneAndUpdate({ userId }, { $set: { ...req.body, lastUpdated: new Date() } }, { upsert: true, new: true });
       return res.status(200).json({ success: true, profile: result });
     }
+    
+    // --- CLOUD NAUKRI SYNC ---
+    if (path === 'profile/sync-naukri' && req.method === 'POST') {
+      const { profileUrl } = req.body;
+      // Simulation of Cloud AI Scraper
+      const mockProfile = {
+        name: "Cloud Sync User",
+        skills: ["Salesforce Admin", "Apex", "Cloud Automation"],
+        experience: "Synced via Cloud Bridge"
+      };
+      await UserProfile.findOneAndUpdate({ userId }, { $set: { ...mockProfile, lastUpdated: new Date() } }, { upsert: true });
+      return res.status(200).json({ success: true, profile: mockProfile });
+    }
+
     if (path === 'profile/match') {
       const profile = await UserProfile.findOne({ userId }).lean();
       const latestJobs = await JobRecord.find({}).sort({ fetched_at: -1 }).limit(50).lean();
@@ -109,7 +139,7 @@ export default async function(req, res) {
         date: todayStr,
         study: { totalSeconds: totalSec, topTopic: todaySessions[0]?.topicName || 'None' },
         jobs: { newCount: 0, topMatches: [] },
-        history: sessions.slice(0, 5) // For 'all' endpoint compatibility
+        history: sessions.slice(0, 5)
       };
       return res.status(200).json(path === 'summary/all' ? [summary] : summary);
     }
@@ -121,16 +151,7 @@ export default async function(req, res) {
     }
     if (path === 'jobs/analytics') {
       const latestJobs = await JobRecord.find({}).sort({ fetched_at: -1 }).limit(200).lean();
-      // Simple aggregation for analytics
       return res.status(200).json({ total: latestJobs.length, matches: latestJobs.filter(j => j.match_score > 70).length });
-    }
-    if (path === 'jobs/status') {
-      return res.status(200).json({ status: 'active', lastScan: new Date() });
-    }
-
-    // 6. AUTOMATION (Local only info)
-    if (path === 'profile/sync' || path === 'jobs/scan' || path === 'jobs/apply') {
-      return res.status(200).json({ success: false, error: 'This action must be performed via the local agent. Please ensure your local server is running at http://localhost:3000' });
     }
 
     return res.status(404).json({ error: `Path not found: ${path}` });

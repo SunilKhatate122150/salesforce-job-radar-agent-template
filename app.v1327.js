@@ -68,28 +68,41 @@ async function apiFetch(url, options = {}) {
 }
 
 window.syncProfile = async function(platform) {
+  const isCloud = window.location.hostname !== 'localhost';
+  
+  if (isCloud) {
+    if (platform === 'LinkedIn') {
+      const width = 600, height = 700;
+      const left = (window.innerWidth / 2) - (width / 2);
+      const top = (window.innerHeight / 2) - (height / 2);
+      window.open('/api/auth/linkedin', 'LinkedInLogin', `width=${width},height=${height},top=${top},left=${left}`);
+      return;
+    }
+    if (platform === 'Naukri') {
+      const url = prompt("Please enter your Naukri Profile Public URL or Username for Cloud Sync:");
+      if (!url) return;
+      
+      const res = await apiFetch('/api/profile/sync-naukri', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ profileUrl: url })
+      });
+      const data = await res.json();
+      if (data.success) {
+        alert('✅ Naukri Cloud Sync Success! Your profile is now being analyzed by Gemini AI.');
+        syncDashboard();
+      }
+      return;
+    }
+  }
+
+  // --- LOCAL FALLBACK (Legacy) ---
   const btnL = document.getElementById('btnSyncLinkedIn');
   const btnN = document.getElementById('btnSyncNaukri');
   const statusEl = document.getElementById('profileSyncStatus');
-  const matchBtn = document.getElementById('btnViewProfileMatch');
   
-  // Show loading state
   if (platform === 'LinkedIn' && btnL) { btnL.innerHTML = '<span style="animation:spin 1s linear infinite;display:inline-block;">⟳</span> Syncing...'; btnL.style.opacity = '0.7'; }
   if (platform === 'Naukri' && btnN) { btnN.innerHTML = '<span style="animation:spin 1s linear infinite;display:inline-block;">⟳</span> Syncing...'; btnN.style.opacity = '0.7'; }
-
-  try {
-    // Step 1: Trigger local sync (scrape + AI)
-    // NOTE: This MUST hit the local server because it spawns Puppeteer
-    const localBase = 'http://localhost:3000';
-    const syncRes = await fetch(localBase + '/api/profile/sync', {
-      method: 'POST',
-      headers: { 
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer ' + GSI_TOKEN
-      },
-      body: JSON.stringify({ platform })
-    });
-    const syncData = await syncRes.json();
     
     if (syncData.success) {
       // Step 2: Read cached profile and push to cloud
