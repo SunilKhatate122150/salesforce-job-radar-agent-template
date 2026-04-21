@@ -153,10 +153,10 @@ body {
 
 #headerTitle {
   font-weight: 800;
-  font-size: clamp(0.9rem, 2vw, 1.1rem);
+  font-size: clamp(0.9rem, 2vw, 1.15rem);
   letter-spacing: 0.5px;
   white-space: nowrap;
-  max-width: 250px;
+  max-width: 350px;
   overflow: hidden;
   text-overflow: ellipsis;
   text-align: center;
@@ -165,6 +165,35 @@ body {
 .floating-profile {
   cursor: pointer;
 }
+.profile-pill {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid var(--border2);
+  border-radius: 30px;
+  padding: 4px 4px 4px 10px;
+  transition: all 0.2s;
+}
+.profile-pill:hover { background: rgba(255,255,255,0.08); border-color: var(--blue); }
+.profile-pill img {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 1px solid var(--blue);
+  object-fit: cover;
+  background: var(--card2);
+}
+.streak-badge-mini {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 0.65rem;
+  font-weight: 800;
+  color: var(--amber);
+}
+.streak-fire { font-size: 0.75rem; }
+.streak-label { font-size: 0.55rem; opacity: 0.6; text-transform: uppercase; margin-left: 1px; }
 
 /* PAGES */
 .page {
@@ -409,26 +438,35 @@ pre.code .num{color:var(--purple);}
   
   #mainHeader {
     position: fixed;
-    height: 65px;
-    padding: 0 15px;
+    height: 60px;
+    padding: 0 10px;
   }
   
   .header-zone-left, .header-zone-right {
-    flex: 0 0 60px;
+    flex: 0 0 50px; /* Even tighter for mobile */
   }
   
   .mobile-toggle { 
     display: flex; 
+    width: 40px;
+    height: 40px;
   }
   
   #headerTitle {
     display: block !important;
-    font-size: 0.85rem;
-    max-width: 150px;
+    font-size: 0.82rem;
+    max-width: 180px;
   }
   
+  .profile-pill {
+    padding: 2px 2px 2px 8px;
+    gap: 4px;
+  }
+  .profile-pill img { width: 28px; height: 28px; }
+  .streak-label { display: none; } /* Hide 'day' text on mobile */
+  
   .page {
-    padding-top: 100px !important; /* High-precision clearance for mobile */
+    padding-top: 90px !important;
     width: 100%;
   }
   .profile-name-label { display: none; }
