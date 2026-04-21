@@ -1580,6 +1580,10 @@ pre.code .num {
 }
 
 
+#userProfile {
+  display: none !important;
+}
+
 /* UNIVERSAL ADAPTIVE ENGINE (v1345) */
 @media (max-width: 1024px) {
   #sidebar {
@@ -1604,6 +1608,10 @@ pre.code .num {
   #sidebar.mobile-open {
     left: 0;
     box-shadow: 20px 0 80px rgba(0, 0, 0, 0.8);
+  }
+
+  #userProfile {
+    display: flex !important;
   }
 
   #closeMobileSidebar {
