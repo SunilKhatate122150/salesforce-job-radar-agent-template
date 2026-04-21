@@ -106,7 +106,7 @@ body {
   flex-direction: column;
 }
 
-/* MASTER HEADER (v1345 Universal Fluid) */
+/* MASTER HEADER (v1345 Absolute-Anchor) */
 #mainHeader {
   position: sticky;
   top: 0;
@@ -116,14 +116,16 @@ body {
   backdrop-filter: blur(25px);
   border-bottom: 1px solid var(--border);
   z-index: 2000;
-  display: grid;
-  grid-template-columns: 80px 1fr 80px; /* Fluid columns */
+  display: flex;
   align-items: center;
-  padding: 0 clamp(10px, 2vw, 30px);
+  justify-content: center; /* PERFECT CENTERING */
+  padding: 0 15px;
+  position: relative;
 }
 
 .mobile-toggle {
-  grid-column: 1;
+  position: absolute;
+  left: 15px;
   width: 44px;
   height: 44px;
   display: none;
@@ -133,24 +135,24 @@ body {
   border: 1px solid var(--border2);
   border-radius: 12px;
   cursor: pointer;
-  transition: transform 0.2s;
+  z-index: 10;
 }
-.mobile-toggle:active { transform: scale(0.95); }
 
 #headerTitle {
-  grid-column: 2;
-  text-align: center;
   font-weight: 800;
-  font-size: clamp(0.85rem, 1.5vw, 1.1rem);
+  font-size: clamp(0.9rem, 2vw, 1.1rem);
   letter-spacing: 0.5px;
   white-space: nowrap;
+  max-width: 50%;
   overflow: hidden;
   text-overflow: ellipsis;
+  text-align: center;
 }
 
 .floating-profile {
-  grid-column: 3;
-  justify-self: end;
+  position: absolute;
+  right: 15px;
+  z-index: 10;
   cursor: pointer;
 }
 
@@ -397,25 +399,36 @@ pre.code .num{color:var(--purple);}
   
   #mainHeader {
     position: fixed;
-    grid-template-columns: 50px 1fr 70px;
     height: 65px;
+    display: flex;
+    justify-content: center; /* Center the title block */
+    padding: 0 10px;
+    left: 0;
+    right: 0;
   }
   
-  .mobile-toggle { display: flex; }
+  .mobile-toggle { 
+    display: flex; 
+    position: absolute;
+    left: 10px;
+  }
   
   #headerTitle {
     display: block !important;
     font-size: 0.85rem;
-    opacity: 0.7;
-    padding: 0 10px;
+    max-width: 50%;
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    text-align: center;
+    pointer-events: none;
   }
   
-  .page {
-    padding-top: calc(var(--header-h) + 1.5rem) !important;
-    width: 100%;
+  .floating-profile {
+    position: absolute;
+    right: 10px;
+    display: flex !important;
   }
-  
-  #floatingProfileContainer { display: flex !important; }
   .profile-name-label { display: none; }
   .profile-pill { padding: 4px 8px !important; }
 }

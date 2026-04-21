@@ -491,7 +491,6 @@ async function checkAuth() {
     });
     
     if (res.status === 401) {
-      console.warn('🔑 Session expired. Showing login overlay.');
       document.getElementById('loginOverlay').style.display = 'flex';
       return false;
     }
