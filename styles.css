@@ -413,6 +413,24 @@ body {
   }
 }
 
+/* UNIVERSAL FLUID GRID (v1371) */
+.universal-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(clamp(270px, 100%, 380px), 1fr));
+  gap: 16px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.content-card {
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  min-width: 0;
+  overflow: hidden;
+  position: relative;
+}
+
 .page.active {
   display: block;
 }
