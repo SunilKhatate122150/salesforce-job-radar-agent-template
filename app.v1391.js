@@ -20,6 +20,51 @@ let currentRetentionTopicId = null;
 let sessionFeedbackProvided = new Set(); 
 
 // =============================================
+// DYNAMIC CONTENT DATA (v1391+)
+// =============================================
+var TOPIC_DATA = {
+  'deloitte': {
+    title: 'Deloitte Salesforce Interview (2026)',
+    subtitle: 'Recent technical screening questions and scenario drills for Senior Developer roles.',
+    blocks: [
+      { type: 'section', title: '🚀 Core Technical Q&A' },
+      { type: 'qa', question: 'How do you handle large data volume (LDV) in Apex triggers?', answer: 'Use asynchronous processing (Queueable), optimize SOQL with indexed fields, and implement Platform Events to decouple processing from the main transaction.' },
+      { type: 'qa', question: 'Explain Deloitte\'s focus on "Quality Engineering" in Salesforce.', answer: 'It involves automated unit testing (Jest for LWC), static code analysis (PMD/Checkmarx), and robust CI/CD pipelines using Salesforce CLI and GitHub Actions.' }
+    ]
+  },
+  'security_5_layers': {
+    title: 'Salesforce 5 Layers of Security',
+    subtitle: 'Master the complete security hierarchy from Organization to Record level.',
+    blocks: [
+      { type: 'section', title: '🛡️ The Security Pyramid' },
+      { type: 'qa', question: 'Layer 1: Organization Level?', answer: 'IP Ranges, Login Hours, and Password Policies.' },
+      { type: 'qa', question: 'Layer 2: Object Level?', answer: 'Profiles and Permission Sets (CRUD permissions).' },
+      { type: 'qa', question: 'Layer 3: Field Level?', answer: 'Field Level Security (FLS) to hide specific sensitive data.' },
+      { type: 'qa', question: 'Layer 4: Record Level (OWD)?', answer: 'Organization-Wide Defaults: Private, Public Read/Write, Public Read Only.' },
+      { type: 'qa', question: 'Layer 5: Record Level (Sharing)?', answer: 'Sharing Rules, Manual Sharing, Apex Sharing, and Role Hierarchy.' }
+    ]
+  },
+  'order_of_execution': {
+    title: 'Order of Execution (Master Class)',
+    subtitle: 'The 20+ steps Salesforce takes when a record is saved.',
+    blocks: [
+      { type: 'section', title: '⏱️ The Sequence' },
+      { type: 'qa', question: 'What happens immediately after System Validation?', answer: 'Before Triggers fire.' },
+      { type: 'qa', question: 'When do Duplicate Rules execute?', answer: 'After Before Triggers but before Record Saving.' },
+      { type: 'qa', question: 'What is the very last step in the order?', answer: 'Commit to Database and Post-Commit Logic (like Email Alerts).' }
+    ]
+  },
+  'flow_master': {
+    title: 'Salesforce Flow Master Class',
+    subtitle: 'Advanced logic, fault paths, and design patterns for modern automation.',
+    blocks: [
+      { type: 'section', title: '🌊 Advanced Flow Logic' },
+      { type: 'qa', question: 'When should you use an Autolaunched Flow vs a Record-Triggered Flow?', answer: 'Use Autolaunched for sub-flows or complex logic triggered by Apex/Platform Events. Use Record-Triggered for direct DML-based automation.' }
+    ]
+  }
+};
+
+// =============================================
 // AUTHENTICATION (Google OAuth2)
 // =============================================
 window.processGAuth = async function(response) {
@@ -521,7 +566,72 @@ Do not include any conversational text before or after the JSON.`;
     btn.textContent = 'Generate AI Interview Q&A';
   }
 }
+// =============================================
+// DYNAMIC TOPIC RENDERING (v1391+)
+// =============================================
+function renderTopicContent(topicId) {
+  const data = TOPIC_DATA[topicId];
+  if (!data) return false;
 
+  const container = document.getElementById('dynamicMainContent');
+  const titleEl = document.getElementById('dynamicTitle');
+  const subEl = document.getElementById('dynamicSubtitle');
+  if (!container || !titleEl || !subEl) return false;
+
+  titleEl.textContent = data.title;
+  subEl.textContent = data.subtitle;
+
+  let html = '';
+  data.blocks.forEach(block => {
+    if (block.type === 'section') {
+      html += `<div style="font-weight:800; font-size:0.8rem; color:var(--blue); text-transform:uppercase; letter-spacing:1px; margin:32px 0 16px;">${block.title}</div>`;
+    } else if (block.type === 'qa') {
+      html += `
+        <div class="qa-block" style="margin-bottom:12px; background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.05); border-radius:12px; overflow:hidden;">
+          <div class="qa-question" onclick="toggleQA(this)" style="padding:16px; cursor:pointer; display:flex; justify-content:space-between; align-items:center;">
+            <span class="qa-q-text" style="font-weight:700; font-size:0.9rem; color:var(--text);">${block.question}</span>
+            <span class="qa-chevron" style="opacity:0.3;">▼</span>
+          </div>
+          <div class="qa-answer" style="padding:0 16px 16px; font-size:0.85rem; color:var(--muted); line-height:1.6; display:none;">
+            ${block.answer}
+          </div>
+        </div>
+      `;
+    }
+  });
+
+  container.innerHTML = html;
+  return true;
+}
+
+window.showPage = function(pageId) {
+  // 1. Hide all pages
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  const dynamicPage = document.getElementById('dynamicContentPage');
+  if (dynamicPage) dynamicPage.classList.remove('active');
+
+  // 2. Try Dynamic Render
+  const isDynamic = renderTopicContent(pageId);
+  if (isDynamic) {
+    if (dynamicPage) dynamicPage.classList.add('active');
+  } else {
+    const page = document.getElementById(pageId);
+    if (page) page.classList.add('active');
+  }
+
+  // 3. Tracking & Sidebar
+  startTracking(pageId);
+  document.querySelectorAll('.nav-item').forEach(item => {
+    item.classList.remove('active');
+    if (item.getAttribute('onclick') && item.getAttribute('onclick').includes(pageId)) item.classList.add('active');
+  });
+
+  // 4. Mobile Close
+  const sidebar = document.getElementById('sidebar');
+  if (sidebar && sidebar.classList.contains('mobile-active')) {
+    sidebar.classList.remove('mobile-active');
+  }
+};
 
 async function checkAuth() {
   const token = localStorage.getItem('google_auth_token');
@@ -636,7 +746,15 @@ var topicConfig = {
   'fde_integration': { name: 'FDE Integration', recommended: 60, group: 'FDE Prep' },
   'fde_apex': { name: 'FDE Apex in Agents', recommended: 60, group: 'FDE Prep' },
   'fde_behavioral': { name: 'FDE Behavioral', recommended: 60, group: 'FDE Prep' },
-  'fde_cheat': { name: 'FDE Cheat Sheet', recommended: 30, group: 'FDE Prep' }
+  'fde_cheat': { name: 'FDE Cheat Sheet', recommended: 30, group: 'FDE Prep' },
+  // New Industrial Modules
+  'deloitte': { name: 'Deloitte Prep', recommended: 60, group: 'Company' },
+  'security_5_layers': { name: '5 Layers Security', recommended: 90, group: 'Technical' },
+  'order_of_execution': { name: 'Order of Execution', recommended: 60, group: 'Technical' },
+  'flow_master': { name: 'Flow Master Class', recommended: 90, group: 'Technical' },
+  'sales_cloud': { name: 'Sales Cloud Arch', recommended: 60, group: 'Technical' },
+  'service_cloud': { name: 'Service Cloud Arch', recommended: 60, group: 'Technical' },
+  'experience_cloud': { name: 'Experience Cloud', recommended: 60, group: 'Technical' }
 };
 
 // =============================================
