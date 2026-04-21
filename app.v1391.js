@@ -32,6 +32,54 @@ var TOPIC_DATA = {
       { type: 'qa', question: 'Explain Deloitte\'s focus on "Quality Engineering" in Salesforce.', answer: 'It involves automated unit testing (Jest for LWC), static code analysis (PMD/Checkmarx), and robust CI/CD pipelines using Salesforce CLI and GitHub Actions.' }
     ]
   },
+  'accenture': {
+    title: 'Accenture Salesforce Prep',
+    subtitle: 'LWC, Integration, and Architecture focused modules.',
+    blocks: [
+      { type: 'section', title: '🏗️ Architecture & Dev' },
+      { type: 'qa', question: 'When to use a Trigger Framework at Accenture?', answer: 'Always. It ensures scalability, avoids recursion, and allows for clean separation of logic from the trigger context.' }
+    ]
+  },
+  'mobigic_pwc': {
+    title: 'Mobigic / PWC Screening',
+    subtitle: 'Core Salesforce fundamentals and domain-specific screening.',
+    blocks: [
+      { type: 'section', title: '📋 Screening Prep' },
+      { type: 'qa', question: 'PWC Focus: Data Security?', answer: 'Mastering OWD, Sharing Rules, and FLS is critical for financial clients.' }
+    ]
+  },
+  'thenken_globus': {
+    title: 'Thenken Globus Technical',
+    subtitle: 'Specific technical focus areas for recent interviews.',
+    blocks: [
+      { type: 'section', title: '⚙️ Technical Depth' },
+      { type: 'qa', question: 'How do you optimize SOQL in a multi-tenant environment?', answer: 'Use selective queries, filter by indexed fields, and avoid NULL checks in WHERE clauses.' }
+    ]
+  },
+  'arago': {
+    title: 'Arago Technical Core',
+    subtitle: 'Salesforce Developer core competencies and logic tests.',
+    blocks: [
+      { type: 'section', title: '🧠 Logic & Core' },
+      { type: 'qa', question: 'Scenario: Record not appearing in list view despite correct OWD?', answer: 'Check Role Hierarchy, Sharing Rules, and Filter Criteria on the list view itself.' }
+    ]
+  },
+  'morgan_stanley': {
+    title: 'Morgan Stanley Advanced',
+    subtitle: 'High-performance computing and enterprise patterns.',
+    blocks: [
+      { type: 'section', title: '🏛️ Enterprise Patterns' },
+      { type: 'qa', question: 'How to handle 1M+ records in an Apex Batch?', answer: 'Use QueryLocator, set reasonable scope sizes (200 or lower if complex), and utilize Finish method for chaining if needed.' }
+    ]
+  },
+  'company_iq': {
+    title: 'Company Model Answers',
+    subtitle: 'High-impact responses tailored for top-tier hiring managers.',
+    blocks: [
+      { type: 'section', title: '💡 Strategic Responses' },
+      { type: 'qa', question: 'Why should we hire you over other developers?', answer: 'Focus on your unique combination of deep technical Apex/LWC skills and your specific US Mortgage domain expertise.' }
+    ]
+  },
   'security_5_layers': {
     title: 'Salesforce 5 Layers of Security',
     subtitle: 'Master the complete security hierarchy from Organization to Record level.',
@@ -60,6 +108,78 @@ var TOPIC_DATA = {
     blocks: [
       { type: 'section', title: '🌊 Advanced Flow Logic' },
       { type: 'qa', question: 'When should you use an Autolaunched Flow vs a Record-Triggered Flow?', answer: 'Use Autolaunched for sub-flows or complex logic triggered by Apex/Platform Events. Use Record-Triggered for direct DML-based automation.' }
+    ]
+  },
+  'sales_cloud': {
+    title: 'Sales Cloud Architecture',
+    subtitle: 'Lead to Order lifecycles and Opportunity management.',
+    blocks: [
+      { type: 'section', title: '💰 Sales Cycle' },
+      { type: 'qa', question: 'How to handle complex discounting logic in Sales Cloud?', answer: 'Use CPQ (Configure, Price, Quote) or custom LWC/Apex logic if CPQ is not available.' }
+    ]
+  },
+  'service_cloud': {
+    title: 'Service Cloud Architecture',
+    subtitle: 'Case management, Omni-channel, and Entitlements.',
+    blocks: [
+      { type: 'section', title: '🛠️ Service Excellence' },
+      { type: 'qa', question: 'Benefit of Omni-Channel?', answer: 'Automated work routing based on agent availability and skill level.' }
+    ]
+  },
+  'experience_cloud': {
+    title: 'Experience Cloud (Portals)',
+    subtitle: 'Customer and Partner community architecture.',
+    blocks: [
+      { type: 'section', title: '🌐 Community Design' },
+      { type: 'qa', question: 'How to expose LWC in Experience Cloud?', answer: 'Update the component meta XML to include lightningCommunity__Page and lightningCommunity__Default targets.' }
+    ]
+  },
+  'fde_ag_concept': {
+    title: 'FDE Prep - Agentforce Core',
+    subtitle: 'Atlas reasoning engine and agent architecture.',
+    blocks: [
+      { type: 'section', title: '🤖 AI Reasoning' },
+      { type: 'qa', question: 'What is Atlas?', answer: 'The reasoning engine that powers Agentforce decision-making and action invocation.' }
+    ]
+  },
+  'fde_atlas': {
+    title: 'FDE Prep - Atlas Deep Dive',
+    subtitle: 'Sub-second reasoning and grounding patterns.',
+    blocks: [
+      { type: 'section', title: '⚡ Performance' },
+      { type: 'qa', question: 'How to optimize grounding for Atlas?', answer: 'Use Data Graphs to provide pre-joined, high-performance data views.' }
+    ]
+  },
+  'fde_trust': {
+    title: 'FDE Prep - Einstein Trust Layer',
+    subtitle: 'PII masking, audit trails, and zero-retention policies.',
+    blocks: [
+      { type: 'section', title: '🔐 Trust & Security' },
+      { type: 'qa', question: 'How does PII masking work?', answer: 'Sensitive data is replaced with tokens before being sent to the LLM; the real data never leaves the Salesforce trust boundary.' }
+    ]
+  },
+  'fde_dc_concept': {
+    title: 'FDE Prep - Data Cloud Core',
+    subtitle: 'Ingestion, Mapping, and Unified Individual profiles.',
+    blocks: [
+      { type: 'section', title: '📊 Data Harmonization' },
+      { type: 'qa', question: 'What is a DMO?', answer: 'Data Model Object - the harmonized target for ingested and mapped data in Data Cloud.' }
+    ]
+  },
+  'fde_dc_adv': {
+    title: 'FDE Prep - Data Cloud Advanced',
+    subtitle: 'Calculated Insights and Zero-Copy architecture.',
+    blocks: [
+      { type: 'section', title: '🔝 Advanced Analytics' },
+      { type: 'qa', question: 'Benefit of Zero-Copy?', answer: 'Query data in-place from external lakes (Snowflake/BigQuery) without physically moving it.' }
+    ]
+  },
+  'fde_cheat': {
+    title: 'FDE Master Cheat Sheet',
+    subtitle: 'Quick-fire definitions and differentiator phrases.',
+    blocks: [
+      { type: 'section', title: '🚀 Power Pitch' },
+      { type: 'qa', question: 'The Differentiator?', answer: 'My ability to combine deep technical Apex/LWC skills with the strategic design of Agentforce and Data Cloud.' }
     ]
   }
 };
