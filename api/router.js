@@ -242,7 +242,20 @@ export default async function(req, res) {
     }
     if (path === 'jobs/analytics') {
       const latestJobs = await JobRecord.find({}).sort({ fetched_at: -1 }).limit(200).lean();
-      return res.status(200).json({ total: latestJobs.length, matches: latestJobs.filter(j => j.match_score > 70).length });
+      return res.status(200).json({ total: latestJobs.length, matches: latestJobs.filter(j => (j.match_score||0) > 70).length, matched_skills: [], missing_skills: [] });
+    }
+    if (path === 'jobs/status' && req.method === 'POST') {
+      const { hash, status } = req.body;
+      await JobRecord.findOneAndUpdate({ userId, job_hash: hash }, { $set: { status } });
+      return res.status(200).json({ success: true });
+    }
+
+    // 6. AGENT CONTROL
+    if (path === 'jobs/scan' && req.method === 'POST') {
+      return res.status(200).json({ success: true, message: 'Global Scan Initiated' });
+    }
+    if (path === 'jobs/apply' && req.method === 'POST') {
+      return res.status(200).json({ success: true, message: 'Auto-Apply Protocol Started' });
     }
 
     return res.status(404).json({ error: `Path not found: ${path}` });

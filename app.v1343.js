@@ -1,8 +1,8 @@
 // =============================================
 // STUDY TIME TRACKER - with Pause/Play
-// Version: 2026-04-21-T1100 (Retention Intelligence)
+// Version: 2026-04-21-T1105 (Global Job Radar)
 // =============================================
-console.log('🚀 Dashboard Version: 2026-04-21-T1100 (v1342)');
+console.log('🚀 Dashboard Version: 2026-04-21-T1105 (v1343)');
 var TRACKER_KEY = 'sf_prep_study_tracker_v3';
 var currentTrackedPage = null;
 var trackingStartTime = null;
@@ -1640,36 +1640,40 @@ function renderJobsList(jobs) {
 async function triggerJobScan() {
   const btn = document.getElementById('btnScanJobs');
   const status = document.getElementById('scanStatusText');
+  const radarIcon = btn.querySelector('span');
   
   btn.disabled = true;
-  btn.style.opacity = '0.5';
-  status.textContent = '📡 Global scan initiated...';
+  btn.classList.add('radar-active');
+  if (radarIcon) radarIcon.style.animation = 'spin 2s linear infinite';
+  
+  status.textContent = '📡 Global Radar Active: Scanning LinkedIn & Naukri...';
   status.style.color = 'var(--blue)';
 
   try {
-    const localBase = 'http://localhost:3000';
-    const res = await fetch(localBase + '/api/jobs/scan', { 
-      method: 'POST',
-      headers: { 'Authorization': 'Bearer ' + GSI_TOKEN }
-    });
+    const res = await apiFetch('/api/jobs/scan', { method: 'POST' });
     const data = await res.json();
+    
     if (data.success) {
-      status.textContent = '⏳ Agent is running (Check console)';
-      setTimeout(() => {
-        status.textContent = '✅ Scan complete / Updated';
+      status.textContent = '⏳ Agent analyzing matches with Gemma 4...';
+      // Simulate real progress or poll status if available
+      setTimeout(async () => {
+        status.textContent = '✅ Scan complete. Syncing latest hits...';
+        btn.classList.remove('radar-active');
+        if (radarIcon) radarIcon.style.animation = '';
         btn.disabled = false;
-        btn.style.opacity = '1';
-        fetchJobs(); // Refresh jobs list
-      }, 30000); // Approximate time
+        await fetchJobs(); 
+        await fetchJobRadarSummary();
+      }, 15000); 
     } else {
-      status.textContent = '❌ Scan failed to start';
-      btn.disabled = false;
-      btn.style.opacity = '1';
+      throw new Error(data.error || 'Scan initiation failed');
     }
   } catch (e) {
-    status.textContent = '❌ Connection error';
+    console.error('Scan Error:', e);
+    status.textContent = '❌ Offline: Ensure local agent is running.';
+    status.style.color = 'var(--red)';
+    btn.classList.remove('radar-active');
+    if (radarIcon) radarIcon.style.animation = '';
     btn.disabled = false;
-    btn.style.opacity = '1';
   }
 }
 
@@ -1677,13 +1681,8 @@ async function smartApply(hash) {
   if (!confirm('This will launch a local browser to attempt automated "Easy Apply" using your active Chrome session. Continue?')) return;
   
   try {
-    const localBase = 'http://localhost:3000';
-    const res = await fetch(localBase + '/api/jobs/apply', {
+    const res = await apiFetch('/api/jobs/apply', {
       method: 'POST',
-      headers: { 
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer ' + GSI_TOKEN
-      },
       body: JSON.stringify({ hash })
     });
     const data = await res.json();

@@ -539,6 +539,27 @@ pre.code .num{color:var(--purple);}
   color: var(--text);
 }
 
+@keyframes radar-ping {
+  0% { transform: scale(1); opacity: 0.8; }
+  100% { transform: scale(2.5); opacity: 0; }
+}
+.radar-active {
+  position: relative;
+  z-index: 1;
+}
+.radar-active::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: var(--blue);
+  border-radius: inherit;
+  animation: radar-ping 1.5s infinite;
+  z-index: -1;
+}
+
 @media (max-width: 768px) {
   .mobile-toggle { display: flex; }
   #sidebar {
