@@ -200,7 +200,6 @@ body {
   position: relative;
   display: flex;
   flex-direction: column;
-  padding-bottom: calc(5rem + env(safe-area-inset-bottom)); /* Stabilize footer visibility */
   scroll-behavior: smooth;
 }
 
