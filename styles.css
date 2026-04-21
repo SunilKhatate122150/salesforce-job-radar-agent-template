@@ -1,3 +1,6 @@
+html {
+  scroll-behavior: smooth;
+}
 :root {
   --bg: #0b0d12;
   --surface: #111520;
@@ -17,8 +20,15 @@
   --dim: #3a4668;
   --code-bg: #0e1320;
 }
-*{box-sizing:border-box;margin:0;padding:0;}
-body{background:var(--bg);color:var(--text);font-family:'Plus Jakarta Sans',sans-serif;display:flex;min-height:100vh;font-size:15px;}
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  display: flex;
+  min-height: 100vh;
+  font-size: clamp(14px, 1vw + 12px, 16px); /* Fluid typography core */
+  overflow-x: hidden;
+}
 
 /* SIDEBAR */
 #sidebar{
@@ -57,20 +67,42 @@ body{background:var(--bg);color:var(--text);font-family:'Plus Jakarta Sans',sans
 }
 
 /* MAIN */
-#main{flex:1;overflow-y:auto;height:100vh;}
-#main::-webkit-scrollbar{width:5px;}
-#main::-webkit-scrollbar-thumb{background:var(--border2);border-radius:4px;}
+#main {
+  flex: 1;
+  overflow-y: auto;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+#main::-webkit-scrollbar { width: 6px; }
+#main::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 10px; }
 
 /* PAGES */
-.page{display:none;padding:2rem;}
-.page.active{display:block;}
-
-.page-title{
-  font-size:1.5rem;font-weight:700;margin-bottom:0.3rem;
-  background:linear-gradient(135deg,var(--blue),var(--cyan));
-  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+.page {
+  display: none;
+  padding: clamp(1rem, 5vw, 3rem);
+  width: 100%;
+  max-width: 1400px; /* Prevent stretching on ultra-wide */
+  margin: 0 auto;
 }
-.page-sub{font-size:0.82rem;color:var(--muted);margin-bottom:1.8rem;padding-bottom:1rem;border-bottom:1px solid var(--border);}
+.page.active { display: block; }
+
+.page-title {
+  font-size: clamp(1.2rem, 3vw, 2.2rem); /* Dynamic title scaling */
+  font-weight: 800;
+  margin-bottom: 0.5rem;
+  background: linear-gradient(135deg, var(--blue), var(--cyan));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.page-sub {
+  font-size: clamp(0.75rem, 1vw + 0.5rem, 0.9rem);
+  color: var(--muted);
+  margin-bottom: 2rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--border);
+}
 
 /* QA CARDS */
 .qa-block{margin-bottom:1.5rem;background:var(--card);border:1px solid var(--border);border-radius:12px;overflow:hidden;}
@@ -260,7 +292,55 @@ pre.code .num{color:var(--purple);}
 #floatingTimer .ft-dot.paused{background:var(--amber);animation:none;}
 
 
-/* Consolidated Media Queries moved to end (v1343) */
+/* TABLET & MOBILE ADAPTIVE OVERRIDES (v1343 Universal) */
+@media (max-width: 1024px) {
+  #sidebar { width: 280px; min-width: 280px; }
+}
+
+@media (max-width: 768px) {
+  #sidebar {
+    position: fixed;
+    left: -280px;
+    z-index: 10000;
+    transition: left 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+  
+  #floatingProfileContainer {
+    position: static !important;
+    margin: 1rem;
+    width: calc(100% - 2rem);
+    order: -1;
+    display: none; /* Controlled by JS */
+    justify-content: flex-end;
+    align-items: center;
+    background: rgba(255,255,255,0.03);
+    padding: 0.8rem;
+    border-radius: 14px;
+    border: 1px solid rgba(255,255,255,0.05);
+  }
+  
+  #main::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 70px;
+    background: rgba(11, 13, 18, 0.7);
+    backdrop-filter: blur(15px);
+    z-index: 1000;
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+  }
+  
+  .profile-pill {
+    width: 100%;
+    justify-content: space-between;
+  }
+  
+  .page {
+    padding-top: 5rem; /* Space for mobile menu button */
+  }
+}
 
 /* JOB RADAR DASHBOARD ADDITIONS */
 .job-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:1rem;margin-bottom:1rem;display:flex;justify-content:space-between;align-items:center;}
