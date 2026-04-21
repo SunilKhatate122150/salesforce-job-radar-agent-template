@@ -106,7 +106,7 @@ body {
   flex-direction: column;
 }
 
-/* MASTER HEADER (v1345 Absolute-Anchor) */
+/* MASTER HEADER (v1346 Tri-Zone Flex) */
 #mainHeader {
   position: sticky;
   top: 0;
@@ -118,14 +118,28 @@ body {
   z-index: 2000;
   display: flex;
   align-items: center;
-  justify-content: center; /* PERFECT CENTERING */
-  padding: 0 15px;
-  position: relative;
+  justify-content: space-between;
+  padding: 0 20px;
+}
+
+.header-zone-left {
+  flex: 0 0 100px;
+  display: flex;
+  align-items: center;
+}
+.header-zone-center {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+}
+.header-zone-right {
+  flex: 0 0 100px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
 }
 
 .mobile-toggle {
-  position: absolute;
-  left: 15px;
   width: 44px;
   height: 44px;
   display: none;
@@ -135,7 +149,6 @@ body {
   border: 1px solid var(--border2);
   border-radius: 12px;
   cursor: pointer;
-  z-index: 10;
 }
 
 #headerTitle {
@@ -143,16 +156,13 @@ body {
   font-size: clamp(0.9rem, 2vw, 1.1rem);
   letter-spacing: 0.5px;
   white-space: nowrap;
-  max-width: 50%;
+  max-width: 250px;
   overflow: hidden;
   text-overflow: ellipsis;
   text-align: center;
 }
 
 .floating-profile {
-  position: absolute;
-  right: 15px;
-  z-index: 10;
   cursor: pointer;
 }
 
@@ -400,34 +410,26 @@ pre.code .num{color:var(--purple);}
   #mainHeader {
     position: fixed;
     height: 65px;
-    display: flex;
-    justify-content: center; /* Center the title block */
-    padding: 0 10px;
-    left: 0;
-    right: 0;
+    padding: 0 15px;
+  }
+  
+  .header-zone-left, .header-zone-right {
+    flex: 0 0 60px;
   }
   
   .mobile-toggle { 
     display: flex; 
-    position: absolute;
-    left: 10px;
   }
   
   #headerTitle {
     display: block !important;
     font-size: 0.85rem;
-    max-width: 50%;
-    position: absolute;
-    left: 50%;
-    transform: translateX(-50%);
-    text-align: center;
-    pointer-events: none;
+    max-width: 150px;
   }
   
-  .floating-profile {
-    position: absolute;
-    right: 10px;
-    display: flex !important;
+  .page {
+    padding-top: 100px !important; /* High-precision clearance for mobile */
+    width: 100%;
   }
   .profile-name-label { display: none; }
   .profile-pill { padding: 4px 8px !important; }
