@@ -1,8 +1,8 @@
 // =============================================
 // STUDY TIME TRACKER - with Pause/Play
-// Version: 2026-04-20-T1720 (Ultra-Force Cache Bust)
+// Version: 2026-04-20-T1732 (Study Command Center)
 // =============================================
-console.log('🚀 Dashboard Version: 2026-04-20-T1720 (v1339)');
+console.log('🚀 Dashboard Version: 2026-04-20-T1732 (v1340)');
 var TRACKER_KEY = 'sf_prep_study_tracker_v3';
 var currentTrackedPage = null;
 var trackingStartTime = null;
@@ -14,6 +14,8 @@ let lastFetchTime = 0;
 const MIN_FETCH_INTERVAL = 60000;
 let currentUser = null;
 let GSI_TOKEN = localStorage.getItem('google_auth_token') || null;
+let userBookmarks = JSON.parse(localStorage.getItem('sf_bookmarks') || '[]');
+let studyStreak = JSON.parse(localStorage.getItem('sf_study_streak') || '{"current":0,"best":0,"lastDate":""}');
 
 // =============================================
 // AUTHENTICATION (Google OAuth2)
@@ -1989,6 +1991,9 @@ async function showPage(id) {
   if (cfg && !cfg.noTimer) {
     startTracking(id);
   }
+  
+  // Ensure bookmark buttons are rendered on the new page (v1340)
+  renderBookmarkButtons();
 }
 
 function toggleQA(el) { 
@@ -2032,7 +2037,13 @@ function goToResult(pageId, idx) {
   document.getElementById('searchInput').value = '';
   document.getElementById('searchPage').style.display = 'none';
   showPage(pageId);
-  setTimeout(function() { if (searchData[idx] && searchData[idx].answerEl) { searchData[idx].answerEl.scrollIntoView({behavior:'smooth',block:'center'}); searchData[idx].answerEl.classList.add('open'); } }, 200);
+  setTimeout(function() { 
+    if (searchData[idx] && searchData[idx].answerEl) { 
+      searchData[idx].answerEl.scrollIntoView({behavior:'smooth',block:'center'}); 
+      searchData[idx].answerEl.classList.add('open'); 
+      renderBookmarkButtons(); // Ensure bookmark star is visible (v1340)
+    } 
+  }, 200);
 }
 
 let cachedHistories = {};
@@ -2424,4 +2435,156 @@ document.addEventListener('keydown', function(e) {
   if (e.ctrlKey && e.key === 'Enter' && document.activeElement.id === 'userAnswerInput') {
     submitAnswer();
   }
+});
+
+// =============================================
+// STUDY STREAKS ENGINE (v1340)
+// =============================================
+function updateStudyStreak() {
+  const today = new Date().toISOString().split('T')[0];
+  const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
+  
+  if (studyStreak.lastDate === today) return; // Already updated today
+  
+  if (studyStreak.lastDate === yesterday) {
+    studyStreak.current += 1;
+  } else if (studyStreak.lastDate !== today) {
+    studyStreak.current = 1; // Reset streak
+  }
+  
+  if (studyStreak.current > studyStreak.best) {
+    studyStreak.best = studyStreak.current;
+  }
+  
+  studyStreak.lastDate = today;
+  localStorage.setItem('sf_study_streak', JSON.stringify(studyStreak));
+  renderStreakBadge();
+}
+
+function renderStreakBadge() {
+  const badge = document.getElementById('streakBadge');
+  if (!badge) return;
+  
+  const flame = studyStreak.current >= 7 ? '🔥' : studyStreak.current >= 3 ? '⚡' : '✨';
+  badge.innerHTML = `${flame} ${studyStreak.current} day${studyStreak.current !== 1 ? 's' : ''}`;
+  badge.title = `Best streak: ${studyStreak.best} days`;
+  badge.style.display = studyStreak.current > 0 ? 'inline-flex' : 'none';
+}
+
+// Hook into stopTracking to update streaks
+const _originalStopTracking = stopTracking;
+stopTracking = async function() {
+  await _originalStopTracking();
+  updateStudyStreak();
+};
+
+// =============================================
+// BOOKMARK SYSTEM (v1340)
+// =============================================
+function toggleBookmark(questionText, topicId) {
+  const idx = userBookmarks.findIndex(b => b.q === questionText);
+  if (idx >= 0) {
+    userBookmarks.splice(idx, 1);
+  } else {
+    userBookmarks.push({ q: questionText, topic: topicId, date: new Date().toISOString() });
+  }
+  localStorage.setItem('sf_bookmarks', JSON.stringify(userBookmarks));
+  renderBookmarkButtons();
+  
+  // Update bookmark count in sidebar
+  const countEl = document.getElementById('bookmarkCount');
+  if (countEl) countEl.textContent = userBookmarks.length;
+}
+
+function isBookmarked(questionText) {
+  return userBookmarks.some(b => b.q === questionText);
+}
+
+function renderBookmarkButtons() {
+  document.querySelectorAll('.qa-question').forEach(qEl => {
+    const qText = qEl.querySelector('.qa-q-text')?.textContent;
+    if (!qText) return;
+    
+    let btn = qEl.querySelector('.bookmark-btn');
+    if (!btn) {
+      btn = document.createElement('span');
+      btn.className = 'bookmark-btn';
+      btn.style.cssText = 'cursor:pointer;font-size:1rem;flex-shrink:0;margin-left:4px;transition:transform 0.2s;';
+      btn.onclick = function(e) {
+        e.stopPropagation();
+        const page = qEl.closest('.page');
+        const topicId = page ? page.id : 'unknown';
+        toggleBookmark(qText, topicId);
+      };
+      qEl.insertBefore(btn, qEl.querySelector('.qa-chevron'));
+    }
+    btn.textContent = isBookmarked(qText) ? '⭐' : '☆';
+    btn.title = isBookmarked(qText) ? 'Remove bookmark' : 'Bookmark this question';
+  });
+}
+
+function showBookmarks() {
+  showPage('bookmarks_page');
+  const container = document.getElementById('bookmarksContent');
+  if (!container) return;
+  
+  if (userBookmarks.length === 0) {
+    container.innerHTML = `
+      <div style="text-align:center; padding:60px 20px;">
+        <div style="font-size:3rem; margin-bottom:16px; opacity:0.3;">☆</div>
+        <div style="font-weight:700; color:var(--text); margin-bottom:8px;">No Bookmarks Yet</div>
+        <p style="font-size:0.82rem; color:var(--muted); max-width:400px; margin:0 auto;">Click the ☆ icon on any question to bookmark it for quick revision. Your bookmarks are saved locally.</p>
+      </div>`;
+    return;
+  }
+  
+  let html = `<div style="font-size:0.75rem; color:var(--muted); margin-bottom:16px;">${userBookmarks.length} bookmarked question${userBookmarks.length !== 1 ? 's' : ''}</div>`;
+  userBookmarks.forEach((b, i) => {
+    const topicName = topicConfig[b.topic] ? topicConfig[b.topic].name : b.topic;
+    html += `
+      <div style="background:var(--card); border:1px solid var(--border); border-radius:12px; padding:14px 16px; margin-bottom:10px; display:flex; align-items:flex-start; gap:12px; cursor:pointer; transition:all 0.2s;" onclick="showPage('${b.topic}')" onmouseenter="this.style.borderColor='var(--blue)'" onmouseleave="this.style.borderColor='var(--border)'">
+        <span style="font-size:1.1rem; flex-shrink:0; margin-top:2px;">⭐</span>
+        <div style="flex:1; min-width:0;">
+          <div style="font-weight:600; font-size:0.88rem; color:var(--text); line-height:1.5;">${b.q}</div>
+          <div style="font-size:0.7rem; color:var(--muted); margin-top:4px; font-family:'IBM Plex Mono',monospace;">${topicName}</div>
+        </div>
+        <span onclick="event.stopPropagation(); toggleBookmark('${b.q.replace(/'/g, "\\'")}', '${b.topic}'); showBookmarks();" style="cursor:pointer; font-size:0.75rem; color:var(--red); padding:4px 8px; border-radius:6px; background:rgba(240,106,106,0.1);">✕</span>
+      </div>`;
+  });
+  container.innerHTML = html;
+}
+
+// =============================================
+// MOBILE SIDEBAR TOGGLE (v1340)
+// =============================================
+function toggleMobileSidebar() {
+  const sidebar = document.getElementById('sidebar');
+  const overlay = document.getElementById('sidebarOverlay');
+  if (!sidebar) return;
+  
+  const isOpen = sidebar.classList.contains('mobile-open');
+  if (isOpen) {
+    sidebar.classList.remove('mobile-open');
+    if (overlay) overlay.style.display = 'none';
+    document.body.style.overflow = '';
+  } else {
+    sidebar.classList.add('mobile-open');
+    if (overlay) overlay.style.display = 'block';
+    document.body.style.overflow = 'hidden';
+  }
+}
+
+// Close sidebar when clicking a nav item on mobile
+document.addEventListener('click', function(e) {
+  if (e.target.closest('.nav-item') && window.innerWidth <= 768) {
+    setTimeout(toggleMobileSidebar, 150);
+  }
+});
+
+// =============================================
+// INIT: Render streaks + bookmarks on load
+// =============================================
+window.addEventListener('DOMContentLoaded', function() {
+  renderStreakBadge();
+  setTimeout(renderBookmarkButtons, 500);
 });

@@ -57,7 +57,7 @@ export default async function(req, res) {
         const payload = ticket.getPayload();
         return res.status(200).json({ 
           success: true, 
-          user: { id: payload['sub'], email: payload['email'], name: payload['name'] } 
+          user: { id: payload['sub'], email: payload['email'], name: payload['name'], picture: payload['picture'] } 
         });
       } catch (e) { 
         console.error('Login error:', e.message);

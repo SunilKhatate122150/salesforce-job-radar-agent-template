@@ -1,9 +1,9 @@
-<!DOCTYPE html> <!-- Pulse: v1339 - 2026-04-20-T1720 -->
+<!DOCTYPE html> <!-- Pulse: v1340 - 2026-04-20-T1732 -->
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Salesforce Prep Guide v1339</title>
+  <title>Salesforce Prep Guide v1340</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=Plus+Jakarta+Sans:wght@400;600;700&display=swap" rel="stylesheet">
@@ -18,6 +18,12 @@
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 </head>
 <body>
+
+<!-- MOBILE TOGGLE & OVERLAY (v1340) -->
+<div class="mobile-toggle" onclick="toggleMobileSidebar()" title="Toggle Sidebar">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:20px;"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+</div>
+<div id="sidebarOverlay" onclick="toggleMobileSidebar()"></div>
 
 <!-- LOGIN OVERLAY -->
 <div id="loginOverlay" style="position:fixed; top:0; left:0; width:100%; height:100%; background:#0f172a; z-index:9999; display:flex; flex-direction:column; align-items:center; justify-content:center; color:white;">
@@ -49,6 +55,7 @@
   <!-- SURGICAL FLOATING PROFILE -->
   <div class="floating-profile" id="floatingProfileContainer" onclick="toggleFloatingDropdown(event)" style="display:none;">
     <div class="profile-pill">
+      <div id="streakBadge">🔥 0 days</div>
       <span class="profile-name-label" id="floatNameLabel">User</span>
       <img src="" class="profile-avatar-img" id="floatAvatarImg">
     </div>
@@ -101,7 +108,7 @@
       🧠 Profile Intelligence
     </button>
 
-    <button onclick="logout()" style="width:100%; margin-top:10px; padding:7px; font-size:0.68rem; font-family:'Plus Jakarta Sans',sans-serif; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08); border-radius:8px; color:var(--muted); cursor:pointer; transition: all 0.2s;" onmouseenter="this.style.background='rgba(239,68,68,0.1)';this.style.borderColor='rgba(239,68,68,0.25)';this.style.color='#ef4444'" onmouseleave="this.style.background='rgba(255,255,255,0.04)';this.style.borderColor='rgba(255,255,255,0.08)';this.style.color='var(--muted)'">Sign Out</button>
+    <button onclick="signOut()" style="width:100%; margin-top:10px; padding:7px; font-size:0.68rem; font-family:'Plus Jakarta Sans',sans-serif; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08); border-radius:8px; color:var(--muted); cursor:pointer; transition: all 0.2s;" onmouseenter="this.style.background='rgba(239,68,68,0.1)';this.style.borderColor='rgba(239,68,68,0.25)';this.style.color='#ef4444'" onmouseleave="this.style.background='rgba(255,255,255,0.04)';this.style.borderColor='rgba(255,255,255,0.08)';this.style.color='var(--muted)'">Sign Out</button>
   </div>
   <div class="sidebar-header">
     <div style="font-size:0.6rem; color:var(--blue); font-family:'IBM Plex Mono',monospace; margin-bottom:0.5rem; letter-spacing:2px; text-transform:uppercase;">Agent Dashboard</div>
@@ -123,6 +130,7 @@
     <div class="nav-item" onclick="showPage('profile_match')">🧠 Profile Matching <span class="count">AI</span></div>
     <div class="nav-item" onclick="showPage('study_history')">📅 Study History <span class="count">Archive</span></div>
     <div class="nav-item" onclick="showPage('job_radar')">📡 Job Radar Dashboard <span class="count">Radar</span></div>
+    <div class="nav-item" onclick="showBookmarks()" style="border-left-color:var(--amber); color:var(--text);">⭐ Bookmarked Q&A <span class="count" id="bookmarkCount" style="background:rgba(244,197,66,0.2); color:var(--amber);">0</span></div>
   </div>
 
   <div class="nav-parent-section">
@@ -289,6 +297,13 @@
       </div>
     </div>
   </div>
+</div>
+
+<!-- BOOKMARKS PAGE (v1340) -->
+<div id="bookmarks_page" class="page">
+  <div class="page-title" style="color:var(--amber);">⭐ My Bookmarks</div>
+  <div class="page-sub">Your curated collection of important questions for quick revision.</div>
+  <div id="bookmarksContent"></div>
 </div>
 
 <!-- SEARCH RESULTS PAGE -->
@@ -12825,6 +12840,6 @@ public class LoanStatusActionTest {
 
 </div><!-- end #main -->
 
-<script src="app.v1339.js"></script>
+<script src="app.v1340.js"></script>
 </body>
 </html>
