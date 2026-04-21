@@ -240,6 +240,20 @@ async function loadUserProfile() {
       renderProfileMatchPage(data.profile);
       updateSidebarProfileStatus(data.profile);
       updateSyncModalUI(data.profile);
+
+      // Cloud Sync Streaks & Bookmarks (v1340)
+      if (data.profile.studyStreak) {
+        studyStreak = data.profile.studyStreak;
+        localStorage.setItem('sf_study_streak', JSON.stringify(studyStreak));
+        renderStreakBadge();
+      }
+      if (data.profile.bookmarks) {
+        userBookmarks = data.profile.bookmarks;
+        localStorage.setItem('sf_bookmarks', JSON.stringify(userBookmarks));
+        renderBookmarkButtons();
+        const countEl = document.getElementById('bookmarkCount');
+        if (countEl) countEl.textContent = userBookmarks.length;
+      }
     }
   } catch (e) { console.log('[Profile] Cloud profile fetch failed or unavailable.'); }
 }
@@ -2459,6 +2473,14 @@ function updateStudyStreak() {
   studyStreak.lastDate = today;
   localStorage.setItem('sf_study_streak', JSON.stringify(studyStreak));
   renderStreakBadge();
+  
+  // Cloud Sync (v1340)
+  if (GSI_TOKEN) {
+    apiFetch('/api/profile/save', {
+      method: 'POST',
+      body: JSON.stringify({ studyStreak })
+    }).catch(e => console.error('Streak cloud sync failed', e));
+  }
 }
 
 function renderStreakBadge() {
@@ -2494,6 +2516,22 @@ function toggleBookmark(questionText, topicId) {
   // Update bookmark count in sidebar
   const countEl = document.getElementById('bookmarkCount');
   if (countEl) countEl.textContent = userBookmarks.length;
+
+  // Cloud Sync (v1340)
+  if (GSI_TOKEN) {
+    apiFetch('/api/profile/toggle-bookmark', {
+      method: 'POST',
+      body: JSON.stringify({ q: questionText, topic: topicId })
+    }).then(async res => {
+      if (res.ok) {
+        const data = await res.json();
+        userBookmarks = data.bookmarks;
+        localStorage.setItem('sf_bookmarks', JSON.stringify(userBookmarks));
+        renderBookmarkButtons();
+        if (countEl) countEl.textContent = userBookmarks.length;
+      }
+    }).catch(e => console.error('Bookmark cloud sync failed', e));
+  }
 }
 
 function isBookmarked(questionText) {

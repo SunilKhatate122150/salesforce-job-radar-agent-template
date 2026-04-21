@@ -84,6 +84,17 @@ const userProfileSchema = new mongoose.Schema({
   // Study plan
   studyPlan: String,                             // Full markdown study plan from Gemma 4
   studyPlanTopics: [studyTopicSchema],           // Structured topics linked to timer
+  // Phase 1 Expansion (v1340)
+  studyStreak: {
+    current: { type: Number, default: 0 },
+    best: { type: Number, default: 0 },
+    lastDate: String
+  },
+  bookmarks: [{
+    q: String,
+    topic: String,
+    date: { type: Date, default: Date.now }
+  }],
   // Raw extraction log
   rawExtraction: {
     linkedinSkills: [String],

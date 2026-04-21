@@ -101,6 +101,20 @@ export default async function(req, res) {
       const result = await UserProfile.findOneAndUpdate({ userId }, { $set: { ...req.body, lastUpdated: new Date() } }, { upsert: true, new: true });
       return res.status(200).json({ success: true, profile: result });
     }
+
+    if (path === 'profile/toggle-bookmark' && req.method === 'POST') {
+      const { q, topic } = req.body;
+      const profile = await UserProfile.findOne({ userId });
+      const bookmarks = profile?.bookmarks || [];
+      const exists = bookmarks.some(b => b.q === q);
+      
+      const update = exists 
+        ? { $pull: { bookmarks: { q } } }
+        : { $push: { bookmarks: { q, topic, date: new Date() } } };
+        
+      const result = await UserProfile.findOneAndUpdate({ userId }, update, { upsert: true, new: true });
+      return res.status(200).json({ success: true, bookmarks: result.bookmarks });
+    }
     
     // --- CLOUD SYNC ENGINE (LinkedIn/Naukri) ---
     if (path === 'profile/sync-cloud' && req.method === 'POST') {
