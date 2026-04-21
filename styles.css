@@ -2447,3 +2447,28 @@ pre.code .num {
     margin-top: 10px !important;
   }
 }
+
+/* Global UI & Sidebar Refinements v1378 */
+.page-header {
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  margin-bottom: 2rem !important;
+  flex-wrap: wrap !important;
+  gap: 15px !important;
+}
+
+@media (max-width: 768px) {
+  .page-header {
+    flex-direction: column !important;
+    align-items: stretch !important;
+  }
+  .content-card {
+    padding: 1.25rem !important;
+    border-radius: 12px !important;
+  }
+  .universal-grid {
+    grid-template-columns: 1fr !important;
+    gap: 12px !important;
+  }
+}
