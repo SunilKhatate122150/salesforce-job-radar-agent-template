@@ -784,10 +784,18 @@ pre.code .num{color:var(--purple);}
 }
 .mobile-toggle:hover { background: rgba(255,255,255,0.05); border-color: var(--blue); }
 
+/* COMPACT SIDEBAR TOP (v1350) */
+.sidebar-top-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 15px 15px;
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+  background: rgba(255,255,255,0.02);
+  margin-bottom: 10px;
+}
+
 #closeMobileSidebar {
-  position: absolute;
-  top: 20px;
-  right: 20px;
   width: 32px;
   height: 32px;
   background: rgba(255,255,255,0.05);
@@ -799,6 +807,7 @@ pre.code .num{color:var(--purple);}
   cursor: pointer;
   color: var(--muted);
   transition: all 0.2s;
+  flex-shrink: 0;
 }
 #closeMobileSidebar:hover { background: rgba(239,68,68,0.1); color: #ef4444; border-color: rgba(239,68,68,0.2); }
 
@@ -847,8 +856,8 @@ pre.code .num{color:var(--purple);}
   }
   
   #userProfile {
-    margin-top: 40px !important; /* Give space for close button */
-    padding: 20px 15px !important;
+    padding: 0 !important; /* Managed by sidebar-top-row */
+    margin: 0 !important;
   }
   .page { padding: 4.5rem 1rem 2rem 1rem; }
   .page-title { font-size: 1.25rem; }
