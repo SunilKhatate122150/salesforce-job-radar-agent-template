@@ -2418,3 +2418,32 @@ pre.code .num {
     display: block !important;
   }
 }
+
+/* History Header Stabilization v1377 */
+.history-header {
+  flex-wrap: wrap !important;
+  gap: 15px !important;
+}
+
+@media (max-width: 768px) {
+  .history-header {
+    flex-direction: column !important;
+    align-items: stretch !important;
+  }
+  .history-tabs {
+    justify-content: center !important;
+    width: 100% !important;
+  }
+  #historyPeriodFilter {
+    width: 100% !important;
+  }
+}
+
+/* Sync Button Stabilization v1377 */
+@media (max-width: 768px) {
+  .sync-btn-header {
+    width: 100% !important;
+    min-width: 0 !important;
+    margin-top: 10px !important;
+  }
+}
