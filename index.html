@@ -1,9 +1,9 @@
-<!DOCTYPE html> <!-- Pulse: v1364 - 2026-04-21-T1355 -->
+<!DOCTYPE html> <!-- Pulse: v1365 - 2026-04-21-T1400 -->
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Salesforce Prep Guide v1364</title>
+  <title>Salesforce Prep Guide v1365</title>
   <link rel="manifest" href="/manifest.json">
   <meta name="theme-color" content="#0b0d12">
   <meta name="mobile-web-app-capable" content="yes">
@@ -12541,7 +12541,10 @@ public class LoanStatusActionTest {
 
   <div id="dailyInsightCard" class="suggestion-card" style="border-left-color:var(--blue); display:none; margin-bottom:1.5rem;">
     <div style="display:flex; justify-content:space-between; align-items:center;">
-      <span style="font-size:0.9rem; font-weight:700; color:var(--blue);">≡ƒôà Today's Cloud Summary</span>
+      <span style="font-size:0.9rem; font-weight:700; color:var(--blue); display:flex; align-items:center; gap:8px;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+        Today's Cloud Summary
+      </span>
       <span id="summaryDate" style="font-size:0.7rem; color:var(--muted); font-family:'IBM Plex Mono',monospace;"></span>
     </div>
     <div id="summaryContent" style="margin-top:0.8rem; font-size:0.82rem; color:var(--text); line-height:1.6;">
@@ -12550,9 +12553,12 @@ public class LoanStatusActionTest {
   </div>
 
   <div style="background:var(--card); border:1px solid var(--border); border-radius:12px; padding:1.5rem; margin-bottom:2rem; border-left:4px solid var(--blue);">
-    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
-      <div>
-        <h3 style="color:var(--text); font-size:1.1rem; margin-bottom:5px;">≡ƒÅü Course Completion Goal</h3>
+    <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:1.5rem; flex-wrap:wrap; gap:15px;">
+      <div style="min-width:200px;">
+        <h3 style="color:var(--text); font-size:1.1rem; margin-bottom:5px; display:flex; align-items:center; gap:8px;">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:18px;height:18px;color:var(--amber);"><circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="12" r="6"></circle><circle cx="12" cy="12" r="2"></circle></svg>
+          Course Completion Goal
+        </h3>
         <p style="color:var(--muted); font-size:0.8rem;">Calculate how many hours you need to study per day to finish.</p>
       </div>
       <div style="display:flex; align-items:center; gap:10px;">
@@ -12926,6 +12932,6 @@ public class LoanStatusActionTest {
 
 </div><!-- end #main -->
 
-<script src="app.v1364.js"></script>
+<script src="app.v1365.js"></script>
 </body>
 </html>
