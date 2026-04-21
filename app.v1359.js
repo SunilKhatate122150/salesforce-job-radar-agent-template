@@ -1,6 +1,6 @@
-// Version: 2026-04-21-T1330 (Auth Polish Mode)
+// Version: 2026-04-21-T1340 (Schedule Fix Mode)
 // =============================================
-console.log('%c 🚀 Dashboard Version: 2026-04-21-T1330 (v1358)', 'color: #10b981; font-weight: bold; font-size: 14px;');
+console.log('%c 🚀 Dashboard Version: 2026-04-21-T1340 (v1359)', 'color: #10b981; font-weight: bold; font-size: 14px;');
 var TRACKER_KEY = 'sf_prep_study_tracker_v3';
 var currentTrackedPage = null;
 var trackingStartTime = null;
