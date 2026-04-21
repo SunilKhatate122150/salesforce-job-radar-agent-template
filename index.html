@@ -1,9 +1,9 @@
-<!DOCTYPE html> <!-- Pulse: v1361 - 2026-04-21-T1355 -->
+<!DOCTYPE html> <!-- Pulse: v1362 - 2026-04-21-T1345 -->
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Salesforce Prep Guide v1361</title>
+  <title>Salesforce Prep Guide v1362</title>
   <link rel="manifest" href="/manifest.json">
   <meta name="theme-color" content="#0b0d12">
   <meta name="mobile-web-app-capable" content="yes">
@@ -199,7 +199,10 @@
   <span class="ft-dot" id="ftDot"></span>
   <span class="ft-topic" id="ftTopic">Ready</span>
   <span class="ft-time" id="ftTime">00:00</span>
-  <button class="ft-btn playing" id="ftPlayPause" onclick="togglePause()" title="Pause/Resume">ΓÅ╕</button>
+  <button class="ft-btn playing" id="ftPlayPause" onclick="togglePause()" title="Pause/Resume">
+    <svg id="ftIconPause" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;"><rect x="6" y="4" width="4" height="16"></rect><rect x="14" y="4" width="4" height="16"></rect></svg>
+    <svg id="ftIconPlay" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;display:none;"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+  </button>
 </div>
 
 <!-- MAIN CONTENT -->
@@ -209,7 +212,8 @@
         <button onclick="closeSyncModal()" style="position:absolute; top:20px; right:20px; background:none; border:none; color:var(--muted); font-size:1.5rem; cursor:pointer;">&times;</button>
         
         <h2 style="font-family:'Plus Jakarta Sans',sans-serif; margin-bottom:0.5rem; display:flex; align-items:center; gap:10px;">
-            <span style="font-size:1.5rem;">≡ƒöä</span> Professional Cloud Sync
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:24px;height:24px;color:var(--blue);"><path d="M21 2v6h-6"></path><path d="M3 12a9 9 0 0 1 15-6.7L21 8"></path><path d="M3 22v-6h6"></path><path d="M21 12a9 9 0 0 1-15 6.7L3 16"></path></svg>
+            Professional Cloud Sync
         </h2>
         <p style="color:var(--muted); font-size:0.9rem; margin-bottom:2rem;">Connect your platforms to generate AI career insights and study plans.</p>
 
@@ -293,7 +297,7 @@
         <div id="floatingProfileContainer" style="display:none;">
           <div class="profile-pill">
             <div id="floatStreakBadge" class="streak-badge-mini">
-              <span class="streak-fire">≡ƒöÑ</span>
+              <span class="streak-fire"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:12px;height:12px;"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"></path></svg></span>
               <span id="floatStreakVal">0</span>
               <span class="streak-label">day</span>
             </div>
@@ -12918,6 +12922,6 @@ public class LoanStatusActionTest {
 
 </div><!-- end #main -->
 
-<script src="app.v1361.js"></script>
+<script src="app.v1362.js"></script>
 </body>
 </html>
