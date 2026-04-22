@@ -2171,7 +2171,7 @@ async function renderTimetable() {
 
           return `
             <div class="timetable-item ${status} ${isDone ? 'done' : ''}" style="${isDone ? 'opacity:0.5; border-color:var(--green);' : ''}">
-              ${status === 'active' ? '<div class="current-indicator">● LIVE NOW</div>' : ''}
+              ${status === 'active' ? '<div class="current-indicator"><span style="width:5px; height:5px; background:white; border-radius:50%; display:inline-block; animation: blink 1s infinite;"></span> LIVE NOW</div>' : ''}
               <div style="display:flex; justify-content:space-between; align-items:flex-start;">
                 <span class="timetable-time">${item.time} - ${item.end}</span>
                 <input type="checkbox" ${isDone ? 'checked' : ''} onchange="toggleTask(${index})" style="width:18px; height:18px; cursor:pointer;">
