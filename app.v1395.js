@@ -1,6 +1,6 @@
-// Version: 2026-04-22-T1505 (Industrial Stability v1394)
+// Version: 2026-04-22-T1510 (Industrial Stability v1395)
 // =============================================
-console.log('%c Dashboard Version: 2026-04-22-T1505 (v1394)', 'color: #3b82f6; font-weight: bold; font-size: 14px;');
+console.log('%c Dashboard Version: 2026-04-22-T1510 (v1395)', 'color: #3b82f6; font-weight: bold; font-size: 14px;');
 var TRACKER_KEY = 'sf_prep_study_tracker_v3';
 var currentTrackedPage = null;
 var trackingStartTime = null;
@@ -30,7 +30,8 @@ var TOPIC_DATA = {
     blocks: [
       { type: 'section', title: '🚀 Core Technical Q&A' },
       { type: 'qa', question: 'How do you handle large data volume (LDV) in Apex triggers?', answer: 'Use asynchronous processing (Queueable), optimize SOQL with indexed fields, and implement Platform Events to decouple processing from the main transaction.' },
-      { type: 'qa', question: 'Explain Deloitte\'s focus on "Quality Engineering" in Salesforce.', answer: 'It involves automated unit testing (Jest for LWC), static code analysis (PMD/Checkmarx), and robust CI/CD pipelines using Salesforce CLI and GitHub Actions.' }
+      { type: 'qa', question: 'Explain Deloitte\'s focus on "Quality Engineering" in Salesforce.', answer: 'It involves automated unit testing (Jest for LWC), static code analysis (PMD/Checkmarx), and robust CI/CD pipelines using Salesforce CLI and GitHub Actions.' },
+      { type: 'qa', question: 'How to handle Governor Limits in complex multi-org environments?', answer: 'Implement Trigger Frameworks to manage recursion, use Maps for bulkified lookups, and leverage Custom Settings/Metadata for configurable logic.' }
     ]
   },
   'accenture': {
@@ -39,7 +40,8 @@ var TOPIC_DATA = {
     blocks: [
       { type: 'section', title: '🏗️ Architecture & Dev' },
       { type: 'qa', question: 'When to use a Trigger Framework at Accenture?', answer: 'Always. It ensures scalability, avoids recursion, and allows for clean separation of logic from the trigger context.' },
-      { type: 'qa', question: 'How to manage multi-org deployments in a Global Delivery Model?', answer: 'Utilize unlocked packages and a centralized Git-based branching strategy (GitFlow) with automated regression testing.' }
+      { type: 'qa', question: 'How to manage multi-org deployments in a Global Delivery Model?', answer: 'Utilize unlocked packages and a centralized Git-based branching strategy (GitFlow) with automated regression testing.' },
+      { type: 'qa', question: 'How to handle "System.LimitException: Too many SOQL queries: 101"?', answer: 'Identify queries inside loops and move them outside using Collections (Sets/Maps). Use the Singleton pattern for data caching.' }
     ]
   },
   'mobigic_pwc': {
@@ -113,7 +115,8 @@ var TOPIC_DATA = {
     blocks: [
       { type: 'section', title: '🌊 Advanced Flow Logic' },
       { type: 'qa', question: 'When should you use an Autolaunched Flow vs a Record-Triggered Flow?', answer: 'Use Autolaunched for sub-flows or complex logic triggered by Apex/Platform Events. Use Record-Triggered for direct DML-based automation.' },
-      { type: 'qa', question: 'What is a Fault Path?', answer: 'A path used to handle errors gracefully, allowing you to log the error or send notifications instead of the user seeing a generic error.' }
+      { type: 'qa', question: 'What is a Fault Path?', answer: 'A path used to handle errors gracefully, allowing you to log the error or send notifications instead of the user seeing a generic error.' },
+      { type: 'qa', question: 'How to bypass Flow execution in Bulk Data Loads?', answer: 'Use a Custom Permission or a Custom Setting "Bypass_Automation__c" and check it in the Flow entry criteria.' }
     ]
   },
   'sales_cloud': {
