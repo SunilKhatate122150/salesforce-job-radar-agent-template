@@ -3455,17 +3455,26 @@ function submitCustomJob() {
 function updateAnalytics() {
   const appliedCount = pipelineJobs.filter(j => j.status !== 'todo' && j.status !== 'rejected').length;
   const rate = pipelineJobs.length > 0 ? Math.round((appliedCount / pipelineJobs.length) * 100) : 0;
-  document.getElementById('met-rate').textContent = rate + '%';
-  document.getElementById('met-streak').textContent = (studyStreak.current || 0) + 'd';
-  document.getElementById('met-followup').textContent = pipelineJobs.filter(j => getFollowUpStatus(j)).length;
+  
+  const elRate = document.getElementById('met-rate');
+  const elStreak = document.getElementById('met-streak');
+  const elFollowup = document.getElementById('met-followup');
+  const elWeekly = document.getElementById('met-weekly');
+  const elGoalArc = document.getElementById('goal-arc');
+  const elGoalPct = document.getElementById('goal-pct');
+
+  if (elRate) elRate.textContent = rate + '%';
+  if (elStreak) elStreak.textContent = (studyStreak.current || 0) + 'd';
+  if (elFollowup) elFollowup.textContent = pipelineJobs.filter(j => getFollowUpStatus(j)).length;
 
   const startOfWeek = new Date();
   startOfWeek.setDate(startOfWeek.getDate() - (startOfWeek.getDay() || 7) + 1);
   const weeklyCount = pipelineJobs.filter(j => j.dateApplied && new Date(j.dateApplied) >= startOfWeek).length;
-  document.getElementById('met-weekly').textContent = `${weeklyCount}/5`;
+  
+  if (elWeekly) elWeekly.textContent = `${weeklyCount}/5`;
   const pct = Math.min(Math.round((weeklyCount / 5) * 100), 100);
-  document.getElementById('goal-arc').style.strokeDasharray = `${pct} 100`;
-  document.getElementById('goal-pct').textContent = pct + '%';
+  if (elGoalArc) elGoalArc.style.strokeDasharray = `${pct} 100`;
+  if (elGoalPct) elGoalPct.textContent = pct + '%';
 }
 
 function checkOfferComparison() {
