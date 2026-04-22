@@ -3093,11 +3093,12 @@ function renderRevisionAlerts() {
 }
 
 // =============================================
-// JOB RADAR PHASE 2 FUNCTIONS (v1399)
+// JOB RADAR PHASE 2 & 3 FUNCTIONS (v1399)
 // =============================================
 function savePipeline() {
   localStorage.setItem('sfpipe2026v3', JSON.stringify(pipelineJobs));
   updateAnalytics();
+  checkOfferComparison();
 }
 
 function logActivity(text, type = 'info') {
@@ -3153,6 +3154,7 @@ function renderBoard() {
       `<div style="padding:20px; text-align:center; color:var(--muted); font-size:0.7rem; border:1px dashed var(--border); border-radius:10px;">No jobs here.</div>` :
       filtered.map(job => renderJobCard(job)).join('');
   });
+  checkOfferComparison();
 }
 
 function renderJobCard(job) {
@@ -3171,13 +3173,14 @@ function renderJobCard(job) {
       <div class="job-card-meta">
         <span class="meta-tag">${job.loc}</span>
         <span class="meta-tag">${job.sal || '—'}</span>
-        <span class="meta-tag">Fit: ${job.score}%</span>
+        <span class="meta-tag" title="AI Fit Score">⚡ ${job.score}%</span>
       </div>
       <div class="job-card-actions">
         ${job.status === 'todo' ? `<button class="card-btn" onclick="moveTo('${job.id}', 'applied')">Applied</button>` : ''}
         ${job.status === 'applied' ? `<button class="card-btn" onclick="openEmailModal('${job.id}')">AI Email</button>` : ''}
         ${['applied', 'interview'].includes(job.status) ? `<button class="card-btn" onclick="moveTo('${job.id}', 'interview')">Interview</button>` : ''}
         ${job.status === 'interview' ? `<button class="card-btn prep" onclick="openPrepPanel('${job.company}')">Prep</button>` : ''}
+        <button class="card-btn" onclick="openAIAssistant('${job.id}')" title="AI Tailoring Assistant">🤖</button>
         <button class="card-btn" onclick="moveTo('${job.id}', 'rejected')" style="margin-left:auto; color:var(--red); border-color:rgba(239,68,68,0.1);">&times;</button>
       </div>
     </div>
@@ -3292,6 +3295,90 @@ function updateAnalytics() {
   if (pctEl) pctEl.textContent = pct + '%';
 }
 
+function checkOfferComparison() {
+  const offers = pipelineJobs.filter(j => j.status === 'offer');
+  const panel = document.getElementById('offer-comparison');
+  const container = document.getElementById('offer-matrix-container');
+  if (!panel || !container) return;
+
+  if (offers.length >= 2) {
+    panel.style.display = 'block';
+    container.innerHTML = `
+      <table style="width:100%; border-collapse:collapse; min-width:600px;">
+        <thead>
+          <tr style="border-bottom:2px solid var(--border); color:var(--muted); font-size:0.7rem; text-transform:uppercase;">
+            <th style="padding:12px; text-align:left;">Company</th>
+            <th style="padding:12px; text-align:left;">Base Salary</th>
+            <th style="padding:12px; text-align:left;">Location</th>
+            <th style="padding:12px; text-align:left;">Fit Score</th>
+            <th style="padding:12px; text-align:center;">Decision</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${offers.map(o => `
+            <tr style="border-bottom:1px solid var(--border);">
+              <td style="padding:12px; font-weight:700; color:var(--text);">${o.company}</td>
+              <td style="padding:12px; color:var(--green); font-weight:700;">${o.sal}</td>
+              <td style="padding:12px; font-size:0.8rem; color:var(--muted);">${o.loc}</td>
+              <td style="padding:12px;">
+                <div style="background:rgba(255,255,255,0.05); height:4px; border-radius:2px; width:100px;">
+                   <div style="background:var(--blue); height:100%; width:${o.score}%; border-radius:2px;"></div>
+                </div>
+              </td>
+              <td style="padding:12px; text-align:center;">
+                <button onclick="moveTo('${o.id}', 'rejected')" style="background:none; border:none; color:var(--muted); cursor:pointer;">Withdraw</button>
+              </td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+    `;
+  } else {
+    panel.style.display = 'none';
+  }
+}
+
+// Phase 2H: Browser Notification System
+async function requestNotifications() {
+  if (!("Notification" in window)) {
+    showToast("This browser does not support notifications");
+    return;
+  }
+  
+  const permission = await Notification.requestPermission();
+  if (permission === "granted") {
+    showToast("🚀 Reminders enabled!");
+    scheduleReminders();
+  }
+}
+
+function scheduleReminders() {
+  setInterval(() => {
+    const today = new Date();
+    pipelineJobs.forEach(j => {
+      if (j.status === 'applied') {
+        const status = getFollowUpStatus(j);
+        if (status && (status.class === 'warn' || status.class === 'urgent')) {
+          new Notification(`Action Needed: ${j.company}`, {
+            body: `It's been over a week since you applied for ${j.role}. Time for a follow-up!`,
+            icon: 'https://cdn-icons-png.flaticon.com/512/561/561127.png'
+          });
+        }
+      }
+    });
+  }, 3600000 * 4); // Every 4 hours
+}
+
+// Phase 3 Stubs
+async function openAIAssistant(jobId) {
+  const job = pipelineJobs.find(j => j.id === jobId);
+  showToast(`🤖 Analyzing JD for ${job.company}...`);
+  // Placeholder for Resume Tailoring
+  setTimeout(() => {
+     alert(`AI Suggestions for ${job.company}:\n1. Highlight your ${job.score > 90 ? 'PD2 Certification' : 'LWC experience'}.\n2. Emphasize Mortgage domain expertise.\n3. Mention Agentforce Specialist role.`);
+  }, 1000);
+}
+
 let selectedJobForEmail = null;
 let currentEmailType = 'followup';
 
@@ -3323,7 +3410,7 @@ async function triggerEmailGeneration() {
   loading.style.display = 'flex';
   
   try {
-    const prompt = `Write a professional ${currentEmailType} email for a Salesforce Developer role at ${selectedJobForEmail.company}. Role: ${selectedJobForEmail.role}. Keep it industrial and concise.`;
+    const prompt = `Write a professional ${currentEmailType} email for a Salesforce Developer role at ${selectedJobForEmail.company}. Role: ${selectedJobForEmail.role}. Keep it industrial and concise. Candidate: Sunil Khatate (4 yrs exp, PD2).`;
     
     const response = await fetch('http://localhost:11434/api/generate', {
       method: 'POST',
@@ -3352,7 +3439,7 @@ async function triggerEmailGeneration() {
     
     logActivity(`Generated ${currentEmailType} email for <strong>${selectedJobForEmail.company}</strong>`, 'ai');
   } catch (e) {
-    body.textContent = "AI unreachable. Use standard templates or check Ollama.";
+    body.textContent = "AI unreachable. Ensure Ollama is running or use standard templates.";
     console.error(e);
   } finally {
     loading.style.display = 'none';
@@ -3431,18 +3518,6 @@ function clearLog() {
     activityLog = [];
     localStorage.removeItem('sfActivityLog');
     renderLog();
-  }
-}
-
-function requestNotifications() {
-  if (!("Notification" in window)) {
-    showToast("This browser does not support notifications");
-  } else if (Notification.permission === "granted") {
-    showToast("Notifications already enabled!");
-  } else {
-    Notification.requestPermission().then(permission => {
-      if (permission === "granted") showToast("🚀 Reminders enabled!");
-    });
   }
 }
 
