@@ -1,6 +1,6 @@
-// Version: 2026-04-22-T1500 (Industrial Stability v1393)
+// Version: 2026-04-22-T1505 (Industrial Stability v1394)
 // =============================================
-console.log('%c Dashboard Version: 2026-04-22-T1500 (v1393)', 'color: #3b82f6; font-weight: bold; font-size: 14px;');
+console.log('%c Dashboard Version: 2026-04-22-T1505 (v1394)', 'color: #3b82f6; font-weight: bold; font-size: 14px;');
 var TRACKER_KEY = 'sf_prep_study_tracker_v3';
 var currentTrackedPage = null;
 var trackingStartTime = null;

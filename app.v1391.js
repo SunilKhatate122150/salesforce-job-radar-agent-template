@@ -693,13 +693,17 @@ function renderTopicContent(topicId) {
   const data = TOPIC_DATA[topicId];
   if (!data) return false;
 
-  const container = document.getElementById('dynamicMainContent');
-  const titleEl = document.getElementById('dynamicTitle');
-  const subEl = document.getElementById('dynamicSubtitle');
-  if (!container || !titleEl || !subEl) return false;
+  const contentEl = document.getElementById('topicViewerContent');
+  const titleEl = document.getElementById('topicViewerTitle');
+  const subEl = document.getElementById('topicViewerSub');
+  const qaContainer = document.getElementById('topicQAContainer');
+  
+  if (!contentEl || !titleEl || !subEl) return false;
 
   titleEl.textContent = data.title;
   subEl.textContent = data.subtitle;
+  contentEl.style.display = 'block';
+  if (qaContainer) qaContainer.style.display = 'none';
 
   let html = '';
   data.blocks.forEach(block => {
@@ -720,38 +724,10 @@ function renderTopicContent(topicId) {
     }
   });
 
-  container.innerHTML = html;
+  contentEl.innerHTML = html;
   return true;
 }
 
-window.showPage = function(pageId) {
-  // 1. Hide all pages
-  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-  const dynamicPage = document.getElementById('dynamicContentPage');
-  if (dynamicPage) dynamicPage.classList.remove('active');
-
-  // 2. Try Dynamic Render
-  const isDynamic = renderTopicContent(pageId);
-  if (isDynamic) {
-    if (dynamicPage) dynamicPage.classList.add('active');
-  } else {
-    const page = document.getElementById(pageId);
-    if (page) page.classList.add('active');
-  }
-
-  // 3. Tracking & Sidebar
-  startTracking(pageId);
-  document.querySelectorAll('.nav-item').forEach(item => {
-    item.classList.remove('active');
-    if (item.getAttribute('onclick') && item.getAttribute('onclick').includes(pageId)) item.classList.add('active');
-  });
-
-  // 4. Mobile Close
-  const sidebar = document.getElementById('sidebar');
-  if (sidebar && sidebar.classList.contains('mobile-active')) {
-    sidebar.classList.remove('mobile-active');
-  }
-};
 
 async function checkAuth() {
   const token = localStorage.getItem('google_auth_token');
@@ -2280,49 +2256,61 @@ async function showPage(id) {
   await stopTracking();
   document.querySelectorAll('.page').forEach(function(p) { p.classList.remove('active'); p.style.display = 'none'; });
   document.querySelectorAll('.nav-item').forEach(function(n) { n.classList.remove('active'); });
+  
   var page = document.getElementById(id);
-  if (!page && topicConfig[id]) {
-    // Redirect to dynamic topic viewer
+  
+  // 1. Try Industrial Topic Sync (TOPIC_DATA)
+  const isIndustrial = renderTopicContent(id);
+  if (isIndustrial) {
+    page = document.getElementById('topic_viewer');
+  } else if (!page && topicConfig[id]) {
+    // 2. Fallback to AI Generator
     page = document.getElementById('topic_viewer');
     document.getElementById('topicViewerTitle').textContent = topicConfig[id].name;
     document.getElementById('topicViewerSub').textContent = 'AI Deep Dive: ' + topicConfig[id].name;
     document.getElementById('topicViewerContent').style.display = 'block';
+    document.getElementById('topicViewerContent').innerHTML = `
+      <div style="background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.06); border-radius:16px; padding:40px; text-align:center;">
+        <div id="topicViewerIcon" style="width:48px; height:48px; margin:0 auto 16px; display:flex; align-items:center; justify-content:center; background:rgba(59,130,246,0.1); border-radius:12px; color:var(--blue);">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+        </div>
+        <div style="font-weight:600; font-size:1.1rem; color:var(--text); margin-bottom:8px;">Ready to generate Interview Questions?</div>
+        <p style="font-size:0.8rem; color:var(--muted); max-width:400px; margin:0 auto 24px;">Gemma 4 will analyze this topic and generate 5 high-impact interview questions with detailed answers tailored to your profile.</p>
+        <button id="btnGenerateTopicQA" style="padding:12px 28px; background:linear-gradient(135deg,var(--blue),var(--cyan)); border:none; border-radius:10px; color:white; font-weight:700; cursor:pointer; transition:all 0.2s;" onmouseenter="this.style.transform='scale(1.05)'" onmouseleave="this.style.transform='scale(1)'">Generate AI Interview Q&A</button>
+      </div>
+    `;
     document.getElementById('topicQAContainer').style.display = 'none';
     document.getElementById('btnGenerateTopicQA').onclick = () => generateDynamicQA(id);
   }
 
   if (page) { page.classList.add('active'); page.style.display = 'block'; }
+  
+  // Update Title and Navigation
+  const headerTitle = document.getElementById('headerTitle');
+  if (headerTitle) {
+    headerTitle.textContent = topicConfig[id] ? topicConfig[id].name : 'SF Prep Guide';
+  }
+
   document.querySelectorAll('.nav-item').forEach(function(n) {
     var oc = n.getAttribute('onclick');
     if (oc && (oc.indexOf("'"+id+"'") !== -1 || oc.indexOf("\""+id+"\"") !== -1)) n.classList.add('active');
   });
+
   const searchPage = document.getElementById('searchPage');
   if (searchPage) searchPage.style.display = 'none';
   const mainEl = document.getElementById('main');
   if (mainEl) mainEl.scrollTop = 0;
   
-  if (id === 'schedule') {
-    await renderTimetable();
+  // Mobile Sidebar Close
+  const sidebar = document.getElementById('sidebar');
+  if (sidebar && sidebar.classList.contains('mobile-open')) {
+    if (typeof toggleMobileSidebar === 'function') toggleMobileSidebar();
   }
   
-  if (id === 'study_history') {
-    await renderHistory();
-  }
-  
-  if (id === 'job_radar') {
-    updateJobRadarSummary();
-    fetchJobsList();
-    fetchJobAnalytics();
-  }
-  
-  if (id === 'profile_match') {
-    if (cachedUserProfile) {
-      renderProfileMatchPage(cachedUserProfile);
-    } else {
-      loadUserProfile();
-    }
-  }
-  
+  if (id === 'schedule') await renderTimetable();
+  if (id === 'study_history') await renderHistory();
+  if (id === 'job_radar') { updateJobRadarSummary(); fetchJobsList(); fetchJobAnalytics(); }
+  if (id === 'profile_match') { if (cachedUserProfile) renderProfileMatchPage(cachedUserProfile); else loadUserProfile(); }
   if (id === 'study_tracker') {
     const lastTab = localStorage.getItem('last_tracker_tab') || 'tab_suggestions';
     switchTrackerTab(lastTab);
@@ -2332,11 +2320,8 @@ async function showPage(id) {
 
   // START TRACKING IF TOPIC
   const cfg = topicConfig[id];
-  if (cfg && !cfg.noTimer) {
-    startTracking(id);
-  }
+  if (cfg && !cfg.noTimer) startTracking(id);
   
-  // Ensure bookmark buttons are rendered on the new page (v1340)
   renderBookmarkButtons();
 }
 
