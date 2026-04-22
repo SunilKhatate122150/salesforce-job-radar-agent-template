@@ -1,8 +1,29 @@
 // Version: 2026-04-22-T1830 (Industrial Enrichment v1399)
 // =============================================
 console.log('%c Dashboard Version: 2026-04-22-T1830 (v1399)', 'color: #3b82f6; font-weight: bold; font-size: 14px;');
-// ... lines 4-29 remain same ...
-var TOPIC_DATA = {
+var TRACKER_KEY = 'sf_prep_study_tracker_v3';
+var currentTrackedPage = null;
+var trackingStartTime = null;
+var trackingInterval = null;
+var isPaused = false;
+var pausedElapsed = 0;
+let globalStudyData = { topics: {}, sessions: [], completedTasks: [] };
+let lastFetchTime = 0;
+const MIN_FETCH_INTERVAL = 60000;
+let currentUser = null;
+let GSI_TOKEN = localStorage.getItem('google_auth_token') || null;
+// --- CLOUD-NATIVE STATE (v1356) ---
+let userBookmarks = []; 
+let studyStreak = { current: 0, best: 0, lastDate: "" };
+let userRetention = {};
+let currentRetentionTopicId = null;
+let sessionFeedbackProvided = new Set(); 
+
+// =============================================
+// DYNAMIC CONTENT DATA (MASTER REGISTRY v1399)
+// =============================================
+// NOTE: Core topics (Apex, LWC, etc.) are hardcoded in index.html for maximum depth.
+// This registry serves as the agile layer for company-specific and advanced modules.
   // --- COMPANY SPECIFIC PREP ---
   'deloitte': {
     title: 'Deloitte Salesforce Interview (2026)',
@@ -1185,10 +1206,7 @@ function formatTime(totalSeconds) {
   return `${s}s`;
 }
 
-// Version: 2026-04-21-T1845 (v1382)
-// =============================================
-const VERSION = '2026-04-21-T1845 (v1382)';
-console.log('%c Dashboard ' + VERSION, 'color: #3b82f6; font-weight: bold; font-size: 14px;');
+const VERSION = '2026-04-22-T1830 (v1399)';
 
 function formatTimeFull(totalSeconds) {
   var h = Math.floor(totalSeconds / 3600);
