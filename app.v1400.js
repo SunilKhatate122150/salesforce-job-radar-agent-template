@@ -1813,9 +1813,13 @@ async function resetTracker() {
 function updateJobRadarSummary() {
   try {
     const jobs = window.allJobRecords || [];
-    document.getElementById('dedupeCount').textContent = jobs.length;
-    document.getElementById('trackedCount').textContent = jobs.length;
-    document.getElementById('appliedCount').textContent = jobs.filter(j => j.status === 'applied').length;
+    const elDedupe = document.getElementById('dedupeCount');
+    const elTracked = document.getElementById('trackedCount');
+    const elApplied = document.getElementById('appliedCount');
+
+    if (elDedupe) elDedupe.textContent = jobs.length;
+    if (elTracked) elTracked.textContent = jobs.length;
+    if (elApplied) elApplied.textContent = jobs.filter(j => j.status === 'applied').length;
   } catch (e) {
     console.error('Failed to update job summary', e);
   }

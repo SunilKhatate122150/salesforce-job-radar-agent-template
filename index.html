@@ -12803,6 +12803,37 @@ public class LoanStatusActionTest {
     </div>
   </div>
 
+  <!-- Discovery Overview (Phase 2F) -->
+  <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap:15px; margin-top:1.5rem;">
+    <div style="background:rgba(255,255,255,0.02); border:1px solid var(--border); border-radius:12px; padding:12px 15px; display:flex; align-items:center; gap:12px;">
+      <div style="width:32px; height:32px; background:rgba(79,142,247,0.1); border-radius:8px; display:flex; align-items:center; justify-content:center; color:var(--blue);">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;"><path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+      </div>
+      <div>
+        <div id="trackedCount" style="font-size:1rem; font-weight:800; color:var(--text);">0</div>
+        <div style="font-size:0.6rem; color:var(--muted); text-transform:uppercase; letter-spacing:0.5px;">Jobs Tracked</div>
+      </div>
+    </div>
+    <div style="background:rgba(255,255,255,0.02); border:1px solid var(--border); border-radius:12px; padding:12px 15px; display:flex; align-items:center; gap:12px;">
+      <div style="width:32px; height:32px; background:rgba(16,185,129,0.1); border-radius:8px; display:flex; align-items:center; justify-content:center; color:var(--green);">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+      </div>
+      <div>
+        <div id="appliedCount" style="font-size:1rem; font-weight:800; color:var(--text);">0</div>
+        <div style="font-size:0.6rem; color:var(--muted); text-transform:uppercase; letter-spacing:0.5px;">Applications</div>
+      </div>
+    </div>
+    <div style="background:rgba(255,255,255,0.02); border:1px solid var(--border); border-radius:12px; padding:12px 15px; display:flex; align-items:center; gap:12px;">
+      <div style="width:32px; height:32px; background:rgba(245,158,11,0.1); border-radius:8px; display:flex; align-items:center; justify-content:center; color:var(--amber);">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;"><path d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+      </div>
+      <div>
+        <div id="dedupeCount" style="font-size:1rem; font-weight:800; color:var(--text);">0</div>
+        <div style="font-size:0.6rem; color:var(--muted); text-transform:uppercase; letter-spacing:0.5px;">Unique Signals</div>
+      </div>
+    </div>
+  </div>
+
   <!-- Dashboard Header & Tabs -->
   <div class="radar-tabs" style="display: flex; gap: 20px; border-bottom: 1px solid var(--border); margin-bottom: 1rem; margin-top: 1rem;">
     <button id="tab-pipeline" class="radar-tab-btn active" onclick="switchRadarSubTab('pipeline')" style="background:none; border:none; padding:12px 20px; color:var(--text); font-weight:700; cursor:pointer; border-bottom: 2px solid var(--blue);">Pipeline Board</button>
