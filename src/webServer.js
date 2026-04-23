@@ -190,17 +190,15 @@ export default async function handler(req, res) {
           res.writeHead(200, { 'Content-Type': 'application/json' });
           res.end(JSON.stringify({ records: debugJobs, dbStatus: isMongoConnected }));
         } else {
-          // Fallback to local application tracker cache
-          const cachePath = path.join(CACHE_DIR, 'application-tracker.json');
-          if (fs.existsSync(cachePath)) {
-            const data = JSON.parse(fs.readFileSync(cachePath, 'utf8'));
-            const records = Array.isArray(data.records) ? data.records : [];
-            res.writeHead(200, { 'Content-Type': 'application/json' });
-            res.end(JSON.stringify({ records }));
-          } else {
-            res.writeHead(200, { 'Content-Type': 'application/json' });
-            res.end(JSON.stringify({ records: [] }));
-          }
+          const errorJob = { 
+            title: 'DEBUG: MONGO CONNECTION FAILED', 
+            company: process.env.MONGODB_URI ? 'URI FOUND BUT FAILED' : 'URI MISSING IN VERCEL',
+            location: 'Check Vercel Environment Variables',
+            status: 'new',
+            job_hash: 'error-1' 
+          };
+          res.writeHead(200, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ records: [errorJob], dbStatus: false }));
         }
       }
       else if (url === '/api/jobs/analytics' && method === 'GET') {
