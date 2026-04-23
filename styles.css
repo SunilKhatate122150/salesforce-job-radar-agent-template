@@ -3187,3 +3187,12 @@ pre.code .num {
 .jbtn-link{background:var(--card2);color:var(--text);border:1px solid var(--border);}
 .jbtn-link:hover{border-color:var(--blue);background:rgba(79,142,247,0.1);}
 
+
+/* --- PREMIUM KANBAN REFINEMENT (v1402) --- */
+.board-wrap { display: flex; gap: 16px; overflow-x: auto; padding: 10px 0; min-height: 500px; }
+.kanban-col { flex: 0 0 320px; background: rgba(255, 255, 255, 0.015); border-radius: 16px; padding: 16px; border: 1px solid var(--border); display: flex; flex-direction: column; gap: 12px; max-height: 80vh; }
+.kanban-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; padding-bottom: 8px; border-bottom: 1px solid rgba(255,255,255,0.05); }
+.kanban-body { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; padding-right: 4px; }
+.kanban-body::-webkit-scrollbar { width: 4px; }
+.kanban-body::-webkit-scrollbar-thumb { background: var(--border); border-radius: 10px; }
+.jcard { min-height: 180px; display: flex !important; flex-direction: column !important; gap: 12px !important; width: 100% !important; box-sizing: border-box !important; }
