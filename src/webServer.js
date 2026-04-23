@@ -181,7 +181,10 @@ export default async function handler(req, res) {
       }
       else if (url === '/api/jobs' && method === 'GET') {
         if (isMongoConnected) {
-          const records = await JobRecord.find({ userId }).sort({ createdAt: -1 }).lean();
+          // Show both user-specific jobs AND system-fetched jobs
+          const records = await JobRecord.find({ 
+            $or: [{ userId }, { userId: 'system' }] 
+          }).sort({ createdAt: -1 }).lean();
           res.writeHead(200, { 'Content-Type': 'application/json' });
           res.end(JSON.stringify({ records }));
         } else {
