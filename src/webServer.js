@@ -148,7 +148,10 @@ export default async function handler(req, res) {
       return;
     }
 
-    if (!userId && url !== '/api/jobs' && url !== '/api/jobs/analytics') {
+    const isPublicFile = url === '/manifest.json' || url.endsWith('.png') || url.endsWith('.ico');
+    const isPublicApi = url === '/api/jobs' || url === '/api/jobs/analytics' || url === '/api/auth/google';
+    
+    if (!userId && !isPublicFile && !isPublicApi) {
       res.writeHead(401);
       res.end(JSON.stringify({ error: 'Unauthorized' }));
       return;
