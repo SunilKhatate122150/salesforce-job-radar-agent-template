@@ -1,0 +1,83 @@
+<div class="page-title">Reports &amp; Dashboards &mdash; Master Reference Guide</div>
+<div class="page-sub">Analytics for the Mortgage Domain &mdash; report types, dynamic dashboards, and Analytics API</div>
+
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">What are the 4 Report Formats in Salesforce &mdash; when do you use each?</span><span class="qa-q-label lbl-domain">REPORTS</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<ul class="ans-list">
+  <li><b>Tabular:</b> Simple list of records. No groupings. Like an Excel sheet. (e.g., "Mailing list of all borrowers").</li>
+  <li><b>Summary:</b> Groupings by rows. Includes subtotals. (e.g., "Loans grouped by Status").</li>
+  <li><b>Matrix:</b> Groupings by both rows AND columns. (e.g., "Loans grouped by Status (rows) and Month (columns)").</li>
+  <li><b>Joined:</b> Combine multiple report blocks (different report types) in one view. (e.g., "Show Account details in Block A and related Opportunities in Block B").</li>
+</ul>
+<div class="tip-box"><div class="tip-label">Dashboard Tip</div><p>Only Summary and Matrix reports can be used as source data for dashboard components (charts, gauges).</p></div>
+</div></div>
+
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How do you access Report Data in Apex &mdash; "Reports and Dashboards API"?</span><span class="qa-q-label lbl-apex">REPORTS</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<p class="ans-p">You can run reports programmatically from Apex to get real-time data for custom LWC charts or automated calculations.</p>
+<pre class="code"><span class="cmt">// Run a report synchronously</span>
+<span class="cls">String</span> reportId = <span class="str">'00O...'</span>;
+<span class="cls">Reports.ReportResults</span> results = <span class="cls">Reports.ReportManager</span>.runReport(reportId, <span class="kw{true});
+
+<span class="cmt">// Get metadata</span>
+<span class="cls">Reports.ReportMetadata</span> meta = results.getReportMetadata();
+System.debug(<span class="str">'Report Name: '</span> + meta.getName());
+
+<span class="cmt">// Access data from the 'Fact Map'</span>
+<span class="cmt">// 'T!T' = Total row for a summary report</span>
+<span class="cls">Reports.ReportFactWithDetails</span> fact =
+    (<span class="cls">Reports.ReportFactWithDetails</span>) results.getFactMap().get(<span class="str">'T!T'</span>);
+
+<span class="kw{for}(Reports.ReportDetailRow row : fact.getRows()) {
+    <span class="cls">String</span> val = (<span class="cls">String</span>) row.getDataCells()[<span class="num}0].getValue();
+    System.debug(<span class="str">'Cell value: '</span> + val);
+}</pre>
+</div></div>
+
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">Report Types &mdash; standard vs custom, joined reports, cross-filters?</span><span class="qa-q-label lbl-domain">REPORTS MASTER</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<p class="ans-p"><b>Custom Report Types (CRT)</b> &mdash; define which objects and fields are available in a report. Necessary when standard report types don't include the fields or relationships you need.</p>
+<ul class="ans-list">
+  <li><b>Create CRT</b> &mdash; Setup → Report Types → New. Define primary object, related objects, and which fields are available</li>
+  <li><b>One-to-many relationship</b> &mdash; CRT can include parent + child in same report (Account with Loans)</li>
+  <li><b>Field availability</b> &mdash; CRT controls which fields users see in the report builder &mdash; useful for hiding sensitive fields from non-admin report builders</li>
+  <li><b>Joined Reports</b> &mdash; combine up to 5 report blocks with different report types. Each block is a separate dataset. Can show side-by-side comparisons (Loans by Status this quarter vs same quarter last year)</li>
+  <li><b>Cross-filters</b> &mdash; filter a report based on related object criteria without showing the related object's fields. Example: Accounts WITH active Loans (without adding loan fields to the report)</li>
+</ul>
+<pre class="code">// Access Reports via Apex Analytics API
+Reports.ReportResults results = Reports.ReportManager.runReport('00O000000000001AAA', true); // true = detail rows
+Reports.ReportMetadata meta = results.getReportMetadata();
+Reports.ReportFactWithDetails facts = (Reports.ReportFactWithDetails) results.getFactMap().get('T!T');
+
+for (Reports.ReportDetailRow row : facts.getRows()) {
+  List&lt;Reports.ReportDataCell&gt; cells = row.getDataCells();
+  String loanName   = (String) cells[0].getValue();
+  Decimal amount    = (Decimal) cells[1].getValue();
+}</pre>
+</div></div>
+
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">Dynamic Dashboards and Dashboard Filters &mdash; how do they work?</span><span class="qa-q-label lbl-domain">REPORTS MASTER</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<ul class="ans-list">
+  <li><b>Dynamic Dashboards</b> &mdash; show data as the viewing user (respects their sharing and visibility). Standard dashboards show data as the dashboard's running user (one fixed view for all).</li>
+  <li><b>When to use Dynamic</b> &mdash; each user should see only their data (loan officers see their own loans). When to use Standard &mdash; executive dashboards where everyone needs the same org-wide view.</li>
+  <li><b>Dashboard Filters</b> &mdash; add up to 3 filter options users can toggle without editing the dashboard. Example: filter by Branch, by Loan Type, by Date Range</li>
+  <li><b>Scheduled Reports</b> &mdash; Setup → Report → Schedule. Sends report to email recipients on a schedule. Maximum 200 scheduled reports per org.</li>
+  <li><b>Analytics API</b> &mdash; Reports.ReportManager.runReport() runs synchronously for &lt;2,000 rows. Use Reports.ReportManager.runAsyncReport() for larger datasets.</li>
+</ul>
+<div class="tip-box"><div class="tip-label">Dashboard component limit</div><p>Each dashboard supports up to 20 components. For complex executive dashboards, use Analytics Studio (Einstein Analytics/CRM Analytics) which has no such limit and supports more chart types.</p></div>
+</div></div>
+
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How do you schedule report exports from Apex &mdash; complete class?</span><span class="qa-q-label lbl-apex">REPORTS</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<pre class="code"><span class="kw{public class} <span class="cls{ScheduledLoanReport} <span class="kw{implements} <span class="cls{Schedulable} {
+    <span class="kw{public void} execute(<span class="cls{SchedulableContext} ctx) {
+        <span class="cls">Reports.ReportResults</span> r = <span class="cls">Reports.ReportManager</span>.runReport(<span class="str">'00O...'</span>, <span class="kw{true});
+        <span class="cls">Reports.ReportFactWithDetails</span> fact =
+            (<span class="cls">Reports.ReportFactWithDetails</span>) r.getFactMap().get(<span class="str">'T!T'</span>);
+        <span class="kw{if}(fact.getRows().size() == <span class="num}0) <span class="kw{return}; <span class="cmt">// skip email if no data
+
+        <span class="cls">Messaging.SingleEmailMessage</span> email = <span class="kw">new</span> <span class="cls">Messaging.SingleEmailMessage</span>();
+        email.setToAddresses(<span class="kw">new</span> <span class="cls">List</span>&lt;<span class="cls">String</span>&gt;{<span class="str">'<a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="6e030f000f090b1c2e0d01031e0f0017400d0103">[email&#160;protected]</a>'</span>});
+        email.setSubject(<span class="str">'Daily Loan Pipeline &mdash; '</span> + Date.today().format());
+        email.setHtmlBody(<span class="str">'&lt;p&gt;'</span> + fact.getRows().size() + <span class="str">' active loans today.&lt;/p&gt;'</span>);
+        <span class="cls">Messaging</span>.sendEmail(<span class="kw">new</span> <span class="cls">List</span>&lt;<span class="cls">Messaging.SingleEmailMessage</span>&gt;{email});
+    }
+}
+<span class="cmt">// Schedule: System.schedule('Daily Report', '0 0 7 * * ?', new ScheduledLoanReport());</span></pre>
+</div></div>

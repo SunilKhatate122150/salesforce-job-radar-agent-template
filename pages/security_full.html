@@ -1,0 +1,102 @@
+<div class="page-title">Salesforce Security Model &mdash; Complete Reference</div>
+<div class="page-sub">Object, Field, and Record level security &mdash; declarative vs programmatic enforcement</div>
+
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">Explain the 3 layers of Salesforce Security in 30 seconds &mdash; "CRUD, FLS, and Sharing".</span><span class="qa-q-label lbl-domain">SECURITY</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<p class="ans-p">Interviewers expect you to break it down exactly like this:</p>
+<ul class="ans-list">
+  <li><b>Layer 1: Object Level (CRUD)</b> &mdash; Profiles and Permission Sets. Determines if a user can Create, Read, Edit, or Delete records of a specific object. (e.g., Can this user even see the Loan object?)</li>
+  <li><b>Layer 2: Field Level (FLS)</b> &mdash; Profiles and Permission Sets. Determines if a user can see or edit specific fields on an object. (e.g., Can they see the SSN field on the Loan object?)</li>
+  <li><b>Layer 3: Record Level (Sharing)</b> &mdash; OWD, Role Hierarchy, Sharing Rules, Apex Sharing. Determines WHICH specific records of that object the user can see. (e.g., I can see Loans, but can I see ONLY MY loans or ALL loans in the org?)</li>
+</ul>
+<div class="tip-box"><div class="tip-label">Memory Hook</div><p>CRUD/FLS is "What can I do?" | Sharing is "Which ones can I do it to?"</p></div>
+</div></div>
+
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">Declarative Sharing Model: OWD vs Role Hierarchy vs Sharing Rules &mdash; give a mortgage scenario.</span><span class="qa-q-label lbl-domain">SECURITY</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<p class="ans-p">Sharing is always additive &mdash; you start with the most restrictive baseline (OWD) and open up access.</p>
+<ul class="ans-list">
+  <li><b>OWD (Organization Wide Defaults):</b> The baseline. Set to <b>Private</b> for Loans. Only the owner and admins see their own records.</li>
+  <li><b>Role Hierarchy:</b> Vertical opening. A Regional Manager (higher in hierarchy) automatically sees all records owned by the Loan Officers below them.</li>
+  <li><b>Sharing Rules (Horizontal):</b> Opening across roles. Rule: "Share all Loans owned by Branch A with the Compliance Team role."</li>
+  <li><b>Manual Sharing:</b> One-off opening. "Loan Officer A manually shares their loan record with Underwriter B for review."</li>
+</ul>
+<table class="comparison-table"><tr><th>Setting</th><th>Use Case</th></tr><tr><td>Private OWD</td><td>Strict privacy &mdash; user only sees what they own. (Standard for BFSI)</td><td>Public Read/Write</td><td>Collaboration &mdash; everyone sees and edits everything. (Good for Accounts)</td></tr></table>
+</div></div>
+
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">What is "with sharing" vs "without sharing" vs "inherited sharing" in Apex &mdash; when to use each?</span><span class="qa-q-label lbl-apex">SECURITY</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<pre class="code"><span class="cmt">// with sharing &mdash; Respects the user's sharing rules (Record level)</span>
+<span class="cmt">// If the user can't see the record via sharing rules, SOQL returns 0 results.</span>
+<span class="kw">public with sharing class</span> <span class="cls">LoanService</span> {
+    <span class="kw">public static</span> <span class="cls">List</span>&lt;<span class="cls">Loan__c</span>&gt; getMyLoans() {
+        <span class="kw{return} [<span class="kw{SELECT} Id <span class="kw{FROM} Loan__c]; <span class="cmt">// only returns records user has access to</span>
+    }
+}
+
+<span class="cmt">// without sharing &mdash; Runs in "System Mode" &mdash; Ignores sharing rules</span>
+<span class="cmt">// User sees ALL records in the org regardless of sharing rules.</span>
+<span class="cmt">// Use for: Batch jobs, background processors, system validation.</span>
+<span class="kw">public without sharing class</span> <span class="cls">SystemManager</span> { ... }
+
+<span class="cmt">// inherited sharing &mdash; RECOMMENDED for utility/service classes</span>
+<span class="cmt">// Takes the sharing mode of the class that called it.</span>
+<span class="kw">public inherited sharing class</span> <span class="cls">LoanUtils</span> { ... }</pre>
+<div class="warn-box"><div class="warn-label">Security Alert</div><p>Apex classes DO NOT enforce CRUD or FLS by default, even if you use "with sharing". "with sharing" ONLY enforces record-level sharing. You must explicitly enforce CRUD/FLS in code.</p></div>
+</div></div>
+
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How do you enforce CRUD and FLS in Apex code &mdash; what are the modern approaches?</span><span class="qa-q-label lbl-apex">SECURITY</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<p class="ans-p">Since 2023, Salesforce has introduced much cleaner ways to enforce security than the old <code>Schema.Describe</code> checks.</p>
+<pre class="code"><span class="cmt">// 1. The SOQL Clause (Easiest for Queries)</span>
+<span class="cls">List</span>&lt;<span class="cls">Loan__c</span>&gt; loans = [<span class="kw{SELECT} Id, Name, LoanAmount__c <span class="kw{FROM} Loan__c <span class="kw{WITH SECURITY_ENFORCED}];
+<span class="cmt">// Throws exception if user cannot see ANY of the fields (Id, Name, or LoanAmount__c)</span>
+
+<span class="cmt">// 2. The User Mode Clause (LATEST - 2024 Recommended)</span>
+<span class="cls">List</span>&lt;<span class="cls">Loan__c</span>&gt; loans2 = [<span class="kw{SELECT} Id <span class="kw{FROM} Loan__c <span class="kw{WITH USER_MODE}];
+<span class="cmt">// Enforces BOTH CRUD and FLS. Throws exception if user lacks access.</span>
+
+<span class="cmt">// 3. Security.stripInaccessible (For DML and results from elsewhere)</span>
+<span class="cls">SObjectAccessDecision</span> decision = Security.stripInaccessible(
+    AccessType.CREATABLE,
+    new List&lt;Loan__c&gt;{ newLoan }
+);
+<span class="cmt">// Automatically removes fields the user cannot edit/create</span>
+insert decision.getRecords(); <span class="cmt">// inserts only the fields the user has access to</span>
+
+<span class="cmt">// 4. Old School (Explicit Checks)</span>
+if (!Schema.sObjectType.Loan__c.fields.LoanAmount__c.isUpdateable()) {
+    throw new AuraHandledException('Insufficient Permissions to update Loan Amount');
+}</pre>
+</div></div>
+
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">What is Apex Managed Sharing &mdash; when and how to implement it?</span><span class="qa-q-label lbl-apex">SECURITY</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<p class="ans-p">Used when declarative sharing (Role Hierarchy, Sharing Rules) isn't complex enough. Example: "A loan should be shared with an Underwriter ONLY IF their credit specialty matches the loan type."</p>
+<pre class="code"><span class="cmt">// Create a Sharing record (the __Share object)</span>
+<span class="cls">Loan__Share</span> lShare = <span class="kw">new</span> <span class="cls">Loan__Share</span>();
+lShare.ParentId = <span class="str">'a00...'</span>; <span class="cmt">// The record being shared</span>
+lShare.UserOrGroupId = <span class="str">'005...'</span>; <span class="cmt">// The user getting access</span>
+lShare.AccessLevel = <span class="str">'Read'</span>; <span class="cmt">// 'Read', 'Edit', 'All'</span>
+lShare.RowCause = Schema.Loan__Share.RowCause.Specialty_Match__c; <span class="cmt">// Optional: reason</span>
+
+insert lShare;</pre>
+<ul class="ans-list">
+  <li><b>Custom Row Cause:</b> Create in Setup so you can track WHY the record was shared.</li>
+  <li><b>Standard vs Custom:</b> For standard objects (AccountShare), the field is <code>AccountId</code>. For custom (Loan__Share), it is <code>ParentId</code>.</li>
+  <li><b>Deletion:</b> If you manually insert share records, you must manually delete them if the condition changes (unless using a standard RowCause).</li>
+</ul>
+</div></div>
+
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">What is the "Guest User Security Policy" &mdash; how does it affect Experience Cloud sites?</span><span class="qa-q-label lbl-domain">SECURITY</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<ul class="ans-list">
+  <li><b>Private by Default:</b> All objects are Private for Guest users. You cannot make them Public.</li>
+  <li><b>Sharing Rules:</b> You must use <b>Guest User Sharing Rules</b> (Criteria-Based) to give access to guests.</li>
+  <li><b>Ownership:</b> Guest users cannot OWN records. New records created by guests must be assigned to a default internal user.</li>
+  <li><b>CRUD:</b> Guests can never have "Update" or "Delete" permissions. They can only "Create" and "Read" (if sharing rules allow).</li>
+</ul>
+<div class="tip-box"><div class="tip-label">Experience Cloud Tip</div><p>If a guest user needs to update a record (e.g., submitting a loan application update), the LWC must call a "without sharing" Apex class to perform the update on their behalf securely.</p></div>
+</div></div>
+
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">What are Permission Set Groups and Muting Permission Sets &mdash; why use them?</span><span class="qa-q-label lbl-domain">SECURITY</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<p class="ans-p">Modern Salesforce security favors "Minimum Viable Profile" + Permission Sets.</p>
+<ul class="ans-list">
+  <li><b>Permission Set Group:</b> Bundles multiple permission sets together. Assign one group to a user instead of 10 individual sets. (e.g., "Senior Underwriter Group" = Base Underwriter + Credit Approval + Manager Overrides).</li>
+  <li><b>Muting Permission Set:</b> Used inside a group to REJECT a specific permission that one of the bundled sets provides. This allows for granular control without creating dozens of slightly different permission sets.</li>
+</ul>
+</div></div>

@@ -1,0 +1,83 @@
+<div class="page-title">Salesforce Flow &mdash; Complete Implementation Guide</div>
+<div class="page-sub">Declarative automation for complex business processes &mdash; record-triggered, screen flows, and orchestration</div>
+
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">When should you use Flow vs Apex &mdash; give a concrete decision framework?</span><span class="qa-q-label lbl-domain">FLOW</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<table class="comparison-table"><tr><th>Use CASE</th><th>Use FLOW</th><th>Use APEX</th></tr><tr><td>Simple CRUD on same record</td><td>YES &mdash; Fast Field Updates</td><td>No</td></tr><tr><td>Simple record creation/update on related objects</td><td>YES</td><td>Only if logic is very complex</td></tr><tr><td>External API Integrations (Callouts)</td><td>Only for simple JSON (HTTP Callout)</td><td>YES &mdash; complex JSON, multiple endpoints</td></tr><tr><td>Mass record processing (10k+)</td><td>No &mdash; Flow is slower for bulk</td><td>YES &mdash; Batch/Queueable</td></tr><tr><td>Custom UI components</td><td>Only as a wrapper</td><td>YES &mdash; LWC</td></tr><tr><td>Complex math/logic/loops</td><td>No &mdash; Flow loops are slow</td><td>YES</td></tr></table>
+<div class="tip-box"><div class="tip-label">Official Guideline</div><p>Salesforce's current stance is "Flow First." Try to build it in Flow. If you hit a limit, or the logic becomes a "spaghetti" of elements that is hard to maintain, move that specific part to an Invocable Apex action or rewrite the whole process in Apex.</p></div>
+</div></div>
+
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">Record-Triggered Flow: Before-Save vs After-Save &mdash; explain the difference?</span><span class="qa-q-label lbl-domain">FLOW</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<ul class="ans-list">
+  <li><b>Before-Save (Fast Field Updates):</b> Runs before the record is saved to the database. Use this for updating fields on the SAME record that triggered the flow. It is 10x faster than After-Save because it doesn't trigger a second save operation.</li>
+  <li><b>After-Save (Actions and Related Records):</b> Runs after the record is saved. Use this for updating OTHER records, sending emails, making callouts, or performing any action that needs the record's ID (which is only available after save).</li>
+</ul>
+<pre class="code"><span class="cmt">// Trigger Order of Execution:</span>
+<span class="cmt">// 1. Before-Save FLOWS</span>
+<span class="cmt">// 2. Before-Trigger APEX</span>
+<span class="cmt">// 3. Validation Rules</span>
+<span class="cmt">// 4. After-Trigger APEX</span>
+<span class="cmt">// 5. After-Save FLOWS</span></pre>
+</div></div>
+
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How do you handle Errors in Flow &mdash; use Fault Paths and custom error messages?</span><span class="qa-q-label lbl-domain">FLOW</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<p class="ans-p">Never let a Flow fail with a "unhandled exception" screen. Use Fault Paths.</p>
+<ul class="ans-list">
+  <li><b>Fault Path:</b> Connect the 'Fault' output of a DML element (Create, Update, Delete) to a separate logic branch.</li>
+  <li><b>Custom Error Element (2024):</b> Use the "Custom Error" element in the fault path to show a user-friendly error message directly on the screen or field, preventing the save.</li>
+  <li><b>Logging:</b> In the fault path, call an Apex Action to log the error to a custom "Error_Log__c" object so admins can debug later.</li>
+  <li><b>Email Alert:</b> Send a notification to the admin team with the <code>{!$Flow.FaultMessage}</code> global variable.</li>
+</ul>
+</div></div>
+
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How do you call Apex from a Flow (Invocable Methods) &mdash; show the code and the Flow setup?</span><span class="qa-q-label lbl-apex">FLOW</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<pre class="code"><span class="kw">public class</span> <span class="cls">LoanCalculator</span> {
+    <span class="ann">@InvocableMethod</span>(label=<span class="str">'Calculate Interest Rate'</span> description=<span class="str">'Returns rate based on FICO'</span>)
+    <span class="kw{public static} <span class="cls{List}&lt;<span class="cls{Decimal}&gt; getRates(<span class="cls{List}&lt;<span class="cls{Integer}&gt; ficoScores) {
+        <span class="cls">List</span>&lt;<span class="cls">Decimal</span>&gt; results = <span class="kw">new</span> <span class="cls">List</span>&lt;<span class="cls">Decimal</span>&gt;();
+        <span class="kw{for}(Integer fico : ficoScores) {
+            <span class="kw{if}(fico &gt; <span class="num}750) results.add(<span class="num}6.5);
+            <span class="kw{else if}(fico &gt; <span class="num}650) results.add(<span class="num}7.2);
+            <span class="kw{else} results.add(<span class="num}8.5);
+        }
+        <span class="kw{return} results; <span class="cmt">// MUST return a List of the same size as input List</span>
+    }
+}</pre>
+<ul class="ans-list">
+  <li><b>In Flow:</b> Add an 'Action' element → Search for "Calculate Interest Rate".</li>
+  <li><b>Mapping:</b> Map the Flow variable <code>{!BorrowerFICO}</code> to the input and store the output in <code>{!InterestRate}</code>.</li>
+  <li><b>Bulkification:</b> Notice the Apex takes a <code>List&lt;Integer&gt;</code>. Flow automatically "batches" multiple records into one Apex call if multiple records are being processed (e.g., in a bulk data load).</li>
+</ul>
+</div></div>
+
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">What is Flow Orchestration &mdash; when do you use it instead of a regular Flow?</span><span class="qa-q-label lbl-domain">FLOW</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<p class="ans-p">Orchestrator handles <b>complex, multi-user, multi-step processes</b> that take days or weeks to complete. A regular Flow is typically "one user, one session."</p>
+<ul class="ans-list">
+  <li><b>Stages and Steps:</b> Orchestration is broken into Stages (e.g., "Application Review," "Underwriting," "Closing"). Each stage contains multiple Steps.</li>
+  <li><b>Interactive Steps:</b> Assign a task to a specific user (e.g., "Underwriter John needs to approve this document"). The process pauses until John completes his Screen Flow.</li>
+  <li><b>Background Steps:</b> Run automated logic between human steps (e.g., "After approval, send document to DocuSign").</li>
+  <li><b>Monitoring:</b> Admins can see exactly where a loan is "stuck" in the orchestration timeline.</li>
+</ul>
+</div></div>
+
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How do you handle "Loops" in Flow without hitting governor limits?</span><span class="qa-q-label lbl-domain">FLOW</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<ul class="ans-list">
+  <li><b>Bulkification:</b> NEVER put a "Create Records" or "Update Records" element INSIDE a loop.</li>
+  <li><b>Correct Pattern:</b>
+    <ol>
+      <li>Loop through records.</li>
+      <li>Inside loop: use an 'Assignment' element to add values to a <b>Record Collection Variable</b>.</li>
+      <li>After the loop: use a single "Update Records" element on that collection.</li>
+    </ol>
+  </li>
+  <li><b>Limits:</b> A single Flow transaction can execute a maximum of 2,000 elements. If your loop processes 500 records and has 5 elements inside, you will hit the 2,500 element limit (500 * 5) and the flow will fail. In this case, move the logic to Apex.</li>
+</ul>
+</div></div>
+
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How do you migrate Workflow Rules and Process Builders to Flow &mdash; "Migrate to Flow" tool?</span><span class="qa-q-label lbl-domain">FLOW</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<ul class="ans-list">
+  <li><b>The Tool:</b> Setup → Migrate to Flow. Select your old Workflow Rule or Process Builder and the tool generates a Flow automatically.</li>
+  <li><b>Deactivation:</b> After migration, you MUST deactivate the old rule/process and activate the new Flow. Never have both running at once.</li>
+  <li><b>Consolidation:</b> Don't just migrate 1:1. Use the migration as an opportunity to consolidate multiple processes into one "Trigger Handler" Flow for that object to improve performance and maintainability.</li>
+  <li><b>Limitations:</b> The tool doesn't handle everything (e.g., complex formulas or certain actions). Always test the generated Flow thoroughly in a sandbox.</li>
+</ul>
+</div></div>

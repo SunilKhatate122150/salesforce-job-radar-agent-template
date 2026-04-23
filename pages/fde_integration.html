@@ -1,0 +1,93 @@
+<div class="page-title">FDE Prep &mdash; Integration Patterns</div>
+<div class="page-sub">5 questions on Agentforce + Data Cloud integration patterns</div>
+
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">3 ways an Agentforce agent retrieves Data Cloud data at runtime.</span><span class="qa-q-label lbl-fde-arch">ARCHITECTURE</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+    <table class="comparison-table">
+      <tr><th>Method</th><th>How</th><th>Pros</th><th>Cons</th></tr>
+      <tr><td><b>CRM Sync</b></td><td>Data Cloud syncs fields back to CRM → agent uses SOQL</td><td>Familiar, no special APIs</td><td>Not real-time, limited fields</td></tr>
+      <tr><td><b>Connect API</b></td><td>Apex calls Data Cloud REST API directly</td><td>Real-time, full access</td><td>Callout limits apply</td></tr>
+      <tr><td><b>Data Graphs</b></td><td>Pre-built optimized profile in one call</td><td>Fastest, pre-optimized</td><td>Setup + refresh needed</td></tr>
+    </table>
+    <div class="tip-box"><div class="tip-label">Phased approach</div><p>"CRM Sync for Phase 1 quick wins, Data Graphs for optimized grounding as the implementation matures."</p></div>
+</div></div>
+
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">Step-by-step: Ground an Agentforce agent with Data Cloud's unified profile.</span><span class="qa-q-label lbl-fde-scenario">SCENARIO</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+    <ul class="ans-list">
+      <li><b>Step 1:</b> Create Data Graph → Individual + Loans + Payments + Calculated Insights</li>
+      <li><b>Step 2:</b> Build Apex Action that retrieves the Data Graph</li>
+      <li><b>Step 3:</b> Create Flex Prompt Template with profile data merge fields</li>
+      <li><b>Step 4:</b> Link action to Topic &mdash; "Customer Inquiry" calls getProfile first, then Prompt Template formats response</li>
+    </ul>
+    <pre class="code">@InvocableMethod(label='Get Customer Profile' 
+    description='Retrieves unified customer profile from Data Cloud')
+public static List&lt;Response&gt; getProfile(List&lt;Request&gt; requests) {
+    // Query Data Cloud via Connect API or CRM-synced fields
+    // Return unified profile as structured response
+}</pre>
+</div></div>
+
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">≡ƒÅå HERO ANSWER: Design complete Agent + Data Cloud architecture for mortgage.</span><span class="qa-q-label lbl-fde-arch">ARCHITECTURE</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+    <div class="fde-hero-box"><h3>≡ƒÅå This is your "Hero Answer" &mdash; rehearse out loud until it flows naturally</h3></div>
+    <div class="fde-flow-diagram">┌─────────────────────────────────────┐
+│          CUSTOMER                   │
+│  "What's my mortgage status?"       │
+└──────────────┬──────────────────────┘
+               ↓
+┌─────────────────────────────────────┐
+│        AGENTFORCE AGENT             │
+│ 4 Topics: Loan Status, Payment,    │
+│           Refinance, Escalation     │
+│ Actions: identifyCustomer(Flow),   │
+│   getUnifiedProfile(Apex→DC),      │
+│   summarizeProfile(Prompt Tmpl),   │
+│   fetchLiveRate(Apex callout),     │
+│   createPaymentPlan(Flow),         │
+│   escalateToOfficer(Flow→Omni)     │
+└──────────────┬──────────────────────┘
+               ↓
+┌─────────────────────────────────────┐
+│         DATA CLOUD                  │
+│ Sources: CRM + LOS + Payments      │
+│ Unified Individual merged           │
+│ Calculated Insights: Balance,      │
+│   LTV: 72%, On-time 24m,          │
+│   ARM Adjust: 87 days             │
+│ Data Graph: sub-second retrieval   │
+└──────────────┬──────────────────────┘
+               ↓
+┌─────────────────────────────────────┐
+│     EINSTEIN TRUST LAYER            │
+│ ✓ PII masked before LLM           │
+│ ✓ Zero data retention             │
+│ ✓ Audit log for TRID/FCRA         │
+└──────────────┬──────────────────────┘
+               ↓
+ "Welcome back, John! You have 2 active
+  loans totaling $487K. Your ARM rate
+  adjusts in 87 days &mdash; want to explore
+  refinancing options?"
+
+ OUTCOMES: 60% deflection, proactive
+ refi outreach, full compliance trail</div>
+    <div class="tip-box"><div class="tip-label">Delivery</div><p>Walk through this naturally. Start from customer, show each layer, end with business outcomes. This is FDE-level thinking.</p></div>
+</div></div>
+
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How do Platform Events connect to Agentforce architecture?</span><span class="qa-q-label lbl-fde">CONCEPT</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+    <ul class="ans-list">
+      <li><b>Agent → Platform Event:</b> Action publishes event to external systems. Agent confirms payoff → publishes Payoff_Request__e → LOS picks it up</li>
+      <li><b>Platform Event → Agent:</b> External system publishes event → triggers Flow → updates CRM → affects agent grounding</li>
+      <li><b>Data Cloud Streaming:</b> Platform Events ingested as streaming engagement events → enriches unified profile real-time</li>
+      <li><b>YOUR experience:</b> Your LOS integration via Platform Events is the EXACT pattern for Agentforce – external system communication</li>
+    </ul>
+</div></div>
+
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">What are Data Cloud Triggered Flows? How different from CRM triggers?</span><span class="qa-q-label lbl-fde">CONCEPT</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+    <ul class="ans-list">
+      <li>Fire when <b>Data Cloud data changes</b> &mdash; similar to record-triggered flows but for DMO events</li>
+      <li><b>Triggers:</b> DMO created/updated, Calculated Insight crosses threshold, streaming event received</li>
+      <li><b>Key difference:</b> Operate on UNIFIED data &mdash; see the cross-system picture, not just one CRM object</li>
+      <li>Credit score drops below 620 → create Risk Alert task in CRM</li>
+      <li>Identity Resolution merges new record → trigger welcome journey</li>
+    </ul>
+    <div class="tip-box"><div class="tip-label">Key distinction</div><p>"CRM triggers see one system's data. Data Cloud triggers see the unified, cross-system truth."</p></div>
+</div></div>

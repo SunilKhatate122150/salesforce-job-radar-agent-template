@@ -1,0 +1,135 @@
+<div class="page-title">Integration &amp; APIs &mdash; Interview Questions</div>
+<div class="page-sub">18 questions with complete answers &mdash; covers REST, SOAP, Named Credentials, and your project integrations</div>
+
+<div class="qa-block">
+  <div class="qa-question" onclick="toggleQA(this)">
+    <span class="qa-q-text">How do you make an authenticated REST API callout in Apex? Show complete code with Named Credentials.</span>
+    <span class="qa-q-label lbl-intg">INTEGRATION</span>
+    <span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span>
+  </div>
+  <div class="qa-answer">
+    <pre class="code"><span class="cmt">// Named Credential: Created in Setup ΓåÆ Security ΓåÆ Named Credentials</span>
+// Name: ExperianCreditAPI, URL: https://api.experian.com
+// Auth: OAuth 2.0 configured here (no credentials in code)
+
+public class <span class="cls">ExperianCreditService</span> {
+    
+    public static <span class="cls">CreditResponse</span> pullCreditReport(<span class="cls">String</span> ssn, <span class="cls">String</span> lastName) {
+        
+        <span class="cmt">// Build request using Named Credential (callout:ExperianCreditAPI)</span>
+        <span class="cls">HttpRequest</span> req = new <span class="cls">HttpRequest</span>();
+        req.setEndpoint('callout:ExperianCreditAPI/v1/credit-report'); <span class="cmt">// Named Cred prefix</span>
+        req.setMethod('POST');
+        req.setHeader('Content-Type', 'application/json');
+        req.setHeader('Accept', 'application/json');
+        req.setTimeout(30000); <span class="cmt">// 30 seconds max</span>
+        
+        <span class="cmt">// Build request body</span>
+        <span class="cls">Map</span>&lt;<span class="cls">String</span>, <span class="cls">Object</span>&gt; body = new <span class="cls">Map</span>&lt;<span class="cls">String</span>, <span class="cls">Object</span>&gt;{
+            'ssn' => ssn,
+            'lastName' => lastName,
+            'requestType' => 'FULL'
+        };
+        req.setBody(JSON.serialize(body));
+        
+        <span class="cmt">// Execute callout</span>
+        <span class="cls">Http</span> http = new <span class="cls">Http</span>();
+        <span class="cls">HttpResponse</span> res;
+        
+        try {
+            res = http.send(req);
+        } catch(<span class="cls">CalloutException</span> e) {
+            throw new <span class="cls">CreditServiceException</span>('Callout failed: ' + e.getMessage());
+        }
+        
+        <span class="cmt">// Handle response by status code</span>
+        if(res.getStatusCode() == 200) {
+            return (<span class="cls">CreditResponse</span>) JSON.deserialize(res.getBody(), <span class="cls">CreditResponse</span>.class);
+        } else if(res.getStatusCode() == 401) {
+            throw new <span class="cls">CreditServiceException</span>('Authentication failed - check Named Credential');
+        } else if(res.getStatusCode() == 429) {
+            throw new <span class="cls">CreditServiceException</span>('Rate limit exceeded - retry after delay');
+        } else {
+            throw new <span class="cls">CreditServiceException</span>('API Error ' + res.getStatusCode() + ': ' + res.getBody());
+        }
+    }
+    
+    <span class="cmt">// Response wrapper class</span>
+    public class <span class="cls">CreditResponse</span> {
+        public <span class="cls">Integer</span> ficoScore;
+        public <span class="cls">String</span> riskCategory;
+        public <span class="cls">List</span>&lt;<span class="cls">TradelineItem</span>&gt; tradelines;
+    }
+}
+
+<span class="cmt">// Test class using HttpCalloutMock</span>
+@isTest
+public class <span class="cls">ExperianCreditServiceTest</span> {
+    
+    @isTest
+    static void testSuccessfulCreditPull() {
+        <span class="cmt">// Mock the HTTP callout response</span>
+        Test.setMock(<span class="cls">HttpCalloutMock</span>.class, new <span class="cls">ExperianMockCallout</span>());
+        Test.startTest();
+        <span class="cls">ExperianCreditService</span>.<span class="cls">CreditResponse</span> result = 
+            <span class="cls">ExperianCreditService</span>.pullCreditReport('123-45-6789', 'Doe');
+        Test.stopTest();
+        System.assertEquals(720, result.ficoScore);
+    }
+    
+    public class <span class="cls">ExperianMockCallout</span> implements <span class="cls">HttpCalloutMock</span> {
+        public <span class="cls">HttpResponse</span> respond(<span class="cls">HttpRequest</span> req) {
+            <span class="cls">HttpResponse</span> res = new <span class="cls">HttpResponse</span>();
+            res.setStatusCode(200);
+            res.setHeader('Content-Type', 'application/json');
+            res.setBody('{"ficoScore": 720, "riskCategory": "Good"}');
+            return res;
+        }
+    }
+}</pre>
+    <div class="tip-box"><div class="tip-label">Use your Experian experience here</div><p>Tell the interviewer: "In my Mortgage Origination Platform project, I used Named Credentials to authenticate with Experian's credit bureau API. This way, the client credentials were managed by Salesforce admins in Named Credentials setup &mdash; not hardcoded in the Apex class. This follows security best practices and makes credential rotation easy."</p></div>
+  </div>
+</div>
+
+<div class="qa-block">
+  <div class="qa-question" onclick="toggleQA(this)">
+    <span class="qa-q-text">Why can't you make callouts from triggers? How do you work around it?</span>
+    <span class="qa-q-label lbl-intg">INTEGRATION</span>
+    <span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span>
+  </div>
+  <div class="qa-answer">
+    <p class="ans-p">Triggers run synchronously within a database transaction. If a callout is made during a transaction and the external system takes 30 seconds, the database transaction locks those records for 30 seconds &mdash; this is a major problem in a multitenant environment.</p>
+    <p class="ans-p">Salesforce enforces: <b>You cannot make an HTTP callout from within a trigger</b> (or any code that runs in a transaction that has already performed DML).</p>
+    <pre class="code"><span class="cmt">// This throws: System.CalloutException: You have uncommitted work pending</span>
+trigger LoanTrigger on Loan__c (after insert) {
+    for(<span class="cls">Loan__c</span> loan : Trigger.new) {
+        <span class="cls">ExperianService</span>.pullCredit(loan.Id); <span class="cmt">// ERROR - DML already happened</span>
+    }
+}
+
+<span class="cmt">// SOLUTION 1: @future with callout=true</span>
+trigger LoanTrigger on Loan__c (after insert) {
+    <span class="cls">Set</span>&lt;<span class="cls">Id</span>&gt; loanIds = Trigger.newMap.keySet();
+    <span class="cls">ExperianService</span>.pullCreditAsync(loanIds); <span class="cmt">// fires after transaction commits</span>
+}
+
+public class <span class="cls">ExperianService</span> {
+    @future(callout=true)
+    public static void pullCreditAsync(<span class="cls">Set</span>&lt;<span class="cls">Id</span>&gt; loanIds) {
+        <span class="cmt">// This runs AFTER the trigger transaction completes</span>
+        // Safe to make callouts here
+        for(<span class="cls">Id</span> loanId : loanIds) {
+            pullCreditReport(loanId); <span class="cmt">// callout now safe</span>
+        }
+    }
+}
+
+<span class="cmt">// SOLUTION 2: Queueable (better - sObject support, chainable)</span>
+trigger LoanTrigger on Loan__c (after insert) {
+    System.enqueueJob(new <span class="cls">CreditCheckQueueable</span>(Trigger.new));
+}
+
+<span class="cmt">// SOLUTION 3: Platform Events (best for complex workflows)</span>
+// Trigger publishes event ΓåÆ separate subscriber trigger handles callout</pre>
+  </div>
+</div>

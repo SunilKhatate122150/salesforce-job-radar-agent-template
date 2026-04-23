@@ -1,0 +1,641 @@
+<div class="page-title">Thenken Globus Solutions &mdash; Technical Round</div>
+<div class="page-sub">Full technical round questions with complete code answers &mdash; LWC, Apex, Sales Cloud, Service Cloud, Integrations, Agentforce, and more.</div>
+
+<div style="margin:2rem 0 1.2rem;padding:0.9rem 1.2rem;background:var(--card2);border-left:3px solid var(--blue);border-radius:8px;"><div style="font-size:0.9rem;font-weight:700;color:var(--blue);font-family:'IBM Plex Mono',monospace;">≡ƒÆ╗ Coding Challenge 1 &mdash; Parent/Child LWC with Account Dropdown + Contacts</div></div>
+
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">Build two LWC components &mdash; parent shows Account dropdown, child shows related Contacts</span><span class="qa-q-label lbl-lwc">CODING CHALLENGE</span><span class="qa-chevron">Γû╝</span></div><div class="qa-answer">
+<p class="ans-p"><b>Requirement:</b> Parent LWC shows a dropdown of Accounts. When user selects an Account, child LWC displays that account's related Contacts list.</p>
+<pre class="code">// ΓöÇΓöÇ APEX CONTROLLER ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+public with sharing class AccountContactController {
+  @AuraEnabled(cacheable=true)
+  public static List&lt;Account&gt; getAllAccounts() {
+    return [SELECT Id, Name FROM Account ORDER BY Name LIMIT 200 WITH SECURITY_ENFORCED];
+  }
+
+  @AuraEnabled(cacheable=true)
+  public static List&lt;Contact&gt; getContactsByAccount(Id accountId) {
+    return [SELECT Id, Name, Email, Phone, Title FROM Contact
+            WHERE AccountId = :accountId WITH SECURITY_ENFORCED ORDER BY Name];
+  }
+}</pre>
+<pre class="code">// ΓöÇΓöÇ PARENT COMPONENT: accountSelector.html ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+&lt;template&gt;
+  &lt;lightning-card title="Account Selector"&gt;
+    &lt;div class="slds-p-around_medium"&gt;
+      &lt;lightning-combobox
+        label="Select Account"
+        placeholder="-- Select an Account --"
+        value={selectedAccountId}
+        options={accountOptions}
+        onchange={handleAccountChange}&gt;
+      &lt;/lightning-combobox&gt;
+      &lt;template if:true={selectedAccountId}&gt;
+        &lt;c-contact-list account-id={selectedAccountId}&gt;&lt;/c-contact-list&gt;
+      &lt;/template&gt;
+    &lt;/div&gt;
+  &lt;/lightning-card&gt;
+&lt;/template&gt;
+
+// ΓöÇΓöÇ PARENT: accountSelector.js ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+import { LightningElement, wire, track } from 'lwc';
+import getAllAccounts from '@salesforce/apex/AccountContactController.getAllAccounts';
+
+export default class AccountSelector extends LightningElement {
+  @track selectedAccountId = '';
+  accountOptions = [];
+
+  @wire(getAllAccounts)
+  wiredAccounts({ data, error }) {
+    if (data) {
+      this.accountOptions = data.map(acc => ({ label: acc.Name, value: acc.Id }));
+    } else if (error) {
+      console.error('Error loading accounts:', error);
+    }
+  }
+
+  handleAccountChange(event) {
+    this.selectedAccountId = event.detail.value;
+  }
+}</pre>
+<pre class="code">// ΓöÇΓöÇ CHILD COMPONENT: contactList.html ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+&lt;template&gt;
+  &lt;lightning-card title="Related Contacts"&gt;
+    &lt;template if:true={isLoading}&gt;
+      &lt;lightning-spinner alternative-text="Loading contacts..."&gt;&lt;/lightning-spinner&gt;
+    &lt;/template&gt;
+    &lt;template if:false={isLoading}&gt;
+      &lt;template if:true={hasContacts}&gt;
+        &lt;lightning-datatable
+          data={contacts}
+          columns={columns}
+          key-field="Id"&gt;
+        &lt;/lightning-datatable&gt;
+      &lt;/template&gt;
+      &lt;template if:false={hasContacts}&gt;
+        &lt;p class="slds-p-around_medium slds-text-color_weak"&gt;No contacts found for this account.&lt;/p&gt;
+      &lt;/template&gt;
+      &lt;template if:true={errorMessage}&gt;
+        &lt;p class="slds-text-color_error"&gt;{errorMessage}&lt;/p&gt;
+      &lt;/template&gt;
+    &lt;/template&gt;
+  &lt;/lightning-card&gt;
+&lt;/template&gt;
+
+// ΓöÇΓöÇ CHILD: contactList.js ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+import { LightningElement, api, wire, track } from 'lwc';
+import getContactsByAccount from '@salesforce/apex/AccountContactController.getContactsByAccount';
+
+export default class ContactList extends LightningElement {
+  @api accountId;   // receives selected Account Id from parent
+  @track contacts = [];
+  @track isLoading = false;
+  @track errorMessage = '';
+
+  columns = [
+    { label: 'Name',  fieldName: 'Name',  type: 'text' },
+    { label: 'Email', fieldName: 'Email', type: 'email' },
+    { label: 'Phone', fieldName: 'Phone', type: 'phone' },
+    { label: 'Title', fieldName: 'Title', type: 'text' }
+  ];
+
+  @wire(getContactsByAccount, { accountId: '$accountId' })
+  wiredContacts({ data, error }) {
+    this.isLoading = false;
+    if (data) {
+      this.contacts     = data;
+      this.errorMessage = '';
+    } else if (error) {
+      this.errorMessage = error.body?.message || 'Error loading contacts';
+      this.contacts     = [];
+    }
+  }
+
+  get hasContacts() { return this.contacts && this.contacts.length > 0; }
+}
+
+// ΓöÇΓöÇ BOTH meta.xml files: expose to App Builder / Record Pages ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+// accountSelector.js-meta.xml:
+// &lt;target&gt;lightning__AppPage&lt;/target&gt;
+// &lt;target&gt;lightning__RecordPage&lt;/target&gt;</pre>
+
+</div></div>
+<div style="margin:2rem 0 1.2rem;padding:0.9rem 1.2rem;background:var(--card2);border-left:3px solid var(--blue);border-radius:8px;"><div style="font-size:0.9rem;font-weight:700;color:var(--blue);font-family:'IBM Plex Mono',monospace;">≡ƒÆ╗ Coding Challenge 2 &mdash; Opportunity Count on Account + Email to Owner's Manager</div></div>
+
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">Show Opportunity count on Account and send email notification to owner's manager</span><span class="qa-q-label lbl-apex">CODING CHALLENGE</span><span class="qa-chevron">Γû╝</span></div><div class="qa-answer">
+<p class="ans-p"><b>Requirement:</b> When Opportunities are created/updated/deleted, update a total count field on the Account. Then send an email notification to the Opportunity owner's manager.</p>
+<pre class="code">// ΓöÇΓöÇ STEP 1: Custom field on Account ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+// Create: Account.Total_Opportunities__c  (Number, 0 decimal places)
+
+// ΓöÇΓöÇ STEP 2: Trigger ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+trigger OpportunityTrigger on Opportunity (after insert, after update, after delete, after undelete) {
+  OpportunityTriggerHandler.handle(
+    Trigger.new, Trigger.old, Trigger.operationType
+  );
+}
+
+// ΓöÇΓöÇ STEP 3: Handler + Service ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+public class OpportunityTriggerHandler {
+  public static void handle(List&lt;Opportunity&gt; newList, List&lt;Opportunity&gt; oldList,
+                             System.TriggerOperation opType) {
+    Set&lt;Id&gt; affectedAccountIds = new Set&lt;Id&gt;();
+
+    if (newList != null) for (Opportunity o : newList) if (o.AccountId != null) affectedAccountIds.add(o.AccountId);
+    if (oldList != null) for (Opportunity o : oldList) if (o.AccountId != null) affectedAccountIds.add(o.AccountId);
+
+    if (affectedAccountIds.isEmpty()) return;
+
+    OpportunityRollupService.updateOppCount(affectedAccountIds);
+
+    // Send email only on new Opportunities
+    if (opType == System.TriggerOperation.AFTER_INSERT) {
+      OpportunityEmailService.notifyManagers(newList);
+    }
+  }
+}
+
+// ΓöÇΓöÇ STEP 4: Rollup Service ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+public class OpportunityRollupService {
+  public static void updateOppCount(Set&lt;Id&gt; accountIds) {
+    // Aggregate count per account
+    Map&lt;Id, Integer&gt; countMap = new Map&lt;Id, Integer&gt;();
+    for (Id accId : accountIds) countMap.put(accId, 0); // default 0
+
+    for (AggregateResult ar : [
+        SELECT AccountId accId, COUNT(Id) cnt
+        FROM Opportunity
+        WHERE AccountId IN :accountIds AND StageName != 'Closed Lost'
+        GROUP BY AccountId
+    ]) {
+      countMap.put((Id) ar.get('accId'), (Integer) ar.get('cnt'));
+    }
+
+    List&lt;Account&gt; toUpdate = new List&lt;Account&gt;();
+    for (Id accId : accountIds) {
+      toUpdate.add(new Account(Id=accId, Total_Opportunities__c=countMap.get(accId)));
+    }
+    update toUpdate;
+  }
+}
+
+// ΓöÇΓöÇ STEP 5: Email Notification Service ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+public class OpportunityEmailService {
+  public static void notifyManagers(List&lt;Opportunity&gt; opps) {
+    // Get Owner IDs
+    Set&lt;Id&gt; ownerIds = new Set&lt;Id&gt;();
+    for (Opportunity o : opps) ownerIds.add(o.OwnerId);
+
+    // Get Owner + Manager details
+    Map&lt;Id, User&gt; userMap = new Map&lt;Id, User&gt;(
+      [SELECT Id, Name, Email, ManagerId, Manager.Name, Manager.Email
+       FROM User WHERE Id IN :ownerIds AND ManagerId != null]
+    );
+
+    // Build emails &mdash; one per Opportunity
+    List&lt;Messaging.SingleEmailMessage&gt; emails = new List&lt;Messaging.SingleEmailMessage&gt;();
+    for (Opportunity o : opps) {
+      User owner = userMap.get(o.OwnerId);
+      if (owner == null || owner.ManagerId == null) continue; // skip if no manager
+
+      Messaging.SingleEmailMessage mail = new Messaging.SingleEmailMessage();
+      mail.setToAddresses(new String[]{ owner.Manager.Email });
+      mail.setSubject('New Opportunity Created: ' + o.Name);
+      mail.setPlainTextBody(
+        'Hello ' + owner.Manager.Name + ',\n\n' +
+        'A new Opportunity has been created by your team member ' + owner.Name + ':\n\n' +
+        'Opportunity Name: ' + o.Name + '\n' +
+        'Amount: $' + (o.Amount != null ? String.valueOf(o.Amount) : 'Not set') + '\n' +
+        'Stage: ' + o.StageName + '\n' +
+        'Close Date: ' + String.valueOf(o.CloseDate) + '\n\n' +
+        'Please review in Salesforce.\n\n' +
+        'Regards,\n' +
+        'Salesforce Automation'
+      );
+      emails.add(mail);
+    }
+
+    if (!emails.isEmpty()) Messaging.sendEmail(emails);
+  }
+}</pre>
+<div class="tip-box"><div class="tip-label">Why this design</div><p>Separating rollup logic (OpportunityRollupService) from email logic (OpportunityEmailService) follows the Single Responsibility principle &mdash; each can be tested and changed independently.</p></div>
+
+</div></div>
+<div style="margin:2rem 0 1.2rem;padding:0.9rem 1.2rem;background:var(--card2);border-left:3px solid var(--blue);border-radius:8px;"><div style="font-size:0.9rem;font-weight:700;color:var(--blue);font-family:'IBM Plex Mono',monospace;">≡ƒÄñ Self Introduction &mdash; Technical Round Version</div></div>
+
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">Self Introduction &mdash; Technical Round (Thenken Globus style)</span><span class="qa-q-label lbl-behav">INTRO</span><span class="qa-chevron">Γû╝</span></div><div class="qa-answer">
+<p class="ans-p">Technical round introductions should be slightly more detailed than screening &mdash; 2 minutes, with technical depth.</p>
+<p class="ans-p">"Good morning. My name is Sunil, and I'm a Salesforce Developer with four years of experience specializing in enterprise Salesforce implementations for the US mortgage and financial services domain.<br><br>
+My technical stack: Apex (triggers, batch, Queueable, REST API callouts), Lightning Web Components, Salesforce Integrations (REST/SOAP/Platform Events), and most recently Agentforce development including custom Apex Actions and Prompt Templates.<br><br>
+My most significant project is a complete Mortgage Origination Platform &mdash; custom objects, full trigger framework with handler pattern, three external integrations (Experian credit bureau, DocuSign e-signature, Loan Origination System bidirectional sync), and an AI-powered document analysis feature using OpenAI's API.<br><br>
+In terms of architecture: I work with service layer patterns, selector patterns, and unit of work for complex DML &mdash; so our code is maintainable and testable by any developer, not just the original author.<br><br>
+I'm comfortable owning technical decisions end-to-end &mdash; from design review through deployment and post-production monitoring. I'm looking to bring that same depth to your team and grow further into solution architecture."
+</p>
+
+</div></div>
+<div style="margin:2rem 0 1.2rem;padding:0.9rem 1.2rem;background:var(--card2);border-left:3px solid var(--blue);border-radius:8px;"><div style="font-size:0.9rem;font-weight:700;color:var(--blue);font-family:'IBM Plex Mono',monospace;">Γÿü Sales Cloud &mdash; In Depth</div></div>
+
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">Sales Cloud &mdash; complete deep dive for technical round</span><span class="qa-q-label lbl-domain">SALES CLOUD</span><span class="qa-chevron">Γû╝</span></div><div class="qa-answer">
+<p class="ans-p"><b>Lead-to-Cash full lifecycle:</b></p>
+<ul class="ans-list">
+  <li><b>Lead Management</b> &mdash; web-to-lead, lead assignment rules, lead scoring (Einstein), lead conversion to Account + Contact + Opportunity</li>
+  <li><b>Opportunity Management</b> &mdash; stages pipeline, probability, forecast categories, close date, primary contact role</li>
+  <li><b>Products and Pricing</b> &mdash; Product2 catalog, Pricebooks (Standard + Custom), PricebookEntry, OpportunityLineItem</li>
+  <li><b>CPQ (Configure, Price, Quote)</b> &mdash; complex product configuration, discount rules, quote generation with approval</li>
+  <li><b>Forecasting</b> &mdash; Collaborative Forecasting, territory-based forecasting, Einstein Forecasting AI predictions</li>
+  <li><b>Territory Management</b> &mdash; assign accounts/opportunities to sales territories by geography or custom criteria</li>
+  <li><b>Email Integration</b> &mdash; Einstein Activity Capture auto-logs emails to Salesforce, Inbox for email + calendar sync</li>
+</ul>
+<pre class="code">// Key Sales Cloud SOQL patterns
+// Lead conversion rate
+SELECT LeadSource, COUNT(Id) total, SUM(IsConverted) converted
+FROM Lead GROUP BY LeadSource
+
+// Pipeline by stage
+SELECT StageName, COUNT(Id) cnt, SUM(Amount) total
+FROM Opportunity WHERE IsClosed = false GROUP BY StageName ORDER BY SUM(Amount) DESC
+
+// Opportunity with Products
+SELECT Id, Name, Amount,
+  (SELECT Id, Product2.Name, UnitPrice, Quantity FROM OpportunityLineItems)
+FROM Opportunity WHERE Id = :oppId</pre>
+<div class="tip-box"><div class="tip-label">Key differentiator</div><p>Know the difference between Forecast Category and Stage. A stage is where the deal IS in the process. Forecast Category is the REVENUE recognition expectation: Pipeline, Best Case, Commit, Omitted, Closed. They're related but different.</p></div>
+
+</div></div>
+<div style="margin:2rem 0 1.2rem;padding:0.9rem 1.2rem;background:var(--card2);border-left:3px solid var(--blue);border-radius:8px;"><div style="font-size:0.9rem;font-weight:700;color:var(--blue);font-family:'IBM Plex Mono',monospace;">≡ƒÄº Service Cloud &mdash; In Depth</div></div>
+
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">Service Cloud &mdash; complete deep dive for technical round</span><span class="qa-q-label lbl-domain">SERVICE CLOUD</span><span class="qa-chevron">Γû╝</span></div><div class="qa-answer">
+<p class="ans-p"><b>Complete Case lifecycle and Service Cloud architecture:</b></p>
+<ul class="ans-list">
+  <li><b>Case Origins</b> &mdash; Email-to-Case (inbound email creates Case), Web-to-Case (web form), Omni-Channel (chat, social, phone), manual creation</li>
+  <li><b>Case Assignment Rules</b> &mdash; route Cases to right queue/agent based on criteria (product, priority, skill)</li>
+  <li><b>Case Escalation Rules</b> &mdash; auto-escalate if not responded to within SLA window; reassign + notify manager</li>
+  <li><b>SLA with Entitlement + Milestones</b> &mdash; Entitlement defines SLA terms; Milestones are time targets within the SLA (first response Γëñ 2 hrs, resolution Γëñ 8 hrs)</li>
+  <li><b>Omni-Channel</b> &mdash; intelligent routing across channels (chat, email, case, custom objects) based on agent availability and capacity</li>
+  <li><b>Knowledge Management</b> &mdash; Knowledge Articles (FAQ, how-to), search from case to suggest articles, CSAT deflection metrics</li>
+  <li><b>Service Console</b> &mdash; split-view UI, utility bar, keyboard shortcuts, macros for agent productivity</li>
+  <li><b>CTI (Computer Telephony Integration)</b> &mdash; Open CTI SDK connects phone system; screen pop shows caller's Account/Case</li>
+</ul>
+<pre class="code">// Case with Entitlement pattern
+// 1. Create Entitlement for Account
+Entitlement ent = new Entitlement(
+  Name='Premium SLA', AccountId=accId, StartDate=Date.today(),
+  EndDate=Date.today().addYears(1), SlaProcessId=slaId
+);
+insert ent;
+
+// 2. Link Case to Entitlement (auto-applies SLA milestones)
+Case c = new Case(Subject='Integration down', AccountId=accId,
+  EntitlementId=ent.Id, Priority='High');
+insert c; // SLA milestones automatically created and tracked
+
+// 3. Query Case Milestones
+List&lt;CaseMilestone&gt; milestones = [
+  SELECT Id, MilestoneType.Name, CompletionDate, IsCompleted, RemainingTimeInMins
+  FROM CaseMilestone WHERE CaseId = :c.Id
+];</pre>
+<div class="tip-box"><div class="tip-label">Escalation vs Assignment</div><p>Assignment Rule = routes new Cases to the right team/person. Escalation Rule = reassigns/notifies if Case is NOT resolved within the SLA time. Both are setup-based, not code-based.</p></div>
+
+</div></div>
+<div style="margin:2rem 0 1.2rem;padding:0.9rem 1.2rem;background:var(--card2);border-left:3px solid var(--blue);border-radius:8px;"><div style="font-size:0.9rem;font-weight:700;color:var(--blue);font-family:'IBM Plex Mono',monospace;">ΓÅ░ Cron Expressions in Salesforce</div></div>
+
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">Cron expressions in Salesforce Scheduled Apex &mdash; complete reference</span><span class="qa-q-label lbl-apex">SCHEDULED APEX</span><span class="qa-chevron">Γû╝</span></div><div class="qa-answer">
+<p class="ans-p"><b>Salesforce cron expression has 7 positions (not 5 like standard Unix cron):</b></p>
+<pre class="code">// Position:  Seconds  Minutes  Hours  Day-of-Month  Month  Day-of-Week  Year
+// Format:    0-59     0-59     0-23   1-31          1-12   1-7 or SUN-SAT  (optional)
+
+// Special characters:
+// *  = any value
+// ?  = no specific value (use for Day-of-Month OR Day-of-Week &mdash; not both)
+// -  = range (e.g., MON-FRI)
+// ,  = list (e.g., MON,WED,FRI)
+// /  = increment (e.g., 0/15 = every 15 starting from 0)
+// L  = last (e.g., L in Day-of-Month = last day of month)
+
+// COMMON EXAMPLES:
+'0 0 2 * * ?'           // Every day at 2:00 AM
+'0 0 2 ? * MON'         // Every Monday at 2:00 AM
+'0 0 2 1 * ?'           // First day of every month at 2:00 AM
+'0 0 0 1 1 ? *'         // January 1st every year at midnight
+'0 0/30 * * * ?'        // Every 30 minutes (avoid &mdash; use PE instead)
+'0 0 8-17 ? * MON-FRI'  // Every hour 8AM-5PM Mon-Fri
+'0 0 2 L * ?'           // Last day of every month at 2AM
+
+// SCHEDULE AN APEX JOB:
+String cronExpr = '0 0 2 * * ?'; // 2AM daily
+String jobName  = 'Nightly Loan Sync';
+System.schedule(jobName, cronExpr, new NightlyLoanSyncSchedule());
+
+// CHECK SCHEDULED JOBS:
+List&lt;CronTrigger&gt; jobs = [
+  SELECT Id, CronJobDetail.Name, CronExpression, State, NextFireTime
+  FROM CronTrigger WHERE CronJobDetail.Name = :jobName
+];
+
+// ABORT A SCHEDULED JOB:
+for (CronTrigger ct : jobs) System.abortJob(ct.Id);
+
+// QUERY ALL ACTIVE SCHEDULED JOBS:
+[SELECT Id, CronJobDetail.Name, NextFireTime, State FROM CronTrigger
+ WHERE State NOT IN ('DELETED','COMPLETE') ORDER BY NextFireTime]</pre>
+<div class="warn-box"><div class="warn-label">Frequency limit</div><p>Do not schedule jobs more frequently than once per hour using Scheduled Apex. For higher frequency automation, use Platform Events + trigger subscribers. Salesforce limits orgs to 100 scheduled jobs total.</p></div>
+
+</div></div>
+<div style="margin:2rem 0 1.2rem;padding:0.9rem 1.2rem;background:var(--card2);border-left:3px solid var(--blue);border-radius:8px;"><div style="font-size:0.9rem;font-weight:700;color:var(--blue);font-family:'IBM Plex Mono',monospace;">≡ƒñû Agentforce &mdash; In Depth</div></div>
+
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">Agentforce complete architecture &mdash; everything a developer needs to know</span><span class="qa-q-label lbl-domain">AGENTFORCE</span><span class="qa-chevron">Γû╝</span></div><div class="qa-answer">
+<p class="ans-p"><b>Agentforce = Salesforce's autonomous AI agent platform (GA: Fall 2024). Agents reason, plan, and execute multi-step tasks.</b></p>
+<table class="comparison-table"><tr><th>Component</th><th>What it is</th><th>Developer role</th></tr><tr><td>Agent</td><td>Autonomous AI with a persona, topics, and actions</td><td>Configure in Setup ΓåÆ Agents</td></tr><tr><td>Topic</td><td>Category of intent the agent handles</td><td>Define instructions + which actions belong</td></tr><tr><td>Agent Action</td><td>Specific operation the agent can perform</td><td>Build Apex @InvocableMethod or Flow</td></tr><tr><td>Prompt Template</td><td>Reusable AI prompts with merge fields</td><td>Build in Prompt Builder (Setup)</td></tr><tr><td>Atlas Reasoning Engine</td><td>The AI 'brain' that decides which action to call</td><td>Platform-provided &mdash; no code</td></tr><tr><td>Model</td><td>The LLM (OpenAI GPT-4, Anthropic Claude, etc.)</td><td>Configure in Setup ΓåÆ AI Models</td></tr></table>
+<pre class="code">// ΓöÇΓöÇ CUSTOM APEX ACTION FOR AGENTFORCE ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+public class LoanStatusAction {
+
+  public class Request {
+    @InvocableVariable(label='Loan Number' required=true)
+    public String loanNumber;
+  }
+
+  public class Response {
+    @InvocableVariable(label='Status')      public String status;
+    @InvocableVariable(label='Amount')      public Decimal amount;
+    @InvocableVariable(label='Next Steps')  public String nextSteps;
+    @InvocableVariable(label='Found')       public Boolean found;
+  }
+
+  @InvocableMethod(
+    label='Get Loan Status'
+    description='Returns the current status, loan amount, and recommended next steps for a given loan number. Use when the borrower asks about their loan status or progress.'
+  )
+  public static List&lt;Response&gt; getLoanStatus(List&lt;Request&gt; requests) {
+    List&lt;Response&gt; responses = new List&lt;Response&gt;();
+
+    for (Request req : requests) {
+      Response res = new Response();
+      List&lt;Loan__c&gt; loans = [SELECT Name, Status__c, Amount__c
+          FROM Loan__c WHERE Name = :req.loanNumber WITH SECURITY_ENFORCED LIMIT 1];
+
+      if (loans.isEmpty()) {
+        res.found = false; res.nextSteps = 'Loan number not found. Please verify and try again.';
+      } else {
+        res.found     = true;
+        res.status    = loans[0].Status__c;
+        res.amount    = loans[0].Amount__c;
+        res.nextSteps = getNextSteps(loans[0].Status__c);
+      }
+      responses.add(res);
+    }
+    return responses;
+  }
+
+  private static String getNextSteps(String status) {
+    Map&lt;String,String&gt; steps = new Map&lt;String,String&gt;{
+      'Applied'       =&gt; 'Application received. Credit check within 24 hours.',
+      'Credit_Approved' =&gt; 'Credit approved. Underwriter review in progress.',
+      'Approved'      =&gt; 'Loan approved! Closing being scheduled.',
+      'Funded'        =&gt; 'Congratulations &mdash; your loan is funded!'
+    };
+    return steps.containsKey(status) ? steps.get(status) : 'Contact your loan officer.';
+  }
+}
+
+// Register in Setup ΓåÆ Agent Actions ΓåÆ New
+// Topic instructions example:
+// "Handle when borrower asks about loan status, progress, stage, or closing date.
+//  Do not speculate about approval likelihood. If loan not found, ask borrower to verify number.
+//  Always address borrower by first name if known."
+</pre>
+<ul class="ans-list">
+  <li><b>Pre-built agents</b> &mdash; Service Agent (customer support), Sales Agent (SDR outreach), Copilot (employee productivity)</li>
+  <li><b>Testing</b> &mdash; Agent Builder has a test conversation panel. Test 20+ realistic inputs including edge cases.</li>
+  <li><b>Monitoring</b> &mdash; Conversation Logs (Setup) to review real production conversations and refine topics</li>
+</ul>
+
+</div></div>
+<div style="margin:2rem 0 1.2rem;padding:0.9rem 1.2rem;background:var(--card2);border-left:3px solid var(--blue);border-radius:8px;"><div style="font-size:0.9rem;font-weight:700;color:var(--blue);font-family:'IBM Plex Mono',monospace;">≡ƒöù Integration &mdash; Complete Deep Dive</div></div>
+
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">Salesforce Integration patterns &mdash; all types with complete code</span><span class="qa-q-label lbl-intg">INTEGRATION</span><span class="qa-chevron">Γû╝</span></div><div class="qa-answer">
+<p class="ans-p"><b>4 core integration patterns:</b></p>
+<table class="comparison-table"><tr><th>Pattern</th><th>Direction</th><th>When</th><th>Example</th></tr><tr><td>Request-Response</td><td>Salesforce Γåö External</td><td>Need immediate result</td><td>Credit check &mdash; must get score before continuing</td></tr><tr><td>Fire and Forget</td><td>Salesforce ΓåÆ External</td><td>Don't need response</td><td>Send loan data to analytics system</td></tr><tr><td>Batch/Bulk Sync</td><td>Salesforce Γåö External</td><td>Large data, scheduled</td><td>Nightly sync of 50K loan records to data warehouse</td></tr><tr><td>Event-Driven</td><td>Salesforce ΓåÆ External (CDC/PE)</td><td>React to data changes</td><td>External system notified when Loan status changes</td></tr></table>
+<pre class="code">// 1. REQUEST-RESPONSE (synchronous Queueable + Named Credential)
+public class CreditCheckQueueable implements Queueable, Database.AllowsCallouts {
+  private Id loanId;
+  public CreditCheckQueueable(Id id) { this.loanId = id; }
+
+  public void execute(QueueableContext ctx) {
+    Loan__c loan = [SELECT Id, SSN__c FROM Loan__c WHERE Id=:loanId];
+    HttpRequest req = new HttpRequest();
+    req.setEndpoint('callout:Experian_NC/v2/credit/score');
+    req.setMethod('POST');
+    req.setHeader('Content-Type','application/json');
+    req.setBody(JSON.serialize(new Map&lt;String,String&gt;{'ssn'=&gt;loan.SSN__c}));
+    req.setTimeout(15000);
+
+    HttpResponse res = new Http().send(req);
+    if (res.getStatusCode()==200) {
+      Map&lt;String,Object&gt; result = (Map&lt;String,Object&gt;) JSON.deserializeUntyped(res.getBody());
+      loan.Credit_Score__c = (Integer) result.get('score');
+      loan.Status__c = (Integer)result.get('score') &gt;= 620 ? 'Credit_Approved' : 'Credit_Declined';
+      update loan;
+    }
+  }
+}
+
+// 2. INBOUND REST ENDPOINT (external system calls Salesforce)
+@RestResource(urlMapping='/v1/loanSync/*')
+global class LoanSyncResource {
+  @HttpPost
+  global static Map&lt;String,String&gt; doPost() {
+    String body = RestContext.request.requestBody.toString();
+    // Validate HMAC signature
+    String sig = RestContext.request.headers.get('X-Signature');
+    if (!validateSignature(body, sig)) { RestContext.response.statusCode=401; return null; }
+    // Parse and upsert
+    Map&lt;String,Object&gt; payload = (Map&lt;String,Object&gt;) JSON.deserializeUntyped(body);
+    Loan__c loan = new Loan__c(
+      LOS_ID__c  = (String) payload.get('losId'), // External ID field
+      Status__c  = (String) payload.get('status')
+    );
+    Database.upsert(loan, Loan__c.LOS_ID__c);
+    return new Map&lt;String,String&gt;{'result'=&gt;'SUCCESS','salesforceId'=&gt;loan.Id};
+  }
+}</pre>
+<pre class="code">// 3. OUTBOUND BATCH SYNC (nightly 50K records to data warehouse)
+public class LoanDataSyncBatch implements Database.Batchable&lt;SObject&gt;, Database.AllowsCallouts {
+  public Database.QueryLocator start(Database.BatchableContext bc) {
+    return Database.getQueryLocator([SELECT Id, Name, Status__c, Amount__c, OwnerId,
+      Account__r.Name, CreatedDate FROM Loan__c WHERE LastModifiedDate &gt;= :Date.today().addDays(-1)]);
+  }
+  public void execute(Database.BatchableContext bc, List&lt;SObject&gt; scope) {
+    // Prepare JSON payload
+    List&lt;Map&lt;String,Object&gt;&gt; records = new List&lt;Map&lt;String,Object&gt;&gt;();
+    for (Loan__c l : (List&lt;Loan__c&gt;)scope)
+      records.add(new Map&lt;String,Object&gt;{
+        'id'=&gt;l.Id,'name'=&gt;l.Name,'status'=&gt;l.Status__c,'amount'=&gt;l.Amount__c
+      });
+    // POST batch to data warehouse
+    HttpRequest req = new HttpRequest();
+    req.setEndpoint('callout:DataWarehouse_NC/api/loans/batch');
+    req.setMethod('POST');
+    req.setBody(JSON.serialize(records));
+    HttpResponse res = new Http().send(req);
+    if (res.getStatusCode()!=200) logError('Batch sync failed', res.getBody());
+  }
+  public void finish(Database.BatchableContext bc) { /* notify ops team */ }
+}</pre>
+
+</div></div>
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">OAuth 2.0 flows &mdash; which to use when for Salesforce integrations?</span><span class="qa-q-label lbl-intg">INTEGRATION</span><span class="qa-chevron">Γû╝</span></div><div class="qa-answer">
+<table class="comparison-table"><tr><th>Flow</th><th>Use case</th><th>How</th></tr><tr><td>Web Server (Auth Code)</td><td>User-facing web app needs Salesforce</td><td>User logs in ΓåÆ auth code ΓåÆ access+refresh tokens</td></tr><tr><td>JWT Bearer</td><td>Server-to-server, no user interaction</td><td>App signs JWT with cert ΓåÆ Salesforce issues access token</td></tr><tr><td>Client Credentials</td><td>Trusted server-to-server (API v59+)</td><td>Client ID + secret ΓåÆ access token directly</td></tr><tr><td>Refresh Token</td><td>Renew expired access token</td><td>Exchange refresh token ΓåÆ new access token</td></tr></table>
+<pre class="code">// JWT Bearer &mdash; for system integrations (recommended)
+// Setup: Connected App ΓåÆ Use Digital Signature ΓåÆ upload certificate
+// Pre-authorize integration user
+
+// Named Credential handles OAuth automatically:
+// Setup ΓåÆ Named Credentials ΓåÆ Auth Protocol: OAuth 2.0 JWT
+// Salesforce handles token refresh, expiry, and re-authentication automatically
+// Code just uses: req.setEndpoint('callout:LOS_NC/path');
+
+// Verify token in Apex (for debugging):
+HttpRequest req = new HttpRequest();
+req.setEndpoint('callout:LOS_NC/services/oauth2/userinfo');
+req.setMethod('GET');
+HttpResponse res = new Http().send(req);
+Map&lt;String,Object&gt; info = (Map&lt;String,Object&gt;) JSON.deserializeUntyped(res.getBody());
+System.debug('Authenticated as: ' + info.get('preferred_username'));</pre>
+
+</div></div>
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">Platform Events for real-time integration &mdash; complete implementation</span><span class="qa-q-label lbl-intg">INTEGRATION</span><span class="qa-chevron">Γû╝</span></div><div class="qa-answer">
+<pre class="code">// 1. Define Platform Event: Setup ΓåÆ Platform Events ΓåÆ New
+// Fields: Loan_Id__c (Text), Status__c (Text), Timestamp__c (DateTime)
+// Publish Behavior: Publish After Commit
+
+// 2. Publish from trigger
+trigger LoanTrigger on Loan__c (after update) {
+  List&lt;Loan_Status_Change__e&gt; events = new List&lt;Loan_Status_Change__e&gt;();
+  for (Loan__c l : Trigger.new) {
+    if (l.Status__c != Trigger.oldMap.get(l.Id).Status__c)
+      events.add(new Loan_Status_Change__e(
+        Loan_Id__c=l.Id, Status__c=l.Status__c, Timestamp__c=DateTime.now()
+      ));
+  }
+  if (!events.isEmpty()) EventBus.publish(events);
+}
+
+// 3. Subscribe &mdash; Apex trigger (internal processing)
+trigger LoanStatusEventTrigger on Loan_Status_Change__e (after insert) {
+  for (Loan_Status_Change__e e : Trigger.new)
+    System.enqueueJob(new LoanStatusProcessorQueueable(e.Loan_Id__c, e.Status__c));
+}
+
+// 4. Subscribe &mdash; LWC real-time UI (empApi)
+import { subscribe } from 'lightning/empApi';
+connectedCallback() {
+  subscribe('/event/Loan_Status_Change__e', -1, (response) =&gt; {
+    const data = response.data.payload;
+    this.updateStatusOnUI(data.Loan_Id__c, data.Status__c);
+  });
+}
+
+// 5. Subscribe &mdash; External system via CometD (Node.js example pattern)
+// const cometd = new CometD(); cometd.configure({url, requestHeaders:{Authorization}});
+// cometd.subscribe('/event/Loan_Status_Change__e', (message) =&gt; { processEvent(message); });</pre>
+
+</div></div>
+<div style="margin:2rem 0 1.2rem;padding:0.9rem 1.2rem;background:var(--card2);border-left:3px solid var(--blue);border-radius:8px;"><div style="font-size:0.9rem;font-weight:700;color:var(--blue);font-family:'IBM Plex Mono',monospace;">≡ƒûÑ LWC &mdash; Complete Deep Dive</div></div>
+
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">LWC complete architecture &mdash; decorators, reactivity, events, lifecycle</span><span class="qa-q-label lbl-lwc">LWC DEEP DIVE</span><span class="qa-chevron">Γû╝</span></div><div class="qa-answer">
+<p class="ans-p"><b>Everything about LWC in one comprehensive answer:</b></p>
+<pre class="code">// DECORATORS
+@api        // Public property &mdash; parent passes data in. Changes trigger re-render.
+@track      // Reactive for deep object/array changes (nested property mutation)
+// No decorator = private reactive (primitive re-assignment triggers re-render)
+
+// REACTIVITY RULES
+this.loanName = 'New Name';           // primitives: re-renders
+this.loan = { ...this.loan, name: 'New' }; // objects: new reference = re-render
+this.loan.name = 'New';              // WITHOUT @track: does NOT re-render
+@track loanObj = { name: '' };
+this.loanObj.name = 'New';           // WITH @track: re-renders (deep tracking)
+
+// WIRE &mdash; declarative data fetching (read-only, cached)
+@wire(getLoans, { status: '$selectedStatus' }) // '$' prefix = reactive param
+wiredLoans({ data, error }) { ... }
+
+// IMPERATIVE APEX &mdash; for mutations or non-cached data
+async handleSave() {
+  const result = await saveLoan({ loan: this.loanData });
+}
+
+// EVENTS &mdash; communication
+// Parent ΓåÆ Child: @api property or @api method
+// Child ΓåÆ Parent: CustomEvent (bubbles, composed for cross-shadow)
+// Sibling/unrelated: Lightning Message Service (LMS)
+
+// LIFECYCLE ORDER
+// constructor ΓåÆ connectedCallback ΓåÆ render ΓåÆ renderedCallback
+// (on parent first, then child)</pre>
+<pre class="code">// COMPLETE COMPONENT EXAMPLE &mdash; loan status card
+import { LightningElement, api, wire, track } from 'lwc';
+import { NavigationMixin }  from 'lightning/navigation';
+import { ShowToastEvent }   from 'lightning/platformShowToastEvent';
+import { refreshApex }      from '@salesforce/apex';
+import getLoanData   from '@salesforce/apex/LoanController.getLoanData';
+import updateStatus  from '@salesforce/apex/LoanController.updateStatus';
+
+export default class LoanStatusCard extends NavigationMixin(LightningElement) {
+  @api recordId;       // injected by record page
+  @track isLoading = false;
+  loanResult;
+
+  @wire(getLoanData, { loanId: '$recordId' })
+  wiredLoan(result) { this.loanResult = result; } // store for refreshApex
+
+  get loan()      { return this.loanResult?.data; }
+  get hasError()  { return !!this.loanResult?.error; }
+  get statusBadgeClass() {
+    return this.loan?.Status__c === 'Approved' ? 'slds-badge_success' : 'slds-badge';
+  }
+
+  async handleApprove() {
+    this.isLoading = true;
+    try {
+      await updateStatus({ loanId: this.recordId, status: 'Approved' });
+      await refreshApex(this.loanResult); // re-fetch
+      this.dispatchEvent(new ShowToastEvent({title:'Approved',variant:'success'}));
+    } catch(e) {
+      this.dispatchEvent(new ShowToastEvent({title:'Error',message:e.body.message,variant:'error'}));
+    } finally { this.isLoading = false; }
+  }
+
+  handleViewInDetail() {
+    this[NavigationMixin.Navigate]({
+      type:'standard__recordPage', attributes:{recordId:this.recordId,actionName:'view'}
+    });
+  }
+}</pre>
+
+</div></div>
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">LWC Performance optimization &mdash; what are the common issues and fixes?</span><span class="qa-q-label lbl-lwc">LWC PERFORMANCE</span><span class="qa-chevron">Γû╝</span></div><div class="qa-answer">
+<ul class="ans-list">
+  <li><b>Too many @wire calls on load</b> &mdash; load only what's needed immediately. Lazy-load secondary data on user action (button click, tab change) using imperative Apex.</li>
+  <li><b>Re-rendering on every keystroke</b> &mdash; debounce input handlers. Don't fire Apex on every keypress, wait 300ms after last keystroke.</li>
+  <li><b>Large datatable (1000+ rows)</b> &mdash; use infinite scroll with pagination instead of loading all rows at once. lightning-datatable with enable-infinite-loading.</li>
+  <li><b>Unnecessary tracked objects</b> &mdash; use @track only when you mutate nested properties. Primitives re-render without @track.</li>
+  <li><b>Missing key in for:each</b> &mdash; always set key attribute to a unique stable ID. Missing/wrong key causes full list re-render on any change.</li>
+</ul>
+<pre class="code">// DEBOUNCED SEARCH &mdash; don't fire Apex on every keystroke
+handleSearch(event) {
+  const searchTerm = event.target.value;
+  window.clearTimeout(this.delayTimeout);
+  this.delayTimeout = setTimeout(() => {
+    this.searchTerm = searchTerm; // triggers @wire after 300ms delay
+  }, 300);
+}
+@wire(searchLoans, { term: '$searchTerm' }) loans;
+
+// LAZY LOAD &mdash; only load when tab activated
+handleTabActive(event) {
+  if (event.target.value === 'documents' && !this.documentsLoaded) {
+    this.loadDocuments(); // imperative &mdash; only loads once when tab first shown
+    this.documentsLoaded = true;
+  }
+}</pre>
+
+</div></div>

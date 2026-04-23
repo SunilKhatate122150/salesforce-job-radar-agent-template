@@ -1,0 +1,295 @@
+<div class="page-header">
+  <div class="page-title">Apex Core &mdash; Interview Questions</div>
+  <div class="page-sub">22 questions with complete answers. Click any question to expand the full answer.</div>
+</div>
+
+<div class="qa-block">
+  <div class="qa-question" onclick="toggleQA(this)">
+    <span class="qa-q-text">What are Salesforce Governor Limits? Give the most important ones by number.</span>
+    <span class="qa-q-label lbl-apex">APEX</span>
+    <span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span>
+  </div>
+  <div class="qa-answer">
+    <p class="ans-p">Governor limits are runtime limits enforced by the Salesforce platform to ensure no single Apex execution consumes too many shared resources across the multitenant environment. These limits apply per transaction &mdash; meaning per trigger execution, per Apex class call, per batch execute() chunk, etc.</p>
+    <p class="ans-p"><b>Critical limits to memorize:</b></p>
+    <ul class="ans-list">
+      <li>SOQL queries per transaction: <b>100</b> (synchronous), <b>200</b> (async)</li>
+      <li>DML statements per transaction: <b>150</b></li>
+      <li>Records per DML statement: <b>10,000</b></li>
+      <li>Total heap size: <b>6 MB</b> (sync), <b>12 MB</b> (async)</li>
+      <li>CPU time: <b>10,000 ms</b> (sync), <b>60,000 ms</b> (async)</li>
+      <li>SOSL queries per transaction: <b>20</b></li>
+      <li>Callouts per transaction: <b>100</b></li>
+      <li>Records returned by SOQL: <b>50,000</b></li>
+      <li>Records returned by Database.QueryLocator (Batch): <b>50,000,000</b></li>
+      <li>Future methods per transaction: <b>50</b></li>
+      <li>Queueable jobs added per transaction: <b>50</b></li>
+      <li>Email invocations: <b>10</b></li>
+    </ul>
+    <div class="tip-box"><div class="tip-label">How to answer this in interview</div><p>Don't just list numbers &mdash; explain WHY limits exist. Say: "Salesforce is a multitenant platform. If one customer's code ran unlimited SOQL queries, it would slow down all other customers on the same server. Governor limits are Salesforce's way of enforcing fair resource usage across all tenants."</p></div>
+  </div>
+</div>
+
+<div class="qa-block">
+  <div class="qa-question" onclick="toggleQA(this)">
+    <span class="qa-q-text">What is bulkification and how do you implement it correctly?</span>
+    <span class="qa-q-label lbl-apex">APEX</span>
+    <span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span>
+  </div>
+  <div class="qa-answer">
+    <p class="ans-p">Bulkification means writing Apex code that handles <b>batches of records</b> efficiently instead of processing one record at a time. This is critical because Salesforce can pass up to 200 records to a trigger in a single execution. If your code runs a SOQL query inside a loop over 200 records, you hit 200 SOQL calls &mdash; which exceeds the 100-query limit.</p>
+    <p class="ans-p"><b>The anti-pattern (WRONG &mdash; will fail in production):</b></p>
+    <pre class="code"><span class="cmt">// BAD CODE - DO NOT DO THIS</span>
+for(<span class="cls">Contact</span> c : Trigger.new) {
+    <span class="cmt">// SOQL inside loop = governor limit error!</span>
+    <span class="cls">Account</span> acc = [SELECT Id, Name FROM Account WHERE Id = :c.AccountId];
+    c.Description = acc.Name;
+}</pre>
+    <p class="ans-p"><b>The correct bulkified pattern:</b></p>
+    <pre class="code"><span class="cmt">// GOOD CODE - Bulkified properly</span>
+// Step 1: Collect all IDs into a Set
+<span class="cls">Set</span>&lt;<span class="cls">Id</span>&gt; accountIds = new <span class="cls">Set</span>&lt;<span class="cls">Id</span>&gt;();
+for(<span class="cls">Contact</span> c : Trigger.new) {
+    if(c.AccountId != null) accountIds.add(c.AccountId);
+}
+
+// Step 2: ONE SOQL query outside the loop
+<span class="cls">Map</span>&lt;<span class="cls">Id</span>, <span class="cls">Account</span>&gt; accMap = new <span class="cls">Map</span>&lt;<span class="cls">Id</span>, <span class="cls">Account</span>&gt;(
+    [SELECT Id, Name FROM Account WHERE Id IN :accountIds]
+);
+
+// Step 3: Loop using Map - no SOQL inside loop
+for(<span class="cls">Contact</span> c : Trigger.new) {
+    if(accMap.containsKey(c.AccountId)) {
+        c.Description = accMap.get(c.AccountId).Name;
+    }
+}</pre>
+    <div class="tip-box"><div class="tip-label">Key rule to remember</div><p>Collect in a Set ΓåÆ Query once with IN clause ΓåÆ Process from a Map. This pattern: one SOQL query handles 200 records. Never put SOQL or DML inside a for loop over sObjects.</p></div>
+  </div>
+</div>
+
+<div class="qa-block">
+  <div class="qa-question" onclick="toggleQA(this)">
+    <span class="qa-q-text">Explain List, Set, and Map in Apex &mdash; when do you use each?</span>
+    <span class="qa-q-label lbl-apex">APEX</span>
+    <span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span>
+  </div>
+  <div class="qa-answer">
+    <table class="comparison-table">
+      <tr><th>Collection</th><th>Ordered?</th><th>Duplicates?</th><th>Key-Value?</th><th>Best Used For</th></tr>
+      <tr><td><b>List</b></td><td>Yes (index)</td><td>Yes</td><td>No</td><td>Ordered collection of records, Trigger.new is a List</td></tr>
+      <tr><td><b>Set</b></td><td>No</td><td>No (unique only)</td><td>No</td><td>Collecting unique IDs for IN clause in SOQL</td></tr>
+      <tr><td><b>Map</b></td><td>No</td><td>Keys unique</td><td>Yes</td><td>Key-value lookup by Id &mdash; fast O(1) access in loops</td></tr>
+    </table>
+    <pre class="code"><span class="cmt">// List - ordered, allows duplicates</span>
+<span class="cls">List</span>&lt;<span class="cls">Account</span>&gt; accounts = new <span class="cls">List</span>&lt;<span class="cls">Account</span>&gt;();
+<span class="cls">List</span>&lt;<span class="cls">String</span>&gt; names = new <span class="cls">List</span>&lt;<span class="cls">String</span>&gt;{'Alice', 'Bob', 'Alice'}; <span class="cmt">// 3 items</span>
+
+// Set - unordered, unique values only
+<span class="cls">Set</span>&lt;<span class="cls">Id</span>&gt; contactIds = new <span class="cls">Set</span>&lt;<span class="cls">Id</span>&gt;();
+for(<span class="cls">Opportunity</span> o : Trigger.new) contactIds.add(o.ContactId__c);
+// Perfect for: WHERE Id IN :contactIds
+
+// Map - key-value lookup, instant access by Id
+<span class="cls">Map</span>&lt;<span class="cls">Id</span>, <span class="cls">Account</span>&gt; accMap = new <span class="cls">Map</span>&lt;<span class="cls">Id</span>, <span class="cls">Account</span>&gt;(
+    [SELECT Id, Name, Phone FROM Account WHERE Id IN :accountIds]
+);
+<span class="cls">Account</span> a = accMap.get(someId); <span class="cmt">// instant lookup - no loop needed</span></pre>
+    <div class="tip-box"><div class="tip-label">Interview tip</div><p>When asked this, always give a concrete real-world use case. Say: "I use Set to collect Account IDs from a list of Contacts before querying, because IN clause requires a Set. Then I put query results in a Map for fast lookup inside a processing loop."</p></div>
+  </div>
+</div>
+
+<div class="qa-block">
+  <div class="qa-question" onclick="toggleQA(this)">
+    <span class="qa-q-text">What are the different types of Apex exceptions and how do you handle them?</span>
+    <span class="qa-q-label lbl-apex">APEX</span>
+    <span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span>
+  </div>
+  <div class="qa-answer">
+    <p class="ans-p"><b>Common built-in exception types:</b></p>
+    <ul class="ans-list">
+      <li><b>DmlException</b> &mdash; thrown when DML operation fails (required field missing, duplicate rule, etc.)</li>
+      <li><b>QueryException</b> &mdash; thrown when SOQL returns no records for assignment to single sObject</li>
+      <li><b>NullPointerException</b> &mdash; accessing property on null variable</li>
+      <li><b>LimitException</b> &mdash; governor limit exceeded (cannot be caught)</li>
+      <li><b>CalloutException</b> &mdash; HTTP callout failure, timeout</li>
+      <li><b>SObjectException</b> &mdash; field not in query accessed on sObject</li>
+      <li><b>TypeException</b> &mdash; invalid type cast</li>
+    </ul>
+    <pre class="code"><span class="cmt">// Always use specific exception types, not generic Exception</span>
+try {
+    <span class="cls">Account</span> a = [SELECT Id FROM Account WHERE Name = 'Test' LIMIT 1];
+    insert a;
+} catch(<span class="cls">QueryException</span> qe) {
+    <span class="cmt">// No records returned by SOQL</span>
+    System.debug('No account found: ' + qe.getMessage());
+} catch(<span class="cls">DmlException</span> de) {
+    <span class="cmt">// DML failed - get field and message details</span>
+    for(<span class="cls">Integer</span> i = 0; i &lt; de.getNumDml(); i++) {
+        System.debug(de.getDmlMessage(i));
+        System.debug(de.getDmlFields(i));
+    }
+} catch(<span class="cls">Exception</span> e) {
+    <span class="cmt">// Catch-all for unexpected errors</span>
+    System.debug('Unexpected: ' + e.getMessage() + ' at ' + e.getStackTraceString());
+}
+
+// Custom exception class - very common in senior dev code
+public class <span class="cls">LoanProcessingException</span> extends <span class="cls">Exception</span> {}
+
+if(loan.Status__c == 'Denied') {
+    throw new <span class="cls">LoanProcessingException</span>('Loan cannot be submitted in Denied status');
+}</pre>
+    <div class="warn-box"><div class="warn-label">Never do this</div><p>Never use an empty catch block. Never catch LimitException (it cannot be caught). Never swallow exceptions silently &mdash; always log or rethrow.</p></div>
+  </div>
+</div>
+
+<div class="qa-block">
+  <div class="qa-question" onclick="toggleQA(this)">
+    <span class="qa-q-text">What is the difference between Database.insert() and just using insert keyword?</span>
+    <span class="qa-q-label lbl-apex">APEX</span>
+    <span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span>
+  </div>
+  <div class="qa-answer">
+    <p class="ans-p"><b>insert keyword:</b> all-or-nothing. If even ONE record fails validation, the entire list rolls back and a DmlException is thrown.</p>
+    <p class="ans-p"><b>Database.insert(list, allOrNone):</b> when allOrNone=false, partial success is allowed. Records that pass insert succeed; failed records are captured in SaveResult. No exception is thrown for individual failures.</p>
+    <pre class="code"><span class="cmt">// Using Database.insert with partial DML - production pattern</span>
+<span class="cls">List</span>&lt;<span class="cls">Database.SaveResult</span>&gt; results = Database.insert(contactList, false);
+
+for(<span class="cls">Integer</span> i = 0; i &lt; results.size(); i++) {
+    if(!results[i].isSuccess()) {
+        for(<span class="cls">Database.Error</span> err : results[i].getErrors()) {
+            System.debug('Failed: ' + contactList[i].LastName 
+                + ' Reason: ' + err.getMessage()
+                + ' Fields: ' + err.getFields());
+        }
+    } else {
+        System.debug('Inserted: ' + results[i].getId());
+    }
+}</pre>
+    <div class="tip-box"><div class="tip-label">When to use which</div><p>Use allOrNone=false (Database.insert) when processing bulk records where partial failure is acceptable &mdash; like mass data loads, batch jobs. Use plain insert when all-or-nothing consistency is required, like financial transactions.</p></div>
+  </div>
+</div>
+
+<div class="qa-block">
+  <div class="qa-question" onclick="toggleQA(this)">
+    <span class="qa-q-text">What are @AuraEnabled, @InvocableMethod, @RemoteAction, @future annotations &mdash; explain each?</span>
+    <span class="qa-q-label lbl-apex">APEX</span>
+    <span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span>
+  </div>
+  <div class="qa-answer">
+    <ul class="ans-list">
+      <li><b>@AuraEnabled</b> &mdash; exposes method to LWC/Aura components. Add cacheable=true only on read-only methods &mdash; enables client-side caching. Cannot be used on methods that do DML with cacheable=true.</li>
+      <li><b>@AuraEnabled(cacheable=true)</b> &mdash; required for @wire adapter in LWC. Returns cached data without server call on subsequent requests.</li>
+      <li><b>@InvocableMethod</b> &mdash; exposes Apex method to Flow, Process Builder. Parameters must use List&lt;T&gt;. Required to run in bulk for Flow interviews.</li>
+      <li><b>@future</b> &mdash; runs method asynchronously in separate transaction. Cannot accept sObject parameters (only primitive types or collections of primitives). Good for callouts from triggers and Mixed DML.</li>
+      <li><b>@RemoteAction</b> &mdash; legacy annotation for Visualforce JavaScript Remoting. Rarely used in new development.</li>
+      <li><b>@TestVisible</b> &mdash; makes private method accessible to test class without changing access modifier.</li>
+      <li><b>@ReadOnly</b> &mdash; allows querying up to 1,000,000 rows in a single transaction. Only for reporting.</li>
+    </ul>
+    <pre class="code"><span class="ann">@AuraEnabled</span>(<span class="kw">cacheable=true</span>)
+public static <span class="cls">List</span>&lt;<span class="cls">Account</span>&gt; getAccounts(<span class="cls">String</span> nameFilter) {
+    return [SELECT Id, Name FROM Account WHERE Name LIKE :('%'+nameFilter+'%')];
+}
+
+<span class="ann">@InvocableMethod</span>(label='Send Loan Approval Email' description='Sends email to borrower')
+public static void sendApprovalEmail(<span class="cls">List</span>&lt;<span class="cls">Id</span>&gt; loanIds) {
+    <span class="cmt">// Flow calls this - must be List parameter</span>
+}</pre>
+  </div>
+</div>
+
+<div class="qa-block">
+  <div class="qa-question" onclick="toggleQA(this)">
+    <span class="qa-q-text">Explain abstract class vs interface in Apex &mdash; when do you use each?</span>
+    <span class="qa-q-label lbl-apex">APEX</span>
+    <span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span>
+  </div>
+  <div class="qa-answer">
+    <table class="comparison-table">
+      <tr><th>Feature</th><th>Abstract Class</th><th>Interface</th></tr>
+      <tr><td>Can have implementation</td><td>Yes &mdash; can have concrete methods</td><td>No &mdash; only method signatures</td></tr>
+      <tr><td>Can have member variables</td><td>Yes</td><td>No</td></tr>
+      <tr><td>Multiple inheritance</td><td>No (single extends)</td><td>Yes (implement multiple)</td></tr>
+      <tr><td>Constructor</td><td>Yes</td><td>No</td></tr>
+      <tr><td>Access modifiers on methods</td><td>Yes</td><td>All public by default</td></tr>
+    </table>
+    <pre class="code"><span class="cmt">// Abstract class - use when sharing partial implementation</span>
+public abstract class <span class="cls">LoanProcessor</span> {
+    public abstract void processLoan(<span class="cls">Loan__c</span> loan);  <span class="cmt">// must override</span>
+    public void logActivity(<span class="cls">String</span> msg) {  <span class="cmt">// shared implementation</span>
+        System.debug('[LoanProcessor] ' + msg);
+    }
+}
+public class <span class="cls">FHALoanProcessor</span> extends <span class="cls">LoanProcessor</span> {
+    public override void processLoan(<span class="cls">Loan__c</span> loan) { <span class="cmt">/* FHA logic */</span> }
+}
+
+// Interface - use when defining a contract with no shared code
+public interface <span class="cls">IDocumentSender</span> {
+    <span class="cls">Boolean</span> sendDocument(<span class="cls">Id</span> recordId, <span class="cls">String</span> templateName);
+}
+public class <span class="cls">DocuSignSender</span> implements <span class="cls">IDocumentSender</span> {
+    public <span class="cls">Boolean</span> sendDocument(<span class="cls">Id</span> recordId, <span class="cls">String</span> templateName) {
+        <span class="cmt">// DocuSign implementation</span>
+    }
+}</pre>
+    <div class="tip-box"><div class="tip-label">Rule of thumb</div><p>Use abstract class when subclasses share some common behavior. Use interface when you want to define a contract that multiple unrelated classes can fulfill &mdash; like a DocuSign sender, an email sender, and an SMS sender all implementing ISender.</p></div>
+  </div>
+</div>
+
+<div class="qa-block">
+  <div class="qa-question" onclick="toggleQA(this)">
+    <span class="qa-q-text">How do you write a test class properly &mdash; @isTest, @TestSetup, Test.startTest()?</span>
+    <span class="qa-q-label lbl-apex">APEX</span>
+    <span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span>
+  </div>
+  <div class="qa-answer">
+    <p class="ans-p">Test classes in Salesforce require <b>75% overall code coverage</b> to deploy to production. But good test classes verify behavior, not just coverage.</p>
+    <pre class="code"><span class="ann">@isTest</span>
+public class <span class="cls">LoanTriggerTest</span> {
+    
+    <span class="cmt">// @TestSetup runs ONCE before all test methods &mdash; faster, more efficient</span>
+    <span class="ann">@TestSetup</span>
+    static void makeData() {
+        <span class="cls">Account</span> broker = new <span class="cls">Account</span>(Name='Test Broker', Type='Broker');
+        insert broker;
+        <span class="cls">Contact</span> officer = new <span class="cls">Contact</span>(
+            FirstName='Test', LastName='Officer', AccountId=broker.Id
+        );
+        insert officer;
+    }
+    
+    <span class="ann">@isTest</span>
+    static void testLoanApproval() {
+        <span class="cls">Contact</span> officer = [SELECT Id FROM Contact LIMIT 1];
+        <span class="cls">Loan__c</span> loan = new <span class="cls">Loan__c</span>(
+            LoanAmount__c = 250000, Status__c = 'Application', LoanOfficer__c = officer.Id
+        );
+        
+        <span class="cmt">// Test.startTest() resets governor limits for the test scope</span>
+        Test.startTest();
+        insert loan;
+        Test.stopTest(); <span class="cmt">// Forces async processes (future, batch) to complete</span>
+        
+        <span class="cmt">// Re-query to check trigger effects</span>
+        <span class="cls">Loan__c</span> updatedLoan = [SELECT Id, Status__c FROM Loan__c WHERE Id = :loan.Id];
+        System.assertEquals('Processing', updatedLoan.Status__c, 'Status should be Processing after insert');
+    }
+    
+    <span class="ann">@isTest</span>
+    static void testBulkLoanInsert() {
+        <span class="cmt">// Always test with 200 records &mdash; simulates real bulk trigger</span>
+        <span class="cls">List</span>&lt;<span class="cls">Loan__c</span>&gt; loans = new <span class="cls">List</span>&lt;<span class="cls">Loan__c</span>&gt;();
+        for(<span class="cls">Integer</span> i = 0; i &lt; 200; i++) {
+            loans.add(new <span class="cls">Loan__c</span>(LoanAmount__c = 100000 + i, Status__c = 'Application'));
+        }
+        Test.startTest();
+        insert loans;
+        Test.stopTest();
+        System.assertEquals(200, [SELECT COUNT() FROM Loan__c]);
+    }
+}</pre>
+    <div class="tip-box"><div class="tip-label">Key rules</div><p>1. Always use Test.startTest/stopTest to get fresh limits and complete async. 2. Always test bulk (200 records). 3. Use System.assertEquals(expected, actual, 'message') &mdash; the message tells you what failed. 4. Use @TestSetup for shared data &mdash; it runs once and is rolled back between test methods. 5. SeeAllData=false by default (test data isolation). Never use SeeAllData=true unless absolutely necessary.</p></div>
+  </div>
+</div>

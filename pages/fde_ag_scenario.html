@@ -1,0 +1,29 @@
+<div class="page-title">FDE Prep: Agentforce Scenarios & Design</div>
+<div class="page-sub">Practical challenges in designing, building, and debugging Salesforce Agents</div>
+
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">Scenario: Agent is hallucinating or giving wrong answers. How do you debug?</span><span class="qa-q-label lbl-fde-debug">DEBUG</span><span class="qa-chevron">Γû╝</span></div><div class="qa-answer">
+  <ol class="ans-list">
+    <li><b>Review Conversation Logs:</b> Look at the exact prompt sent to the LLM.</li>
+    <li><b>Check Grounding:</b> Was the correct record data retrieved? If not, check Action inputs.</li>
+    <li><b>Refine Instructions:</b> Is the Topic description too vague? Atlas might be routing to the wrong topic.</li>
+    <li><b>PII Masking check:</b> Did the Trust Layer mask a critical piece of info needed for the answer?</li>
+  </ol>
+</div></div>
+
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">Scenario: Design an Agent for a Mortgage Borrower checking loan status.</span><span class="qa-q-label lbl-fde-scenario">DESIGN</span><span class="qa-chevron">Γû╝</span></div><div class="qa-answer">
+  <ul class="ans-list">
+    <li><b>Topic:</b> "Loan Status Inquiries"</li>
+    <li><b>Action:</b> Apex @InvocableMethod `getLoanDetails(loanNumber)`</li>
+    <li><b>Grounding:</b> Ground the prompt with Loan__c fields (Status, CloseDate).</li>
+    <li><b>Guardrails:</b> "If loan is 'Declined', do not give reasons. Escalate to Loan Officer."</li>
+  </ul>
+</div></div>
+
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">When should you use Apex vs Flow for an Agent Action?</span><span class="qa-q-label lbl-fde-compare">COMPARE</span><span class="qa-chevron">Γû╝</span></div><div class="qa-answer">
+  <table class="comparison-table">
+    <tr><th>Use Flow When...</th><th>Use Apex When...</th></tr>
+    <tr><td>Simple CRUD (Create/Update record)</td><td>Complex calculations or collections logic</td></tr>
+    <tr><td>Declarative logic needed</td><td>External REST API callouts needed</td></tr>
+    <tr><td>Standard automation triggers</td><td>High-performance processing required</td></tr>
+  </ul>
+</div></div>

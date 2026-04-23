@@ -1,0 +1,84 @@
+<div class="page-title">FDE Prep &mdash; Atlas Reasoning Engine Deep Dive</div>
+<div class="page-sub">6 deep technical questions on Atlas reasoning, memory, and multi-agent orchestration</div>
+
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How does Atlas handle ambiguous user input when multiple topics could match?</span><span class="qa-q-label lbl-fde">CONCEPT</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+    <ul class="ans-list">
+      <li><b>Confidence scoring</b> &mdash; Atlas scores each topic based on match quality between user message and topic description + instructions</li>
+      <li>If <b>top score is high</b> → routes directly to that topic</li>
+      <li>If <b>multiple topics score similarly</b> → Atlas generates a clarifying question</li>
+      <li>If <b>no topic exceeds threshold</b> → falls back to system prompt default (polite decline + escalation offer)</li>
+      <li><b>Negative instructions</b> remove ambiguity: "This topic does NOT handle payment disputes"</li>
+    </ul>
+    <div class="tip-box"><div class="tip-label">Critical insight</div><p>The quality of your topic descriptions is MORE important than prompt templates. Atlas routes BEFORE the LLM fires.</p></div>
+</div></div>
+
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">Explain the full Atlas reasoning loop with a real multi-step mortgage example.</span><span class="qa-q-label lbl-fde-scenario">SCENARIO</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+    <p class="ans-p"><b>User:</b> "I want to know my loan balance and also set up autopay"</p>
+    <div class="fde-flow-diagram">TURN 1: User → "I want my loan balance and set up autopay"
+
+REASON #1: Two intents detected. Start with loan balance (read-only, safer).
+           Match → Topic: "Loan Inquiry"
+           Plan  → Call action: getLoanBalance(customerId)
+
+ACT #1:   Execute getLoanBalance → Returns: {balance: $243,500, rate: 6.5%}
+
+OBSERVE:  Got loan data. First intent resolved. Now address autopay.
+
+REASON #2: Second intent = autopay setup.
+           Match → Topic: "Payment Management"
+           Need bank account info → Ask user first.
+
+ACT #2:   "Your balance is $243,500 at 6.5%. Which bank account for autopay?"
+
+TURN 2: User → "Use Chase checking ending in 4521"
+
+REASON #3: Bank info provided. Execute setup.
+           Plan → Call action: setupAutoPay(userId, acct: 4521)
+
+ACT #3:   Execute → {success: true, startDate: "June 1"}
+
+ACT #4:   "Done! Autopay set up with Chase ****4521, starting June 1."</div>
+    <div class="tip-box"><div class="tip-label">Key insight</div><p>Atlas decomposes multi-intent messages and addresses them sequentially, maintaining state across the loop.</p></div>
+</div></div>
+
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">Deterministic vs Generative actions in Atlas &mdash; when to use each?</span><span class="qa-q-label lbl-fde-compare">COMPARE</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+    <table class="comparison-table">
+      <tr><th>Aspect</th><th>Deterministic Actions</th><th>Generative Actions</th></tr>
+      <tr><td>What</td><td>SOQL query, record create, API callout</td><td>Prompt Template, summarization, email draft</td></tr>
+      <tr><td>Output</td><td>Same output every time given same input</td><td>May vary between runs</td></tr>
+      <tr><td>Use for</td><td>Data retrieval &amp; record mutations</td><td>Text generation tasks only</td></tr>
+      <tr><td>Example</td><td>"What is my balance?" → SOQL returns $243,500</td><td>"Summarize my account" → LLM generates text</td></tr>
+    </table>
+    <div class="warn-box"><div class="warn-label">Critical rule</div><p>NEVER use a generative action to retrieve factual data. The LLM should PRESENT data, not CREATE it.</p></div>
+</div></div>
+
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How does Atlas handle conversation context and memory? What are the limits?</span><span class="qa-q-label lbl-fde">CONCEPT</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+    <ul class="ans-list">
+      <li><b>Within a conversation:</b> Atlas maintains the full transcript &mdash; every message, response, and action result accumulated as context</li>
+      <li><b>Token limit:</b> Long conversations may hit context window constraints &mdash; older turns get summarized or truncated</li>
+      <li><b>No cross-conversation memory:</b> Each new session starts fresh. Agent does NOT remember past conversations</li>
+      <li><b>Workaround:</b> Store preferences in CRM fields (language, communication prefs) and retrieve via grounding at session start</li>
+      <li><b>Session variables:</b> Within one conversation, topic state carries information between actions</li>
+    </ul>
+    <div class="tip-box"><div class="tip-label">Key phrasing</div><p>"Agentforce has session memory, not persistent memory. For persistent personalization, use Data Cloud unified profiles."</p></div>
+</div></div>
+
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">What is "Plan" mode vs "Act" mode in Atlas?</span><span class="qa-q-label lbl-fde-arch">ARCHITECTURE</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+    <ul class="ans-list">
+      <li><b>Plan mode</b> &mdash; Atlas generates a step-by-step plan and shows to user for approval BEFORE executing. For high-risk operations</li>
+      <li><b>Act mode</b> &mdash; Atlas executes actions immediately as it reasons. Faster, but less user control</li>
+      <li><b>Hybrid:</b> Configure per-topic &mdash; read-only = Act mode (speed), transactional = Plan mode + confirmation (safety)</li>
+      <li><b>Mortgage:</b> Balance inquiry = Act mode. Payoff request = Plan mode with explicit confirmation</li>
+    </ul>
+</div></div>
+
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">What is Agentforce 2.0's multi-agent orchestration? How does it work?</span><span class="qa-q-label lbl-fde">CONCEPT</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+    <ul class="ans-list">
+      <li><b>Multi-Agent Orchestration</b> &mdash; orchestrator agent delegates sub-tasks to specialist agents. Like a manager routing to the right team member</li>
+      <li><b>Example:</b> Orchestrator receives "I want to refinance and update my address" → delegates to Refinance Agent AND Profile Update Agent</li>
+      <li><b>MuleSoft native integration</b> &mdash; agents browse and invoke MuleSoft API catalog directly</li>
+      <li><b>Slack Agents</b> &mdash; deployable into Slack for internal use cases (IT helpdesk, HR onboarding)</li>
+      <li><b>Tableau integration</b> &mdash; agents query Tableau analytics and include chart summaries</li>
+    </ul>
+    <div class="tip-box"><div class="tip-label">Architecture analogy</div><p>"Agentforce 2.0 moved from single-agent automation to multi-agent collaboration &mdash; similar to microservices evolving from monoliths."</p></div>
+</div></div>

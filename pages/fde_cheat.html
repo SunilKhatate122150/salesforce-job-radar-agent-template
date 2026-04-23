@@ -1,0 +1,106 @@
+<div class="page-title">FDE Prep &mdash; Quick-Fire &amp; Cheat Sheet</div>
+<div class="page-sub">7 rapid-fire definition tables and a final pre-interview cheat sheet</div>
+
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">Agentforce terminology &mdash; rapid-fire definitions</span><span class="qa-q-label lbl-fde-cheat">FLASH</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+    <table class="comparison-table">
+      <tr><th>Term</th><th>Definition</th></tr>
+      <tr><td><b>Atlas</b></td><td>The reasoning engine powering all Agentforce decision-making</td></tr>
+      <tr><td><b>ReAct</b></td><td>Reason + Act &mdash; alternate between thinking and doing in a loop</td></tr>
+      <tr><td><b>RAG</b></td><td>Retrieval Augmented Generation &mdash; inject real data into prompt to prevent hallucination</td></tr>
+      <tr><td><b>Grounding</b></td><td>Giving the LLM factual context so it doesn't make things up</td></tr>
+      <tr><td><b>PII Masking</b></td><td>Replacing sensitive data with tokens before sending to LLM</td></tr>
+      <tr><td><b>Zero Data Retention</b></td><td>LLM provider cannot store or train on your data</td></tr>
+      <tr><td><b>Prompt Template</b></td><td>Reusable prompt blueprint with merge fields for dynamic data</td></tr>
+      <tr><td><b>BYOM</b></td><td>Bring Your Own Model &mdash; connect external AI models to Einstein</td></tr>
+      <tr><td><b>Omni-Channel</b></td><td>Routing engine assigning work based on skills/capacity</td></tr>
+    </table>
+</div></div>
+
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">Data Cloud terminology &mdash; rapid-fire definitions</span><span class="qa-q-label lbl-fde-cheat">FLASH</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+    <table class="comparison-table">
+      <tr><th>Term</th><th>Definition</th></tr>
+      <tr><td><b>DLO</b></td><td>Data Lake Object &mdash; raw ingested data before mapping</td></tr>
+      <tr><td><b>DMO</b></td><td>Data Model Object &mdash; harmonized, mapped data</td></tr>
+      <tr><td><b>Unified Individual</b></td><td>Master 360° profile from Identity Resolution (non-destructive)</td></tr>
+      <tr><td><b>Data Graph</b></td><td>Pre-joined, optimized data view for fast retrieval</td></tr>
+      <tr><td><b>Calculated Insight</b></td><td>Pre-computed metric on Data Cloud data</td></tr>
+      <tr><td><b>Activation Target</b></td><td>Destination where a segment is pushed</td></tr>
+      <tr><td><b>Data Space</b></td><td>Logical partition for multi-BU data isolation</td></tr>
+      <tr><td><b>Zero Copy</b></td><td>Query data in-place without copying (Snowflake, BigQuery)</td></tr>
+    </table>
+</div></div>
+
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">Compliance terminology for mortgage FDE</span><span class="qa-q-label lbl-fde-cheat">FLASH</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+    <table class="comparison-table">
+      <tr><th>Term</th><th>What It Is</th><th>Agent Design Impact</th></tr>
+      <tr><td><b>TRID</b></td><td>TILA-RESPA Integrated Disclosures</td><td>Hard escalation for LE/CD discussions</td></tr>
+      <tr><td><b>FCRA</b></td><td>Fair Credit Reporting Act</td><td>Agent cannot access credit data</td></tr>
+      <tr><td><b>RESPA</b></td><td>Real Estate Settlement Procedures</td><td>No recommending specific providers</td></tr>
+      <tr><td><b>HMDA</b></td><td>Home Mortgage Disclosure Act</td><td>Data Cloud batch for HMDA filings</td></tr>
+      <tr><td><b>GLBA</b></td><td>Gramm-Leach-Bliley (privacy)</td><td>Consent check before profile access</td></tr>
+      <tr><td><b>ECOA</b></td><td>Equal Credit Opportunity Act</td><td>No protected attributes in recommendations</td></tr>
+    </table>
+</div></div>
+
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">Data Cloud SQL vs SOQL &mdash; complete comparison</span><span class="qa-q-label lbl-fde-compare">COMPARE</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+    <table class="comparison-table">
+      <tr><th>Feature</th><th>SOQL</th><th>Data Cloud SQL</th></tr>
+      <tr><td>Scope</td><td>CRM objects only</td><td>Data Cloud objects (DLO, DMO)</td></tr>
+      <tr><td>Syntax</td><td>Salesforce-specific</td><td>ANSI SQL compliant</td></tr>
+      <tr><td>Joins</td><td>Limited relationship queries</td><td>Full JOINs (INNER, LEFT, CROSS)</td></tr>
+      <tr><td>Aggregations</td><td>GROUP BY, HAVING</td><td>Full SQL + window functions</td></tr>
+      <tr><td>Use cases</td><td>Apex, LWC, Reports</td><td>Calculated Insights, Data Explorer</td></tr>
+    </table>
+    <div class="warn-box"><div class="warn-label">Important distinction</div><p>Cannot use SOQL on Data Cloud objects. Cannot use Data Cloud SQL on CRM objects. Separate query languages for separate platforms.</p></div>
+</div></div>
+
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">What channels can Agentforce be deployed on?</span><span class="qa-q-label lbl-fde">CONCEPT</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+    <table class="comparison-table">
+      <tr><th>Channel</th><th>Use Case</th><th>Design Impact</th></tr>
+      <tr><td>Web Chat</td><td>Website widget</td><td>Rich UI: buttons, carousels, files</td></tr>
+      <tr><td>In-App</td><td>Mobile embedded</td><td>Shorter responses, quick replies</td></tr>
+      <tr><td>SMS/WhatsApp</td><td>Outbound + inbound</td><td>Text-only, character limits</td></tr>
+      <tr><td>Slack</td><td>Internal teams</td><td>Thread-based, emoji reactions</td></tr>
+      <tr><td>Experience Cloud</td><td>Portal/community</td><td>Full CRM context, authenticated</td></tr>
+      <tr><td>API</td><td>Custom frontends</td><td>You control UI; agent = logic only</td></tr>
+    </table>
+</div></div>
+
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">Instruction hierarchy: Agent vs Topic vs Action Instructions</span><span class="qa-q-label lbl-fde">CONCEPT</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+    <ul class="ans-list">
+      <li><b>Agent Instructions (System Prompt)</b> &mdash; Global persona + guardrails. Every conversation. "You are a helpful mortgage assistant. Never provide legal advice."</li>
+      <li><b>Topic Instructions</b> &mdash; Specific to one domain. "Always verify identity before sharing loan details."</li>
+      <li><b>Action Instructions</b> &mdash; Tell Atlas HOW/WHEN to invoke an action. "Call getLoanBalance when customer asks about balance or payoff."</li>
+      <li><b>Priority:</b> Agent → Topic → Action. Lower-level wins within scope but can't override agent-level guardrails</li>
+    </ul>
+    <div class="tip-box"><div class="tip-label">Analogy</div><p>"Think of it like: Agent = company policy, Topic = department rules, Action = specific procedure."</p></div>
+</div></div>
+
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">Pre-Interview Cheat Sheet &mdash; Your 5 Key Differentiators + Power Phrases</span><span class="qa-q-label lbl-fde-cheat">CHEAT SHEET</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+    <div class="fde-hero-box"><h3>Your 5 Key Differentiators &mdash; Weave Into Every Answer</h3>
+      <ul class="ans-list">
+        <li><b>1. Mortgage compliance (TRID/FCRA/RESPA)</b> → directly maps to agent guardrail design</li>
+        <li><b>2. Apex @InvocableMethod mastery</b> → core pattern for ALL Agentforce actions</li>
+        <li><b>3. Platform Events + event-driven architecture</b> → same pattern as Agent ↔ external systems</li>
+        <li><b>4. Trigger framework + governor limit awareness</b> → critical for production-grade actions</li>
+        <li><b>5. Data integration (Experian, LOS)</b> → maps to Data Cloud ingestion + Calculated Insights</li>
+      </ul>
+    </div>
+    <p class="ans-p"><b>🎙 Power Phrases to Use:</b></p>
+    <ul class="ans-list">
+      <li>"I'd start with a phased approach &mdash; quick wins first, then iterate based on conversation analytics."</li>
+      <li>"Grounding is the foundation of accurate agent responses. Without it, you just have a generic chatbot."</li>
+      <li>"In mortgage, certain decisions legally cannot be made by AI &mdash; I'd design those hard boundaries upfront."</li>
+      <li>"Data Cloud is the customer intelligence layer beneath all Einstein AI features."</li>
+      <li>"I separate read-only topics from write topics &mdash; fundamentally different risk profiles."</li>
+      <li>"Topic descriptions matter more than prompt engineering &mdash; Atlas routes before the LLM fires."</li>
+    </ul>
+    <p class="ans-p"><b>⚠️ If You Only Remember 5 Things:</b></p>
+    <ul class="ans-list">
+      <li><b>1.</b> Agentforce = Agent + Topics + Actions + Atlas + Trust Layer &mdash; 5 components, draw it</li>
+      <li><b>2.</b> Data Cloud = Ingest → Map → Resolve → Insights → Segment → Activate &mdash; 6 steps</li>
+      <li><b>3.</b> RAG = retrieve real data + inject into prompt &mdash; prevents hallucination</li>
+      <li><b>4.</b> Trust Layer = PII mask → injection defense → toxicity → zero retention → audit</li>
+      <li><b>5.</b> YOUR mortgage platform maps 1:1 &mdash; Experian = agent action, PE = events, TRID/FCRA = guardrails</li>
+    </ul>
+</div></div>

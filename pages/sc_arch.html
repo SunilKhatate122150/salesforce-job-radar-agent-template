@@ -1,0 +1,80 @@
+<div class="page-title">Architecture &amp; Mixed Scenarios &mdash; 10 Questions</div>
+<div class="page-sub">Senior-level architectural decision questions &mdash; explain your reasoning, not just the answer</div>
+
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How do you decide between Flow vs Apex Trigger vs Process Builder for a new automation requirement?</span><span class="qa-q-label lbl-domain">ARCHITECTURE</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<pre class="code">// DECISION FRAMEWORK &mdash; ask these questions in order:
+
+// 1. Is this logic admin-maintainable and simple enough for Flow?
+//    YES + small data volumes → USE FLOW (Record-Triggered)
+//    YES but complex logic → CONSIDER Apex with @InvocableMethod from Flow
+
+// 2. Does it involve bulk operations (200+ records at once)?
+//    YES → USE APEX TRIGGER (Flow is risky at scale)
+
+// 3. Does it require external API callouts?
+//    YES → USE APEX (Queueable from trigger, or @InvocableMethod from Flow)
+
+// 4. Is performance critical?
+//    YES → USE APEX (triggers are faster than Flow for bulk operations)
+
+// 5. Is it Process Builder or Workflow?
+//    ALWAYS MIGRATE TO FLOW &mdash; both are deprecated/retiring
+
+// NEVER use:
+// ❌ Process Builder for new logic &mdash; deprecated, replacing with Flow</pre>
+</div></div>
+
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How do you approach performance testing before a large Salesforce deployment?</span><span class="qa-q-label lbl-apex">ARCHITECTURE</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<ul class="ans-list">
+  <li><b>Query Plan analysis:</b> Run all SOQL from triggers and LWC wire calls through Developer Console with EXPLAIN. Fix any TableScan before deployment</li>
+  <li><b>Bulk trigger test at 200 records:</b> ALWAYS test triggers inserting exactly 200 records. If test only uses 1 record, governor limit issues will not surface until production</li>
+  <li><b>Batch at scale in Full Sandbox:</b> Full Sandbox = copy of production data. Run batch with scope=1, then scope=50, then scope=200. Monitor governor limit consumption at each step</li>
+  <li><b>LWC with realistic data:</b> Test datatable components with the maximum realistic row count (100, 500, 1000 rows). A datatable with 1000 rows renders very differently than one with 10</li>
+  <li><b>Limits.getCpuTime() profiling:</b> Add CPU time checks at key points in complex Apex to identify bottlenecks before they hit the 10,000ms limit in production</li>
+  <li><b>Debug log analysis:</b> Enable debug logs during load tests. Look for: slow queries (>200ms), repeated queries inside loops, unexpected governor consumption</li>
+</ul>
+<pre class="code">// CPU time profiling in Apex
+Long startCpu = Limits.getCpuTime();
+// ... some operation ...
+Long elapsed = Limits.getCpuTime() - startCpu;
+System.debug('CPU used for operation: ' + elapsed + 'ms of ' + Limits.getLimitCpuTime() + 'ms total');</pre>
+</div></div>
+
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How do you manage technical debt in an existing Salesforce org with outdated automation?</span><span class="qa-q-label lbl-domain">ARCHITECTURE</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<ul class="ans-list">
+  <li><b>Audit with Salesforce Optimizer:</b> Run the free Salesforce Optimizer report (Setup → Optimizer). It identifies unused fields, inactive flows, low-coverage Apex, duplicate rules, excessive objects</li>
+  <li><b>Migrate Process Builder and Workflow to Flow:</b> Both are deprecated. Salesforce retirement dates are announced &mdash; start migration before forced retirement causes failures</li>
+  <li><b>Refactor triggers to handler pattern:</b> Any org with logic directly in .trigger files (not handler classes) is a debt item. Prioritize the most-changed objects first</li>
+  <li><b>Coverage baseline:</b> Any Apex class below 75% coverage = untested code that will fail. Treat each low-coverage class as a debt bug to fix</li>
+  <li><b>Dead code removal:</b> Use "Where is this used?" for custom fields. Fields used in 0 automations, 0 layouts, 0 reports can be candidates for removal (verify with business first)</li>
+  <li><b>Tech debt as backlog items:</b> Frame debt in business terms &mdash; "Refactoring Account trigger reduces deployment time from 4 hours to 45 minutes due to eliminated merge conflicts"</li>
+  <li><b>Dedicated cleanup time:</b> Reserve 10&ndash;20% of each sprint for debt reduction. Without dedicated time, debt only accumulates</li>
+</ul>
+</div></div>
+
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How do you stay current with Salesforce releases as a senior developer?</span><span class="qa-q-label lbl-domain">ARCHITECTURE</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<p class="ans-p">Salesforce releases 3 major updates per year: Spring (February), Summer (June), Winter (October/November).</p>
+<ul class="ans-list">
+  <li><b>Release Notes:</b> Read for every release. Focus on: Apex API changes, LWC new capabilities, Flow enhancements, deprecated features and their timelines</li>
+  <li><b>Pre-release orgs:</b> Salesforce makes preview orgs available 4&ndash;6 weeks before each release. Test existing code against the new release before it hits production</li>
+  <li><b>Trailhead Release modules:</b> 1&ndash;2 new Trailhead modules released with each major release &mdash; completing them is the fastest way to learn what changed</li>
+  <li><b>Certification maintenance:</b> Salesforce certs require annual maintenance exams for each release. These force you to learn what changed &mdash; make them part of your professional development</li>
+  <li><b>Salesforce Developer Blog:</b> Official technical announcements. Follow on Trailblazer Community. Subscribe to the developer newsletter</li>
+  <li><b>Deprecation tracking:</b> Keep a personal deprecation timeline &mdash; when does Process Builder retire? When does With SECURITY_ENFORCED become the wrong choice? Plan migrations proactively</li>
+</ul>
+<div class="tip-box"><div class="tip-label">Interview answer</div><p>Say: "I stay current through the official release notes and Salesforce Developer Blog, and I test major features in sandbox before they reach production. I also track the Process Builder and Workflow deprecation timeline because we have existing automations that need migration to Flow &mdash; I want to stay ahead of forced retirements rather than scramble at the deadline."</p></div>
+</div></div>
+
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">Design a real-time loan status notification system from scratch &mdash; architect the complete solution</span><span class="qa-q-label lbl-domain">ARCHITECTURE</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<p class="ans-p"><b>Requirements: send email, SMS, and push notifications when loan status changes. Multiple loan types. Configurable rules per status change.</b></p>
+<p class="ans-p"><b>Architecture decision &mdash; Why NOT direct in trigger:</b> The trigger would need to know about every notification channel, every loan type's rules, and every recipient configuration. That is too tightly coupled.</p>
+<p class="ans-p"><b>Decoupled design:</b></p>
+<ul class="ans-list">
+  <li><b>Trigger:</b> After update on Loan__c &mdash; if Status__c changed → publish Loan_Status_Changed__e Platform Event (loanId, oldStatus, newStatus). Nothing else in the trigger.</li>
+  <li><b>Configuration:</b> Notification_Config__mdt (Custom Metadata) &mdash; rows defining: LoanType, FromStatus, ToStatus, Channels (Email/SMS/Push), RecipientType (Borrower/LO/Manager). No code change needed to add/change rules.</li>
+  <li><b>Router class:</b> Platform Event trigger subscribes to Loan_Status_Changed__e. Queries Notification_Config__mdt for matching rules. For each matching rule, calls the appropriate channel adapter via INotificationChannel interface.</li>
+  <li><b>Channel adapters:</b> EmailAdapter (Salesforce Messaging), SMSAdapter (Twilio via Named Credential callout), PushAdapter (Salesforce Notification Builder).</li>
+  <li><b>Error handling:</b> Every notification attempt logged to Notification_Log__c. Failed sends retried by scheduled Apex up to 3 times.</li>
+</ul>
+<div class="tip-box"><div class="tip-label">Patterns demonstrated</div><p>Platform Events (decoupling), Custom Metadata (configuration-driven, deploy without code change), Strategy Pattern (INotificationChannel), Error logging, Retry logic. This answer shows senior architect thinking &mdash; decoupling, configuration-driven design, error handling, retry logic.</p></div>
+</div></div>

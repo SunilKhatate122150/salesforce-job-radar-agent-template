@@ -1,0 +1,157 @@
+<div class="page-title">Triggers &amp; Handler Patterns</div>
+<div class="page-sub">14 questions with complete code &mdash; the #1 interview topic for Salesforce Senior Devs</div>
+
+<div class="qa-block">
+  <div class="qa-question" onclick="toggleQA(this)">
+    <span class="qa-q-text">Walk me through your trigger handler pattern &mdash; show complete code</span>
+    <span class="qa-q-label lbl-apex">TRIGGERS</span>
+    <span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span>
+  </div>
+  <div class="qa-answer">
+    <p class="ans-p">The trigger handler pattern separates the trigger (routing) from the business logic (handler class). The trigger file should have ZERO business logic &mdash; it only calls the handler. The handler class has methods for each trigger event.</p>
+    <pre class="code"><span class="cmt">// STEP 1: The Trigger File (ContactTrigger.trigger)</span>
+// This file has NO logic - only routing
+trigger ContactTrigger on Contact (
+    before insert, before update, before delete,
+    after insert, after update, after delete, after undelete
+) {
+    <span class="cls">ContactTriggerHandler</span> handler = new <span class="cls">ContactTriggerHandler</span>();
+    handler.run();
+}
+
+<span class="cmt">// STEP 2: Base Handler Class (TriggerHandler.cls)</span>
+// Reusable base class for all triggers in the org
+public virtual class <span class="cls">TriggerHandler</span> {
+    
+    private static <span class="cls">Set</span>&lt;<span class="cls">String</span>&gt; bypassedHandlers = new <span class="cls">Set</span>&lt;<span class="cls">String</span>&gt;();
+    
+    public void run() {
+        if(isBypassed(getHandlerName())) return;
+        
+        switch on Trigger.operationType {
+            when BEFORE_INSERT  { beforeInsert(); }
+            when BEFORE_UPDATE  { beforeUpdate(); }
+            when BEFORE_DELETE  { beforeDelete(); }
+            when AFTER_INSERT   { afterInsert(); }
+            when AFTER_UPDATE   { afterUpdate(); }
+            when AFTER_DELETE   { afterDelete(); }
+            when AFTER_UNDELETE { afterUndelete(); }
+        }
+    }
+    
+    protected virtual void beforeInsert() {}
+    protected virtual void beforeUpdate() {}
+    protected virtual void beforeDelete() {}
+    protected virtual void afterInsert() {}
+    protected virtual void afterUpdate() {}
+    protected virtual void afterDelete() {}
+    protected virtual void afterUndelete() {}
+    
+    public static void bypass(<span class="cls">String</span> handlerName) { bypassedHandlers.add(handlerName); }
+    public static <span class="cls">Boolean</span> isBypassed(<span class="cls">String</span> handlerName) { return bypassedHandlers.contains(handlerName); }
+    private <span class="cls">String</span> getHandlerName() { return String.valueOf(this).substring(0, String.valueOf(this).indexOf(':')); }
+}
+
+<span class="cmt">// STEP 3: Specific Handler (ContactTriggerHandler.cls)</span>
+public class <span class="cls">ContactTriggerHandler</span> extends <span class="cls">TriggerHandler</span> {
+    
+    private <span class="cls">List</span>&lt;<span class="cls">Contact</span>&gt; newContacts;
+    private <span class="cls">Map</span>&lt;<span class="cls">Id</span>, <span class="cls">Contact</span>&gt; oldContactMap;
+    
+    public <span class="cls">ContactTriggerHandler</span>() {
+        newContacts = Trigger.new;
+        oldContactMap = (<span class="cls">Map</span>&lt;<span class="cls">Id</span>, <span class="cls">Contact</span>&gt;) Trigger.oldMap;
+    }
+    
+    protected override void beforeInsert() {
+        <span class="cls">ContactService</span>.preventDuplicates(newContacts);
+        <span class="cls">ContactService</span>.populateDefaultValues(newContacts);
+    }
+    
+    protected override void afterUpdate() {
+        <span class="cls">ContactService</span>.syncPhoneToAccount(newContacts, oldContactMap);
+    }
+}</pre>
+    <div class="tip-box"><div class="tip-label">Interview answer tip</div><p>Explain the separation of concerns: trigger = routing only, handler = event dispatching, service = business logic. This makes code testable, maintainable, and allows bypass logic for data migrations. Always mention: "One trigger per object &mdash; all events in one file."</p></div>
+  </div>
+</div>
+
+<div class="qa-block">
+  <div class="qa-question" onclick="toggleQA(this)">
+    <span class="qa-q-text">How do you prevent recursive triggers? What are the pitfalls?</span>
+    <span class="qa-q-label lbl-apex">TRIGGERS</span>
+    <span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span>
+  </div>
+  <div class="qa-answer">
+    <p class="ans-p">Recursive trigger = trigger fires, performs DML on same object, which fires the trigger again ΓåÆ infinite loop ΓåÆ CPU limit exceeded.</p>
+    <pre class="code"><span class="cmt">// Method 1: Static Boolean Flag (Simple but imperfect)</span>
+public class <span class="cls">TriggerRecursionPrevention</span> {
+    public static <span class="cls">Boolean</span> isFirstRun = true;
+}
+
+trigger AccountTrigger on Account (after update) {
+    if(<span class="cls">TriggerRecursionPrevention</span>.isFirstRun) {
+        <span class="cls">TriggerRecursionPrevention</span>.isFirstRun = false;
+        <span class="cmt">// logic here</span>
+    }
+}
+<span class="cmt">// PROBLEM: Only runs once per transaction even for different records</span>
+
+// Method 2: Set of processed IDs (Better - handles bulk correctly)
+public class <span class="cls">TriggerRecursionHelper</span> {
+    public static <span class="cls">Set</span>&lt;<span class="cls">Id</span>&gt; processedIds = new <span class="cls">Set</span>&lt;<span class="cls">Id</span>&gt;();
+}
+
+protected override void afterUpdate() {
+    <span class="cls">List</span>&lt;<span class="cls">Contact</span>&gt; toProcess = new <span class="cls">List</span>&lt;<span class="cls">Contact</span>&gt;();
+    for(<span class="cls">Contact</span> c : newContacts) {
+        if(!<span class="cls">TriggerRecursionHelper</span>.processedIds.contains(c.Id)) {
+            toProcess.add(c);
+            <span class="cls">TriggerRecursionHelper</span>.processedIds.add(c.Id);
+        }
+    }
+    if(!toProcess.isEmpty()) {
+        <span class="cls">ContactService</span>.syncPhone(toProcess);
+    }
+}</pre>
+    <div class="warn-box"><div class="warn-label">Pitfall</div><p>Static variables persist for the entire transaction, not just one trigger call. In a batch job processing 200 records at a time, your static flag from chunk 1 still exists in chunk 2 &mdash; this can cause logic to be skipped entirely for later chunks. Design with this in mind.</p></div>
+  </div>
+</div>
+
+<div class="qa-block">
+  <div class="qa-question" onclick="toggleQA(this)">
+    <span class="qa-q-text">What is the difference between before and after trigger &mdash; when do you use each?</span>
+    <span class="qa-q-label lbl-apex">TRIGGERS</span>
+    <span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span>
+  </div>
+  <div class="qa-answer">
+    <table class="comparison-table">
+      <tr><th>Feature</th><th>Before Trigger</th><th>After Trigger</th></tr>
+      <tr><td>Record has Id?</td><td>No (insert), Yes (update/delete)</td><td>Yes &mdash; always has Id</td></tr>
+      <tr><td>Can modify record directly?</td><td>Yes &mdash; no DML needed</td><td>No &mdash; must use DML (additional DML)</td></tr>
+      <tr><td>Database committed yet?</td><td>No &mdash; record not in DB yet</td><td>Yes &mdash; record is in DB</td></tr>
+      <tr><td>Use for</td><td>Validation, field population/defaulting</td><td>Cross-object updates, callouts, related record creation</td></tr>
+    </table>
+    <pre class="code"><span class="cmt">// BEFORE INSERT &mdash; validate and set fields (no DML needed)</span>
+protected override void beforeInsert() {
+    for(<span class="cls">Loan__c</span> loan : Trigger.new) {
+        <span class="cmt">// Validation - field directly modifiable</span>
+        if(loan.LoanAmount__c > 2000000 &amp;&amp; loan.LoanType__c == 'FHA') {
+            loan.addError('FHA loans cannot exceed $2,000,000');
+        }
+        <span class="cmt">// Field default - set directly, no update DML needed</span>
+        if(loan.Status__c == null) loan.Status__c = 'Application';
+    }
+}
+
+<span class="cmt">// AFTER INSERT &mdash; create related records (record now has Id)</span>
+protected override void afterInsert() {
+    <span class="cls">List</span>&lt;<span class="cls">LoanTask__c</span>&gt; tasks = new <span class="cls">List</span>&lt;<span class="cls">LoanTask__c</span>&gt;();
+    for(<span class="cls">Loan__c</span> loan : Trigger.new) {
+        <span class="cmt">// Now we have loan.Id (not available in before insert)</span>
+        tasks.add(new <span class="cls">LoanTask__c</span>(Loan__c = loan.Id, Type__c = 'Initial Review'));
+    }
+    if(!tasks.isEmpty()) insert tasks;
+}</pre>
+  </div>
+</div>

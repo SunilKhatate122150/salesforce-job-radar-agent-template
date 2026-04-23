@@ -77,26 +77,6 @@ var TOPIC_DATA = {
       { type: 'qa', question: 'Scenario: Implement a progress bar for a 5-minute external API call.', answer: '<p class="ans-p">Since an HTTP callout cannot stay open for 5 minutes (timeout is 120s), we use a <b>Polling or Callback pattern</b>:</p><ol class="ans-list"><li><b>Initiate:</b> Apex calls the API, gets a "Job ID", and returns it to LWC.</li><li><b>Poll:</b> LWC uses <code>setInterval</code> to call another Apex method every 5-10 seconds to check the status of that Job ID.</li><li><b>Progress:</b> As the status updates (e.g., 20%, 50%), the LWC updates a <code>lightning-progress-bar</code>.</li><li><b>Complete:</b> Once status is "Success", clear the interval and show a toast message.</li></ol>' }
     ]
   },
-  'mobigic_pwc': {
-    title: 'Mobigic / PWC Prep (2026)',
-    subtitle: 'Screening round focus: Core LWC, standard Salesforce features, and domain expertise.',
-    blocks: [
-      { type: 'section', title: '🎤 Screening Focus' },
-      { type: 'qa', question: 'What is NavigationMixin and how is it used in LWC?', answer: '<p class="ans-p"><code>NavigationMixin</code> adds navigation capability to LWC. You must extend your class with it: <code>export default class MyComp extends NavigationMixin(LightningElement)</code>. Use <code>this[NavigationMixin.Navigate]({ type: \'standard__recordPage\', attributes: { ... } })</code> to open records, object pages, or external URLs.</p>' },
-      { type: 'qa', question: 'Explain LWC Communication Patterns.', answer: '<p class="ans-p"><b>Parent to Child:</b> Use <code>@api</code> properties or methods. <b>Child to Parent:</b> Use <code>Custom Events</code>. <b>Unrelated:</b> Use <code>Lightning Message Service (LMS)</code>.</p>' },
-      { type: 'qa', question: 'Apex Collections: List vs Set vs Map.', answer: '<p class="ans-p"><b>List:</b> Ordered collection allowing duplicates; used for DML. <b>Set:</b> Unordered unique elements; used for storing IDs to avoid duplicates. <b>Map:</b> Key-value pairs; used for O(1) fast lookups by ID in triggers.</p>' }
-    ]
-  },
-  'thenken_globus': {
-    title: 'Thenken Globus Technical Round',
-    subtitle: 'Deep technical drills on LWC, Apex, and Salesforce Automation.',
-    blocks: [
-      { type: 'section', title: '💻 Coding Scenarios' },
-      { type: 'qa', question: 'Scenario: Parent/Child LWC for Account-Contact Drilldown.', answer: '<p class="ans-p"><b>Parent:</b> Contains a <code>lightning-combobox</code> wired to an Apex method <code>getAccounts</code>. When a value is selected, it passes the <code>accountId</code> to the child. <b>Child:</b> Has an <code>@api accountId</code>. It uses <code>@wire(getContacts, { accountId: \'$accountId\' })</code> to fetch and display contacts in a <code>lightning-datatable</code>.</p>' },
-      { type: 'qa', question: 'Scenario: Roll-up Opportunity count and notify manager.', answer: '<p class="ans-p"><b>Trigger:</b> On Opportunity (after insert, update, delete). <b>Logic:</b> Collect Account IDs, run an aggregate query to count Opportunities, and update the <code>Total_Opportunities__c</code> field on the Account. <b>Email:</b> Use <code>Messaging.SingleEmailMessage</code> to send a notification to the <code>Owner.Manager.Email</code> using a single email list to stay within limits.</p>' },
-      { type: 'qa', question: 'Explain Cron Expressions in Salesforce.', answer: '<p class="ans-p">Salesforce cron has 7 positions: <code>Seconds Minutes Hours Day_of_Month Month Day_of_Week Optional_Year</code>. Example: <code>0 0 2 * * ?</code> runs every day at 2:00 AM. Use <code>?</code> to indicate "no specific value" for either Day-of-Month or Day-of-Week.</p>' }
-    ]
-  },
   'fde_ag_concept': {
     title: 'FDE Prep — Agentforce Core',
     subtitle: 'Architectural concepts for AI Specialists.',
@@ -858,8 +838,9 @@ var topicConfig = {
   'eng_starters': { name: '50 Sentence Starters', recommended: 20, group: 'Communication' },
   'eng_phrases': { name: 'Difficult Situations', recommended: 30, group: 'Communication' },
   // Company-Specific
-  'company_interviews': { name: 'Arago & Morgan Stanley', recommended: 60, group: 'Company' },
-  'company_iq': { name: 'Company Model Answers', recommended: 60, group: 'Company' },
+  'deloitte': { name: 'Deloitte (Recent) 2026', recommended: 60, group: 'Company' },
+  'accenture': { name: 'Accenture Prep (LWC+Async)', recommended: 60, group: 'Company' },
+  'company_iq': { name: 'Arago & Morgan Stanley', recommended: 60, group: 'Company' },
   'mobigic_pwc': { name: 'Mobigic / PWC', recommended: 45, group: 'Company' },
   'thenken_globus': { name: 'Thenken Globus', recommended: 45, group: 'Company' },
   // FDE Interview Prep
@@ -874,7 +855,6 @@ var topicConfig = {
   'fde_behavioral': { name: 'FDE Behavioral', recommended: 60, group: 'FDE Prep' },
   'fde_cheat': { name: 'FDE Cheat Sheet', recommended: 30, group: 'FDE Prep' },
   // New Industrial Modules
-  'deloitte': { name: 'Deloitte Prep', recommended: 60, group: 'Company' },
   'security_5_layers': { name: '5 Layers Security', recommended: 90, group: 'Technical' },
   'order_of_execution': { name: 'Order of Execution', recommended: 60, group: 'Technical' },
   'flow_master': { name: 'Flow Master Class', recommended: 90, group: 'Technical' },
@@ -1838,22 +1818,27 @@ async function fetchJobsList() {
     window.allJobRecords = data.records || [];
     console.log(`✅ [RADAR] Received ${window.allJobRecords.length} jobs. DB Status: ${data.dbStatus}`);
     
-    // Phase 2: Sync with Radar Pipeline
+    // Phase 2: Sync with Radar Pipeline (with Duplicate Protection)
     window.allJobRecords.forEach(rec => {
-      if (!pipelineJobs.find(j => j.id === rec.id || (j.company === rec.company && j.role === rec.role))) {
+      const jobHash = rec.job_hash || btoa(rec.company + rec.role + rec.location);
+      const isDuplicate = pipelineJobs.some(j => j.id === rec.id || j.job_hash === jobHash || (j.company === rec.company && j.role === rec.role));
+      
+      if (!isDuplicate) {
         pipelineJobs.push({
           id: rec.id || 'job_' + Math.random().toString(36).substr(2, 9),
-          company: rec.company,
+          job_hash: jobHash,
+          company: rec.company || 'Confidential',
           role: rec.role || rec.title,
-          loc: rec.location || 'Remote',
-          sal: rec.salary || rec.sal || '—',
+          loc: rec.location || 'India',
+          sal: rec.salary || 'Competitive',
           experience: rec.experience || '3–5 Yrs',
           company_type: rec.company_type || 'MNC',
-          why_apply: rec.why_apply || 'Strong match for PD2 skills.',
+          why_apply: rec.why_apply || 'Matches your PD2 profile.',
           skills: rec.matched_skills || ['Apex', 'LWC'],
           score: rec.match_score || 75,
           prob: rec.probability || 'medium',
-          status: 'todo',
+          status: rec.status || 'todo',
+          url: rec.apply_link || rec.url || '#',
           created_at: rec.created_at || new Date().toISOString()
         });
       }
@@ -2318,8 +2303,61 @@ async function fetchLeaderboard() {
   }
 }
 
+// --- DYNAMIC PAGE LOADING ENGINE (v1403 Modular) ---
+async function ensurePageLoaded(pageId) {
+    const pageEl = document.getElementById(pageId);
+    if (!pageEl) return false;
+    
+    // If page is not empty and not just whitespace, skip loading
+    if (pageEl.innerHTML.trim().length > 50) return true;
+    
+    // Check if it's a page that SHOULD be modular
+    const modularPages = [
+        'job_radar', 'schedule', 'study_tracker', 'profile_match', 'study_history',
+        'thenken_globus', 'fde_ag_concept', 'fde_ag_scenario', 'fde_atlas', 'fde_trust',
+        'fde_dc_concept', 'fde_dc_adv', 'fde_integration', 'fde_apex', 'fde_behavioral',
+        'fde_cheat', 'ai_interview', 'topic_viewer', 
+        'apex', 'soql', 'async', 'triggers', 'lwc', 'aura', 'integration', 'security',
+        'domain', 'scenario', 'design', 'adv_apex', 'admin',
+        'sc_objects', 'sc_recordpage', 'sc_flow', 'sc_arch', 'sc_async', 'sc_fileupload', 
+        'sc_reports', 'sc_agentforce', 'sc_navmixin', 'sc_validation',
+        'intro', 'behavioral', 'speaking', 'comm', 'vocab', 'salary', 'mock',
+        'company_iq', 'mobigic_pwc'
+    ];
+    if (!modularPages.includes(pageId)) return true;
+
+    console.log(`📡 [LOADER] Fetching modular page: ${pageId}...`);
+    try {
+        const response = await fetch(`/pages/${pageId}.html`);
+        if (!response.ok) throw new Error(`Page ${pageId} not found`);
+        const html = await response.text();
+        pageEl.innerHTML = html;
+        console.log(`✅ [LOADER] Page ${pageId} injected.`);
+        
+        // Post-injection setup for specific pages
+        if (pageId === 'job_radar') {
+            if (typeof fetchJobsList === 'function') fetchJobsList();
+            if (typeof fetchJobAnalytics === 'function') fetchJobAnalytics();
+        }
+        if (pageId === 'schedule') {
+          if (typeof renderSchedule === 'function') renderSchedule();
+        }
+        return true;
+    } catch (err) {
+        console.error(`❌ [LOADER] Failed to load page ${pageId}:`, err);
+        pageEl.innerHTML = `<div style="padding:40px; text-align:center; color:var(--red);">
+            <h3>⚠️ Modular Load Failed</h3>
+            <p>Could not load <b>${pageId}.html</b>. Please check if the file exists in the /pages directory.</p>
+        </div>`;
+        return false;
+    }
+}
+
 // Update showPage to include timetable rendering
 async function showPage(id) {
+  // Ensure the page content is loaded before showing
+  await ensurePageLoaded(id);
+
   localStorage.setItem('last_active_tab', id);
   await stopTracking();
   document.querySelectorAll('.page').forEach(function(p) { 
@@ -3228,40 +3266,40 @@ function renderJobCard(job) {
   }
 
   return `
-    <div class="jcard" id="card-${job.id}" data-prob="${job.prob || 'medium'}" style="background:#1e293b !important; border:1px solid rgba(59,130,246,0.3) !important; padding:20px !important; margin-bottom:15px !important; display:block !important; border-radius:16px !important; color:white !important;">
-      <div class="jcard-top" style="display:flex !important; justify-content:space-between !important; align-items:center !important; margin-bottom:15px !important;">
-        <div class="co-info" style="display:flex !important; align-items:center !important; gap:12px !important;">
-          <div class="co-logo" style="width:40px !important; height:40px !important; background:#3b82f6 !important; border-radius:10px !important; display:flex !important; align-items:center !important; justify-content:center !important; font-weight:800 !important; color:white !important;">${job.company ? job.company.charAt(0) : '💼'}</div>
-          <div style="display:block !important;">
-            <div class="co-name" style="font-weight:700 !important; font-size:1rem !important; color:white !important; display:block !important;">${job.company || 'Confidential'}</div>
-            <div class="co-type" style="font-size:0.7rem !important; color:#94a3b8 !important; display:block !important;">${job.company_type || 'Salesforce Partner'}</div>
+    <div class="jcard" id="card-${job.id}" data-prob="${job.prob || 'medium'}">
+      <div class="jcard-top">
+        <div class="co-info">
+          <div class="co-logo">${job.company ? job.company.charAt(0) : '💼'}</div>
+          <div>
+            <div class="co-name">${job.company || 'Confidential'}</div>
+            <div class="co-type">${job.company_type || 'Salesforce Partner'}</div>
           </div>
         </div>
-        <div class="score-ring ${sc}" style="--p:${job.score || 75}; width:45px; height:45px;">
-          <div class="score-inner ${sc}">${job.score || 75}%</div>
+        <div class="score-ring ${sc}" style="--p:${job.score || 75}">
+          <div class="score-inner">${job.score || 75}%</div>
         </div>
       </div>
 
-      <div class="job-role" style="font-family:'Syne',sans-serif !important; font-weight:800 !important; font-size:1.15rem !important; color:#60a5fa !important; margin:10px 0 !important; display:block !important;">${job.role || 'Salesforce Developer'}</div>
+      <div class="job-role">${job.role || 'Salesforce Developer'}</div>
       ${badgeHtml}
 
-      <div class="jcard-meta" style="display:flex !important; gap:10px !important; margin:15px 0 !important; flex-wrap:wrap !important;">
-        <span class="meta-pill" style="background:rgba(255,255,255,0.05) !important; padding:4px 12px !important; border-radius:20px !important; font-size:0.7rem !important; color:#cbd5e1 !important;">📍 ${job.loc || 'India'}</span>
-        <span class="meta-pill" style="background:rgba(255,255,255,0.05) !important; padding:4px 12px !important; border-radius:20px !important; font-size:0.7rem !important; color:#cbd5e1 !important;">💼 ${job.experience || '3-5 Yrs'}</span>
-        <span class="meta-pill" style="background:rgba(59,130,246,0.1) !important; padding:4px 12px !important; border-radius:20px !important; font-size:0.7rem !important; color:white !important; font-weight:700 !important;">💰 ${job.sal || 'Competitive'}</span>
+      <div class="jcard-meta">
+        <span class="meta-pill">📍 ${job.loc || 'India'}</span>
+        <span class="meta-pill">💼 ${job.experience || '3-5 Yrs'}</span>
+        <span class="meta-pill">💰 ${job.sal || 'Competitive'}</span>
       </div>
 
-      <div class="jcard-skills" style="display:flex !important; flex-wrap:wrap !important; gap:6px !important; margin-bottom:15px !important;">
-        ${(Array.isArray(job.skills) ? job.skills : ['Apex', 'LWC']).map(s => `<span class="skill-tag" style="font-size:0.6rem !important; padding:3px 8px !important; background:rgba(255,255,255,0.03) !important; border:1px solid rgba(255,255,255,0.1) !important; border-radius:4px !important; color:#94a3b8 !important;">${s}</span>`).join('')}
+      <div class="jcard-skills">
+        ${(Array.isArray(job.skills) ? job.skills : ['Apex', 'LWC']).map(s => `<span class="skill-tag">${s}</span>`).join('')}
       </div>
 
-      <div class="jcard-why" style="background:rgba(59,130,246,0.05) !important; border-left:3px solid #3b82f6 !important; padding:12px !important; border-radius:0 8px 8px 0 !important; font-size:0.75rem !important; color:#e2e8f0 !important; line-height:1.5 !important;">
-        <strong style="color:#60a5fa !important;">Why Apply:</strong> ${job.why_apply || 'Matches your PD2 profile.'}
+      <div class="jcard-why">
+        <strong>Why Apply:</strong> ${job.why_apply || 'Matches your PD2 profile.'}
       </div>
 
-      <div class="jcard-actions" style="display:flex !important; gap:10px !important; margin-top:20px !important;">
-        <a href="${job.url || '#'}" target="_blank" class="jbtn jbtn-apply" style="flex:1 !important; background:#3b82f6 !important; color:white !important; padding:10px !important; border-radius:8px !important; text-align:center !important; text-decoration:none !important; font-weight:700 !important; font-size:0.8rem !important;">View Job</a>
-        <button class="jbtn jbtn-link" onclick="openAIAssistant('${job.id}')" style="background:rgba(255,255,255,0.03) !important; border:1px solid rgba(255,255,255,0.1) !important; color:white !important; padding:10px !important; border-radius:8px !important; cursor:pointer !important;">🤖</button>
+      <div class="jcard-actions">
+        <a href="${job.url || '#'}" target="_blank" class="jbtn jbtn-apply">View Job</a>
+        <button class="jbtn jbtn-link" onclick="openAIAssistant('${job.id}')">🤖</button>
       </div>
     </div>
   `;

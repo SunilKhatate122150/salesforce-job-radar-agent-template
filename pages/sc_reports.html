@@ -1,0 +1,172 @@
+<div class="page-title">Reports &amp; Dashboards &mdash; 10 Scenarios</div>
+<div class="page-sub">Practical reporting scenarios for senior Salesforce developers &mdash; from report types to Apex Analytics API</div>
+
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">What are the 4 types of Salesforce reports &mdash; when do you use each with mortgage examples?</span><span class="qa-q-label lbl-domain">REPORTS</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<table class="comparison-table"><tr><th>Type</th><th>Structure</th><th>Charts?</th><th>Mortgage Use Case</th></tr>
+<tr><td>Tabular</td><td>Simple rows &mdash; no grouping</td><td>No</td><td>Export all active loans with contact info for mail merge</td></tr>
+<tr><td>Summary</td><td>Rows grouped by field(s) with subtotals</td><td>Yes</td><td>Total funded loans per loan officer per month</td></tr>
+<tr><td>Matrix</td><td>Grouped by row AND column cross-tab</td><td>Yes</td><td>Loan count by status (rows) vs loan type (columns)</td></tr>
+<tr><td>Joined</td><td>Multiple blocks from different objects</td><td>Yes per block</td><td>New applications this week (block 1) next to loans closing this week (block 2)</td></tr></table>
+<p class="ans-p"><b>Custom Report Types:</b> When standard report types don't show the objects/fields you need, create a Custom Report Type. Example: "Loans with Borrowers and Documents" &mdash; Loan__c primary + Loan_Borrower__c related + ContentDocumentLink related. Makes all three objects' fields available in one report.</p>
+</div></div>
+
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How do you read a Salesforce report from Apex using the Reports API?</span><span class="qa-q-label lbl-apex">REPORTS</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<pre class="code">// Synchronous report run &mdash; returns up to 2000 rows, immediate response
+Reports.ReportResults results = Reports.ReportManager.runReport('00O5g...', true);
+// true = include detail rows; false = summary only (faster)
+
+// Access the fact map
+// Key format: 'rowGroupIndex!colGroupIndex' or 'T!T' for grand total
+Reports.ReportFactWithDetails grandTotal =
+    (Reports.ReportFactWithDetails) results.getFactMap().get('T!T');
+
+Integer rowCount = grandTotal.getRows().size();
+for(Reports.ReportDetailRow row : grandTotal.getRows()) {
+    List&lt;Reports.ReportDataCell&gt; cells = row.getDataCells();
+    String loanName = cells[0].getLabel();   // formatted display value
+    Object amount = cells[1].getValue();     // raw value (Decimal, Id, String)
+    System.debug(loanName + ': ' + amount);
+}
+
+// Get column names from metadata
+List&lt;String&gt; columns = results.getReportMetadata().getDetailColumns();
+
+// Override filters at runtime (no change to saved report)
+Reports.ReportMetadata meta = Reports.ReportManager.describeReport('00O...').getReportMetadata();
+Reports.ReportFilter filter = new Reports.ReportFilter();
+filter.setColumn('STATUS');
+filter.setOperator('equals');
+filter.setValue('Active');
+meta.setReportFilters(new List&lt;Reports.ReportFilter&gt;{ filter });
+Reports.ReportResults filtered = Reports.ReportManager.runReport(meta, true);
+
+// Asynchronous run (for reports over 2000 rows)
+Reports.ReportInstance instance = Reports.ReportManager.runAsyncReport('00O...', true);
+String instanceId = instance.getId();
+// Poll: Reports.ReportManager.getReportInstance('00O...', instanceId).getStatus()</pre>
+</div></div>
+
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">What is a Dynamic Dashboard &mdash; how does it work and what are the limitations?</span><span class="qa-q-label lbl-domain">REPORTS</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<p class="ans-p">A Dynamic Dashboard uses "Run As: Logged-in user" instead of a fixed user. Each person who opens the dashboard sees data filtered by their own permissions and record ownership &mdash; everyone sees their own data from the same dashboard.</p>
+<p class="ans-p"><b>Mortgage use case:</b> One "Loan Officer Performance Dashboard" showing My Active Loans, My Pipeline Value, My Closing This Week. Loan Officer A sees their 15 loans. Officer B sees their 8 loans. Admin sees all.</p>
+<ul class="ans-list">
+  <li>Cannot be scheduled for email refresh (only static dashboards can be scheduled)</li>
+  <li>Cannot be combined with Dashboard Filters</li>
+  <li>Maximum 10 dynamic dashboards per org (varies by edition)</li>
+  <li>Underlying reports must use "with sharing" data &mdash; no system-mode access</li>
+  <li>Each viewer must have access to the underlying report</li>
+</ul>
+</div></div>
+
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">What is a Cross Filter in a report &mdash; show a mortgage example?</span><span class="qa-q-label lbl-domain">REPORTS</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<p class="ans-p">Cross Filters let you filter report results based on whether related records EXIST or DON'T EXIST. They answer questions that regular filters cannot &mdash; "Show me Loans that have NO uploaded appraisal document."</p>
+<p class="ans-p"><b>In Report Builder:</b> Add Filter → Cross Filter → "[Object] with/without [Related Object]"</p>
+<ul class="ans-list">
+  <li>"Loans WITHOUT ContentDocumentLink where Title contains 'Appraisal'" &mdash; loans missing appraisal</li>
+  <li>"Applications WITHOUT Loan__c where Status = Active" &mdash; applications with no active loans</li>
+  <li>"Contacts who HAVE Loan_Borrower__c where Loan Status = Funded" &mdash; all funded borrowers</li>
+  <li>"Accounts WITHOUT Opportunities WHERE CloseDate is this year" &mdash; no closed business this year</li>
+</ul>
+<div class="tip-box"><div class="tip-label">Compliance use case</div><p>For TRID compliance: "Show all Loans where ClosingDate is in next 3 days WITHOUT a ContentDocumentLink where Title = 'Closing Disclosure'" &mdash; loans approaching closing without the required CD document uploaded. This becomes a daily compliance report.</p></div>
+</div></div>
+
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How do you run a Salesforce report from Apex and process the results?</span><span class="qa-q-label lbl-domain">REPORTS</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<pre class="code">// Run report synchronously (max 2,000 rows)
+Reports.ReportResults results = Reports.ReportManager.runReport('00O5g000004xyzA', true); // true = detail rows
+
+Reports.ReportFactWithDetails facts = (Reports.ReportFactWithDetails) results.getFactMap().get('T!T');
+List&lt;Reports.ReportDetailRow&gt; rows = facts.getRows();
+
+for (Reports.ReportDetailRow row : rows) {
+  List&lt;Reports.ReportDataCell&gt; cells = row.getDataCells();
+  String loanName   = (String)  cells[0].getValue();
+  Decimal amount    = (Decimal) cells[1].getValue();
+  String status     = (String)  cells[2].getValue();
+  System.debug(loanName + ': $' + amount + ' (' + status + ')');
+}
+
+// Run asynchronously (for reports &gt;2,000 rows)
+String jobId = Reports.ReportManager.runAsyncReport('00O5g000004xyzA', true);
+// Poll for completion:
+Reports.ReportInstance instance = Reports.ReportManager.getReportInstance(jobId);
+while (instance.getStatus() != 'Success') {
+  // wait and poll (in practice, use a scheduled job to check)
+  instance = Reports.ReportManager.getReportInstance(jobId);
+}
+Reports.ReportResults asyncResults = instance.getReportResults();</pre>
+
+</div></div>
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How do you build a report that shows data from custom objects with complex relationships?</span><span class="qa-q-label lbl-domain">REPORTS</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<p class="ans-p">When standard report types don't include the object or relationship you need, create a Custom Report Type (CRT).</p>
+<ul class="ans-list">
+  <li><b>Step 1</b> &mdash; Setup → Report Types → New Custom Report Type</li>
+  <li><b>Step 2</b> &mdash; Select primary object: Loan__c</li>
+  <li><b>Step 3</b> &mdash; Add related objects: Account (borrower), Loan_Document__c (documents), Loan_Officer__r (owner's User record)</li>
+  <li><b>Step 4</b> &mdash; Choose relationship type: 'A may or may not have B' (outer join &mdash; shows loans even without documents)</li>
+  <li><b>Step 5</b> &mdash; Add fields to layout: drag all fields you want available in reports to the field layout</li>
+  <li><b>Step 6</b> &mdash; Publish and assign to appropriate profiles</li>
+</ul>
+<div class="tip-box"><div class="tip-label">Outer vs Inner join</div><p>'A must have B' = inner join &mdash; only records with a related record appear. 'A may or may not have B' = outer join &mdash; all primary records appear. For reports showing loans regardless of whether they have documents, use 'may or may not have'.</p></div>
+
+</div></div>
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">What are Bucket Columns in reports &mdash; when are they more useful than formula fields?</span><span class="qa-q-label lbl-domain">REPORTS</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<p class="ans-p">Bucket Columns let you categorise field values into groups directly in the report &mdash; without creating a formula field on the object. Available for number, text, and picklist fields.</p>
+<ul class="ans-list">
+    <li><b>Use Bucket for</b> &mdash; ad-hoc grouping that only applies to this report. No object schema change needed.</li>
+    <li><b>Example: Loan Amount Buckets</b> &mdash; Small (&lt;100K), Medium (100K&ndash;500K), Large (500K+)</li>
+    <li><b>Example: Credit Score Tiers</b> &mdash; Excellent (750+), Good (700-749), Fair (620-699), Poor (&lt;620)</li>
+    <li><b>Use Formula Field instead when</b> &mdash; grouping is used in many reports, needs to appear on record page, or the calculation is complex</li>
+</ul>
+<pre class="code">// Bucket Column config in Report Builder (UI only &mdash; not in Apex):
+// Field: Amount__c
+// Bucket name: Loan Size
+// Rule 1: Amount__c &lt; 100000 → 'Small'
+// Rule 2: Amount__c &gt;= 100000 AND &lt;= 500000 → 'Medium'
+// Rule 3: Amount__c &gt; 500000 → 'Large'
+// After bucketing: can group by Loan Size and show count/sum per bucket</pre>
+</div></div>
+
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How do you create a dashboard that refreshes on a schedule and emails to stakeholders?</span><span class="qa-q-label lbl-domain">REPORTS</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<ul class="ans-list">
+  <li><b>Dashboard refresh</b> &mdash; Dashboards refresh automatically when viewed if last refresh &gt;24h old. For scheduled refresh: Setup → Dashboard → Subscribe → set schedule</li>
+  <li><b>Subscribe to dashboard</b> &mdash; users can subscribe to receive dashboard snapshots via email. Set frequency: daily/weekly. Sends a PDF snapshot of the dashboard.</li>
+  <li><b>Report subscriptions</b> &mdash; From Report → Subscribe → set schedule and email format. Can send CSV, Excel, or formatted email. Filter conditions: only send if results meet criteria (e.g., only alert if loans past due &gt; 0)</li>
+  <li><b>Conditional alerts</b> &mdash; Reports → Subscribe → Add Filter: 'Run report only if row count &gt; 0'. Useful for exception reporting &mdash; only email when there is something to act on.</li>
+  <li><b>Salesforce Flow scheduled reports</b> &mdash; create a Scheduled Flow that calls a Report in Apex and emails results in a custom format with additional business logic</li>
+</ul>
+<div class="warn-box"><div class="warn-label">Dashboard data is cached</div><p>Dashboards show data from when they were last refreshed &mdash; not real-time. If a stakeholder needs live data, point them to the underlying report (always shows current data) or use a custom LWC dashboard connected to @wire.</p></div>
+</div></div>
+
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">What is CRM Analytics (Einstein Analytics) &mdash; how does it differ from standard Reports?</span><span class="qa-q-label lbl-domain">REPORTS</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<table class="comparison-table"><tr><th>Feature</th><th>Standard Reports</th><th>CRM Analytics</th></tr><tr><td>Data limit</td><td>~250K rows per report</td><td>Billions of rows &mdash; separate analytics database</td></tr><tr><td>Real-time</td><td>Yes &mdash; queries live</td><td>Near-real-time &mdash; data synced via dataflow</td></tr><tr><td>External data</td><td>No</td><td>Yes &mdash; connect to external databases, CSV, Salesforce</td></tr><tr><td>AI/ML</td><td>No</td><td>Built-in predictions, Einstein Discovery</td></tr><tr><td>Components</td><td>Charts, tables, filters</td><td>Lenses, dashboards, stories, Einstein Predictions</td></tr><tr><td>Cost</td><td>Included in Salesforce</td><td>Requires separate license</td></tr><tr><td>Developer customization</td><td>Limited &mdash; UI only</td><td>SAQL (custom analytics query language), JSON dashboard config</td></tr></table>
+<div class="tip-box"><div class="tip-label">When CRM Analytics makes sense</div><p>When reporting on tens of millions of records, when you need cross-cloud analytics (Salesforce + external data warehouse), when stakeholders want interactive 'slice and dice' exploration rather than static reports.</p></div>
+</div></div>
+
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How do you export Salesforce report data programmatically using the Analytics REST API?</span><span class="qa-q-label lbl-domain">REPORTS</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<pre class="code">// Analytics REST API &mdash; access reports via HTTP callout (from external system or Apex)
+// Endpoint: /services/data/v59.0/analytics/reports/{reportId}
+// Must authenticate with OAuth access token
+
+// From external system (Python example pattern):
+// GET /services/data/v59.0/analytics/reports/00O5g000004xyzA
+// Returns JSON with column metadata and row data
+
+// From Apex (for inter-org or testing scenarios):
+HttpRequest req = new HttpRequest();
+req.setEndpoint('callout:Self_Named_Credential/services/data/v59.0/analytics/reports/00O5g000004xyzA');
+req.setMethod('GET');
+req.setHeader('Content-Type', 'application/json');
+HttpResponse res = new Http().send(req);
+
+Map&lt;String,Object&gt; report = (Map&lt;String,Object&gt;) JSON.deserializeUntyped(res.getBody());
+Map&lt;String,Object&gt; factMap = (Map&lt;String,Object&gt;) report.get('factMap');
+Map&lt;String,Object&gt; total  = (Map&lt;String,Object&gt;) factMap.get('T!T');
+List&lt;Object&gt; rows  = (List&lt;Object&gt;) total.get('rows');
+
+for (Object rowObj : rows) {
+  Map&lt;String,Object&gt; row   = (Map&lt;String,Object&gt;) rowObj;
+  List&lt;Object&gt; cells = (List&lt;Object&gt;) row.get('dataCells');
+  String value = (String) ((Map&lt;String,Object&gt;) cells[0]).get('label');
+}</pre>
+
+</div></div>

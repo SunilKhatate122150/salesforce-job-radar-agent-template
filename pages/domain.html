@@ -1,0 +1,80 @@
+<div class="page-title">US Mortgage Domain Knowledge</div>
+<div class="page-sub">Your biggest differentiator &mdash; most Salesforce devs don't know this. Use it in every interview.</div>
+
+<div class="domain-section">
+  <h3>Loan Lifecycle &mdash; Full Flow</h3>
+  <div class="domain-grid">
+    <div class="domain-card"><div class="domain-card-title">1. Pre-Qualification</div><p>Borrower provides basic info (income, assets, debt). LO gives informal estimate of loan amount. No credit pull, no commitment. Quick assessment &mdash; usually same day.</p></div>
+    <div class="domain-card"><div class="domain-card-title">2. Loan Application (1003)</div><p>Borrower completes Uniform Residential Loan Application (Form 1003). Credit is pulled here (hard inquiry). TRID clock starts &mdash; Loan Estimate must be delivered within 3 business days.</p></div>
+    <div class="domain-card"><div class="domain-card-title">3. Loan Processing</div><p>Processor collects all documentation: W2s, pay stubs, bank statements, tax returns, title report, appraisal ordered. Verifies employment (VOE), assets (VOA), income calculations. Typically 1&ndash;2 weeks.</p></div>
+    <div class="domain-card"><div class="domain-card-title">4. Underwriting</div><p>Underwriter analyzes the full loan file. Evaluates 3 Cs: Credit (FICO, history), Capacity (DTI, income), Collateral (appraisal, LTV). Issues Conditional Approval or Denial. Most complex stage.</p></div>
+    <div class="domain-card"><div class="domain-card-title">5. Conditional Approval</div><p>UW approves with conditions: "Provide updated bank statement", "Explain large deposit", "HOA letter required". Processor works with borrower to satisfy conditions. Loan goes back to UW for final clear.</p></div>
+    <div class="domain-card"><div class="domain-card-title">6. Clear to Close (CTC)</div><p>All conditions satisfied. UW gives Clear to Close. Closing Disclosure must be delivered 3 business days before closing date (TRID requirement). CD shows final loan terms.</p></div>
+    <div class="domain-card"><div class="domain-card-title">7. Closing</div><p>Borrower signs documents at title company or notary. Typically includes: Note, Deed of Trust, Closing Disclosure. Funds not disbursed yet &mdash; right of rescission period for refinances (3 days).</p></div>
+    <div class="domain-card"><div class="domain-card-title">8. Funding</div><p>Lender wires funds to title company. Loan is "funded" &mdash; money disbursed to seller. Deed recorded at county. Borrower gets keys. Loan is now a live mortgage.</p></div>
+    <div class="domain-card"><div class="domain-card-title">9. Post-Close / Servicing</div><p>Loan may be sold to secondary market (Fannie Mae, Freddie Mac). Servicing transferred. Monthly payments begin. Escrow account managed for taxes and insurance.</p></div>
+  </div>
+</div>
+
+<div class="domain-section">
+  <h3>Critical Compliance Regulations</h3>
+  <div class="domain-grid">
+    <div class="domain-card">
+      <div class="domain-card-title">TRID (TILA-RESPA Integrated Disclosure)</div>
+      <p>Effective 2015. Combines Truth in Lending Act and Real Estate Settlement Procedures Act disclosures.</p>
+      <ul>
+        <li><b>Loan Estimate (LE):</b> Must deliver within 3 business days of application</li>
+        <li><b>Closing Disclosure (CD):</b> Must deliver 3 business days before closing</li>
+        <li>Tolerance rules: certain fees cannot increase by more than 10% at closing vs LE</li>
+        <li>In Salesforce: Track LE sent date, CD sent date, calculate closing date restrictions automatically</li>
+      </ul>
+    </div>
+    <div class="domain-card">
+      <div class="domain-card-title">ECOA (Equal Credit Opportunity Act)</div>
+      <p>Prohibits discrimination in credit decisions based on race, color, religion, national origin, sex, marital status, age.</p>
+      <ul>
+        <li>Adverse Action Notice: Must be sent within 30 days of denial</li>
+        <li>Must state specific reasons for denial &mdash; "creditworthiness" not sufficient</li>
+        <li>HMDA data collection feeds into ECOA compliance monitoring</li>
+        <li>In Salesforce: Auto-generate adverse action letter when status = Denied</li>
+      </ul>
+    </div>
+    <div class="domain-card">
+      <div class="domain-card-title">FCRA (Fair Credit Reporting Act)</div>
+      <p>Governs how credit information is used and protected.</p>
+      <ul>
+        <li><b>Permissible Purpose:</b> Credit can only be pulled with borrower's signed written authorization</li>
+        <li>Borrower has right to dispute inaccurate info</li>
+        <li>In Salesforce: Store credit pull authorization date, link to signed document</li>
+        <li>Experian, Equifax, TransUnion are CRAs covered by FCRA</li>
+      </ul>
+    </div>
+    <div class="domain-card">
+      <div class="domain-card-title">HMDA (Home Mortgage Disclosure Act)</div>
+      <p>Requires lenders to collect and report data on home loan applications to CFPB.</p>
+      <ul>
+        <li>LAR (Loan Application Register) filed annually</li>
+        <li>Data includes: race, ethnicity, gender, income, loan type, action taken</li>
+        <li>Purpose: detect discriminatory lending patterns</li>
+        <li>In Salesforce: Custom object or fields to capture all required HMDA data points automatically</li>
+      </ul>
+    </div>
+    <div class="domain-card">
+      <div class="domain-card-title">BSA/AML + KYC</div>
+      <p>Bank Secrecy Act / Anti-Money Laundering. Know Your Customer.</p>
+      <ul>
+        <li><b>OFAC Screening:</b> Check borrower against SDN (Specially Designated Nationals) list before funding</li>
+        <li><b>SAR:</b> Suspicious Activity Report &mdash; must file if suspicious transaction detected</li>
+        <li><b>KYC:</b> Verify identity using government ID, SSN, address verification</li>
+        <li>In Salesforce: OFAC API integration &mdash; your Experian/OFAC work applies here</li>
+      </ul>
+    </div>
+    <div class="domain-card">
+      <div class="domain-card-title">Key Loan Metrics</div>
+      <p><b>DTI (Debt-to-Income Ratio):</b> Total monthly debt / gross monthly income. Conventional max: 43-50%. FHA max: 57%.</p>
+      <p><b>LTV (Loan-to-Value):</b> Loan amount / appraised value. Conventional max: 80% (without PMI). FHA: 96.5%.</p>
+      <p><b>FICO Score:</b> Conventional min: 620. FHA min: 580 (500 with 10% down). VA: 620 typical.</p>
+      <p><b>PMI:</b> Private Mortgage Insurance required when LTV &gt; 80% on conventional loans.</p>
+    </div>
+  </div>
+</div>

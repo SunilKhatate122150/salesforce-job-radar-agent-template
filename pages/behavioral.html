@@ -1,0 +1,228 @@
+<div class="page-title">Behavioral Interview &mdash; STAR Method Stories</div>
+<div class="page-sub">12 complete stories using YOUR real project experience. Read, then tell each story out loud from memory.</div>
+
+<div class="star-card open">
+  <div class="star-header" onclick="toggleStar(this)">
+    <span class="star-title">Tell me about yourself &mdash; 2-minute introduction</span>
+    <span class="star-tag">OPENING &mdash; MOST IMPORTANT</span>
+  </div>
+  <div class="star-body">
+    <div class="star-segment">
+      <div class="star-seg-label">Script &mdash; Read Aloud Until Memorized</div>
+      <div class="star-seg-text">"Thank you for this opportunity. My name is Sunil, and I'm a Salesforce Developer with four years of experience, currently based in Pune, Maharashtra. My expertise is concentrated in the US mortgage and financial services domain &mdash; which I believe makes me a strong fit for roles that involve complex, regulated business processes.<br><br>Professionally, I've worked both as a solo end-to-end developer and as a Senior Developer in team environments. In my most recent role at Inflooens India Operations, I was involved in building mortgage origination systems from the ground up &mdash; covering everything from custom Apex triggers and Lightning Web Components to third-party integrations with DocuSign for document generation, Experian for credit bureau pulls, and OFAC screening systems for regulatory compliance.<br><br>One of my most challenging and rewarding projects was a solo-built Loan Officer Campaign Platform where I integrated OpenAI GPT-4o for AI-driven content, the FRED API for economic data, and Freddie Mac's rate service &mdash; all within a single Salesforce org. That experience gave me deep confidence in end-to-end development and complex API architecture.<br><br>I'm now looking for a Senior Salesforce Developer role where I can bring this domain expertise and technical depth to help a team build scalable, compliant financial systems. I'm excited about this particular opportunity because..."</div>
+    </div>
+    <div class="star-segment">
+      <div class="star-seg-label">Practice Notes</div>
+      <div class="star-seg-text">Time yourself &mdash; this should be 1:45 to 2:15 minutes. Not shorter, not longer. Practice it 10 times until it sounds natural, not memorized. End with a genuine reason why you want THEIR specific role &mdash; do company research before every interview.</div>
+    </div>
+  </div>
+</div>
+
+<div class="star-card">
+  <div class="star-header" onclick="toggleStar(this)">
+    <span class="star-title">Tell me about the most complex project you've built</span>
+    <span class="star-tag">PROJECT STORY</span>
+  </div>
+  <div class="star-body">
+    <div class="star-segment">
+      <div class="star-seg-label">Situation</div>
+      <div class="star-seg-text">Our mortgage company needed loan officers to run targeted email campaigns to prospective borrowers, but they had no way to personalize content based on current market conditions like interest rates. The manual process was completely disconnected from real-time data.</div>
+    </div>
+    <div class="star-segment">
+      <div class="star-seg-label">Task</div>
+      <div class="star-seg-text">I was assigned as the sole developer to design and build this platform end-to-end &mdash; from architecture decisions to deployment. No other developer. I had to integrate multiple external APIs, build a full LWC UI, and ensure the system worked within Salesforce's governor limits at scale.</div>
+    </div>
+    <div class="star-segment">
+      <div class="star-seg-label">Action</div>
+      <div class="star-seg-text">I architected the platform using a service layer pattern to keep the integration logic completely separated from the Salesforce data layer. I integrated four external APIs: Resend for email delivery because it had better deliverability and a clean API compared to Salesforce's built-in email; OpenAI GPT-4o for AI-generated personalized email content based on borrower profile and loan type; the FRED API from the Federal Reserve to pull live economic indicators like unemployment and inflation data; and Freddie Mac's rate service for real-time mortgage rate feeds. I used Named Credentials for all authentication, Queueable Apex for async email processing to stay within callout limits, and built the entire front-end in LWC with a real-time rate dashboard and campaign builder interface. I wrote comprehensive test classes achieving 90% coverage.</div>
+    </div>
+    <div class="star-segment">
+      <div class="star-seg-label" style="color:var(--green)">Result</div>
+      <div class="star-result"><div class="star-seg-label">Impact</div><div class="star-seg-text">The platform launched on schedule. Loan officers could create and send personalized campaigns in 10 minutes compared to hours previously. Email open rates improved by around 35% due to AI-generated personalized content. I delivered this entirely solo &mdash; demonstrating ownership, architecture skills, and technical depth across the full Salesforce stack.</div></div>
+    </div>
+  </div>
+</div>
+
+<div class="star-card">
+  <div class="star-header" onclick="toggleStar(this)">
+    <span class="star-title">Describe the most complex integration you worked on</span>
+    <span class="star-tag">INTEGRATION STORY &mdash; Mortgage Platform</span>
+  </div>
+  <div class="star-body">
+    <div class="star-segment">
+      <div class="star-seg-label">Situation</div>
+      <div class="star-seg-text">In the Mortgage Origination Platform, we needed to integrate Experian's credit bureau API to automate the credit pull process. Previously, loan officers manually called Experian, received results in a PDF, and manually entered FICO scores into the system &mdash; taking 20&ndash;30 minutes per application and introducing data entry errors.</div>
+    </div>
+    <div class="star-segment">
+      <div class="star-seg-label">Task</div>
+      <div class="star-seg-text">As the senior developer on the integration module, I was responsible for designing and implementing the Experian integration &mdash; handling authentication, data mapping, error handling, FCRA compliance (we could only pull with signed authorization), and the UI for displaying results.</div>
+    </div>
+    <div class="star-segment">
+      <div class="star-seg-label">Action</div>
+      <div class="star-seg-text">I first worked with the business to map all the data fields we needed from Experian to our custom Salesforce objects. I set up Named Credentials for OAuth 2.0 authentication so credentials were never in code. I built the Apex service class using a Queueable job because we needed to make callouts after trigger DML. I implemented proper error handling with retry logic for rate limit errors (HTTP 429) and stored raw JSON responses in a related log object for audit purposes. For FCRA compliance, I added a check that only allowed credit pulls if a signed credit authorization document was already attached to the loan application &mdash; enforced in both Apex and in the LWC UI. I wrote HttpCalloutMock test classes achieving 95% coverage on the integration service.</div>
+    </div>
+    <div class="star-segment">
+      <div class="star-seg-label" style="color:var(--green)">Result</div>
+      <div class="star-result"><div class="star-seg-label">Impact</div><div class="star-seg-text">Credit pull time reduced from 25 minutes to under 30 seconds. Data entry errors were eliminated. The FCRA compliance check prevented unauthorized pulls, reducing compliance risk significantly. The integration also served as the template for our OFAC screening integration that followed.</div></div>
+    </div>
+  </div>
+</div>
+
+<div class="star-card">
+  <div class="star-header" onclick="toggleStar(this)">
+    <span class="star-title">Tell me about a time you debugged a critical production issue</span>
+    <span class="star-tag">PROBLEM SOLVING</span>
+  </div>
+  <div class="star-body">
+    <div class="star-segment">
+      <div class="star-seg-label">Situation</div>
+      <div class="star-seg-text">In production, loan officers started reporting that some loans were getting stuck in "Processing" status and not automatically advancing to "Underwriting" after all required documents were attached. This was happening intermittently &mdash; about 15-20% of qualifying loans were affected. This was critical because delayed processing meant delayed closings, which upset borrowers and could cause regulatory issues.</div>
+    </div>
+    <div class="star-segment">
+      <div class="star-seg-label">Task</div>
+      <div class="star-seg-text">I needed to identify root cause quickly &mdash; the business was escalating the issue. I had to diagnose a bug that was intermittent, in a trigger that ran on file attachment, in a production org I couldn't deploy to without change management approval.</div>
+    </div>
+    <div class="star-segment">
+      <div class="star-seg-label">Action</div>
+      <div class="star-seg-text">First, I checked the Salesforce Debug Logs for the affected loan IDs &mdash; I found several with a "governor limit exception" for SOQL queries but it was being swallowed by an empty catch block. The trigger was counting document types attached to the loan, but the query was inside a for loop &mdash; so when 6 or more documents were attached at once (which happened when users did bulk uploads), the 100 SOQL limit was hit and the exception was silently caught and ignored. I fixed the bug in sandbox by refactoring to collect all Loan IDs first, then use a single aggregate SOQL query to count documents per loan. I also removed the empty catch block and replaced it with proper error logging to a custom Error Log object. I created a quick emergency fix and worked with the team to get it deployed through a hotfix process. I also wrote a data fix script to reprocess the stuck loans.</div>
+    </div>
+    <div class="star-segment">
+      <div class="star-seg-label" style="color:var(--green)">Result</div>
+      <div class="star-result"><div class="star-seg-label">Impact</div><div class="star-seg-text">Bug was identified within 2 hours and fixed within 4 hours. 47 stuck loans were reprocessed. I added a code review rule to the team: never empty catch blocks, always test with 200 records in bulk. This incident became a learning session I led for the team on governor limits and bulkification.</div></div>
+    </div>
+  </div>
+</div>
+
+<div class="star-card">
+  <div class="star-header" onclick="toggleStar(this)">
+    <span class="star-title">Tell me about a time you disagreed with a technical decision</span>
+    <span class="star-tag">CONFLICT / TECHNICAL LEADERSHIP</span>
+  </div>
+  <div class="star-body">
+    <div class="star-segment">
+      <div class="star-seg-label">Situation</div>
+      <div class="star-seg-text">During the Mortgage Origination Platform project, the team lead proposed using Aura components for all new UI development because the team was more familiar with Aura at the time. I believed this was the wrong direction given where Salesforce was heading with LWC.</div>
+    </div>
+    <div class="star-segment">
+      <div class="star-seg-label">Task</div>
+      <div class="star-seg-text">I needed to raise my concern constructively without creating conflict &mdash; the team lead had more experience than me overall. I had to be persuasive with data, not just opinion.</div>
+    </div>
+    <div class="star-segment">
+      <div class="star-seg-label">Action</div>
+      <div class="star-seg-text">I prepared a comparison document showing: LWC performance benchmarks, Salesforce's official roadmap indicating LWC is the future (no new features in Aura), the fact that LWC has standard Jest testing while Aura has no unit test framework, and a realistic estimate that the team could learn LWC basics in 2 weeks. I presented this calmly in our next sprint planning, framing it as a risk discussion rather than a criticism of the existing decision. I also offered to build the first component in LWC and document the patterns so the team could follow &mdash; removing the "unknown" risk they were worried about.</div>
+    </div>
+    <div class="star-segment">
+      <div class="star-seg-label" style="color:var(--green)">Result</div>
+      <div class="star-result"><div class="star-seg-label">Impact</div><div class="star-seg-text">The team agreed to move to LWC for all new components. I built the first three components and wrote a team style guide for LWC patterns. Within a month, the entire team was comfortable in LWC and appreciated not being locked into legacy technology. The project's UI components ended up much more performant than if we had used Aura.</div></div>
+    </div>
+  </div>
+</div>
+
+<div class="star-card">
+  <div class="star-header" onclick="toggleStar(this)">
+    <span class="star-title">Tell me about a time you worked under pressure / tight deadline</span>
+    <span class="star-tag">PRESSURE / DELIVERY</span>
+  </div>
+  <div class="star-body">
+    <div class="star-segment">
+      <div class="star-seg-label">Situation</div>
+      <div class="star-seg-text">During the Loan Officer Campaign Platform project, a regulatory deadline meant the system had to be live before a specific date &mdash; our original timeline was cut by 3 weeks due to a business decision I had no control over. I was the only developer on this project.</div>
+    </div>
+    <div class="star-segment">
+      <div class="star-seg-label">Task</div>
+      <div class="star-seg-text">I had to re-scope the delivery to meet the hard deadline without compromising the core functionality or cutting corners on code quality and testing that would hurt us in production later.</div>
+    </div>
+    <div class="star-segment">
+      <div class="star-seg-label">Action</div>
+      <div class="star-seg-text">I immediately created a prioritization matrix &mdash; must-have vs nice-to-have features. I identified that the AI content generation and FRED API integration were phase 2 features that could launch after go-live without blocking the core campaign functionality. I communicated this clearly to the product owner with specific delivery dates for both phases. I then focused exclusively on the core: email sending via Resend API, campaign management UI, and basic rate integration. I worked longer hours for 2 weeks but structured my day to maintain quality &mdash; coding in the morning when focused, testing in the afternoon, reviewing my own code every evening.</div>
+    </div>
+    <div class="star-segment">
+      <div class="star-seg-label" style="color:var(--green)">Result</div>
+      <div class="star-result"><div class="star-seg-label">Impact</div><div class="star-seg-text">Phase 1 launched on the regulatory deadline with zero production bugs. Phase 2 features were delivered 2 weeks after go-live as promised. The structured re-scoping prevented panic delivery of a broken product. The product owner appreciated the transparency about what was achievable.</div></div>
+    </div>
+</div>
+
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">Tell me about a time you had to learn a complex new technology quickly?</span><span class="qa-q-label lbl-behav">BEHAVIORAL</span><span class="qa-chevron"></span></div><div class="qa-answer">
+<p class="ans-p"><b>Situation:</b> Three months into my project, the client added a requirement to integrate with Experian credit bureau API. I had never worked with credit bureau APIs or FCRA compliance requirements.</p>
+<p class="ans-p"><b>Task:</b> Design and build a production-grade credit pull integration in six weeks, including FCRA-compliant data handling, error handling, and retry logic.</p>
+<p class="ans-p"><b>Action:</b> I broke it into three tracks. First, read Experian documentation end-to-end and built a proof-of-concept callout in Developer Org within week one. Second, studied FCRA requirements and documented how our implementation needed to comply. Third, called two Salesforce partners who had done credit bureau integrations to learn their architecture decisions.</p>
+<p class="ans-p"><b>Result:</b> Integration went live week five &mdash; one week early. Handles 200+ credit pulls daily with 99.2% success rate. The FCRA approach I designed became the standard for all subsequent integrations.</p>
+</div></div>
+
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">Describe a time you disagreed with a senior technical decision?</span><span class="qa-q-label lbl-behav">BEHAVIORAL</span><span class="qa-chevron"></span></div><div class="qa-answer">
+<p class="ans-p"><b>Situation:</b> During architecture review, the tech lead proposed using Workflow Rules and polling every 5 minutes for the LOS sync. I believed Platform Events would be significantly better.</p>
+<p class="ans-p"><b>Task:</b> Make the case diplomatically without undermining the tech lead.</p>
+<p class="ans-p"><b>Action:</b> I asked for 20 minutes in the next design session. I prepared a comparison: the polling approach would execute 288 scheduled jobs per day and make 288 API calls regardless of whether data changed. Platform Events would only trigger when data changed and scale from 10 to 10,000 loan changes per day without architecture change. I framed it as considering all options, not criticising.</p>
+<p class="ans-p"><b>Result:</b> Tech lead agreed to pilot the Platform Event approach. We adopted it for production. I learned that HOW you raise a disagreement matters as much as whether you are technically right.</p>
+</div></div>
+
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">Tell me about the most complex bug you debugged?</span><span class="qa-q-label lbl-behav">BEHAVIORAL</span><span class="qa-chevron"></span></div><div class="qa-answer">
+<p class="ans-p"><b>Situation:</b> In production, loan status intermittently did not update even though LWC showed Save Successful. Happened 3% of the time &mdash; no reproducible steps.</p>
+<p class="ans-p"><b>Action:</b> I ruled out obvious causes &mdash; no failed DML, no validation failures, no sharing issues. The 3% rate correlated with concurrent edits &mdash; two users updating the same record within seconds. Found that our static variable recursion guard was set to true even when the first trigger invocation failed, and was never reset in a finally block. When User B saved immediately after, the guard was still true and the handler exited early.</p>
+<p class="ans-p"><b>Result:</b> After resetting the flag in a finally block, the failure rate dropped to zero over 30 days. Lesson: intermittent bugs almost always have a concurrency or state management root cause.</p>
+</div></div>
+
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">Describe a time you delivered difficult news to a client?</span><span class="qa-q-label lbl-behav">BEHAVIORAL</span><span class="qa-chevron"></span></div><div class="qa-answer">
+<p class="ans-p"><b>Situation:</b> Two weeks before go-live, I found a logic error in pro-rated interest calculations affecting 23 of 180 test records. CFO had already signed off on UAT.</p>
+<p class="ans-p"><b>Action:</b> I requested a live call with the project sponsor and CFO the same day. I prepared: exact scope of the problem, root cause, complete fix plan, and two options &mdash; delay one week or go-live with documented manual workaround for 23 affected loan types. I led with facts: 'In validation we found a calculation error affecting 12% of records. Here are your two options.'</p>
+<p class="ans-p"><b>Result:</b> Client chose the one-week delay. CFO said: 'This is exactly how I want issues raised &mdash; facts, impact, options.' We went live one week later with zero calculation issues in production.</p>
+</div></div>
+
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">Tell me about mentoring a junior developer?</span><span class="qa-q-label lbl-behav">BEHAVIORAL</span><span class="qa-chevron"></span></div><div class="qa-answer">
+<p class="ans-p"><b>Situation:</b> A junior developer was writing trigger logic directly in .trigger files with SOQL inside loops. Their trigger would have hit the governor limit at 50+ records.</p>
+<p class="ans-p"><b>Action:</b> Instead of just commenting 'fix the SOQL', I scheduled a 45-minute pairing session. I explained WHY the limit exists &mdash; Salesforce multi-tenant architecture means one org's runaway Apex impacts all orgs on the same server. Then we refactored together &mdash; I asked questions rather than gave answers: 'What information do we need from Account? Can we get all of it at once?'</p>
+<p class="ans-p"><b>Result:</b> In the next sprint, zero bulkification issues in their code reviews. They later became the person on our team who explained bulkification to new joiners. Most effective mentoring asks questions that guide discovery, not gives answers directly.</p>
+</div></div>
+
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">Describe balancing technical quality with deadline pressure?</span><span class="qa-q-label lbl-behav">BEHAVIORAL</span><span class="qa-chevron"></span></div><div class="qa-answer">
+<p class="ans-p"><b>Situation:</b> On day 8 of a 10-day sprint, I realised my DocuSign polling approach would not handle webhook failures &mdash; no retry mechanism.</p>
+<p class="ans-p"><b>Action:</b> I assessed the real risk: the polling worked for 95% of cases. Webhook miss was rare and required manual follow-up. I documented the gap clearly: frequency of impact and 3-day effort to fix properly. I brought this to the product owner with two clear options and let them decide &mdash; making sure they understood the risk they were accepting, not protecting myself.</p>
+<p class="ans-p"><b>Result:</b> Product owner chose to deliver on time. Fixed properly in Sprint 4. The limitation was hit twice before the fix &mdash; both handled manually with no customer impact. Technical debt is sometimes the right call, but only when risk is quantified and the stakeholder consciously accepts it.</p>
+</div></div>
+
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">Tell me about working with legacy code and technical debt?</span><span class="qa-q-label lbl-behav">BEHAVIORAL</span><span class="qa-chevron"></span></div><div class="qa-answer">
+<p class="ans-p"><b>Situation:</b> Joined a project with an Account trigger that was 800 lines of procedural code in the .trigger file &mdash; no handler pattern, SOQL scattered throughout, 65% test coverage.</p>
+<p class="ans-p"><b>Action:</b> First two days: mapping all automations and dependencies before touching anything. Then wrote tests for existing behaviour to lock in a baseline. For new features, created a new handler class and restructured the trigger to call it &mdash; not touching existing logic. Over four sprints, proposed two story points per sprint for debt reduction, framed in business terms: 'This refactoring reduces deployment time from 4 hours to 45 minutes.'</p>
+<p class="ans-p"><b>Result:</b> After four sprints: fully converted to handler pattern, test coverage 91%, Account deployment time dropped from 4+ hours to under one hour.</p>
+</div></div>
+
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">Describe your approach to code reviews &mdash; giving and receiving?</span><span class="qa-q-label lbl-behav">BEHAVIORAL</span><span class="qa-chevron"></span></div><div class="qa-answer">
+<p class="ans-p"><b>Giving reviews &mdash; my framework:</b></p>
+<ul class="ans-list">
+  <li><b>Severity labels:</b> Must Fix (blocker), Should Fix (important), Consider (suggestion). No ambiguity about what is required.</li>
+  <li><b>Explain why, not just what:</b> Not just 'move SOQL outside the loop' &mdash; explain the governor limit consequence that will hit production.</li>
+  <li><b>Acknowledge what is well done:</b> If someone wrote clean bulkification or good test assertions, say so explicitly.</li>
+  <li><b>Style is a Consider, not Must Fix:</b> Unless the team has an agreed style guide, personal preferences should never block a PR.</li>
+</ul>
+<p class="ans-p"><b>Receiving reviews:</b></p>
+<ul class="ans-list">
+  <li>Every comment gets a response &mdash; Fixed or I disagree because X, let's discuss.</li>
+  <li>Never take feedback personally &mdash; the code is reviewed, not me.</li>
+  <li>Disagree with Must Fix? Request a conversation, not a comment thread.</li>
+  <li>After a review, look for patterns in feedback &mdash; recurring issues mean something to learn.</li>
+</ul>
+</div></div>
+
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">Tell me about handling a production incident?</span><span class="qa-q-label lbl-behav">BEHAVIORAL</span><span class="qa-chevron"></span></div><div class="qa-answer">
+<p class="ans-p"><b>Situation:</b> At 9 AM Monday, loan officers reported the LWC loan form was throwing errors for all FHA loans. Production impact &mdash; officers could not submit FHA applications.</p>
+<p class="ans-p"><b>Action:</b> First 5 minutes: set up debug log, reproduced the error, captured the stack trace. Error: NullPointerException in FHALoanProcessor.calculateRate() &mdash; a Custom Metadata deployment from Friday had accidentally wiped the FHA rate configuration row. Fix: added the missing metadata record directly in Setup &mdash; no deployment needed for CMDT records. Total time: 23 minutes from first report to resolution.</p>
+<p class="ans-p"><b>Result:</b> Loan officers back to full operation in 23 minutes. Post-incident: added metadata validation check to deployment checklist and created Scheduled Apex that verifies required CMDT records exist and alerts admins if any are missing.</p>
+</div></div>
+
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">Where do you see yourself in 3-5 years &mdash; how does this role fit?</span><span class="qa-q-label lbl-behav">BEHAVIORAL</span><span class="qa-chevron"></span></div><div class="qa-answer">
+<p class="ans-p">In 3 to 5 years, I want to be making architecture decisions for complex Salesforce implementations &mdash; not just executing them. I want to be the person who can say 'here is why Platform Events serve us better than polling, and here is the risk we accept' with full technical credibility.</p>
+<p class="ans-p">This role fits specifically because: the US mortgage domain requires FCRA and RESPA compliance &mdash; those constraints force you to build correctly. The senior developer position means real design decisions. And I am working toward the Salesforce Architect certification &mdash; the complexity of this work is the fastest path to that knowledge.</p>
+<div class="tip-box"><div class="tip-label">Key elements of strong answer</div><p>1. Specific &mdash; name what you want to do, not vague growth. 2. Connected to THIS role specifically. 3. Ambitious but realistic. 4. Shows long-term commitment.</p></div>
+</div></div>
+
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How do you stay current with Salesforce releases and new features?</span><span class="qa-q-label lbl-behav">BEHAVIORAL</span><span class="qa-chevron"></span></div><div class="qa-answer">
+<p class="ans-p">Salesforce releases 3 major updates per year: Spring (February), Summer (June), Winter (October).</p>
+<ul class="ans-list">
+  <li><b>Release Notes:</b> Read for every release &mdash; focus on Apex API changes, LWC new capabilities, Flow enhancements, deprecated features and their retirement timelines.</li>
+  <li><b>Pre-release orgs:</b> Available 4-6 weeks before each release. Test existing code against the new release before it hits production.</li>
+  <li><b>Trailhead release modules:</b> 1-2 new modules per release &mdash; fastest way to learn what changed.</li>
+  <li><b>Certification maintenance:</b> Salesforce certs require annual maintenance exams. These force you to learn what changed.</li>
+  <li><b>Deprecation tracking:</b> Personal timeline &mdash; when does Process Builder retire? When does WITH SECURITY_ENFORCED become wrong? Plan migrations proactively.</li>
+</ul>
+<div class="tip-box"><div class="tip-label">Interview answer</div><p>Say: I stay current through release notes and the Salesforce Developer Blog, and I test major features in sandbox before they reach production. I also track the Process Builder deprecation timeline because we have existing automations that need migration to Flow &mdash; I want to stay ahead of forced retirements rather than scramble at the deadline.</p></div>
+</div></div>

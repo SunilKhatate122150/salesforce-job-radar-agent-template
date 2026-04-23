@@ -1,0 +1,122 @@
+<div class="page-title">Security &amp; Sharing Model &mdash; Interview Questions</div>
+<div class="page-sub">18 questions &mdash; from OWD fundamentals to Apex managed sharing and FLS enforcement</div>
+
+<div class="qa-block">
+  <div class="qa-question" onclick="toggleQA(this)">
+    <span class="qa-q-text">Explain the Salesforce security model layers from top to bottom</span>
+    <span class="qa-q-label lbl-sec">SECURITY</span>
+    <span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span>
+  </div>
+  <div class="qa-answer">
+    <p class="ans-p">Salesforce security is layered &mdash; each layer controls a different level of access:</p>
+    <ul class="ans-list">
+      <li><b>Organization Level:</b> Login hours, IP restrictions, password policies, 2FA settings</li>
+      <li><b>Object Level (CRUD):</b> Profiles and Permission Sets control Create, Read, Edit, Delete per object</li>
+      <li><b>Field Level (FLS):</b> Profiles and Permission Sets control visibility and editability of individual fields</li>
+      <li><b>Record Level (Sharing):</b> OWD, Role Hierarchy, Sharing Rules, Manual Sharing, Apex Sharing control which records a user can see</li>
+    </ul>
+    <p class="ans-p"><b>Important rule:</b> These layers work together &mdash; a user must pass ALL layers. Even if sharing rules give record access, FLS still controls which fields are visible. Even if CRUD gives object access, OWD may restrict which records.</p>
+    <div class="tip-box"><div class="tip-label">How to remember it</div><p>Think of it as security gates: Org gate ΓåÆ Object gate ΓåÆ Field gate ΓåÆ Record gate. A user must pass through all gates to see a specific field value on a specific record.</p></div>
+  </div>
+</div>
+
+<div class="qa-block">
+  <div class="qa-question" onclick="toggleQA(this)">
+    <span class="qa-q-text">What is OWD? Explain each setting and when you use it.</span>
+    <span class="qa-q-label lbl-sec">SECURITY</span>
+    <span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span>
+  </div>
+  <div class="qa-answer">
+    <p class="ans-p">OWD (Organization-Wide Default) is the <b>baseline record access level</b> for every object. It sets the most restrictive access level, and you then open up access using Role Hierarchy, Sharing Rules, or Manual Sharing.</p>
+    <table class="comparison-table">
+      <tr><th>OWD Setting</th><th>What It Means</th><th>Use Case</th></tr>
+      <tr><td>Private</td><td>Only record owner (and users above in role hierarchy) can see/edit</td><td>Loan applications &mdash; only assigned loan officer should see their loans</td></tr>
+      <tr><td>Public Read Only</td><td>Everyone can read, only owner can edit</td><td>Rate sheets, product catalog that all can see but only admins edit</td></tr>
+      <tr><td>Public Read/Write</td><td>Everyone can read and edit</td><td>Shared lookup tables, common reference data</td></tr>
+      <tr><td>Controlled by Parent</td><td>Inherits access from parent object</td><td>Contact inheriting Account's sharing &mdash; if you can see Account, you can see its Contacts</td></tr>
+    </table>
+    <div class="tip-box"><div class="tip-label">Key principle</div><p>Always set OWD to the most restrictive setting that makes sense for the object, then use sharing rules and role hierarchy to open up access. Never start with Public and try to restrict down &mdash; that's architecturally wrong and leads to data exposure.</p></div>
+  </div>
+</div>
+
+<div class="qa-block">
+  <div class="qa-question" onclick="toggleQA(this)">
+    <span class="qa-q-text">What is with sharing, without sharing, inherited sharing &mdash; explain with code</span>
+    <span class="qa-q-label lbl-sec">SECURITY</span>
+    <span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span>
+  </div>
+  <div class="qa-answer">
+    <table class="comparison-table">
+      <tr><th>Keyword</th><th>Behavior</th><th>When to Use</th></tr>
+      <tr><td>with sharing</td><td>Enforces the running user's sharing rules in SOQL/DML &mdash; user only sees records they have access to</td><td>Default for all service classes &mdash; always use this unless there's a reason not to</td></tr>
+      <tr><td>without sharing</td><td>Runs in system mode &mdash; ignores sharing rules, user sees all records</td><td>Batch jobs, system processes, when you explicitly need access beyond user's permissions</td></tr>
+      <tr><td>inherited sharing</td><td>Inherits sharing context from the calling class</td><td>Utility/helper classes that should adapt to their caller's sharing context</td></tr>
+      <tr><td>(no keyword)</td><td>Defaults to without sharing for classes called from system context (triggers, batch)</td><td>Avoid &mdash; be explicit about sharing intent</td></tr>
+    </table>
+    <pre class="code"><span class="cmt">// Service class - always explicitly declare sharing</span>
+public with sharing class <span class="cls">LoanService</span> {
+    <span class="cmt">// Enforces user's sharing - borrowers can't see other borrowers' loans</span>
+    public static <span class="cls">List</span>&lt;<span class="cls">Loan__c</span>&gt; getUserLoans() {
+        return [SELECT Id, LoanAmount__c, Status__c FROM Loan__c];
+        <span class="cmt">// Only returns loans this user can see based on OWD + sharing rules</span>
+    }
+}
+
+<span class="cmt">// Batch job - needs system-level access to process all records</span>
+public without sharing class <span class="cls">LoanInterestBatch</span> implements <span class="cls">Database</span>.<span class="cls">Batchable</span>&lt;<span class="cls">SObject</span>&gt; {
+    <span class="cmt">// Processes ALL loans regardless of ownership - needed for system batch</span>
+}
+
+<span class="cmt">// Utility class - adapts to caller's sharing</span>
+public inherited sharing class <span class="cls">ValidationUtils</span> {
+    <span class="cmt">// If called from with sharing context, respects sharing</span>
+    // If called from without sharing context, runs in system mode
+    public static <span class="cls">Boolean</span> isValidLoanAmount(<span class="cls">Decimal</span> amount) {
+        return amount > 0 &amp;&amp; amount &lt;= 5000000;
+    }
+}</pre>
+  </div>
+</div>
+
+<div class="qa-block">
+  <div class="qa-question" onclick="toggleQA(this)">
+    <span class="qa-q-text">How do you enforce FLS in Apex? What is stripInaccessible?</span>
+    <span class="qa-q-label lbl-sec">SECURITY</span>
+    <span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span>
+  </div>
+  <div class="qa-answer">
+    <pre class="code"><span class="cmt">// Method 1: Manual FLS check before DML</span>
+public static void updateLoanStatus(<span class="cls">Loan__c</span> loan) {
+    <span class="cls">Schema.SObjectField</span> statusField = <span class="cls">Loan__c</span>.SObjectType.getDescribe()
+                                       .fields.getMap().get('Status__c');
+    if(!statusField.getDescribe().isUpdateable()) {
+        throw new <span class="cls">SecurityException</span>('You do not have permission to update Status field');
+    }
+    update loan;
+}
+
+<span class="cmt">// Method 2: stripInaccessible - BEST for bulk operations</span>
+// Automatically removes fields the user cannot access - no exception thrown
+public static void safeInsertContacts(<span class="cls">List</span>&lt;<span class="cls">Contact</span>&gt; contacts) {
+    <span class="cmt">// Before DML - strips fields user cannot edit</span>
+    <span class="cls">SObjectAccessDecision</span> decision = Security.stripInaccessible(
+        <span class="cls">AccessType</span>.CREATABLE,  <span class="cmt">// CREATABLE, UPDATABLE, READABLE, UPSERTABLE</span>
+        contacts
+    );
+    insert decision.getRecords(); <span class="cmt">// only accessible fields are set</span>
+}
+
+<span class="cmt">// Method 3: WITH USER_MODE in SOQL (clean, modern)</span>
+<span class="cls">List</span>&lt;<span class="cls">Loan__c</span>&gt; loans = [
+    SELECT Id, LoanAmount__c, SSN__c 
+    FROM Loan__c 
+    WITH USER_MODE  <span class="cmt">// silently excludes fields user cannot see</span>
+];
+
+<span class="cmt">// CRUD check before DML</span>
+if(!<span class="cls">Loan__c</span>.sObjectType.getDescribe().isCreateable()) {
+    throw new <span class="cls">SecurityException</span>('No permission to create Loan records');
+}</pre>
+    <div class="tip-box"><div class="tip-label">When to use stripInaccessible</div><p>Use stripInaccessible when displaying or inserting records from user input &mdash; like when saving a form submitted by a Community user. It silently cleans the data rather than throwing errors, making for a better user experience while maintaining security.</p></div>
+  </div>
+</div>

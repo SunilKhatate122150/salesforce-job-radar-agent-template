@@ -1,0 +1,227 @@
+<div class="page-title">Aura Components &mdash; Interview Questions</div>
+<div class="page-sub">10 questions &mdash; know enough to maintain and debug legacy Aura code</div>
+<div class="qa-block">
+  <div class="qa-question" onclick="toggleQA(this)">
+    <span class="qa-q-text">What is the difference between LWC and Aura &mdash; give 5 key differences</span>
+    <span class="qa-q-label lbl-lwc">AURA vs LWC</span>
+    <span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span>
+  </div>
+  <div class="qa-answer">
+    <table class="comparison-table">
+      <tr><th>Feature</th><th>LWC (Lightning Web Components)</th><th>Aura Components</th></tr>
+      <tr><td>Standard</td><td>Based on W3C Web Standards (custom elements, shadow DOM)</td><td>Proprietary Salesforce framework</td></tr>
+      <tr><td>Performance</td><td>Faster &mdash; less framework overhead, compiled to native browser APIs</td><td>Slower &mdash; more abstraction layers</td></tr>
+      <tr><td>JavaScript</td><td>Modern ES6+ &mdash; classes, arrow functions, modules, async/await</td><td>Older ES5 pattern &mdash; controller.js, helper.js separation</td></tr>
+      <tr><td>Testing</td><td>Jest testing &mdash; industry standard unit testing</td><td>No standard unit test framework</td></tr>
+      <tr><td>Communication</td><td>CustomEvent, LMS, @api</td><td>Application events, Component events (more complex)</td></tr>
+      <tr><td>File structure</td><td>.html, .js, .css, .js-meta.xml</td><td>.cmp, Controller.js, Helper.js, Style.css, Renderer.js</td></tr>
+      <tr><td>Data binding</td><td>One-way by default, explicit two-way</td><td>Two-way binding everywhere (can cause performance issues)</td></tr>
+      <tr><td>Salesforce direction</td><td>Future &mdash; all new features here</td><td>Maintenance mode only &mdash; no new features</td></tr>
+    </table>
+    <div class="tip-box"><div class="tip-label">Interview answer tip</div><p>Say: "LWC is based on web standards, which means faster performance and easier debugging with browser dev tools. Aura is a proprietary framework that predates web components. In current projects, I always build in LWC and only touch Aura when maintaining legacy components. Salesforce itself is investing all new features in LWC."</p></div>
+  </div>
+</div>
+
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How do you call Apex from an Aura component &mdash; complete callback pattern?</span><span class="qa-q-label lbl-lwc">AURA</span><span class="qa-chevron"></span></div><div class="qa-answer">
+<p class="ans-p">All Aura Apex calls are asynchronous and use a callback pattern (unlike LWC async/await).</p>
+<pre class="code">// MyComp.cmp
+&lt;aura:component controller="LoanController"&gt;
+  &lt;aura:attribute name="loans" type="Loan__c[]"/&gt;
+  &lt;aura:attribute name="isLoading" type="Boolean" default="false"/&gt;
+  &lt;aura:handler name="init" value="{!this}" action="{!c.doInit}"/&gt;
+  &lt;aura:iteration items="{!v.loans}" var="loan"&gt;
+    &lt;p&gt;{!loan.Name}&lt;/p&gt;
+  &lt;/aura:iteration&gt;
+&lt;/aura:component&gt;
+
+// MyCompController.js
+({
+  doInit: function(component, event, helper) {
+    component.set('v.isLoading', true);
+    var action = component.get('c.getLoans');  // c. = Apex controller
+    action.setParams({ status: 'Active' });
+    action.setCallback(this, function(response) {
+      component.set('v.isLoading', false);
+      if (response.getState() === 'SUCCESS') {
+        component.set('v.loans', response.getReturnValue());
+      } else {
+        var errors = response.getError();
+        console.error('Error:', errors[0].message);
+      }
+    });
+    action.setStorable(); // cache result (like cacheable=true in LWC)
+    $A.enqueueAction(action);
+  }
+})</pre>
+</div></div>
+
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">What are Aura component events vs application events &mdash; when to use each?</span><span class="qa-q-label lbl-lwc">AURA</span><span class="qa-chevron"></span></div><div class="qa-answer">
+<table class="comparison-table"><tr><th>Type</th><th>Scope</th><th>Direction</th><th>Use when</th></tr><tr><td>Component Event</td><td>Bubbles up through component hierarchy</td><td>Child ΓåÆ Parent ancestor only</td><td>Parent needs to react to child action</td></tr><tr><td>Application Event</td><td>Broadcast to ALL handlers in entire app</td><td>Any component ΓåÆ any other component</td><td>Truly unrelated components need to communicate</td></tr></table>
+<pre class="code">// Component Event (preferred &mdash; more contained)
+// LoanSelectedEvt.evt: &lt;aura:event type="COMPONENT"&gt;&lt;aura:attribute name="loanId" type="String"/&gt;&lt;/aura:event&gt;
+// Fire: component.getEvent('loanSelected').setParams({loanId: id}).fire();
+// Handle in parent: &lt;aura:handler name="loanSelected" event="c:LoanSelectedEvt" action="{!c.onSelect}"/&gt;
+
+// Application Event (use sparingly)
+// &lt;aura:event type="APPLICATION"&gt;&lt;aura:attribute name="loanId" type="String"/&gt;&lt;/aura:event&gt;
+// Fire: $A.get('e.c:LoanApprovedEvt').setParams({loanId: id}).fire();
+// Handle anywhere: &lt;aura:handler event="c:LoanApprovedEvt" action="{!c.onApproval}"/&gt;</pre>
+<div class="warn-box"><div class="warn-label">Application events create tight coupling</div><p>They fire to every registered handler in the app. In large orgs this makes debugging very hard. Prefer Component Events or migrate to LWC + Lightning Message Service.</p></div>
+</div></div>
+
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">What is Aura Locker Service &mdash; what restrictions does it impose?</span><span class="qa-q-label lbl-lwc">AURA</span><span class="qa-chevron"></span></div><div class="qa-answer">
+<p class="ans-p">Locker Service is Salesforce's JavaScript security sandbox for Aura. It wraps DOM elements in SecureElement proxies to prevent cross-component DOM access and XSS.</p>
+<ul class="ans-list">
+  <li><b>Cannot use document.querySelector()</b> &mdash; blocked. Use component.find('aura:id') instead</li>
+  <li><b>instanceof checks fail</b> &mdash; element instanceof HTMLInputElement returns false (it's a SecureElement). Check tagName instead</li>
+  <li><b>eval() and Function() blocked</b> &mdash; cannot dynamically execute code strings</li>
+  <li><b>Cross-namespace DOM access blocked</b> &mdash; cannot access another component's internal DOM</li>
+  <li><b>Some browser globals restricted</b> &mdash; window, document proxied through Locker</li>
+</ul>
+<pre class="code">// WRONG &mdash; blocked by Locker
+var input = document.getElementById('myInput');
+if (input instanceof HTMLInputElement) { } // always false
+
+// CORRECT &mdash; Aura safe patterns
+var input = component.find('myInput'); // find by aura:id
+if (input.getElement().tagName === 'INPUT') { } // check tagName not instanceof</pre>
+</div></div>
+
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How do Aura components communicate with Lightning Web Components?</span><span class="qa-q-label lbl-lwc">AURA</span><span class="qa-chevron"></span></div><div class="qa-answer">
+<p class="ans-p">LWC components can be used inside Aura components but the reverse is not true &mdash; you cannot use Aura inside LWC.</p>
+<pre class="code">// Using LWC inside Aura &mdash; works natively
+&lt;aura:component&gt;
+  &lt;!-- c-loan-card is an LWC component --&gt;
+  &lt;c-loan-card loan-id="{!v.selectedLoanId}" onloanapproved="{!c.handleApproval}"&gt;&lt;/c-loan-card&gt;
+&lt;/aura:component&gt;
+
+// LWC child communicates to Aura parent via Custom Events &mdash; Aura listens with on prefix
+// LWC fires: this.dispatchEvent(new CustomEvent('loanapproved', { detail: { loanId } }));
+// Aura handles: onloanapproved="{!c.handleApproval}"
+// handleApproval: function(cmp, event) { var loanId = event.getParam('detail').loanId; }
+
+// Lightning Message Service (LMS) &mdash; works for both Aura and LWC
+// Best for two-way communication between Aura and LWC components on the same page</pre>
+<div class="tip-box"><div class="tip-label">Migration strategy</div><p>Wrap existing Aura components in LWC wrappers gradually. New features = LWC. Existing Aura = maintain until full replacement. Use LMS as the communication bridge during transition.</p></div>
+</div></div>
+
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">What are Aura attributes &mdash; types, defaults, access modifiers?</span><span class="qa-q-label lbl-lwc">AURA</span><span class="qa-chevron"></span></div><div class="qa-answer">
+<pre class="code">&lt;aura:component access="global"&gt;
+  &lt;!-- Basic types --&gt;
+  &lt;aura:attribute name="loanId"    type="String"    default=""/&gt;
+  &lt;aura:attribute name="amount"    type="Decimal"   default="0"/&gt;
+  &lt;aura:attribute name="isLoading" type="Boolean"   default="false"/&gt;
+  &lt;aura:attribute name="loans"     type="Loan__c[]"/&gt;       &lt;!-- SObject list --&gt;
+  &lt;aura:attribute name="loan"      type="Loan__c"/&gt;         &lt;!-- Single SObject --&gt;
+  &lt;aura:attribute name="config"    type="Map"/&gt;             &lt;!-- Key-value map --&gt;
+  &lt;aura:attribute name="callback"  type="Aura.Action"/&gt;     &lt;!-- Pass action as attribute --&gt;
+
+  &lt;!-- Access modifiers --&gt;
+  &lt;aura:attribute name="publicProp"  type="String" access="public"/&gt;   &lt;!-- Parent can read/write --&gt;
+  &lt;aura:attribute name="globalProp"  type="String" access="global"/&gt;   &lt;!-- Any component / managed pkg --&gt;
+  &lt;aura:attribute name="privateProp" type="String" access="private"/&gt;  &lt;!-- This component only --&gt;
+&lt;/aura:component&gt;
+
+// In controller: read/write attributes
+component.get('v.loanId');           // read
+component.set('v.isLoading', true);  // write</pre>
+</div></div>
+
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">What is the Aura component lifecycle &mdash; init, render, rerender?</span><span class="qa-q-label lbl-lwc">AURA</span><span class="qa-chevron"></span></div><div class="qa-answer">
+<table class="comparison-table"><tr><th>Event</th><th>When</th><th>Use for</th></tr><tr><td>init</td><td>Component created, attributes set, not yet in DOM</td><td>Initialize data, make first Apex call</td></tr><tr><td>render</td><td>Returns markup &mdash; override only for complex DOM manipulation</td><td>Rarely overridden</td></tr><tr><td>afterRender</td><td>Component in DOM after initial render</td><td>Access DOM elements, init third-party JS</td></tr><tr><td>rerender</td><td>Called on every re-render (attribute change)</td><td>Update third-party libraries on data change</td></tr><tr><td>unrender</td><td>Component destroyed</td><td>Cleanup &mdash; timers, listeners, subscriptions</td></tr></table>
+<pre class="code">// Aura handler declarations in .cmp
+&lt;aura:handler name="init" value="{!this}" action="{!c.doInit}"/&gt;
+&lt;aura:handler name="render" value="{!this}" action="{!c.doAfterRender}"/&gt;
+&lt;aura:handler name="destroy" value="{!this}" action="{!c.doCleanup}"/&gt;
+// Note: in LWC these are connectedCallback, renderedCallback, disconnectedCallback</pre>
+</div></div>
+
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How do you use $A.createComponent() for dynamic component creation?</span><span class="qa-q-label lbl-lwc">AURA</span><span class="qa-chevron"></span></div><div class="qa-answer">
+<pre class="code">// Dynamically create a component at runtime (no LWC equivalent &mdash; Aura-only)
+({
+  createLoanModal: function(component, event, helper) {
+    $A.createComponent(
+      'c:LoanApprovalModal',  // component type
+      {                        // attribute values
+        'loanId': component.get('v.selectedLoanId'),
+        'onClose': component.getReference('c.handleModalClose')
+      },
+      function(newCmp, status, errorMessage) {
+        if (status === 'SUCCESS') {
+          var body = component.get('v.body');
+          body.push(newCmp);
+          component.set('v.body', body); // add to component body
+        } else {
+          console.error('Component creation failed:', errorMessage);
+        }
+      }
+    );
+  }
+})</pre>
+<div class="tip-box"><div class="tip-label">When used</div><p>$A.createComponent is used for modal dialogs, dynamic content areas, and wizard steps where the component type is determined at runtime. In LWC, use conditional templates (if:true) or dynamic imports instead.</p></div>
+</div></div>
+
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">What is Aura helper &mdash; how does it differ from controller?</span><span class="qa-q-label lbl-lwc">AURA</span><span class="qa-chevron"></span></div><div class="qa-answer">
+<p class="ans-p">Every Aura component has a Controller (event handlers, bound to markup) and a Helper (shared utility functions). The Helper is a singleton &mdash; one instance shared across all instances of the component.</p>
+<pre class="code">// Controller &mdash; handles events from markup, delegates to helper
+({
+  handleSave: function(component, event, helper) {
+    helper.saveRecord(component, function(result) {
+      component.set('v.message', 'Saved: ' + result.Id);
+    });
+  }
+})
+
+// Helper &mdash; reusable utility methods, shared across all component instances
+({
+  saveRecord: function(component, callback) {
+    var action = component.get('c.saveLoan');
+    action.setParams({ loan: component.get('v.loan') });
+    action.setCallback(this, function(response) {
+      if (response.getState() === 'SUCCESS') callback(response.getReturnValue());
+    });
+    $A.enqueueAction(action);
+  },
+  validateForm: function(component) {
+    var amount = component.get('v.loan').Amount__c;
+    return amount > 0 &amp;&amp; amount &lt;= 10000000;
+  }
+})</pre>
+<div class="tip-box"><div class="tip-label">Best practice</div><p>Keep Controller functions thin &mdash; they just call Helper methods. This makes Helper functions easily testable and reusable.</p></div>
+</div></div>
+
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How do you handle errors in Aura &mdash; force:showToast and error events?</span><span class="qa-q-label lbl-lwc">AURA</span><span class="qa-chevron"></span></div><div class="qa-answer">
+<pre class="code">// Show toast notification
+({
+  showSuccess: function(component) {
+    var toastEvent = $A.get('e.force:showToast');
+    toastEvent.setParams({
+      title: 'Success',
+      message: 'Loan approved successfully.',
+      type: 'success',   // success, error, warning, info
+      mode: 'dismissible' // dismissible, sticky, pester
+    });
+    toastEvent.fire();
+  },
+
+  handleError: function(component, error) {
+    var toastEvent = $A.get('e.force:showToast');
+    toastEvent.setParams({
+      title: 'Error',
+      message: error.message || 'An unexpected error occurred.',
+      type: 'error',
+      mode: 'sticky'
+    });
+    toastEvent.fire();
+  },
+
+  // Handle Apex error in callback
+  handleApexResponse: function(component, response) {
+    if (response.getState() === 'ERROR') {
+      var errors = response.getError();
+      var message = (errors &amp;&amp; errors[0] &amp;&amp; errors[0].message) ? errors[0].message : 'Unknown error';
+      this.handleError(component, { message: message });
+    }
+  }
+})</pre>
+</div></div>

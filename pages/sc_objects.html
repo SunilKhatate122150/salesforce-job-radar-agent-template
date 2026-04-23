@@ -1,0 +1,328 @@
+<div class="page-title">Objects &amp; Fields &mdash; 10 Scenario Questions</div>
+<div class="page-sub">Real interview scenarios on the Salesforce data model &mdash; know these cold for 4-year experience level</div>
+
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">What is the difference between Lookup and Master-Detail? Give a scenario for each &mdash; with code.</span><span class="qa-q-label lbl-domain">OBJECTS</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<table class="comparison-table"><tr><th>Feature</th><th>Lookup</th><th>Master-Detail</th></tr><tr><td>Parent required?</td><td>No &mdash; child can exist without parent</td><td>YES &mdash; mandatory, cannot be null</td></tr><tr><td>Delete parent</td><td>Child stays, lookup goes null</td><td>Child records DELETED (cascade delete)</td></tr><tr><td>Rollup Summary</td><td>NOT available</td><td>Available &mdash; COUNT, SUM, MIN, MAX</td></tr><tr><td>Sharing</td><td>Child has own OWD/sharing</td><td>Child inherits parent's sharing</td></tr><tr><td>Reparenting</td><td>Allowed (change parent anytime)</td><td>Restricted (controlled per MDR setting)</td></tr><tr><td>Max per object</td><td>25 lookups</td><td>2 master-detail</td></tr></table>
+<pre class="code"><span class="cmt">// Mortgage example: Lookup &mdash; Contact to Account</span>
+<span class="cmt">// Contact can exist without Account (orphan contact is valid)</span>
+<span class="cls">Contact</span> c = [<span class="kw">SELECT</span> Id, AccountId <span class="kw">FROM</span> Contact <span class="kw">WHERE</span> AccountId = <span class="kw">null</span>]; <span class="cmt">// valid query</span>
+
+<span class="cmt">// Master-Detail &mdash; Loan__c to Application__c</span>
+<span class="cmt">// Loan cannot exist without Application &mdash; Application__c field is required</span>
+<span class="cmt">// Rollup on Application: Total_Loan_Amount__c = SUM(Loan__c.LoanAmount__c)</span>
+<span class="cls">Loan__c</span> orphanLoan = <span class="kw">new</span> <span class="cls">Loan__c</span>(LoanAmount__c=<span class="num">100000</span>);
+<span class="cmt">// insert orphanLoan;  // FAILS &mdash; Application__c is required (master-detail)</span>
+
+<span class="cmt">// Delete cascade &mdash; delete Application deletes ALL its Loans automatically</span>
+delete [<span class="kw">SELECT</span> Id <span class="kw">FROM</span> Application__c <span class="kw">WHERE</span> Id = :appId];
+<span class="cmt">// All child Loan__c records are now deleted too</span></pre>
+<div class="tip-box"><div class="tip-label">Interview connection</div><p>Say: "In my Mortgage Platform, Loan__c had a Master-Detail to Application__c because a loan cannot logically exist without an application, and we needed a Rollup Summary to show total funded amount on the Application record. For the Contact-to-Account relationship we used Lookup because a loan officer (Contact) could exist in the system before being assigned to a broker office (Account)."</p></div>
+</div></div>
+
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How do you implement a many-to-many relationship using a Junction Object &mdash; build one for the mortgage domain?</span><span class="qa-q-label lbl-domain">OBJECTS</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<p class="ans-p">Salesforce does not support many-to-many natively. Use a Junction Object &mdash; a custom object with two Master-Detail fields pointing to each parent.</p>
+<pre class="code"><span class="cmt">// Scenario: A Loan can have multiple Borrowers (Primary, Co-Borrower)</span>
+<span class="cmt">// A Contact (Borrower) can be on multiple Loans</span>
+
+<span class="cmt">// Junction Object: Loan_Borrower__c</span>
+<span class="cmt">// Field 1: Loan__c       &mdash; Master-Detail to Loan__c</span>
+<span class="cmt">// Field 2: Borrower__c   &mdash; Master-Detail to Contact</span>
+<span class="cmt">// Field 3: Role__c       &mdash; Picklist: Primary Borrower, Co-Borrower, Guarantor</span>
+<span class="cmt">// Field 4: CreditScore__c &mdash; Number (borrower's FICO at time of application)</span>
+
+<span class="cmt">// Query all borrowers on a loan:</span>
+<span class="cls">List</span>&lt;<span class="cls">Loan_Borrower__c</span>&gt; borrowers = [
+    <span class="kw">SELECT</span> Borrower__r.Name, Borrower__r.Email, Role__c, CreditScore__c
+    <span class="kw">FROM</span> Loan_Borrower__c
+    <span class="kw">WHERE</span> Loan__c = :loanId
+    <span class="kw">ORDER BY</span> Role__c
+];
+
+<span class="cmt">// Query all loans for a borrower (Contact):</span>
+<span class="cls">List</span>&lt;<span class="cls">Loan_Borrower__c</span>&gt; theirLoans = [
+    <span class="kw">SELECT</span> Loan__r.Name, Loan__r.LoanAmount__c, Loan__r.Status__c, Role__c
+    <span class="kw">FROM</span> Loan_Borrower__c
+    <span class="kw">WHERE</span> Borrower__c = :contactId
+    <span class="kw">ORDER BY</span> Loan__r.CreatedDate <span class="kw">DESC</span>
+];
+
+<span class="cmt">// Parent-to-Child subquery from Loan:</span>
+<span class="cls">List</span>&lt;<span class="cls">Loan__c</span>&gt; loansWithBorrowers = [
+    <span class="kw">SELECT</span> Id, Name,
+           (<span class="kw">SELECT</span> Borrower__r.Name, Role__c <span class="kw">FROM</span> Loan_Borrowers__r)
+    <span class="kw">FROM</span> Loan__c <span class="kw">WHERE</span> Id = :loanId
+];</pre>
+</div></div>
+
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">What are External ID fields &mdash; when and how do you use them in integrations?</span><span class="qa-q-label lbl-domain">OBJECTS</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<p class="ans-p">External ID fields store a unique identifier from an external system. Salesforce indexes them for fast lookups. They are critical for upsert operations in integrations &mdash; you can upsert by External ID instead of Salesforce Id.</p>
+<pre class="code"><span class="cmt">// Field: Loan__c.LOS_Loan_ID__c (External ID, Unique, Text)</span>
+<span class="cmt">// Stores the ID from an external Loan Origination System</span>
+
+<span class="cmt">// UPSERT &mdash; matches on External ID, inserts if not found, updates if found</span>
+<span class="cls">Loan__c</span> loan = <span class="kw">new</span> <span class="cls">Loan__c</span>(
+    LOS_Loan_ID__c = <span class="str">'2024-LOS-78542'</span>,
+    LoanAmount__c = <span class="num">350000</span>,
+    Status__c = <span class="str">'Processing'</span>
+);
+Database.upsert(loan, <span class="cls">Loan__c</span>.LOS_Loan_ID__c, <span class="kw">false</span>);
+<span class="cmt">// false = partial mode &mdash; does not throw for single failures</span>
+
+<span class="cmt">// Bulk upsert from LOS integration:</span>
+<span class="cls">List</span>&lt;<span class="cls">Database.UpsertResult</span>&gt; results = Database.upsert(loansFromLOS, <span class="cls">Loan__c</span>.LOS_Loan_ID__c, <span class="kw">false</span>);
+
+<span class="cmt">// REST API equivalent:</span>
+<span class="cmt">// PATCH /services/data/v59.0/sobjects/Loan__c/LOS_Loan_ID__c/2024-LOS-78542</span>
+<span class="cmt">// Body: {"LoanAmount__c": 350000, "Status__c": "Processing"}</span>
+
+<span class="cmt">// Best practices:</span>
+<span class="cmt">// Max 25 External ID fields per object</span>
+<span class="cmt">// Field types: Text, Number, Email, Auto Number only</span>
+<span class="cmt">// Mark as Unique to enforce no duplicates</span>
+<span class="cmt">// Do NOT use Id field as External ID &mdash; use a meaningful business identifier</span></pre>
+<div class="tip-box"><div class="tip-label">Real use from your project</div><p>In the Mortgage Origination Platform, when syncing from the external LOS, we upserted on LOS_Loan_ID__c instead of Salesforce Id. This meant the integration never needed to query Salesforce first to find the record &mdash; just upsert with the LOS ID and Salesforce handled insert vs update automatically.</p></div>
+</div></div>
+
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">What is a Rollup Summary field &mdash; what are its limitations? How do you replicate it on a Lookup relationship?</span><span class="qa-q-label lbl-domain">OBJECTS</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<p class="ans-p">Rollup Summary fields aggregate child record values (COUNT, SUM, MIN, MAX) onto a parent object. They only work on Master-Detail relationships.</p>
+<ul class="ans-list"><li>Supported functions: COUNT, SUM, MIN, MAX</li><li>Can filter which child records to include (like a WHERE clause)</li><li>Update automatically when child records change &mdash; asynchronous on bulk loads</li><li>Cannot roll up formula fields or fields two levels away</li><li>Not available on Lookup relationships</li></ul>
+<pre class="code"><span class="cmt">// Replicating Rollup on a Lookup relationship using Apex trigger</span>
+<span class="cmt">// Scenario: Account (parent lookup) ← Contact (child)</span>
+<span class="cmt">// Goal: Count active contacts on Account.Active_Contact_Count__c</span>
+
+trigger ContactRollupTrigger on Contact (after insert, after update, after delete, after undelete) {
+
+    <span class="cls">Set</span>&lt;<span class="cls">Id</span>&gt; accountIds = <span class="kw">new</span> <span class="cls">Set</span>&lt;<span class="cls">Id</span>&gt;();
+    <span class="cls">List</span>&lt;<span class="cls">Contact</span>&gt; allContacts = Trigger.new != <span class="kw">null</span> ? Trigger.new : Trigger.old;
+    <span class="kw">for</span>(<span class="cls">Contact</span> c : allContacts) {
+        <span class="kw">if</span>(c.AccountId != <span class="kw">null</span>) accountIds.add(c.AccountId);
+    }
+    <span class="cmt">// Also include old AccountId on updates (contact moved to different account)</span>
+    <span class="kw">if</span>(Trigger.old != <span class="kw">null</span>) {
+        <span class="kw">for</span>(<span class="cls">Contact</span> c : Trigger.old) {
+            <span class="kw">if</span>(c.AccountId != <span class="kw">null</span>) accountIds.add(c.AccountId);
+        }
+    }
+    <span class="kw">if</span>(accountIds.isEmpty()) <span class="kw">return</span>;
+
+    <span class="cls">List</span>&lt;<span class="cls">AggregateResult</span>&gt; counts = [
+        <span class="kw">SELECT</span> AccountId, COUNT(Id) cnt
+        <span class="kw">FROM</span> Contact
+        <span class="kw">WHERE</span> AccountId <span class="kw">IN</span> :accountIds <span class="kw">AND</span> IsActive__c = <span class="kw">true</span>
+        <span class="kw">GROUP BY</span> AccountId
+    ];
+
+    <span class="cls">Map</span>&lt;<span class="cls">Id</span>, <span class="cls">Integer</span>&gt; countMap = <span class="kw">new</span> <span class="cls">Map</span>&lt;<span class="cls">Id</span>, <span class="cls">Integer</span>&gt;();
+    <span class="kw">for</span>(<span class="cls">AggregateResult</span> ar : counts) countMap.put((<span class="cls">Id</span>)ar.get(<span class="str">'AccountId'</span>), (<span class="cls">Integer</span>)ar.get(<span class="str">'cnt'</span>));
+
+    <span class="cls">List</span>&lt;<span class="cls">Account</span>&gt; toUpdate = <span class="kw">new</span> <span class="cls">List</span>&lt;<span class="cls">Account</span>&gt;();
+    <span class="kw">for</span>(<span class="cls">Id</span> aId : accountIds) {
+        toUpdate.add(<span class="kw">new</span> <span class="cls">Account</span>(Id=aId, Active_Contact_Count__c = countMap.containsKey(aId) ? countMap.get(aId) : <span class="num">0</span>));
+    }
+    update toUpdate;
+}</pre>
+</div></div>
+
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How do field dependencies (controlling and dependent picklists) work &mdash; implement in LWC?</span><span class="qa-q-label lbl-domain">OBJECTS</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<p class="ans-p">Field dependencies link two picklist fields. The Controlling field determines which values appear in the Dependent field. With lightning-record-edit-form, this works automatically. With custom lightning-combobox elements, you must filter manually in JavaScript.</p>
+<pre class="code"><span class="cmt">// Custom LWC &mdash; filter dependent picklist manually</span>
+<span class="cmt">// Controlling: LoanType__c | Dependent: LoanProgram__c</span>
+
+handleLoanTypeChange(event) {
+    this.selectedLoanType = event.detail.value;
+    const programMap = {
+        <span class="str">'Conventional'</span>: [<span class="str">'Conforming 30yr'</span>, <span class="str">'Conforming 15yr'</span>, <span class="str">'Jumbo'</span>],
+        <span class="str">'FHA'</span>: [<span class="str">'FHA 30yr'</span>, <span class="str">'FHA 15yr'</span>, <span class="str">'FHA Streamline'</span>],
+        <span class="str">'VA'</span>: [<span class="str">'VA 30yr'</span>, <span class="str">'VA IRRRL'</span>, <span class="str">'VA Jumbo'</span>],
+        <span class="str">'USDA'</span>: [<span class="str">'USDA Rural'</span>]
+    };
+    const programs = programMap[this.selectedLoanType] || [];
+    this.loanProgramOptions = programs.map(p => ({ label: p, value: p }));
+    this.selectedLoanProgram = <span class="str">''</span>;
+}
+
+<span class="cmt">// Get picklist values from Salesforce metadata at runtime (best approach):</span>
+import { getPicklistValues, getObjectInfo } from <span class="str">'lightning/uiObjectInfoApi'</span>;
+import LOAN_PROGRAM from <span class="str">'@salesforce/schema/Loan__c.LoanProgram__c'</span>;
+
+@wire(getObjectInfo, { objectApiName: <span class="str">'Loan__c'</span> }) objectInfo;
+
+@wire(getPicklistValues, {
+    recordTypeId: <span class="str">'$objectInfo.data.defaultRecordTypeId'</span>,
+    fieldApiName: LOAN_PROGRAM
+})
+loanProgramPicklist({ data }) {
+    <span class="cmt">// data.controllerValues maps controlling picklist value to index</span>
+    <span class="cmt">// data.values[i].validFor is a bitmask matching controller indices</span>
+    <span class="cmt">// Use this to filter dependent values based on selected controlling value</span>
+    this.allLoanPrograms = data;
+}</pre>
+</div></div>
+
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How do you get all field metadata at runtime using Schema describe &mdash; use case: dynamic form builder?</span><span class="qa-q-label lbl-domain">OBJECTS</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<pre class="code"><span class="cmt">// Get all fields and their properties at runtime</span>
+<span class="cls">Map</span>&lt;<span class="cls">String</span>, <span class="cls">Schema.SObjectField</span>&gt; fieldMap =
+    <span class="cls">Schema.SObjectType</span>.<span class="cls">Loan__c</span>.fields.getMap();
+
+<span class="cls">List</span>&lt;<span class="cls">Map</span>&lt;<span class="cls">String</span>,<span class="cls">Object</span>&gt;&gt; fieldData = <span class="kw">new</span> <span class="cls">List</span>&lt;<span class="cls">Map</span>&lt;<span class="cls">String</span>,<span class="cls">Object</span>&gt;&gt;();
+<span class="kw">for</span>(<span class="cls">String</span> fieldName : fieldMap.keySet()) {
+    <span class="cls">Schema.DescribeFieldResult</span> dfr = fieldMap.get(fieldName).getDescribe();
+    <span class="kw">if</span>(!dfr.isAccessible()) <span class="kw">continue</span>; <span class="cmt">// skip inaccessible fields</span>
+    fieldData.add(<span class="kw">new</span> <span class="cls">Map</span>&lt;<span class="cls">String</span>,<span class="cls">Object</span>&gt;{
+        <span class="str">'apiName'</span> =&gt; dfr.getName(),
+        <span class="str">'label'</span> =&gt; dfr.getLabel(),
+        <span class="str">'type'</span> =&gt; String.valueOf(dfr.getType()),
+        <span class="str">'required'</span> =&gt; !dfr.isNillable() &amp;&amp; dfr.isCreateable(),
+        <span class="str">'updateable'</span> =&gt; dfr.isUpdateable(),
+        <span class="str">'length'</span> =&gt; dfr.getLength()
+    });
+}
+
+<span class="cmt">// Get picklist values at runtime &mdash; for dynamic dropdowns</span>
+<span class="cls">List</span>&lt;<span class="cls">Schema.PicklistEntry</span>&gt; statusVals = <span class="cls">Loan__c</span>.Status__c.getDescribe().getPicklistValues();
+<span class="kw">for</span>(<span class="cls">Schema.PicklistEntry</span> pv : statusVals) {
+    System.debug(pv.getValue() + <span class="str">' &mdash; active: '</span> + pv.isActive() + <span class="str">' default: '</span> + pv.isDefaultValue());
+}
+
+<span class="cmt">// Expose to LWC:</span>
+<span class="ann">@AuraEnabled</span>(cacheable=<span class="kw">true</span>)
+<span class="kw">public static</span> <span class="cls">List</span>&lt;<span class="cls">Map</span>&lt;<span class="cls">String</span>,<span class="cls">String</span>&gt;&gt; getLoanStatusOptions() {
+    <span class="cls">List</span>&lt;<span class="cls">Map</span>&lt;<span class="cls">String</span>,<span class="cls">String</span>&gt;&gt; opts = <span class="kw">new</span> <span class="cls">List</span>&lt;<span class="cls">Map</span>&lt;<span class="cls">String</span>,<span class="cls">String</span>&gt;&gt;();
+    <span class="kw">for</span>(<span class="cls">Schema.PicklistEntry</span> e : <span class="cls">Loan__c</span>.Status__c.getDescribe().getPicklistValues()) {
+        <span class="kw">if</span>(e.isActive()) opts.add(<span class="kw">new</span> <span class="cls">Map</span>&lt;<span class="cls">String</span>,<span class="cls">String</span>&gt;{<span class="str">'label'</span>=&gt;e.getLabel(),<span class="str">'value'</span>=&gt;e.getValue()});
+    }
+    <span class="kw">return</span> opts;
+}</pre>
+</div></div>
+
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">What are Record Types &mdash; when do you use them and how do you get the ID in Apex?</span><span class="qa-q-label lbl-domain">OBJECTS</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<p class="ans-p">Record Types allow different page layouts, picklist values, and business processes per user type. In mortgage: Loan__c could have Record Types for Conventional, FHA, VA, USDA &mdash; each showing different fields and picklist values.</p>
+<pre class="code"><span class="cmt">// Get Record Type Id &mdash; ALWAYS use DeveloperName, not Name</span>
+<span class="cmt">// Name can change (admin renames it), DeveloperName is stable</span>
+<span class="cls">Id</span> fhaRTId = <span class="cls">Schema.SObjectType</span>.<span class="cls">Loan__c</span>
+    .getRecordTypeInfosByDeveloperName().get(<span class="str">'FHA_Loan'</span>).getRecordTypeId();
+
+<span class="cls">Loan__c</span> fhaLoan = <span class="kw">new</span> <span class="cls">Loan__c</span>(
+    RecordTypeId = fhaRTId,
+    LoanAmount__c = <span class="num">300000</span>
+);
+
+<span class="cmt">// Get all active record types for an object:</span>
+<span class="cls">Map</span>&lt;<span class="cls">String</span>, <span class="cls">Schema.RecordTypeInfo</span>&gt; rtMap =
+    <span class="cls">Schema.SObjectType</span>.<span class="cls">Loan__c</span>.getRecordTypeInfosByDeveloperName();
+<span class="kw">for</span>(<span class="cls">String</span> devName : rtMap.keySet()) {
+    <span class="cls">Schema.RecordTypeInfo</span> rti = rtMap.get(devName);
+    <span class="kw">if</span>(rti.isActive() &amp;&amp; !rti.isMaster()) {
+        System.debug(rti.getName() + <span class="str">' → '</span> + rti.getRecordTypeId());
+    }
+}
+
+<span class="cmt">// In LWC &mdash; use getObjectInfo wire adapter to get record types available to the user</span>
+import { getObjectInfo } from <span class="str">'lightning/uiObjectInfoApi'</span>;
+import LOAN_OBJECT from <span class="str">'@salesforce/schema/Loan__c'</span>;
+
+@wire(getObjectInfo, { objectApiName: LOAN_OBJECT })
+objectInfo;
+
+get recordTypeOptions() {
+    <span class="kw">if</span>(!this.objectInfo?.data) <span class="kw">return</span> [];
+    <span class="kw">return</span> Object.values(this.objectInfo.data.recordTypeInfos)
+        .filter(rt => rt.available &amp;&amp; !rt.master)
+        .map(rt => ({ label: rt.name, value: rt.recordTypeId }));
+}</pre>
+</div></div>
+
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How do you implement a self-relationship (hierarchical data) in Salesforce &mdash; example with org chart?</span><span class="qa-q-label lbl-domain">OBJECTS</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<p class="ans-p">A self-relationship is a lookup field on an object that points back to the same object. The Account.ParentId is the classic example. You can create custom self-lookups for hierarchical data like territory trees or category trees.</p>
+<pre class="code"><span class="cmt">// Standard self-relationship: Account → ParentAccount</span>
+<span class="cls">Account</span> branch = [
+    <span class="kw">SELECT</span> Id, Name, Parent.Name, Parent.Parent.Name
+    <span class="kw">FROM</span> Account <span class="kw">WHERE</span> Id = :branchId
+];
+<span class="cmt">// Navigate up 5 levels max</span>
+
+<span class="cmt">// Custom self-relationship: Loan_Category__c → Parent_Category__c (Lookup to Loan_Category__c)</span>
+<span class="cls">List</span>&lt;<span class="cls">Loan_Category__c</span>&gt; hierarchy = [
+    <span class="kw">SELECT</span> Id, Name, Parent_Category__r.Name, Parent_Category__r.Parent_Category__r.Name
+    <span class="kw">FROM</span> Loan_Category__c
+    <span class="kw">WHERE</span> Id = :categoryId
+];
+
+<span class="cmt">// Build full hierarchy path (all ancestors):</span>
+<span class="kw">public static</span> <span class="cls">List</span>&lt;<span class="cls">String</span>&gt; getCategoryPath(<span class="cls">Id</span> categoryId) {
+    <span class="cls">List</span>&lt;<span class="cls">String</span>&gt; path = <span class="kw">new</span> <span class="cls">List</span>&lt;<span class="cls">String</span>&gt;();
+    <span class="cls">Id</span> currentId = categoryId;
+    <span class="kw">while</span>(currentId != <span class="kw">null</span>) {
+        <span class="cls">Loan_Category__c</span> cat = [<span class="kw">SELECT</span> Id, Name, Parent_Category__c <span class="kw">FROM</span> Loan_Category__c <span class="kw">WHERE</span> Id = :currentId];
+        path.add(<span class="num">0</span>, cat.Name); <span class="cmt">// add at front for correct order</span>
+        currentId = cat.Parent_Category__c;
+    }
+    <span class="kw">return</span> path; <span class="cmt">// e.g. ['Real Estate', 'Residential', 'Single Family']</span>
+}</pre>
+</div></div>
+
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">What are the different Salesforce ID formats &mdash; 15-digit vs 18-digit &mdash; when does it matter in code?</span><span class="qa-q-label lbl-domain">OBJECTS</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<p class="ans-p">Salesforce IDs have two formats. Both refer to the same record &mdash; the difference is case sensitivity handling.</p>
+<ul class="ans-list"><li><b>15-character ID:</b> Case-sensitive. Used in Salesforce UI URLs. Shorter. Comparison in Apex is case-sensitive for String comparison but case-insensitive when stored as Id type.</li><li><b>18-character ID:</b> Case-insensitive. Appends 3 checksum characters. Safe for use in Excel (which lowercases text), external systems, and case-insensitive string comparisons.</li></ul>
+<pre class="code"><span class="cmt">// Apex Id type handles both &mdash; comparison is always case-insensitive</span>
+<span class="cls">Id</span> id15 = <span class="str">'001Dn000009XYZa'</span>;
+<span class="cls">Id</span> id18 = <span class="str">'001Dn000009XYZaIAG'</span>;
+System.assertEquals(id15, id18); <span class="cmt">// TRUE &mdash; Apex Id type handles this</span>
+
+<span class="cmt">// Problem: String comparison is case-SENSITIVE</span>
+<span class="cls">String</span> strId = <span class="str">'001DN000009XYZA'</span>; <span class="cmt">// different case</span>
+System.assertEquals((Id)strId, id15); <span class="cmt">// TRUE &mdash; cast to Id first</span>
+
+<span class="cmt">// Best practice: ALWAYS store and compare as Id type, not String</span>
+<span class="cls">Id</span> safeId = id15; <span class="cmt">// not String safeId = id15;</span>
+
+<span class="cmt">// Convert 15 to 18 digit in Apex:</span>
+<span class="cls">String</span> id18digit = (<span class="cls">String</span>) id15; <span class="cmt">// automatic when cast Id to String</span>
+System.debug(id18digit.length()); <span class="cmt">// 18</span>
+
+<span class="cmt">// Object prefix codes (first 3 chars) &mdash; useful for type checking:</span>
+<span class="cmt">// 001 = Account, 003 = Contact, 006 = Opportunity, 005 = User</span>
+<span class="cmt">// Custom objects vary by org &mdash; use Schema.getGlobalDescribe() to find them</span>
+<span class="cls">String</span> objType = Id.valueOf(someId).getSObjectType().getDescribe().getName();</pre>
+</div></div>
+
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How do you prevent a user from deleting a parent record if it has active child records &mdash; two approaches?</span><span class="qa-q-label lbl-domain">OBJECTS</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<pre class="code"><span class="cmt">// APPROACH 1: Validation Rule on Parent</span>
+<span class="cmt">// Rule on Application__c object, fires on Delete:</span>
+<span class="cmt">// Condition: VLOOKUP("Loan__c Count", "Active_Loan_Count__c", Id) > 0</span>
+<span class="cmt">// (Requires a rollup summary field Active_Loan_Count__c on Application__c)</span>
+<span class="cmt">// Error: "Cannot delete Application with active Loans. Close or deny all loans first."</span>
+
+<span class="cmt">// APPROACH 2: Apex Before Delete Trigger (more flexible, checks any condition)</span>
+trigger ApplicationDeleteTrigger on Application__c (before delete) {
+    <span class="cls">Set</span>&lt;<span class="cls">Id</span>&gt; appIds = Trigger.oldMap.keySet();
+
+    <span class="cmt">// Check for active child loans</span>
+    <span class="cls">Map</span>&lt;<span class="cls">Id</span>, <span class="cls">Integer</span>&gt; activeLoans = <span class="kw">new</span> <span class="cls">Map</span>&lt;<span class="cls">Id</span>, <span class="cls">Integer</span>&gt;();
+    <span class="kw">for</span>(<span class="cls">AggregateResult</span> ar : [
+        <span class="kw">SELECT</span> Application__c, COUNT(Id) cnt
+        <span class="kw">FROM</span> Loan__c
+        <span class="kw">WHERE</span> Application__c <span class="kw{IN} :appIds
+        <span class="kw">AND</span> Status__c <span class="kw{NOT IN} (<span class="str">'Closed'</span>, <span class="str">'Denied'</span>, <span class="str">'Withdrawn'</span>)
+        <span class="kw{GROUP BY} Application__c
+    ]) {
+        activeLoans.put((<span class="cls">Id</span>)ar.get(<span class="str">'Application__c'</span>), (<span class="cls">Integer</span>)ar.get(<span class="str">'cnt'</span>));
+    }
+
+    <span class="kw">for</span>(<span class="cls">Application__c</span> app : Trigger.old) {
+        <span class="kw{if}(activeLoans.containsKey(app.Id)) {
+            app.addError(
+                <span class="str">'Cannot delete Application "'</span> + app.Name +
+                <span class="str">'" &mdash; it has '</span> + activeLoans.get(app.Id) +
+                <span class="str">' active loan(s). Close or deny all loans first.'</span>
+            );
+        }
+    }
+}</pre>
+</div></div>
+
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How does "Controlled by Parent" OWD work for Contact &mdash; explain the nuance?</span><span class="qa-q-label lbl-domain">OBJECTS</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<p class="ans-p">"Controlled by Parent" is a special OWD setting for Contact. When set, Contact record access is determined by the parent Account's sharing. If a user can see the Account, they can see all its Contacts. If they cannot see the Account, they cannot see the Contacts.</p>
+<ul class="ans-list"><li>Only available for Contact (standard) when Account is the parent</li><li>Contact inherits Account's OWD &mdash; if Account is Private, Contacts are effectively Private</li><li>If Account is Public Read Only → Contacts are Read Only to everyone</li><li>Sharing rules on Account automatically extend to its Contacts</li><li>Private Contacts (no AccountId) are only visible to the owner and admins regardless of this setting</li><li>This setting simplifies sharing model management &mdash; you only maintain Account sharing, not both Account and Contact separately</li></ul>
+<div class="tip-box"><div class="tip-label">Practical implication</div><p>In a mortgage org: if Accounts (Broker Offices) are set to Private, and Contact uses "Controlled by Parent," then each loan officer only sees contacts at brokers they have access to. This prevents loan officer A from seeing loan officer B's borrower contacts &mdash; which is a FCRA/privacy best practice.</p></div>
+</div></div>

@@ -1,0 +1,185 @@
+<div class="page-title">SOQL Deep Dive &mdash; Interview Questions</div>
+<div class="page-sub">14 questions with complete answers and code examples</div>
+
+<div class="qa-block">
+  <div class="qa-question" onclick="toggleQA(this)">
+    <span class="qa-q-text">What is SOQL injection and how do you prevent it? Show vulnerable code and the fix.</span>
+    <span class="qa-q-label lbl-apex">SOQL</span>
+    <span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span>
+  </div>
+  <div class="qa-answer">
+    <p class="ans-p">SOQL injection is a security vulnerability where a malicious user inputs text that manipulates a dynamic SOQL query to expose unauthorized data &mdash; similar to SQL injection in traditional databases.</p>
+    <pre class="code"><span class="cmt">// VULNERABLE CODE - Never do this</span>
+public static <span class="cls">List</span>&lt;<span class="cls">Account</span>&gt; searchAccounts(<span class="cls">String</span> name) {
+    <span class="cls">String</span> query = 'SELECT Id, Name FROM Account WHERE Name = \'' + name + '\'';
+    return Database.query(query);
+    <span class="cmt">// If name = "test' OR Name != '", this returns ALL accounts!</span>
+}
+
+<span class="cmt">// FIX 1: escapeSingleQuotes() - escapes the user input</span>
+public static <span class="cls">List</span>&lt;<span class="cls">Account</span>&gt; searchAccounts(<span class="cls">String</span> name) {
+    <span class="cls">String</span> safeName = <span class="cls">String</span>.escapeSingleQuotes(name);
+    <span class="cls">String</span> query = 'SELECT Id, Name FROM Account WHERE Name = \'' + safeName + '\'';
+    return Database.query(query);
+}
+
+<span class="cmt">// FIX 2: Bind variables in dynamic SOQL (best approach)</span>
+public static <span class="cls">List</span>&lt;<span class="cls">Account</span>&gt; searchAccounts(<span class="cls">String</span> name) {
+    <span class="cmt">// :name is a bind variable - Salesforce handles escaping automatically</span>
+    return Database.query('SELECT Id, Name FROM Account WHERE Name = :name');
+}
+
+<span class="cmt">// FIX 3: Use static SOQL instead of dynamic when possible</span>
+return [SELECT Id, Name FROM Account WHERE Name = :name];</pre>
+    <div class="tip-box"><div class="tip-label">Best practice order</div><p>1. Use static SOQL (not dynamic) whenever possible. 2. If dynamic SOQL is needed, use bind variable :name syntax. 3. If you must concatenate, always use escapeSingleQuotes(). 4. Validate and whitelist the input (if filtering by Status__c, verify the value is in an allowed list).</p></div>
+  </div>
+</div>
+
+<div class="qa-block">
+  <div class="qa-question" onclick="toggleQA(this)">
+    <span class="qa-q-text">Write a SOQL query to get all Contacts with their Account name and parent Account. Explain relationship queries.</span>
+    <span class="qa-q-label lbl-apex">SOQL</span>
+    <span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span>
+  </div>
+  <div class="qa-answer">
+    <p class="ans-p">Salesforce has two types of relationship queries:</p>
+    <p class="ans-p"><b>1. Child-to-Parent (traversing up):</b> Use dot notation. You traverse from the child up to the parent. The relationship name depends on the field.</p>
+    <pre class="code"><span class="cmt">// Child-to-Parent: Contact ΓåÆ Account ΓåÆ Account's Parent</span>
+<span class="cls">List</span>&lt;<span class="cls">Contact</span>&gt; contacts = [
+    SELECT Id, 
+           FirstName, 
+           LastName,
+           Account.Name,                  <span class="cmt">// parent Account name</span>
+           Account.Phone,                 <span class="cmt">// parent Account phone</span>
+           Account.Parent.Name,           <span class="cmt">// grandparent Account name</span>
+           Account.Parent.Industry        <span class="cmt">// grandparent field (up to 5 levels)</span>
+    FROM Contact
+    WHERE Account.Type = 'Broker'
+];
+
+<span class="cmt">// Accessing in Apex:</span>
+for(<span class="cls">Contact</span> c : contacts) {
+    System.debug(c.Account.Name);          <span class="cmt">// parent account name</span>
+    System.debug(c.Account.Parent.Name);   <span class="cmt">// grandparent name</span>
+}</pre>
+    <p class="ans-p"><b>2. Parent-to-Child (subquery - traversing down):</b> Use relationship name in a subquery. For standard objects the plural of the child object name. For custom, use __r (relationship) name.</p>
+    <pre class="code"><span class="cmt">// Parent-to-Child: Account with all its Contacts (subquery)</span>
+<span class="cls">List</span>&lt;<span class="cls">Account</span>&gt; accounts = [
+    SELECT Id, Name, 
+           (SELECT Id, FirstName, LastName, Email FROM Contacts),       <span class="cmt">// standard child</span>
+           (SELECT Id, CloseDate, Amount FROM Opportunities WHERE StageName != 'Closed Lost'),
+           (SELECT Id, LoanAmount__c FROM Loans__r)                     <span class="cmt">// custom child (__r)</span>
+    FROM Account
+    WHERE Id IN :accountIds
+];
+
+<span class="cmt">// Accessing child records:</span>
+for(<span class="cls">Account</span> a : accounts) {
+    for(<span class="cls">Contact</span> c : a.Contacts) {  <span class="cmt">// iterating over subquery results</span>
+        System.debug(c.Email);
+    }
+}</pre>
+  </div>
+</div>
+
+<div class="qa-block">
+  <div class="qa-question" onclick="toggleQA(this)">
+    <span class="qa-q-text">Explain aggregate functions in SOQL &mdash; GROUP BY, HAVING, AggregateResult</span>
+    <span class="qa-q-label lbl-apex">SOQL</span>
+    <span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span>
+  </div>
+  <div class="qa-answer">
+    <pre class="code"><span class="cmt">// COUNT, SUM, MIN, MAX, AVG - aggregate functions</span>
+<span class="cls">List</span>&lt;<span class="cls">AggregateResult</span>&gt; results = [
+    SELECT Account.Name accName, 
+           COUNT(Id) loanCount,
+           SUM(LoanAmount__c) totalAmount,
+           AVG(LoanAmount__c) avgAmount,
+           MAX(LoanAmount__c) maxLoan
+    FROM Loan__c
+    WHERE Status__c != 'Denied'
+    GROUP BY Account.Name
+    HAVING COUNT(Id) > 5          <span class="cmt">// HAVING filters on aggregate result (like WHERE for GROUP BY)</span>
+    ORDER BY SUM(LoanAmount__c) DESC
+    LIMIT 20
+];
+
+<span class="cmt">// Accessing AggregateResult - use alias or field name as string</span>
+for(<span class="cls">AggregateResult</span> ar : results) {
+    <span class="cls">String</span> name = (<span class="cls">String</span>) ar.get('accName');
+    <span class="cls">Integer</span> count = (<span class="cls">Integer</span>) ar.get('loanCount');
+    <span class="cls">Decimal</span> total = (<span class="cls">Decimal</span>) ar.get('totalAmount');
+    System.debug(name + ': ' + count + ' loans, total: ' + total);
+}
+
+<span class="cmt">// COUNT() vs COUNT(Id)</span>
+// COUNT() - returns Integer, no GROUP BY needed, no field needed
+<span class="cls">Integer</span> total = [SELECT COUNT() FROM Account WHERE Industry = 'Financial'];
+// COUNT(Id) - returns AggregateResult, can be used with GROUP BY</pre>
+    <div class="tip-box"><div class="tip-label">HAVING vs WHERE</div><p>WHERE filters individual records BEFORE grouping. HAVING filters the grouped results AFTER aggregation. You cannot use WHERE on an aggregate function &mdash; use HAVING for that.</p></div>
+  </div>
+</div>
+
+<div class="qa-block">
+  <div class="qa-question" onclick="toggleQA(this)">
+    <span class="qa-q-text">What is WITH SECURITY_ENFORCED and WITH USER_MODE &mdash; what is the difference?</span>
+    <span class="qa-q-label lbl-apex">SOQL</span>
+    <span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span>
+  </div>
+  <div class="qa-answer">
+    <p class="ans-p">Both enforce field-level security in SOQL queries, but they work differently:</p>
+    <table class="comparison-table">
+      <tr><th>Feature</th><th>WITH SECURITY_ENFORCED</th><th>WITH USER_MODE</th></tr>
+      <tr><td>Available since</td><td>API 48.0 (Spring '20)</td><td>API 56.0 (Spring '23)</td></tr>
+      <tr><td>If inaccessible field queried</td><td>Throws QueryException &mdash; all or nothing</td><td>Strips inaccessible fields silently, no error</td></tr>
+      <tr><td>DML enforcement</td><td>No</td><td>Yes &mdash; also enforces CRUD on DML</td></tr>
+      <tr><td>Usage</td><td>In SOQL query clause</td><td>After Database.query() or as class modifier</td></tr>
+    </table>
+    <pre class="code"><span class="cmt">// WITH SECURITY_ENFORCED - throws QueryException if any field is not accessible</span>
+<span class="cls">List</span>&lt;<span class="cls">Account</span>&gt; accs = [SELECT Id, Name, AnnualRevenue 
+                       FROM Account WITH SECURITY_ENFORCED];
+<span class="cmt">// Limitation: does NOT work in subqueries, does NOT work with GROUP BY</span>
+
+// WITH USER_MODE - more flexible, newer approach
+<span class="cls">List</span>&lt;<span class="cls">Account</span>&gt; accs = [SELECT Id, Name, AnnualRevenue 
+                       FROM Account WITH USER_MODE];
+
+// WITH USER_MODE can also be applied to an entire class
+public with sharing class <span class="cls">AccountService</span> {
+    public static <span class="cls">List</span>&lt;<span class="cls">Account</span>&gt; getAccounts() {
+        return Database.query('SELECT Id, Name FROM Account', <span class="cls">AccessLevel</span>.USER_MODE);
+    }
+}</pre>
+    <div class="tip-box"><div class="tip-label">Recommendation</div><p>Prefer WITH USER_MODE for new code. It's more flexible, supports subqueries, and also enforces CRUD during DML. WITH SECURITY_ENFORCED is older and has limitations with subqueries and aggregate functions.</p></div>
+  </div>
+</div>
+
+<div class="qa-block">
+  <div class="qa-question" onclick="toggleQA(this)">
+    <span class="qa-q-text">What is SOQL FOR UPDATE &mdash; row locking? When do you use it?</span>
+    <span class="qa-q-label lbl-apex">SOQL</span>
+    <span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span>
+  </div>
+  <div class="qa-answer">
+    <p class="ans-p">FOR UPDATE locks the queried records in the database, preventing other transactions from modifying them until your current transaction completes. It is pessimistic locking &mdash; assume conflict and prevent it.</p>
+    <pre class="code"><span class="cmt">// FOR UPDATE - locks records while you process them</span>
+<span class="cls">List</span>&lt;<span class="cls">Loan__c</span>&gt; loans = [SELECT Id, Status__c, LoanAmount__c 
+                        FROM Loan__c 
+                        WHERE Status__c = 'Underwriting'
+                        FOR UPDATE]; <span class="cmt">// Locked! No one else can modify these</span>
+
+// Process and update - other transactions will wait or fail
+for(<span class="cls">Loan__c</span> l : loans) {
+    l.Status__c = 'Approved';
+    l.ApprovedDate__c = Date.today();
+}
+update loans; <span class="cmt">// Lock released after DML completes</span></pre>
+    <p class="ans-p"><b>When to use FOR UPDATE:</b></p>
+    <ul class="ans-list">
+      <li>Financial transactions where double-processing must be prevented</li>
+      <li>Status transitions that should only happen once (e.g., loan approval)</li>
+      <li>Counter/accumulator fields updated by multiple concurrent users</li>
+    </ul>
+    <div class="warn-box"><div class="warn-label">Deadlock risk</div><p>If two transactions lock different sets of records and then try to access each other's locked records, a deadlock occurs. Salesforce will throw a QueryException. Always lock records in a consistent order and keep locked transactions short.</p></div>
+  </div>
+</div>

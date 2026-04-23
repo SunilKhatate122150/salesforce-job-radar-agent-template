@@ -1,0 +1,100 @@
+<div class="page-title">FDE Prep &mdash; Behavioral &amp; Scenario Questions</div>
+<div class="page-sub">9 FDE-specific behavioral, scenario, and soft-skill questions</div>
+
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How would you explain Agentforce to a non-technical bank executive in 2 minutes?</span><span class="qa-q-label lbl-fde">FDE</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+    <ul class="ans-list">
+      <li>"Think of Agentforce as hiring a new team member who works 24/7, never takes a day off, and handles thousands of conversations simultaneously."</li>
+      <li>"When your borrower texts 'what is my balance?', this AI employee looks up their account and responds &mdash; in seconds, without a human involved."</li>
+      <li>"When the situation is complex or sensitive &mdash; like a rate dispute &mdash; they immediately hand it to your licensed loan officer with a full conversation summary."</li>
+      <li>"Because it's built on Salesforce, every conversation is logged, auditable, and secure &mdash; your compliance team has full visibility."</li>
+    </ul>
+    <div class="tip-box"><div class="tip-label">FDE skill</div><p>Translating technical concepts into business value. Practice until it sounds natural.</p></div>
+</div></div>
+
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">"Agentforce is just a chatbot, we tried chatbots and they failed." How do you respond?</span><span class="qa-q-label lbl-fde">FDE</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+    <ul class="ans-list">
+      <li><b>Acknowledge:</b> "That's a fair concern &mdash; most chatbots failed because they were rule-based systems that broke when users said something unexpected."</li>
+      <li><b>Differentiate:</b> "Agentforce doesn't follow a script. It understands intent, reasons through multi-step problems, and takes real actions."</li>
+      <li><b>Prove:</b> "The key difference is grounding &mdash; it's not making up answers. It pulls YOUR actual customer data to answer accurately."</li>
+      <li><b>Trust:</b> "The Einstein Trust Layer means your data never leaves Salesforce's secure infrastructure."</li>
+    </ul>
+    <div class="tip-box"><div class="tip-label">Pattern</div><p>Objection handling: empathy first → educate → reassure. Very common FDE interview pattern.</p></div>
+</div></div>
+
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">What are the real limitations of Agentforce you'd proactively share?</span><span class="qa-q-label lbl-fde">FDE</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+    <ul class="ans-list">
+      <li>LLM hallucination risk if grounding data is incomplete &mdash; mitigated but not eliminated</li>
+      <li>Complex reasoning limits &mdash; most scenarios handled, but extremely complex orchestration may need custom code</li>
+      <li>Token limits &mdash; long conversations or large grounding data can hit context window</li>
+      <li>Cost &mdash; LLM inference adds up at scale; model usage patterns before broad deployment</li>
+      <li>Regulatory &mdash; in mortgage/healthcare, certain decisions legally cannot be AI-made</li>
+      <li>Evolving tech &mdash; some features in Beta/Pilot; set roadmap expectations honestly</li>
+    </ul>
+    <div class="tip-box"><div class="tip-label">Trust builder</div><p>FDEs who share limitations proactively earn trust. It shows you're a partner, not a salesperson.</p></div>
+</div></div>
+
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">"Tell me about explaining a complex solution to a non-technical stakeholder." (STAR)</span><span class="qa-q-label lbl-fde-behav">BEHAVIORAL</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+    <ul class="ans-list">
+      <li><b>S:</b> Building Experian credit integration. Compliance team needed to understand data flow.</li>
+      <li><b>T:</b> Explain PII flow: Salesforce → Experian → back, and why it's secure.</li>
+      <li><b>A:</b> Created visual data flow diagram. Analogy: "Named Credentials are like a locked courier." Walked through each security layer.</li>
+      <li><b>R:</b> Compliance approved architecture in one session. Built trust for future features.</li>
+    </ul>
+    <div class="tip-box"><div class="tip-label">Why this matters</div><p>This tests FDE core skill: translating deep tech into business language. They want to see you do this naturally.</p></div>
+</div></div>
+
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">"Customer's POC isn't working after 2 weeks. They're frustrated. What do you do?"</span><span class="qa-q-label lbl-fde-behav">BEHAVIORAL</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+    <ul class="ans-list">
+      <li><b>Listen:</b> "Tell me specifically &mdash; wrong answers? Slow? Missing features?"</li>
+      <li><b>Diagnose:</b> Check conversation logs → grounding data → prompt templates → action errors</li>
+      <li><b>Quick wins:</b> Improve topic descriptions, add negative instructions, fix data quality</li>
+      <li><b>Set expectations:</b> "Accuracy improves iteratively. First 2 weeks = learning phase."</li>
+      <li><b>Build confidence:</b> Show improvement metrics over next sprint</li>
+    </ul>
+</div></div>
+
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">"How would you plan a 90-day Agentforce implementation?"</span><span class="qa-q-label lbl-fde-behav">BEHAVIORAL</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+    <table class="comparison-table">
+      <tr><th>Phase</th><th>Week</th><th>Activities</th></tr>
+      <tr><td>Discovery</td><td>1&ndash;2</td><td>Interviews, top 3 use cases, data landscape, compliance needs</td></tr>
+      <tr><td>Architecture</td><td>3&ndash;4</td><td>Agent topology, Data Cloud ingestion plan, trust layer config</td></tr>
+      <tr><td>Build Sprint 1</td><td>5&ndash;7</td><td>Core agent with 1&ndash;2 topics, basic grounding, CRM connector</td></tr>
+      <tr><td>Test & Tune</td><td>8&ndash;9</td><td>Testing framework, conversation sims, compliance review</td></tr>
+      <tr><td>Build Sprint 2</td><td>10&ndash;11</td><td>Remaining topics, complex actions, Data Cloud advanced</td></tr>
+      <tr><td>UAT & Training</td><td>12</td><td>Customer testing, training, admin enablement</td></tr>
+      <tr><td>Go Live</td><td>13</td><td>Phased: 10% → 50% → 100%, monitoring, war room</td></tr>
+    </table>
+    <div class="tip-box"><div class="tip-label">Maturity signal</div><p>Phased rollout (not "flip the switch") shows maturity and risk awareness.</p></div>
+</div></div>
+
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">"Why Salesforce? Why FDE specifically?"</span><span class="qa-q-label lbl-fde-behav">BEHAVIORAL</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+    <ul class="ans-list">
+      <li><b>Why SF:</b> "It's not just a CRM &mdash; it's an AI platform. Agentforce is the most exciting evolution in enterprise AI."</li>
+      <li><b>Why FDE:</b> "Perfect intersection &mdash; deep Apex/LWC expertise WITH customer-facing solution design. I want both."</li>
+      <li><b>Why now:</b> "FDEs work on newest products before wide adoption. I'd rather SHAPE how customers use Agentforce."</li>
+      <li><b>My edge:</b> "Mortgage industry experience = instant credibility with FinServ customers."</li>
+    </ul>
+</div></div>
+
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How does your Mortgage Platform directly relate to FDE work?</span><span class="qa-q-label lbl-fde-scenario">SCENARIO</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+    <ul class="ans-list">
+      <li><b>Experian integration</b> = secure external callouts → maps to agent actions through Trust Layer</li>
+      <li><b>Platform Events for LOS</b> = event-driven architecture → same as Agentforce streaming triggers</li>
+      <li><b>HMDA batch reporting</b> = large data processing → parallels Data Cloud batch ingestion</li>
+      <li><b>Trigger framework + Queueable</b> = deep governor limits knowledge → critical for scalable agent actions</li>
+      <li><b>TRID/FCRA/RESPA knowledge</b> = rare compliance understanding → exactly what FDEs need for guardrail design</li>
+    </ul>
+    <div class="tip-box"><div class="tip-label">Competitive advantage</div><p>Rehearse connecting at least 3 of these dots. This is your competitive advantage over candidates with generic SF experience.</p></div>
+</div></div>
+
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">"Do you have any questions for us?" &mdash; Your prepared list.</span><span class="qa-q-label lbl-fde">FDE</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+    <div class="warn-box"><div class="warn-label">Never do this</div><p>NEVER say "No, I'm good." Always ask at least 2 questions.</p></div>
+    <ul class="ans-list">
+      <li><b>1.</b> "What does a typical first 90 days look like for an FDE Associate?"</li>
+      <li><b>2.</b> "How does the FDE team collaborate with Product Engineering when customers hit limitations?"</li>
+      <li><b>3.</b> "What's the most common challenge FDEs face in Agentforce deployments right now?"</li>
+      <li><b>4.</b> "How do you measure FDE success &mdash; customer outcomes, adoption, or something else?"</li>
+      <li><b>5.</b> "What Agentforce roadmap features are you most excited about?"</li>
+    </ul>
+    <div class="tip-box"><div class="tip-label">Best choice</div><p>Pick 2&ndash;3 based on conversation flow. #3 is strongest &mdash; shows you're already thinking about challenges.</p></div>
+</div></div>

@@ -1,0 +1,266 @@
+<div class="page-title">Validation &mdash; UI and Backend Scenarios</div>
+<div class="page-sub">10 scenarios enforcing data quality from LWC form to Apex trigger to database &mdash; complete end-to-end</div>
+
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How do you validate a custom LWC form with multiple lightning-input fields before calling Apex?</span><span class="qa-q-label lbl-lwc">VALIDATION</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<pre class="code">// loanApplicationForm.js
+import { LightningElement, track } from 'lwc';
+import { ShowToastEvent } from 'lightning/platformShowToastEvent';
+import saveLoanApplication from '@salesforce/apex/LoanController.saveLoanApplication';
+
+export default class LoanApplicationForm extends LightningElement {
+    @track formData = { loanAmount: '', loanType: '', borrowerName: '', fico: '' };
+
+    handleFieldChange(event) {
+        const field = event.target.dataset.field;
+        this.formData = { ...this.formData, [field]: event.target.value };
+    }
+
+    handleSubmit() {
+        // Step 1: Trigger built-in lightning-input validation
+        const allInputs = this.template.querySelectorAll('lightning-input, lightning-combobox');
+        let isValid = [...allInputs].every(input => {
+            const valid = input.checkValidity();
+            if (!valid) input.reportValidity();  // shows error UI on that field
+            return valid;
+        });
+
+        // Step 2: Custom cross-field business rules
+        if (isValid) {
+            if (parseInt(this.formData.fico) < 500) {
+                // Set error on specific field
+                const ficoInput = this.template.querySelector('[data-field="fico"]');
+                ficoInput.setCustomValidity('FICO score must be at least 500.');
+                ficoInput.reportValidity();
+                isValid = false;
+            }
+            if (parseFloat(this.formData.loanAmount) > 2000000 && this.formData.loanType === 'FHA') {
+                this.dispatchEvent(new ShowToastEvent({
+                    title: 'Validation Error',
+                    message: 'FHA loans cannot exceed $2,000,000.',
+                    variant: 'error'
+                }));
+                isValid = false;
+            }
+        }
+
+        if (!isValid) return;  // stop &mdash; do not call Apex
+
+        // Step 3: Call Apex only when client validation passes
+        this.saveForm();
+    }
+
+    async saveForm() {
+        try {
+            const result = await saveLoanApplication({ data: JSON.stringify(this.formData) });
+            this.dispatchEvent(new ShowToastEvent({
+                title: 'Saved', message: 'Application ID: ' + result.Id, variant: 'success'
+            }));
+        } catch (e) {
+            this.dispatchEvent(new ShowToastEvent({
+                title: 'Save Failed', message: e.body?.message, variant: 'error'
+            }));
+        }
+    }
+}</pre>
+</div></div>
+
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How does trigger addError() surface to LWC &mdash; show the complete flow from trigger to UI toast?</span><span class="qa-q-label lbl-lwc">VALIDATION</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<pre class="code">// APEX TRIGGER &mdash; addError prevents DML and returns error to caller
+trigger LoanTrigger on Loan__c (before insert, before update) {
+    for(Loan__c loan : Trigger.new) {
+        if(loan.LoanAmount__c > 2000000 && loan.LoanType__c == 'FHA') {
+            // Field-level error &mdash; highlights the LoanAmount field in red
+            loan.LoanAmount__c.addError('FHA loans cannot exceed $2,000,000.');
+        }
+        if(loan.Status__c == 'Approved' && loan.FicoScore__c < 620) {
+            // Record-level error &mdash; shows as banner at top of form
+            loan.addError('Cannot approve loan with FICO score below 620.');
+        }
+    }
+}
+
+// LWC &mdash; updateRecord catches addError() automatically
+async handleSaveLoan() {
+    try {
+        await updateRecord({ fields: { Id: this.recordId, LoanAmount__c: this.amount } });
+        this.dispatchEvent(new ShowToastEvent({ title: 'Saved', variant: 'success' }));
+    } catch (error) {
+        // error.body.output.fieldErrors &mdash; field-level errors keyed by field API name
+        // error.body.output.errors &mdash; record-level errors array
+        // error.body.message &mdash; overall error message
+        const msg = error.body?.output?.errors?.[0]?.message
+                 || error.body?.message
+                 || 'Save failed';
+        this.dispatchEvent(new ShowToastEvent({
+            title: 'Validation Failed', message: msg, variant: 'error', mode: 'sticky'
+        }));
+    }
+}
+
+// With lightning-record-edit-form &mdash; addError() errors show AUTOMATICALLY
+// Field errors highlight the specific field
+// Record errors appear in lightning-messages component
+// No extra error handling code needed for trigger validation!</pre>
+</div></div>
+
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">Validation Rule vs Apex before trigger &mdash; which runs first and when to use each?</span><span class="qa-q-label lbl-apex">VALIDATION</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<table class="comparison-table"><tr><th>Feature</th><th>Validation Rule</th><th>Apex Before Trigger</th></tr>
+<tr><td>Runs on ALL DML (API, UI, Data Loader)</td><td>Yes</td><td>Yes</td></tr>
+<tr><td>Can query other objects</td><td>No (formula only)</td><td>Yes</td></tr>
+<tr><td>Admin-maintainable</td><td>Yes &mdash; no deployment</td><td>No &mdash; code deploy needed</td></tr>
+<tr><td>Complex logic</td><td>Limited (formula)</td><td>Full Apex power</td></tr>
+<tr><td>Execution order</td><td>After before triggers</td><td>Before validation rules</td></tr>
+<tr><td>Can bypass</td><td>Yes (custom bypass field)</td><td>Only with explicit Apex bypass</td></tr></table>
+<div class="tip-box"><div class="tip-label">Execution order</div><p>Full Salesforce save order: System validation → Before triggers → Custom validation rules → Duplicate rules → After triggers → Workflow rules → Processes → Flows. Apex before trigger runs BEFORE validation rules &mdash; so if your trigger throws an error, validation rules never run for that record.</p></div>
+</div></div>
+
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How do you prevent duplicate records using an Apex trigger &mdash; complete bulkified code?</span><span class="qa-q-label lbl-apex">VALIDATION</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<pre class="code">trigger ContactDuplicateTrigger on Contact (before insert, before update) {
+
+    // Step 1: Collect emails from new/updated records
+    Set&lt;String&gt; emails = new Set&lt;String&gt;();
+    for(Contact c : Trigger.new) {
+        if(String.isNotBlank(c.Email)) emails.add(c.Email.toLowerCase());
+    }
+    if(emails.isEmpty()) return;
+
+    // Step 2: One SOQL query outside the loop
+    Map&lt;String, Contact&gt; existingByEmail = new Map&lt;String, Contact&gt;();
+    for(Contact c : [SELECT Id, Email, FirstName, LastName FROM Contact
+                     WHERE Email IN :emails]) {
+        existingByEmail.put(c.Email.toLowerCase(), c);
+    }
+
+    // Step 3: Flag duplicates
+    for(Contact c : Trigger.new) {
+        if(String.isBlank(c.Email)) continue;
+        Contact existing = existingByEmail.get(c.Email.toLowerCase());
+        if(existing == null) continue;
+        // For update: skip if it is the same record being updated
+        if(Trigger.isUpdate && existing.Id == c.Id) continue;
+        // Field-level error &mdash; highlights Email field in the UI
+        c.Email.addError(
+            'Duplicate: a Contact with this email already exists &mdash; '
+            + existing.FirstName + ' ' + existing.LastName
+        );
+    }
+}</pre>
+</div></div>
+
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How do you validate file uploads in LWC &mdash; restrict type and size before sending to server?</span><span class="qa-q-label lbl-lwc">VALIDATION</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<pre class="code">const MAX_SIZE = 10 * 1024 * 1024;  // 10 MB in bytes
+const ALLOWED_EXTS = ['.pdf', '.jpg', '.jpeg', '.png'];
+
+export default class FileValidator extends LightningElement {
+    @api recordId;
+    selectedFile = null;
+    isValid = false;
+    fileError = '';
+
+    handleFileChange(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+        this.selectedFile = file;
+        this.fileError = '';
+        this.isValid = false;
+
+        // Check extension
+        const ext = '.' + file.name.split('.').pop().toLowerCase();
+        if (!ALLOWED_EXTS.includes(ext)) {
+            this.fileError = 'Only PDF, JPG, and PNG files are allowed.';
+            return;
+        }
+
+        // Check size
+        if (file.size > MAX_SIZE) {
+            this.fileError = `File is ${(file.size/1024/1024).toFixed(1)}MB &mdash; maximum is 10MB.`;
+            return;
+        }
+
+        this.isValid = true;
+    }
+
+    async handleUpload() {
+        if (!this.isValid || !this.selectedFile) return;
+        // Read as base64 for Apex
+        const base64 = await new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(reader.result.split(',')[1]);
+            reader.onerror = reject;
+            reader.readAsDataURL(this.selectedFile);
+        });
+        // Pass base64, fileName, recordId to Apex
+    }
+}</pre>
+</div></div>
+
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How does lightning-record-edit-form handle validation automatically &mdash; show onsubmit, onsuccess, onerror pattern?</span><span class="qa-q-label lbl-lwc">VALIDATION</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<pre class="code">&lt;!-- loanEditForm.html --&gt;
+&lt;lightning-record-edit-form
+    record-id={recordId}
+    object-api-name="Loan__c"
+    onsuccess={handleSuccess}
+    onerror={handleError}
+    onsubmit={handleSubmit}&gt;
+
+    &lt;!-- Validation rule + trigger addError() messages auto-appear here --&gt;
+    &lt;lightning-messages&gt;&lt;/lightning-messages&gt;
+
+    &lt;!-- Field errors appear on each field automatically --&gt;
+    &lt;lightning-input-field field-name="LoanAmount__c"&gt;&lt;/lightning-input-field&gt;
+    &lt;lightning-input-field field-name="LoanType__c"&gt;&lt;/lightning-input-field&gt;
+    &lt;lightning-button type="submit" label="Save"&gt;&lt;/lightning-button&gt;
+&lt;/lightning-record-edit-form&gt;
+
+// JS handlers:
+handleSubmit(event) {
+    event.preventDefault();  // stop default submit for custom pre-check
+    const fields = event.detail.fields;
+
+    // Custom pre-submit check
+    if (parseFloat(fields.LoanAmount__c) &lt; 50000) {
+        this.dispatchEvent(new ShowToastEvent({
+            title: 'Error', message: 'Minimum loan amount is $50,000', variant: 'error'
+        }));
+        return;  // do NOT submit
+    }
+    // Proceed with submit
+    this.template.querySelector('lightning-record-edit-form').submit(fields);
+}
+
+handleSuccess(event) {
+    const savedRecord = event.detail;
+    this.dispatchEvent(new ShowToastEvent({ title: 'Saved', variant: 'success' }));
+}
+
+handleError(event) {
+    // Trigger addError() and Validation Rules auto-show on fields via lightning-messages
+    // This handler catches SYSTEM errors (permissions, network, etc.)
+    console.error('System error:', event.detail);
+}</pre>
+</div></div>
+
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How do you handle Database.SaveResult errors in Apex and return them clearly to LWC?</span><span class="qa-q-label lbl-apex">VALIDATION</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<pre class="code">// Apex &mdash; partial DML with error collection
+@AuraEnabled
+public static Map&lt;String,Object&gt; bulkSaveLoans(List&lt;Loan__c&gt; loans) {
+    List&lt;Database.SaveResult&gt; results = Database.insert(loans, false); // partial mode
+    List&lt;Map&lt;String,String&gt;&gt; errors = new List&lt;Map&lt;String,String&gt;&gt;();
+    List&lt;String&gt; successIds = new List&lt;String&gt;();
+
+    for (Integer i=0; i&lt;results.size(); i++) {
+        if (results[i].isSuccess()) {
+            successIds.add(results[i].getId());
+        } else {
+            for(Database.Error err : results[i].getErrors()) {
+                errors.add(new Map&lt;String,String&gt;{
+                    'index' =&gt; String.valueOf(i),
+                    'field' =&gt; String.join(err.getFields(), ','),
+                    'message' =&gt; err.getMessage()
+                });
+            }
+        }
+    }
+    return new Map&lt;String,Object&gt;{ 'successIds' =&gt; successIds, 'errors' =&gt; errors };
+}</pre>
+</div></div>

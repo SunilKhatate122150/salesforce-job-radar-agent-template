@@ -1,0 +1,171 @@
+<div class="page-title">Agentforce &mdash; 10 Scenario Questions</div>
+<div class="page-sub">Real interview questions about Agentforce for 2025-2026 &mdash; architecture, actions, grounding, Trust Layer</div>
+
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">What is Agentforce &mdash; explain the architecture at a senior developer level?</span><span class="qa-q-label lbl-domain">AGENTFORCE</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<p class="ans-p">Agentforce is Salesforce's autonomous AI agent platform (GA: Fall 2024). Agents can reason, act, and complete multi-step tasks without constant human input. As a developer, you extend agents by building Apex @InvocableMethod actions, Flows, and Prompt Templates.</p>
+<table class="comparison-table"><tr><th>Component</th><th>What It Is</th><th>Developer Builds</th></tr>
+<tr><td>Agent</td><td>AI entity with Role, Goals, Instructions, Topics</td><td>Configure in Agent Builder</td></tr>
+<tr><td>LLM</td><td>The reasoning engine &mdash; GPT-4o, Claude, xGen etc.</td><td>Select in LLM Gateway</td></tr>
+<tr><td>Topics</td><td>Logical groups of related Actions (e.g. "Loan Status")</td><td>Define scope + which actions belong</td></tr>
+<tr><td>Actions</td><td>What agent CAN do &mdash; Flow, Apex, CRM, External API</td><td>@InvocableMethod Apex classes</td></tr>
+<tr><td>Grounding</td><td>How agent accesses real data &mdash; Data Cloud, Knowledge, CRM</td><td>Design SOQL access strategy</td></tr>
+<tr><td>Einstein Trust Layer</td><td>PII masking, zero data retention, audit trail</td><td>Configure masking rules in Setup</td></tr></table>
+<div class="tip-box"><div class="tip-label">Key developer skill</div><p>The most important new skill: write excellent @InvocableMethod descriptions. The description is what the LLM reads to decide WHEN to call your action. Vague description = wrong action called. Write it as: "Use this action when [intent]. Returns [what]. Requires [input]."</p></div>
+</div></div>
+
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How do you build an Apex Action for Agentforce &mdash; what makes a good action description?</span><span class="qa-q-label lbl-apex">AGENTFORCE</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<pre class="code">public class AgentLoanStatusAction {
+
+    public class Request {
+        @InvocableVariable(label='Borrower Email' required=true
+            description='Email address of the borrower asking about their loan')
+        public String borrowerEmail;
+    }
+
+    public class Response {
+        @InvocableVariable(label='Status Summary')
+        public String statusSummary;
+        @InvocableVariable(label='Next Steps')
+        public String nextSteps;
+        @InvocableVariable(label='Found')
+        public Boolean found;
+    }
+
+    // THE DESCRIPTION IS CRITICAL &mdash; this is what the LLM reads to decide WHEN to call this
+    @InvocableMethod(
+        label='Get Loan Status for Borrower'
+        description='Use this action when a borrower asks about their loan status, application progress, what stage their loan is in, or what happens next. This action looks up the borrower''s active loan by email and returns the current status and next steps. Requires the borrower''s email address.'
+        category='Loan Processing'
+    )
+    public static List&lt;Response&gt; getLoanStatus(List&lt;Request&gt; requests) {
+        List&lt;Response&gt; responses = new List&lt;Response&gt;();
+        for(Request req : requests) {
+            Response resp = new Response();
+            List&lt;Loan__c&gt; loans = [
+                SELECT Id, Name, Status__c, Next_Steps__c, LoanOfficer__r.Name
+                FROM Loan__c
+                WHERE BorrowerEmail__c = :req.borrowerEmail
+                AND Status__c NOT IN ('Closed', 'Denied')
+                WITH USER_MODE
+                ORDER BY CreatedDate DESC LIMIT 1
+            ];
+            if(loans.isEmpty()) {
+                resp.found = false;
+                resp.statusSummary = 'No active loan application found for this email address.';
+                resp.nextSteps = 'Please contact your loan officer or call our main number.';
+            } else {
+                Loan__c l = loans[0];
+                resp.found = true;
+                resp.statusSummary = 'Your loan ' + l.Name + ' is currently in ' + l.Status__c + ' status. Your loan officer is ' + l.LoanOfficer__r.Name + '.';
+                resp.nextSteps = String.isNotBlank(l.Next_Steps__c) ? l.Next_Steps__c : 'Your loan officer will contact you with the next steps shortly.';
+            }
+            responses.add(resp);
+        }
+        return responses;
+    }
+}</pre>
+</div></div>
+
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">What is Grounding in Agentforce &mdash; how does it access real CRM data and why is it important?</span><span class="qa-q-label lbl-domain">AGENTFORCE</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<p class="ans-p">Grounding connects the LLM to real, current data. Without grounding, the LLM only knows what was in its training data &mdash; potentially outdated or wrong for your business. Grounding makes responses factually accurate.</p>
+<ul class="ans-list">
+  <li><b>CRM Grounding:</b> Agent calls a Standard CRM Action or Apex Action that queries Salesforce records. The result is returned as context the LLM reads before generating its response</li>
+  <li><b>Knowledge Article Grounding:</b> Agent searches your Salesforce Knowledge Base via vector search. Retrieved articles become context for answering policy/FAQ questions accurately</li>
+  <li><b>Data Cloud Grounding:</b> Agent accesses unified customer profiles and calculated insights from Data Cloud via semantic vector search (RAG &mdash; Retrieval Augmented Generation)</li>
+  <li><b>External Grounding via Apex:</b> Apex Action calls an external API (e.g., FRED for mortgage rates) and returns the data as a string the LLM uses to ground its response in real-time data</li>
+</ul>
+<div class="tip-box"><div class="tip-label">Why grounding matters in mortgage</div><p>Without grounding, if a borrower asks "What is the current 30-year fixed rate?" the LLM might answer with its training data from 2023. With Apex grounding calling the FRED API, the agent answers with today's actual rate. Grounding is what makes AI responses trustworthy in a regulated financial services context.</p></div>
+</div></div>
+
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">What is the Einstein Trust Layer and why is it essential for financial services?</span><span class="qa-q-label lbl-domain">AGENTFORCE</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<ul class="ans-list">
+  <li><b>Zero Data Retention:</b> External LLM providers (OpenAI, Anthropic) are contractually prevented from storing or training on Salesforce customer data. Data is used for one response only</li>
+  <li><b>PII Masking:</b> SSN, credit card numbers, and other PII are automatically detected and replaced with tokens before reaching the LLM. The LLM never sees raw borrower PII</li>
+  <li><b>Toxicity Detection:</b> LLM output is scanned before shown to users. Harmful content is blocked</li>
+  <li><b>Audit Trail:</b> All AI interactions are logged in Salesforce for compliance review. For ECOA/FCRA regulated environments, this audit trail is required</li>
+  <li><b>Data Residency:</b> Data stays within configured geographic boundaries &mdash; EU data doesn't leave EU</li>
+</ul>
+<pre class="code">// Configure PII masking in Setup → Einstein → Einstein Trust Layer → Data Masking Rules
+// Add custom rule for sensitive fields:
+// Object: Loan__c, Field: SSN__c → Masking: Replace with [MASKED_SSN]
+
+// What LLM receives instead of real data:
+// Original: "Borrower SSN: 123-45-6789, FICO: 720"
+// After masking: "Borrower SSN: [MASKED_SSN], FICO: 720"
+// The LLM can still answer about FICO but never sees the actual SSN
+
+// Query audit trail:
+List&lt;EinsteinAIAuditEvent&gt; auditLog = [
+    SELECT Id, UserId, ActionType, CreatedDate
+    FROM EinsteinAIAuditEvent
+    WHERE CreatedDate = TODAY
+    ORDER BY CreatedDate DESC
+];</pre>
+</div></div>
+
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">What are the current limitations of Agentforce a developer should know for interviews?</span><span class="qa-q-label lbl-domain">AGENTFORCE</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<ul class="ans-list">
+  <li><b>Response latency:</b> Agent reasoning + grounding + LLM generation adds 2&ndash;10 seconds. Not suitable for real-time sub-second interactions</li>
+  <li><b>Non-deterministic:</b> Same input may produce slightly different outputs. Critical business logic must remain in deterministic Apex/Flow &mdash; not in LLM reasoning</li>
+  <li><b>Hallucination risk:</b> Even with grounding, LLMs can occasionally produce incorrect information. Always validate critical outputs</li>
+  <li><b>Context window limits:</b> Very long conversations or large grounded documents may exceed LLM context window, causing truncation</li>
+  <li><b>No direct DML:</b> The LLM itself doesn't write to Salesforce. It calls Actions, which then perform DML. This adds a step but maintains data integrity</li>
+  <li><b>Einstein AI credits:</b> High-volume deployments need capacity planning &mdash; each agent interaction consumes credits</li>
+  <li><b>Testing challenges:</b> Non-deterministic behavior means more end-to-end testing needed. Test Apex actions independently (they're just InvocableMethods) and test full agent flows in Agent Builder sandbox</li>
+</ul>
+</div></div>
+
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How does Agentforce determine which action to call &mdash; explain topics and instructions?</span><span class="qa-q-label lbl-domain">AGENTFORCE SCENARIOS</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<p class="ans-p"><b>Agent Topics</b> are categories of user intent. Each topic has natural language instructions telling the agent when to handle that type of request.</p>
+<ul class="ans-list">
+  <li><b>Topic</b> &mdash; 'Loan Status Inquiries'. Instructions: 'Handle when user asks about loan status, loan progress, what stage their loan is in, or when their loan will close.'</li>
+  <li><b>Agent Actions within a Topic</b> &mdash; GetLoanStatus, GetEstimatedCloseDate, GetRequiredDocuments. The agent picks the right action based on the user's specific ask.</li>
+  <li><b>Topic instructions format</b> &mdash; natural language, 1-2 sentences per instruction. Tell the agent what the topic covers, what it should NOT handle (hand-off triggers), and how to behave.</li>
+  <li><b>Example boundary instruction</b> &mdash; 'If the user asks about rates, interest calculations, or pre-approval decisions, escalate to a human loan officer rather than answering.'</li>
+  <li><b>Tone instructions</b> &mdash; 'Always address the user by first name. Be empathetic when delivering declined or on-hold status. Never speculate about approval likelihood.'</li>
+</ul>
+<div class="tip-box"><div class="tip-label">Good topic design</div><p>Well-defined topics with clear boundaries prevent hallucination. If the agent knows exactly what it should and should not handle, it stays within its lane and escalates appropriately rather than guessing.</p></div>
+</div></div>
+
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">What is the difference between Agentforce Service Agent, Sales Agent, and custom agents?</span><span class="qa-q-label lbl-domain">AGENTFORCE SCENARIOS</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<table class="comparison-table"><tr><th>Agent Type</th><th>Primary Use</th><th>Pre-built Topics</th><th>Custom?</th></tr><tr><td>Service Agent</td><td>Customer service &mdash; answer FAQs, case status, routing</td><td>Case status, FAQ answering, human escalation</td><td>Add custom topics + actions</td></tr><tr><td>Sales Agent (SDR)</td><td>Prospect outreach, follow-up, pipeline management</td><td>Email drafting, meeting scheduling, lead qualification</td><td>Add custom topics + actions</td></tr><tr><td>Copilot (Employee-facing)</td><td>Internal productivity &mdash; summarize, draft, lookup</td><td>Record summaries, email drafting, task creation</td><td>Highly customizable</td></tr><tr><td>Custom Agent (from scratch)</td><td>Fully bespoke &mdash; your own persona, topics, actions</td><td>None &mdash; you define everything</td><td>Fully custom</td></tr></table>
+<div class="tip-box"><div class="tip-label">Start with pre-built</div><p>In an interview, show you know the pre-built agents exist and their use cases. Demonstrate you'd evaluate pre-built first before building from scratch &mdash; shows business judgment. Custom agents require more maintenance.</p></div>
+</div></div>
+
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How do you test and evaluate an Agentforce agent before going to production?</span><span class="qa-q-label lbl-domain">AGENTFORCE SCENARIOS</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<ul class="ans-list">
+  <li><b>Agent Builder Testing panel</b> &mdash; in Setup → Agent Builder, test conversations directly. See which topic was selected, which action was called, and what data was returned.</li>
+  <li><b>Test conversation transcripts</b> &mdash; run 20+ realistic test conversations covering expected user inputs, edge cases, and out-of-scope queries. Verify the agent handles each correctly.</li>
+  <li><b>Boundary testing</b> &mdash; deliberately ask questions outside the agent's topics. Verify it escalates rather than hallucinating an answer.</li>
+  <li><b>Action testing</b> &mdash; for each Apex Action, verify: correct data returned, handles 'not found' gracefully, FLS respected (agent running as correct user context), no SOQL/DML errors.</li>
+  <li><b>User acceptance testing</b> &mdash; deploy to a sandbox, have actual loan officers test realistic questions. Their natural language will be different from what the developer tested.</li>
+  <li><b>Monitoring in production</b> &mdash; use Conversation Logs (Setup → Bot Conversation Logs) to review real conversations. Identify patterns where the agent fails and refine topics/instructions.</li>
+</ul>
+</div></div>
+
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">What is Einstein Copilot for Developers (Code Generation) &mdash; how does it work?</span><span class="qa-q-label lbl-domain">AGENTFORCE SCENARIOS</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<p class="ans-p">Einstein for Developers is an AI coding assistant built into VS Code (Salesforce Extension Pack) and the Developer Console. It generates Apex, LWC, SOQL, and test code from natural language.</p>
+<ul class="ans-list">
+  <li><b>Generate Apex from comment</b> &mdash; write a comment describing what you want, press a shortcut, get code. Example: /* Create a method that finds all loans past due date and updates status to Late */</li>
+  <li><b>Explain code</b> &mdash; select code → ask Einstein to explain it. Useful for understanding inherited code.</li>
+  <li><b>Generate test class</b> &mdash; select an Apex class → ask Einstein to generate a test class with positive, negative, and bulk test cases.</li>
+  <li><b>Fix errors</b> &mdash; paste a compile error → Einstein suggests the fix.</li>
+  <li><b>SOQL generation</b> &mdash; describe what you want to query in plain English → get SOQL.</li>
+</ul>
+<div class="warn-box"><div class="warn-label">Always review AI-generated code</div><p>Einstein-generated code may have security issues (missing WITH SECURITY_ENFORCED), performance issues (SOQL in loops), or logic errors. Treat it as a starting draft, not a finished solution. Run code review and tests as normal.</p></div>
+</div></div>
+
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How would you design an Agentforce agent for a mortgage company &mdash; complete architecture?</span><span class="qa-q-label lbl-domain">AGENTFORCE SCENARIOS</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<p class="ans-p"><b>Business requirement:</b> Borrowers need self-service access to loan status, document requirements, and appointment scheduling &mdash; currently handled by 3 loan officers spending 2 hours each per day on these repetitive queries.</p>
+<p class="ans-p"><b>Agent design:</b></p>
+<ul class="ans-list">
+  <li><b>Agent persona</b> &mdash; 'Mortgage Assistant'. Friendly, professional, empathetic. Always addresses borrower by first name.</li>
+  <li><b>Topic 1: Loan Status</b> &mdash; Action: GetLoanStatus (Apex). Input: loan number or borrower name. Output: status, stage, next steps, estimated close date.</li>
+  <li><b>Topic 2: Document Requirements</b> &mdash; Action: GetRequiredDocuments (Apex). Input: loan ID. Output: list of required documents, which are received, which are outstanding.</li>
+  <li><b>Topic 3: Appointment Scheduling</b> &mdash; Action: GetAvailableSlots + ScheduleAppointment (Apex). Integrates with loan officer calendar.</li>
+  <li><b>Topic 4: Out of Scope</b> &mdash; Escalation topic. Any question about rates, approval decisions, legal advice → 'I'll connect you with your loan officer for that.'</li>
+  <li><b>Channel</b> &mdash; Messaging for In-App and Web (Experience Cloud portal), SMS via Salesforce Messaging.</li>
+  <li><b>Grounding</b> &mdash; Agent queries Loan__c, Borrower__c, Loan_Document__c via Apex Actions. No hallucination risk on factual data.</li>
+</ul>
+<div class="tip-box"><div class="tip-label">ROI framing for interview</div><p>Frame the design in business terms: 'This agent handles 80% of routine borrower inquiries, freeing loan officers to focus on complex cases and new applications &mdash; reducing cost per loan and improving borrower NPS.'</p></div>
+</div></div>

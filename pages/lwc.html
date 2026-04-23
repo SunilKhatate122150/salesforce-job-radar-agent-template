@@ -1,0 +1,247 @@
+<div class="page-title">Lightning Web Components &mdash; Interview Questions</div>
+<div class="page-sub">20 questions with complete answers and code examples</div>
+
+<div class="qa-block">
+  <div class="qa-question" onclick="toggleQA(this)">
+    <span class="qa-q-text">What is the difference between @api, @track, and @wire &mdash; explain with code</span>
+    <span class="qa-q-label lbl-lwc">LWC</span>
+    <span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span>
+  </div>
+  <div class="qa-answer">
+    <table class="comparison-table">
+      <tr><th>Decorator</th><th>Purpose</th><th>Access</th><th>Reactive?</th></tr>
+      <tr><td>@api</td><td>Public property &mdash; accessible from parent component or Lightning App Builder</td><td>External &mdash; parent can set it</td><td>Yes</td></tr>
+      <tr><td>@track</td><td>Reactive private property &mdash; triggers re-render when value changes</td><td>Internal only</td><td>Yes (deep object/array)</td></tr>
+      <tr><td>@wire</td><td>Declarative data fetching &mdash; connects to wire adapters or cacheable Apex</td><td>Internal, auto-populated</td><td>Yes (auto-refires)</td></tr>
+    </table>
+    <pre class="code"><span class="cmt">// Import decorators from lwc</span>
+import { LightningElement, api, track, wire } from 'lwc';
+import getLoans from '@salesforce/apex/LoanController.getLoans';
+import { getRecord, getFieldValue } from 'lightning/uiRecordApi';
+import LOAN_AMOUNT_FIELD from '@salesforce/schema/Loan__c.LoanAmount__c';
+
+export default class <span class="cls">LoanDetails</span> extends <span class="cls">LightningElement</span> {
+    
+    // @api - parent passes this in, re-renders when parent changes it
+    @api recordId;          <span class="cmt">// Required for record pages</span>
+    @api loanType = 'FHA'; <span class="cmt">// With default value</span>
+    
+    // @track - for deeply nested object changes
+    // Note: in current LWC, plain properties ARE reactive for reassignment
+    // @track only needed when mutating nested object/array properties
+    @track filterCriteria = { minAmount: 0, maxAmount: 1000000, status: 'Active' };
+    
+    isLoading = false; <span class="cmt">// Plain property - reactive for reassignment (no @track needed)</span>
+    
+    // @wire with Apex - requires cacheable=true on Apex method
+    @wire(getLoans, { loanType: '$loanType' }) <span class="cmt">// '$loanType' = reactive param</span>
+    wiredLoans({ error, data }) {
+        if(data) {
+            this.loans = data;
+            this.error = undefined;
+        } else if(error) {
+            this.error = error;
+            this.loans = undefined;
+        }
+    }
+    
+    // @wire with standard adapter
+    @wire(getRecord, { recordId: '$recordId', fields: [LOAN_AMOUNT_FIELD] })
+    loanRecord;
+    
+    get loanAmount() {
+        return getFieldValue(this.loanRecord.data, LOAN_AMOUNT_FIELD);
+    }
+}</pre>
+    <div class="tip-box"><div class="tip-label">Key distinction interviewers test</div><p>@track is no longer needed for primitive reassignment in modern LWC &mdash; all properties are reactive by default for assignment. @track is only needed when you mutate a nested property like this.obj.nestedProp = 'value' without reassigning the top-level object.</p></div>
+  </div>
+</div>
+
+<div class="qa-block">
+  <div class="qa-question" onclick="toggleQA(this)">
+    <span class="qa-q-text">How do you communicate between LWC components &mdash; all 3 patterns with code</span>
+    <span class="qa-q-label lbl-lwc">LWC</span>
+    <span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span>
+  </div>
+  <div class="qa-answer">
+    <p class="ans-p"><b>Pattern 1: Parent ΓåÆ Child (via @api property or method call)</b></p>
+    <pre class="code"><span class="cmt">// Parent HTML - sets child @api property</span>
+&lt;c-child-component loan-type={selectedType} loan-id={currentLoanId}&gt;&lt;/c-child-component&gt;
+&lt;lightning-button label="Reset Child" onclick={resetChild}&gt;&lt;/lightning-button&gt;
+
+<span class="cmt">// Parent JS - call child method using querySelector</span>
+resetChild() {
+    this.template.querySelector('c-child-component').resetForm(); <span class="cmt">// calls child's @api method</span>
+}
+
+<span class="cmt">// Child JS - receives @api property</span>
+@api loanType;
+@api resetForm() { <span class="cmt">// callable by parent</span>
+    this.formData = {};
+    this.errors = [];
+}</pre>
+    <p class="ans-p"><b>Pattern 2: Child ΓåÆ Parent (via CustomEvent)</b></p>
+    <pre class="code"><span class="cmt">// Child JS - dispatch event with data</span>
+handleSave() {
+    const event = new CustomEvent('loansaved', {
+        detail: { loanId: this.loanId, status: 'Approved' },
+        bubbles: true,   <span class="cmt">// propagates up through DOM</span>
+        composed: false  <span class="cmt">// stays within component tree (false = default)</span>
+    });
+    this.dispatchEvent(event);
+}
+
+<span class="cmt">// Parent HTML - listen for the event</span>
+&lt;c-loan-form onloansaved={handleLoanSaved}&gt;&lt;/c-loan-form&gt;
+
+<span class="cmt">// Parent JS - handle event</span>
+handleLoanSaved(event) {
+    const { loanId, status } = event.detail;
+    this.showToast('Success', 'Loan ' + loanId + ' saved', 'success');
+}</pre>
+    <p class="ans-p"><b>Pattern 3: Unrelated Components ΓåÆ Lightning Message Service (LMS)</b></p>
+    <pre class="code"><span class="cmt">// Step 1: Create MessageChannel metadata file</span>
+// LoanStatusChannel.messageChannel-meta.xml
+
+<span class="cmt">// Step 2: Publisher component</span>
+import { publish, MessageContext } from 'lightning/messageService';
+import LOAN_STATUS_CHANNEL from '@salesforce/messageChannel/LoanStatusChannel__c';
+
+@wire(MessageContext) messageContext;
+
+publishLoanUpdate(loanId, status) {
+    publish(this.messageContext, LOAN_STATUS_CHANNEL, { loanId, status });
+}
+
+<span class="cmt">// Step 3: Subscriber component</span>
+import { subscribe, unsubscribe, APPLICATION_SCOPE, MessageContext } from 'lightning/messageService';
+import LOAN_STATUS_CHANNEL from '@salesforce/messageChannel/LoanStatusChannel__c';
+
+subscription = null;
+
+connectedCallback() {
+    this.subscription = subscribe(this.messageContext, LOAN_STATUS_CHANNEL, 
+        (msg) => this.handleLoanUpdate(msg), { scope: APPLICATION_SCOPE });
+}
+disconnectedCallback() {
+    unsubscribe(this.subscription); <span class="cmt">// Always unsubscribe to prevent memory leaks</span>
+}
+handleLoanUpdate(message) {
+    this.currentLoanId = message.loanId;
+    this.loanStatus = message.status;
+}</pre>
+  </div>
+</div>
+
+<div class="qa-block">
+  <div class="qa-question" onclick="toggleQA(this)">
+    <span class="qa-q-text">LWC lifecycle hooks &mdash; what fires in what order?</span>
+    <span class="qa-q-label lbl-lwc">LWC</span>
+    <span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span>
+  </div>
+  <div class="qa-answer">
+    <p class="ans-p"><b>Order of lifecycle hooks:</b> constructor ΓåÆ connectedCallback ΓåÆ render ΓåÆ renderedCallback</p>
+    <pre class="code">export default class <span class="cls">LoanComponent</span> extends <span class="cls">LightningElement</span> {
+    
+    constructor() {
+        super(); <span class="cmt">// ALWAYS call super() first - mandatory</span>
+        <span class="cmt">// Fires: When component is instantiated</span>
+        // Cannot: Access DOM (not rendered yet), access @api properties
+        // Can: Set private properties, initialize collections
+        this.loans = [];
+    }
+    
+    connectedCallback() {
+        <span class="cmt">// Fires: When component is inserted into the DOM</span>
+        // Can: Access template (careful - may not be fully rendered)
+        // Use for: Initialization logic, subscriptions, imperative Apex calls
+        this.loadInitialData();
+        this.registerListeners(); <span class="cmt">// LMS subscriptions go here</span>
+    }
+    
+    renderedCallback() {
+        <span class="cmt">// Fires: After every render (initial and re-renders)</span>
+        // WARNING: Can cause infinite loop if you modify state here without a guard
+        // Use hasRendered flag to run once:
+        if(this.hasRendered) return;
+        this.hasRendered = true;
+        <span class="cmt">// Third-party JS initialization (charts, maps) goes here - DOM is ready</span>
+        this.initializeChart();
+    }
+    
+    disconnectedCallback() {
+        <span class="cmt">// Fires: When component is removed from DOM</span>
+        // Use for: Cleanup - unsubscribe LMS, clear intervals/timeouts
+        unsubscribe(this.subscription);
+        clearInterval(this.pollingInterval);
+    }
+    
+    errorCallback(error, stack) {
+        <span class="cmt">// Fires: When child component throws an error</span>
+        // Use for: Graceful error handling, error boundary pattern
+        this.errorMessage = error.message;
+    }
+}</pre>
+  </div>
+</div>
+
+<div class="qa-block">
+  <div class="qa-question" onclick="toggleQA(this)">
+    <span class="qa-q-text">Wire vs Imperative Apex &mdash; when do you use each? Show both patterns.</span>
+    <span class="qa-q-label lbl-lwc">LWC</span>
+    <span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span>
+  </div>
+  <div class="qa-answer">
+    <table class="comparison-table">
+      <tr><th>Feature</th><th>@wire (Declarative)</th><th>Imperative (JS function call)</th></tr>
+      <tr><td>Apex method</td><td>Must have cacheable=true</td><td>Any @AuraEnabled method</td></tr>
+      <tr><td>When it fires</td><td>Automatically on component load and when params change</td><td>You control exactly when (button click, connectedCallback)</td></tr>
+      <tr><td>Caching</td><td>Yes &mdash; client-side caching by default</td><td>No &mdash; fresh call every time</td></tr>
+      <tr><td>DML Apex</td><td>No &mdash; cacheable methods cannot do DML</td><td>Yes &mdash; can do any operation</td></tr>
+      <tr><td>Use for</td><td>Reading data, auto-refresh on param change</td><td>User-triggered actions, DML, conditional calls</td></tr>
+    </table>
+    <pre class="code"><span class="cmt">// WIRE - declarative, auto-fires, cached</span>
+@wire(getLoansByStatus, { status: '$selectedStatus' }) <span class="cmt">// fires when selectedStatus changes</span>
+wiredLoans({ data, error }) {
+    this.isLoading = false;
+    if(data) { this.loans = data; this.error = undefined; }
+    else if(error) { this.error = error.body.message; }
+}
+
+<span class="cmt">// Refresh wire data after DML:</span>
+import { refreshApex } from '@salesforce/apex';
+handleSave() {
+    saveLoan({ loanData: this.loanRecord })
+        .then(() => refreshApex(this.wiredLoans)) <span class="cmt">// force wire to refetch</span>
+        .catch(error => this.handleError(error));
+}
+
+<span class="cmt">// IMPERATIVE - user-triggered, no caching, more control</span>
+handleSearch() {
+    this.isLoading = true;
+    searchLoans({ searchTerm: this.searchTerm, minAmount: this.minAmount })
+        .then(result => {
+            this.loans = result;
+            this.isLoading = false;
+        })
+        .catch(error => {
+            this.error = error.body.message;
+            this.isLoading = false;
+        });
+}
+
+<span class="cmt">// Or with async/await:</span>
+async handleSaveLoan() {
+    try {
+        this.isLoading = true;
+        const result = await saveLoan({ loan: this.loanData });
+        this.showToast('Success', 'Loan saved: ' + result.Id, 'success');
+        await refreshApex(this.wiredLoans);
+    } catch(error) {
+        this.showToast('Error', error.body.message, 'error');
+    } finally {
+        this.isLoading = false;
+    }
+}</pre>
+  </div>
+</div>

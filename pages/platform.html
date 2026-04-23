@@ -1,0 +1,220 @@
+<div class="page-title">Platform Events &amp; Change Data Capture</div>
+<div class="page-sub">From your Mortgage Origination Platform &mdash; use your real project experience here</div>
+
+<div class="qa-block">
+  <div class="qa-question" onclick="toggleQA(this)">
+    <span class="qa-q-text">What are Platform Events? How do you publish and subscribe? Show complete code.</span>
+    <span class="qa-q-label lbl-intg">PLATFORM EVENTS</span>
+    <span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span>
+  </div>
+  <div class="qa-answer">
+    <p class="ans-p">Platform Events are a messaging solution built on Salesforce's streaming infrastructure. They enable event-driven architecture &mdash; loosely coupled components communicate through events rather than direct calls. The publisher doesn't know who the subscribers are.</p>
+    <pre class="code"><span class="cmt">// 1. Define Platform Event: Loan_Status_Update__e</span>
+// Fields: LoanId__c (Text), NewStatus__c (Text), UpdatedBy__c (Text), Timestamp__c (DateTime)
+
+<span class="cmt">// 2. PUBLISH from Apex (trigger or service class)</span>
+public class <span class="cls">LoanStatusEventPublisher</span> {
+    
+    public static void publishStatusChange(<span class="cls">List</span>&lt;<span class="cls">Loan__c</span>&gt; updatedLoans) {
+        <span class="cls">List</span>&lt;<span class="cls">Loan_Status_Update__e</span>&gt; events = new <span class="cls">List</span>&lt;<span class="cls">Loan_Status_Update__e</span>&gt;();
+        
+        for(<span class="cls">Loan__c</span> loan : updatedLoans) {
+            events.add(new <span class="cls">Loan_Status_Update__e</span>(
+                LoanId__c = loan.Id,
+                NewStatus__c = loan.Status__c,
+                UpdatedBy__c = UserInfo.getUserId(),
+                Timestamp__c = DateTime.now()
+            ));
+        }
+        
+        <span class="cmt">// Publish and check results</span>
+        <span class="cls">List</span>&lt;<span class="cls">Database.SaveResult</span>&gt; results = EventBus.publish(events);
+        for(<span class="cls">Database.SaveResult</span> sr : results) {
+            if(!sr.isSuccess()) {
+                System.debug('Event publish failed: ' + sr.getErrors()[0].getMessage());
+            }
+        }
+    }
+}
+
+<span class="cmt">// 3. SUBSCRIBE via Apex trigger</span>
+trigger LoanStatusUpdateTrigger on Loan_Status_Update__e (after insert) {
+    <span class="cls">List</span>&lt;<span class="cls">Loan_Status_Update__e</span>&gt; events = Trigger.new;
+    <span class="cmt">// Trigger.new contains the events - NOT database records</span>
+    
+    <span class="cls">List</span>&lt;<span class="cls">Id</span>&gt; loanIds = new <span class="cls">List</span>&lt;<span class="cls">Id</span>&gt;();
+    for(<span class="cls">Loan_Status_Update__e</span> event : events) {
+        loanIds.add(event.LoanId__c);
+    }
+    
+    <span class="cmt">// Now do whatever needs to happen when loan status changes</span>
+    // e.g., notify DocuSign, update related records, send email
+    <span class="cls">DocuSignNotificationService</span>.notifyOnStatusChange(loanIds, events);
+}
+
+<span class="cmt">// 4. Publish Behavior: IMPORTANT DISTINCTION</span>
+// PublishImmediately: event fires even if transaction ROLLS BACK
+// PublishAfterCommit (default): event fires only if transaction COMMITS successfully
+// For financial systems: ALWAYS use PublishAfterCommit (default)</pre>
+    <div class="tip-box"><div class="tip-label">Your project story</div><p>"In our Mortgage Origination Platform, we used Platform Events to decouple the loan status update process from DocuSign document generation. When a loan moved to 'Approved' status, a Platform Event was published. A separate trigger subscribed to that event and triggered the DocuSign envelope. This meant our loan processing code didn't need to know about DocuSign &mdash; clean separation of concerns."</p></div>
+  </div>
+</div>
+
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">What is Change Data Capture (CDC) &mdash; how is it different from Platform Events?</span><span class="qa-q-label lbl-intg">PLATFORM EVENTS</span><span class="qa-chevron"></span></div><div class="qa-answer">
+<table class="comparison-table"><tr><th>Feature</th><th>Platform Events</th><th>Change Data Capture</th></tr><tr><td>Who creates it</td><td>You publish via EventBus.publish()</td><td>Salesforce auto-generates on record DML</td></tr><tr><td>What triggers it</td><td>Your explicit publish call</td><td>Any Insert/Update/Delete/Undelete on subscribed object</td></tr><tr><td>Payload</td><td>Custom fields you define</td><td>ChangeEventHeader: changed fields, change type, record IDs</td></tr><tr><td>Use for</td><td>Business process events, decoupling, notifications</td><td>Real-time data sync to external systems</td></tr><tr><td>Retention</td><td>72 hours</td><td>3 days</td></tr><tr><td>Setup</td><td>Create custom PE object</td><td>Enable per-object in Setup ΓåÆ Change Data Capture</td></tr></table>
+<pre class="code">// Subscribe to Loan__c CDC changes in Apex trigger
+trigger LoanCDCTrigger on LoanChangeEvent (after insert) {
+  for (LoanChangeEvent evt : Trigger.new) {
+    String changeType = evt.ChangeEventHeader.changeType; // CREATE UPDATE DELETE UNDELETE
+    List&lt;String&gt; changedFields = evt.ChangeEventHeader.changedFields;
+    List&lt;Id&gt; recordIds = evt.ChangeEventHeader.recordIds;
+
+    if (changeType == 'UPDATE' &amp;&amp; changedFields.contains('Status__c')) {
+      System.enqueueJob(new StatusSyncQueueable(recordIds[0], evt.Status__c));
+    }
+  }
+}</pre>
+</div></div>
+
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">What is the ReplayId in Platform Events &mdash; how does event replay work?</span><span class="qa-q-label lbl-intg">PLATFORM EVENTS</span><span class="qa-chevron"></span></div><div class="qa-answer">
+<p class="ans-p">Every Platform Event gets a monotonically increasing ReplayId. Subscribers use it to resume from a specific point in the 72-hour retention window &mdash; critical for disaster recovery.</p>
+<pre class="code">// empApi in LWC &mdash; replay options
+// -1 = new events only (default)
+// -2 = replay ALL retained events from earliest available
+// specific number = replay from that event onward
+
+import { subscribe } from 'lightning/empApi';
+subscribe('/event/Loan_Status_Change__e', -2, callback); // replay all retained
+subscribe('/event/Loan_Status_Change__e', 12345, callback); // replay from event 12345
+
+// Pattern: store last processed ReplayId in Custom Setting
+// On system restart: retrieve stored ReplayId ΓåÆ subscribe from that point
+// Ensures no events are missed during downtime (within 72-hour window)</pre>
+<div class="tip-box"><div class="tip-label">Disaster recovery</div><p>If your external system is down for 2 hours it can resubscribe with the last processed ReplayId and receive every missed event. This is the killer advantage of Platform Events over custom polling tables.</p></div>
+</div></div>
+
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">Publish Immediately vs Publish After Commit &mdash; which to use and when?</span><span class="qa-q-label lbl-intg">PLATFORM EVENTS</span><span class="qa-chevron"></span></div><div class="qa-answer">
+<table class="comparison-table"><tr><th></th><th>Publish Immediately</th><th>Publish After Commit</th></tr><tr><td>When fires</td><td>The moment EventBus.publish() is called</td><td>Only when enclosing transaction commits successfully</td></tr><tr><td>If tx rolls back</td><td>Event still published &mdash; subscribers may act on rolled-back data</td><td>Event NOT published &mdash; consistent with data</td></tr><tr><td>Set where</td><td>Platform Event definition ΓåÆ Publish Behavior</td><td>Same</td></tr><tr><td>Use for</td><td>Logging, monitoring, non-critical notifications</td><td>Business events tied to data state changes</td></tr></table>
+<pre class="code">// Trigger with Publish After Commit PE (correct for data-driven events)
+trigger LoanTrigger on Loan__c (after update) {
+  List&lt;Loan_Status_Change__e&gt; events = new List&lt;Loan_Status_Change__e&gt;();
+  for (Loan__c loan : Trigger.new) {
+    if (loan.Status__c != Trigger.oldMap.get(loan.Id).Status__c)
+      events.add(new Loan_Status_Change__e(Loan_Id__c=loan.Id, New_Status__c=loan.Status__c));
+  }
+  EventBus.publish(events); // fires ONLY if update commits &mdash; no phantom events
+}</pre>
+</div></div>
+
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How do you subscribe to Platform Events in LWC using empApi?</span><span class="qa-q-label lbl-intg">PLATFORM EVENTS</span><span class="qa-chevron"></span></div><div class="qa-answer">
+<pre class="code">import { LightningElement } from 'lwc';
+import { subscribe, unsubscribe, onError } from 'lightning/empApi';
+
+export default class LoanStatusMonitor extends LightningElement {
+  subscription = {};
+
+  async connectedCallback() {
+    // Subscribe &mdash; -1 means new events only
+    this.subscription = await subscribe('/event/Loan_Status_Change__e', -1, (response) => {
+      const payload = response.data.payload;
+      this.handleUpdate(payload.Loan_Id__c, payload.New_Status__c);
+    });
+
+    onError(error => console.error('Streaming error:', error));
+  }
+
+  handleUpdate(loanId, status) {
+    // Update UI in real time &mdash; no page refresh
+    this.dispatchEvent(new CustomEvent('statuschange', { detail: { loanId, status } }));
+  }
+
+  disconnectedCallback() {
+    unsubscribe(this.subscription, response => console.log('Unsubscribed:', response));
+  }
+}</pre>
+</div></div>
+
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">What are Platform Event governor limits and how do you handle publish failures?</span><span class="qa-q-label lbl-intg">PLATFORM EVENTS</span><span class="qa-chevron"></span></div><div class="qa-answer">
+<table class="comparison-table"><tr><th>Limit</th><th>Value</th></tr><tr><td>Events published per transaction</td><td>150 (same as DML limit)</td></tr><tr><td>Max event message size</td><td>1 MB per event</td></tr><tr><td>Daily volume (Enterprise)</td><td>250,000 / day</td></tr><tr><td>Daily volume (Unlimited)</td><td>500,000 / day</td></tr><tr><td>Subscriber trigger limits</td><td>Standard async Apex limits (200 SOQL, 150 DML per chunk)</td></tr></table>
+<pre class="code">// Always check publish results
+List&lt;Loan_Status_Change__e&gt; events = buildEvents(loans);
+List&lt;Database.SaveResult&gt; results = EventBus.publish(events);
+for (Integer i = 0; i &lt; results.size(); i++) {
+  if (!results[i].isSuccess())
+    insert new Error_Log__c(
+      Message__c = 'Event publish failed: ' + results[i].getErrors()[0].getMessage()
+    );
+}</pre>
+</div></div>
+
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How do you use Platform Events to decouple a trigger from complex post-processing?</span><span class="qa-q-label lbl-intg">PLATFORM EVENTS</span><span class="qa-chevron"></span></div><div class="qa-answer">
+<p class="ans-p">Classic pattern: trigger publishes a Platform Event ΓåÆ separate subscriber trigger handles downstream work. The original trigger stays thin and fast.</p>
+<pre class="code">// Thin trigger &mdash; just publishes, no logic
+trigger LoanTrigger on Loan__c (after update) {
+  List&lt;Loan_Event__e&gt; evts = new List&lt;Loan_Event__e&gt;();
+  for (Loan__c l : Trigger.new) {
+    if (l.Status__c != Trigger.oldMap.get(l.Id).Status__c)
+      evts.add(new Loan_Event__e(Loan_Id__c=l.Id, Status__c=l.Status__c));
+  }
+  EventBus.publish(evts);
+}
+
+// Email observer trigger &mdash; independent, can be deployed/removed without touching loan trigger
+trigger LoanEmailObserver on Loan_Event__e (after insert) {
+  LoanEmailService.processEvents(Trigger.new);
+}
+
+// LOS sync observer trigger &mdash; another independent subscriber
+trigger LoanLOSObserver on Loan_Event__e (after insert) {
+  for (Loan_Event__e e : Trigger.new)
+    System.enqueueJob(new LOSSyncQueueable(e.Loan_Id__c, e.Status__c));
+}</pre>
+</div></div>
+
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">What is the Streaming API &mdash; what are all its event types?</span><span class="qa-q-label lbl-intg">PLATFORM EVENTS</span><span class="qa-chevron"></span></div><div class="qa-answer">
+<ul class="ans-list">
+  <li><b>PushTopic Events (legacy)</b> &mdash; define a SOQL query, subscribers notified when matching records change. Being replaced by CDC.</li>
+  <li><b>Generic Streaming Events</b> &mdash; lightweight, schema-less JSON messages. No retention. Good for simple real-time notifications.</li>
+  <li><b>Platform Events</b> &mdash; schematized, 72-hour retention, high volume. Subscribe via Apex trigger, Flow, LWC empApi, or external CometD client.</li>
+  <li><b>Change Data Capture (CDC)</b> &mdash; auto-generated per object. 3-day retention. Best for external system data sync.</li>
+  <li><b>Monitoring Events (Event Monitoring)</b> &mdash; read-only. LoginEvent, ApiEvent, ListViewEvent for security audit/monitoring.</li>
+</ul>
+</div></div>
+
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How do you test Platform Event publishing and subscribing in Apex tests?</span><span class="qa-q-label lbl-intg">PLATFORM EVENTS</span><span class="qa-chevron"></span></div><div class="qa-answer">
+<pre class="code">// Testing publishing &mdash; verify events were enqueued
+@isTest
+static void testEventPublish() {
+  Loan__c loan = new Loan__c(Status__c='Applied', Amount__c=250000); insert loan;
+
+  Test.startTest();
+  loan.Status__c = 'Approved';
+  update loan;
+  Test.stopTest(); // forces platform event trigger to run
+
+  // Verify downstream effect of the subscriber trigger
+  List&lt;Notification_Log__c&gt; logs = [SELECT Id FROM Notification_Log__c WHERE Loan__c=:loan.Id];
+  System.assertEquals(1, logs.size(), 'Subscriber should have created a notification log');
+}
+
+// Testing a PE subscriber trigger directly
+@isTest
+static void testSubscriberTrigger() {
+  Test.startTest();
+  // Directly publish the event &mdash; triggers the subscriber
+  EventBus.publish(new Loan_Status_Change__e(Loan_Id__c='a0B000000000001', Status__c='Approved'));
+  Test.stopTest();
+  // Assert what the subscriber should have done
+}</pre>
+</div></div>
+
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">What are Platform Events vs Custom Notifications vs In-App Notifications?</span><span class="qa-q-label lbl-intg">PLATFORM EVENTS</span><span class="qa-chevron"></span></div><div class="qa-answer">
+<table class="comparison-table"><tr><th>Feature</th><th>Platform Events</th><th>Custom Notifications</th><th>In-App Notifications</th></tr><tr><td>Primary use</td><td>System integration, event-driven architecture</td><td>Push notifications to Salesforce users</td><td>Bell icon notifications in Salesforce UI</td></tr><tr><td>Channel</td><td>Streaming API, Apex triggers, LWC</td><td>Salesforce mobile app, desktop</td><td>Salesforce UI bell icon</td></tr><tr><td>Sent from</td><td>Apex, Flow, API</td><td>Apex, Flow</td><td>Flow, Process Builder</td></tr><tr><td>External systems?</td><td>Yes &mdash; via Streaming API</td><td>No &mdash; Salesforce users only</td><td>No &mdash; Salesforce users only</td></tr><tr><td>Code</td><td>EventBus.publish()</td><td>Messaging.CustomNotification</td><td>Native Flow action</td></tr></table>
+<pre class="code">// Send Custom Notification from Apex (push to mobile/desktop)
+Messaging.CustomNotification notification = new Messaging.CustomNotification();
+notification.setTitle('Loan Approved');
+notification.setBody('Loan #' + loan.Name + ' has been approved for $' + loan.Amount__c);
+notification.setNotificationTypeId([SELECT Id FROM CustomNotificationType WHERE DeveloperName='Loan_Alert' LIMIT 1].Id);
+notification.setTargetId(loan.Id); // opens this record when tapped
+notification.send(new Set&lt;String&gt;{loan.OwnerId}); // send to loan officer</pre>
+</div></div>

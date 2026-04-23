@@ -1,0 +1,95 @@
+<div class="page-title">Async Apex &mdash; Interview Questions</div>
+<div class="page-sub">Future, Queueable, Batch, Scheduled &mdash; complete with code and comparison</div>
+
+<div class="qa-block">
+  <div class="qa-question" onclick="toggleQA(this)">
+    <span class="qa-q-text">What is the difference between Future, Queueable, Batch, and Scheduled Apex? When do you use each?</span>
+    <span class="qa-q-label lbl-apex">ASYNC</span>
+    <span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span>
+  </div>
+  <div class="qa-answer">
+    <table class="comparison-table">
+      <tr><th>Feature</th><th>@future</th><th>Queueable</th><th>Batch</th><th>Scheduled</th></tr>
+      <tr><td>Chainable</td><td>No</td><td>Yes</td><td>From finish()</td><td>Via Schedulable</td></tr>
+      <tr><td>sObject param</td><td>No</td><td>Yes</td><td>Yes</td><td>Yes</td></tr>
+      <tr><td>Job monitoring</td><td>No</td><td>Yes (AsyncApexJob)</td><td>Yes</td><td>Yes (CronTrigger)</td></tr>
+      <tr><td>Records limit</td><td>Unlimited (careful!)</td><td>Unlimited</td><td>50M (QueryLocator)</td><td>N/A</td></tr>
+      <tr><td>Callouts</td><td>Yes (callout=true)</td><td>Yes</td><td>Yes (AllowsCallouts)</td><td>Via inner class</td></tr>
+      <tr><td>Use for</td><td>Simple async ops, Mixed DML fix</td><td>Complex chained jobs</td><td>Mass data processing</td><td>Recurring jobs</td></tr>
+    </table>
+    <pre class="code"><span class="cmt">// @future - simple, no sObject params, not chainable</span>
+<span class="ann">@future</span>(callout=true)
+public static void sendToExternalSystem(<span class="cls">List</span>&lt;<span class="cls">Id</span>&gt; recordIds) {
+    <span class="cmt">// Only Id (primitive) - not full sObject</span>
+    <span class="cls">List</span>&lt;<span class="cls">Loan__c</span>&gt; loans = [SELECT Id, LoanAmount__c FROM Loan__c WHERE Id IN :recordIds];
+    <span class="cmt">// Make callout here</span>
+}
+
+// Queueable - complex async, chainable, sObject allowed
+public class <span class="cls">CreditCheckQueueable</span> implements <span class="cls">Queueable</span>, <span class="cls">Database</span>.<span class="cls">AllowsCallouts</span> {
+    private <span class="cls">List</span>&lt;<span class="cls">Loan__c</span>&gt; loans;
+    public <span class="cls">CreditCheckQueueable</span>(<span class="cls">List</span>&lt;<span class="cls">Loan__c</span>&gt; loans) { this.loans = loans; }
+    
+    public void execute(<span class="cls">QueueableContext</span> ctx) {
+        <span class="cmt">// Process loans, make callout to Experian</span>
+        // Chain another job if needed:
+        System.enqueueJob(new <span class="cls">OFACCheckQueueable</span>(loans));  <span class="cmt">// chaining!</span>
+    }
+}
+// To start: System.enqueueJob(new CreditCheckQueueable(loans));
+
+// Batch - large data volumes
+public class <span class="cls">LoanStatusBatch</span> implements <span class="cls">Database</span>.<span class="cls">Batchable</span>&lt;<span class="cls">SObject</span>&gt;, <span class="cls">Database</span>.<span class="cls">Stateful</span> {
+    public <span class="cls">Integer</span> successCount = 0; <span class="cmt">// Stateful - preserved between chunks</span>
+    public <span class="cls">Database</span>.<span class="cls">QueryLocator</span> start(<span class="cls">Database</span>.<span class="cls">BatchableContext</span> bc) {
+        return Database.getQueryLocator('SELECT Id, Status__c FROM Loan__c WHERE Status__c = \'Active\'');
+    }
+    public void execute(<span class="cls">Database</span>.<span class="cls">BatchableContext</span> bc, <span class="cls">List</span>&lt;<span class="cls">SObject</span>&gt; scope) {
+        <span class="cmt">// Process up to 200 records per chunk</span>
+        successCount += scope.size();
+    }
+    public void finish(<span class="cls">Database</span>.<span class="cls">BatchableContext</span> bc) {
+        System.debug('Total processed: ' + successCount);
+    }
+}
+// To run: Database.executeBatch(new LoanStatusBatch(), 200);</pre>
+  </div>
+</div>
+
+<div class="qa-block">
+  <div class="qa-question" onclick="toggleQA(this)">
+    <span class="qa-q-text">What is Mixed DML error and how do you fix it?</span>
+    <span class="qa-q-label lbl-apex">ASYNC</span>
+    <span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span>
+  </div>
+  <div class="qa-answer">
+    <p class="ans-p">Mixed DML occurs when you try to do DML on a <b>setup object</b> (like User, Profile, PermissionSet) AND a <b>non-setup object</b> (like Account, Contact) <b>in the same transaction</b>. Salesforce does not allow this.</p>
+    <p class="ans-p">Setup objects: User, UserRole, Profile, PermissionSet, PermissionSetAssignment, GroupMember, etc.</p>
+    <pre class="code"><span class="cmt">// This throws: MIXED_DML_OPERATION error</span>
+<span class="cls">User</span> u = new <span class="cls">User</span>(ProfileId = adminProfileId, Username = 'email-protected'...);
+insert u;  <span class="cmt">// Setup object DML</span>
+
+<span class="cls">Account</span> a = new <span class="cls">Account</span>(Name = 'Test');
+insert a;  <span class="cmt">// Non-setup DML in same transaction = ERROR</span>
+
+<span class="cmt">// FIX 1: Use @future for the non-setup DML</span>
+<span class="ann">@future</span>
+public static void createAccountAsync(<span class="cls">String</span> name) {
+    insert new <span class="cls">Account</span>(Name = name);
+}
+// @future runs in a NEW transaction - no Mixed DML
+
+// FIX 2: In tests, use System.runAs() to separate transactions
+<span class="ann">@isTest</span>
+static void testUserCreation() {
+    <span class="cls">User</span> newUser; 
+    System.runAs(new <span class="cls">User</span>(Id = UserInfo.getUserId())) {
+        newUser = createTestUser(); <span class="cmt">// Setup DML here</span>
+    }
+    System.runAs(newUser) {
+        insert new <span class="cls">Account</span>(Name = 'Test'); <span class="cmt">// Non-setup DML here</span>
+    }
+}</pre>
+    <div class="tip-box"><div class="tip-label">Real scenario from your projects</div><p>In the Mortgage platform, when creating a new loan officer (User) and their first Loan record, you'd hit Mixed DML. Solution: insert User first, then use @future to create the Loan record in a separate transaction.</p></div>
+  </div>
+</div>

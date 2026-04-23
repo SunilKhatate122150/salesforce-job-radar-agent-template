@@ -1,0 +1,475 @@
+<div class="page-title">File Upload + Google Drive &mdash; Scenarios</div>
+<div class="page-sub">10 scenarios covering Salesforce Files, chunked upload for large files, and external storage integration</div>
+
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How do you use lightning-file-upload component &mdash; complete working example?</span><span class="qa-q-label lbl-lwc">FILE UPLOAD</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<pre class="code">&lt;!-- documentUpload.html --&gt;
+&lt;lightning-card title="Upload Loan Documents"&gt;
+    &lt;lightning-file-upload
+        label="Upload Documents (PDF, max 10MB)"
+        name="loanDocuments"
+        accept=".pdf,.jpg,.png"
+        record-id={recordId}
+        multiple
+        onuploadfinished={handleUploadFinished}&gt;
+    &lt;/lightning-file-upload&gt;
+&lt;/lightning-card&gt;
+
+// documentUpload.js
+import { LightningElement, api, track } from 'lwc';
+import { ShowToastEvent } from 'lightning/platformShowToastEvent';
+import linkDocumentToLoan from '@salesforce/apex/DocumentController.linkDocumentToLoan';
+
+export default class DocumentUpload extends LightningElement {
+    @api recordId;
+    @track uploadedFiles = [];
+
+    async handleUploadFinished(event) {
+        // event.detail.files = array of { documentId, name, contentVersionId }
+        const files = event.detail.files;
+        this.uploadedFiles = [...this.uploadedFiles, ...files];
+
+        try {
+            // Post-upload processing &mdash; tag files with document type
+            for (const file of files) {
+                await linkDocumentToLoan({
+                    contentDocumentId: file.documentId,
+                    loanId: this.recordId,
+                    documentType: 'Supporting Document'
+                });
+            }
+            this.dispatchEvent(new ShowToastEvent({
+                title: 'Upload Complete',
+                message: files.length + ' file(s) uploaded successfully',
+                variant: 'success'
+            }));
+        } catch(e) {
+            this.dispatchEvent(new ShowToastEvent({
+                title: 'Post-Upload Processing Failed',
+                message: e.body?.message, variant: 'error'
+            }));
+        }
+    }
+}</pre>
+</div></div>
+
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How do you upload a 12MB file using chunked upload &mdash; LWC + Apex complete code?</span><span class="qa-q-label lbl-lwc">FILE UPLOAD</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<pre class="code">// LWC &mdash; chunks the file client-side before sending
+const CHUNK_SIZE = 3 * 1024 * 1024;  // 3MB per chunk (safe for Apex 6MB heap)
+
+export default class ChunkedUpload extends LightningElement {
+    @api recordId;
+    isUploading = false;
+    progressPercent = 0;
+
+    async handleFileChange(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+        this.isUploading = true;
+        const uploadId = 'UPL_' + Date.now() + '_' + Math.random().toString(36).substr(2,6);
+        const totalChunks = Math.ceil(file.size / CHUNK_SIZE);
+
+        try {
+            for (let i = 0; i &lt; totalChunks; i++) {
+                const start = i * CHUNK_SIZE;
+                const chunk = file.slice(start, Math.min(start + CHUNK_SIZE, file.size));
+                const base64 = await this.readAsBase64(chunk);
+
+                await uploadChunk({
+                    uploadId, chunkNumber: i, totalChunks,
+                    fileName: file.name, base64Data: base64, fileSize: file.size
+                });
+                this.progressPercent = Math.round(((i + 1) / totalChunks) * 90);
+            }
+            // Finalize &mdash; assemble chunks server-side
+            const result = await finalizeUpload({
+                uploadId, loanId: this.recordId, fileName: file.name
+            });
+            this.progressPercent = 100;
+            this.dispatchEvent(new ShowToastEvent({
+                title: 'Upload Complete', message: file.name + ' uploaded', variant: 'success'
+            }));
+        } catch(e) {
+            this.dispatchEvent(new ShowToastEvent({
+                title: 'Upload Failed', message: e.body?.message, variant: 'error'
+            }));
+        } finally { this.isUploading = false; }
+    }
+
+    readAsBase64(blob) {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(reader.result.split(',')[1]);
+            reader.onerror = reject;
+            reader.readAsDataURL(blob);
+        });
+    }
+}</pre>
+<pre class="code">// Apex &mdash; ChunkedUploadController.cls
+public class ChunkedUploadController {
+
+    @AuraEnabled
+    public static void uploadChunk(String uploadId, Integer chunkNumber, Integer totalChunks,
+                                   String fileName, String base64Data, Long fileSize) {
+        insert new Upload_Chunk__c(
+            UploadId__c = uploadId, ChunkNumber__c = chunkNumber,
+            TotalChunks__c = totalChunks, FileName__c = fileName,
+            ChunkData__c = base64Data, FileSize__c = fileSize
+        );
+    }
+
+    @AuraEnabled
+    public static Map&lt;String,String&gt; finalizeUpload(String uploadId, Id loanId, String fileName) {
+        List&lt;Upload_Chunk__c&gt; chunks = [
+            SELECT ChunkNumber__c, ChunkData__c FROM Upload_Chunk__c
+            WHERE UploadId__c = :uploadId ORDER BY ChunkNumber__c ASC
+        ];
+        // Reassemble base64
+        String combined = '';
+        for(Upload_Chunk__c c : chunks) combined += c.ChunkData__c;
+        Blob fileData = EncodingUtil.base64Decode(combined);
+
+        // Save to Salesforce Files
+        ContentVersion cv = new ContentVersion(
+            Title = fileName, PathOnClient = fileName,
+            VersionData = fileData, FirstPublishLocationId = loanId
+        );
+        insert cv;
+
+        // Queue upload to Google Drive
+        Id jobId = System.enqueueJob(new GoogleDriveUploadQueueable(cv.Id, loanId, fileName));
+
+        // Cleanup temp chunks
+        delete chunks;
+        return new Map&lt;String,String&gt;{ 'contentVersionId' =&gt; cv.Id, 'jobId' =&gt; jobId };
+    }
+}</pre>
+</div></div>
+
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How do ContentDocument, ContentDocumentLink, and ContentVersion work together &mdash; query and manage files?</span><span class="qa-q-label lbl-apex">FILE UPLOAD</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<pre class="code">// THREE OBJECTS in the Salesforce Files system:
+// ContentVersion &mdash; the actual file binary (each version = separate record)
+// ContentDocument &mdash; the logical file (parent of all ContentVersions)
+// ContentDocumentLink &mdash; links a file to one or more Salesforce records
+
+// CREATE a file and link to a record:
+ContentVersion cv = new ContentVersion(
+    Title = 'Loan Agreement 2024',
+    PathOnClient = 'loan_agreement.pdf',
+    VersionData = fileBlob,             // binary content
+    FirstPublishLocationId = loanId     // auto-creates ContentDocumentLink
+);
+insert cv;
+
+// Get the ContentDocumentId (created after insert):
+cv = [SELECT ContentDocumentId FROM ContentVersion WHERE Id = :cv.Id];
+
+// LINK the same file to additional records:
+insert new ContentDocumentLink(
+    ContentDocumentId = cv.ContentDocumentId,
+    LinkedEntityId = applicationId,  // link to Application too
+    ShareType = 'V',                 // V = viewer, C = collaborator, I = inferred
+    Visibility = 'AllUsers'
+);
+
+// QUERY all files linked to a record:
+List&lt;ContentDocumentLink&gt; links = [
+    SELECT ContentDocument.Title, ContentDocument.FileExtension,
+           ContentDocument.ContentSize, ContentDocument.LatestPublishedVersionId,
+           ContentDocument.CreatedDate, ContentDocument.CreatedBy.Name
+    FROM ContentDocumentLink
+    WHERE LinkedEntityId = :loanId
+    ORDER BY ContentDocument.CreatedDate DESC
+];
+
+// Download URL for a file:
+// '/sfc/servlet.shepherd/version/download/' + contentVersionId
+
+// DELETE a file (deletes all versions and all links):
+delete [SELECT Id FROM ContentDocument WHERE Id = :contentDocumentId];</pre>
+</div></div>
+
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How do you send a file from Salesforce to Google Drive using a Queueable with OAuth2 Named Credential?</span><span class="qa-q-label lbl-apex">FILE UPLOAD</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<pre class="code">// GoogleDriveUploadQueueable.cls
+public class GoogleDriveUploadQueueable implements Queueable, Database.AllowsCallouts {
+    private Id contentVersionId;
+    private Id loanId;
+    private String fileName;
+
+    public GoogleDriveUploadQueueable(Id cvId, Id loanId, String fileName) {
+        this.contentVersionId = cvId;
+        this.loanId = loanId;
+        this.fileName = fileName;
+    }
+
+    public void execute(QueueableContext ctx) {
+        // Retrieve file binary from Salesforce Files
+        ContentVersion cv = [SELECT Id, VersionData, FileExtension FROM ContentVersion WHERE Id = :contentVersionId];
+
+        // Determine MIME type
+        String mimeType = getMimeType(cv.FileExtension);
+
+        // Upload to Google Drive via Named Credential (handles OAuth2 automatically)
+        // Named Credential 'GoogleDriveAPI' configured with OAuth2 Client Credentials or JWT
+        String boundary = 'sfdc_boundary_' + String.valueOf(DateTime.now().getTime());
+
+        // Build multipart request body
+        String metadata = '{"name":"' + fileName + '","parents":["' + getDriveFolderId(loanId) + '"]}';
+        String body = '--' + boundary + '\r\n'
+            + 'Content-Type: application/json; charset=UTF-8\r\n\r\n'
+            + metadata + '\r\n'
+            + '--' + boundary + '\r\n'
+            + 'Content-Type: ' + mimeType + '\r\n'
+            + 'Content-Transfer-Encoding: base64\r\n\r\n'
+            + EncodingUtil.base64Encode(cv.VersionData) + '\r\n'
+            + '--' + boundary + '--';
+
+        HttpRequest req = new HttpRequest();
+        req.setEndpoint('callout:GoogleDriveAPI/upload/drive/v3/files?uploadType=multipart');
+        req.setMethod('POST');
+        req.setHeader('Content-Type', 'multipart/related; boundary="' + boundary + '"');
+        req.setTimeout(120000);  // 2 minutes for large files
+        req.setBody(body);
+
+        HttpResponse res = new Http().send(req);
+        if(res.getStatusCode() == 200) {
+            Map&lt;String,Object&gt; parsed = (Map&lt;String,Object&gt;) JSON.deserializeUntyped(res.getBody());
+            String driveFileId = (String)parsed.get('id');
+            // Save Google Drive file ID back to Loan record
+            update new Loan__c(Id = loanId, GDrive_File_ID__c = driveFileId,
+                               GDrive_Upload_Date__c = DateTime.now());
+        } else {
+            throw new GoogleDriveException('Upload failed: ' + res.getStatusCode() + ' ' + res.getBody());
+        }
+    }
+
+    private String getMimeType(String ext) {
+        Map&lt;String,String&gt; types = new Map&lt;String,String&gt;{
+            'pdf'=&gt;'application/pdf','jpg'=&gt;'image/jpeg','jpeg'=&gt;'image/jpeg','png'=&gt;'image/png'
+        };
+        return types.containsKey(ext?.toLowerCase()) ? types.get(ext.toLowerCase()) : 'application/octet-stream';
+    }
+
+    public class GoogleDriveException extends Exception {}
+}</pre>
+</div></div>
+
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How do you display uploaded files in an LWC component with download links and delete option?</span><span class="qa-q-label lbl-lwc">FILE UPLOAD</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<pre class="code">// fileList.js
+import { LightningElement, api, wire } from 'lwc';
+import { deleteRecord } from 'lightning/uiRecordApi';
+import { refreshApex } from '@salesforce/apex';
+import { ShowToastEvent } from 'lightning/platformShowToastEvent';
+import getLinkedFiles from '@salesforce/apex/DocumentController.getLinkedFiles';
+
+export default class FileList extends LightningElement {
+    @api recordId;
+    wiredFilesResult;
+    files = [];
+
+    @wire(getLinkedFiles, { recordId: '$recordId' })
+    wiredFiles(result) {
+        this.wiredFilesResult = result;
+        if(result.data) {
+            this.files = result.data.map(f => ({
+                ...f,
+                downloadUrl: '/sfc/servlet.shepherd/version/download/' + f.contentVersionId,
+                iconName: this.getIcon(f.extension)
+            }));
+        }
+    }
+
+    getIcon(ext) {
+        return { pdf:'doctype:pdf', jpg:'doctype:image', png:'doctype:image',
+                 doc:'doctype:word', docx:'doctype:word' }[ext?.toLowerCase()] || 'doctype:unknown';
+    }
+
+    async handleDelete(event) {
+        const docId = event.target.dataset.docid;
+        if (!confirm('Delete this file permanently?')) return;
+        try {
+            await deleteRecord(docId);  // deletes ContentDocument + all links
+            await refreshApex(this.wiredFilesResult);
+            this.dispatchEvent(new ShowToastEvent({ title: 'Deleted', variant: 'success' }));
+        } catch(e) {
+            this.dispatchEvent(new ShowToastEvent({ title: 'Delete Failed', message: e.body?.message, variant: 'error' }));
+        }
+    }
+}
+
+// Apex:
+@AuraEnabled(cacheable=true)
+public static List&lt;Map&lt;String,Object&gt;&gt; getLinkedFiles(Id recordId) {
+    List&lt;Map&lt;String,Object&gt;&gt; result = new List&lt;Map&lt;String,Object&gt;&gt;();
+    for(ContentDocumentLink cdl : [
+        SELECT ContentDocument.Title, ContentDocument.FileExtension,
+               ContentDocument.ContentSize, ContentDocument.LatestPublishedVersionId,
+               ContentDocument.Id, ContentDocument.CreatedDate, ContentDocument.CreatedBy.Name
+        FROM ContentDocumentLink WHERE LinkedEntityId = :recordId
+        ORDER BY ContentDocument.CreatedDate DESC
+    ]) {
+        Long bytes = cdl.ContentDocument.ContentSize;
+        String size = bytes &lt; 1048576 ? (bytes/1024) + ' KB' : String.valueOf((bytes/1048576.0).setScale(1)) + ' MB';
+        result.add(new Map&lt;String,Object&gt;{
+            'title' =&gt; cdl.ContentDocument.Title,
+            'extension' =&gt; cdl.ContentDocument.FileExtension,
+            'contentVersionId' =&gt; cdl.ContentDocument.LatestPublishedVersionId,
+            'contentDocumentId' =&gt; cdl.ContentDocument.Id,
+            'fileSize' =&gt; size,
+            'uploadedBy' =&gt; cdl.ContentDocument.CreatedBy.Name,
+            'uploadedDate' =&gt; cdl.ContentDocument.CreatedDate.format('MMM dd, yyyy')
+        });
+    }
+    return result;
+}</pre>
+</div></div>
+
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How do you retrieve uploaded files from Salesforce Files and link them to records?</span><span class="qa-q-label lbl-lwc">FILE UPLOAD</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<pre class="code">// Get all files linked to a record
+List&lt;ContentDocumentLink&gt; links = [
+  SELECT ContentDocumentId, ContentDocument.Title, ContentDocument.FileExtension,
+         ContentDocument.ContentSize, ContentDocument.CreatedDate,
+         ContentDocument.LatestPublishedVersionId
+  FROM ContentDocumentLink
+  WHERE LinkedEntityId = :loanId
+  ORDER BY ContentDocument.CreatedDate DESC
+];
+
+// Get file content (for processing or forwarding to external system)
+ContentVersion cv = [
+  SELECT Id, Title, VersionData, FileExtension, ContentSize
+  FROM ContentVersion
+  WHERE Id = :latestPublishedVersionId
+];
+Blob fileContent = cv.VersionData; // use for callout: req.setBodyAsBlob(fileContent);
+String base64Content = EncodingUtil.base64Encode(fileContent); // for JSON payload
+
+// Link an existing file to a new record
+ContentDocumentLink link = new ContentDocumentLink(
+  ContentDocumentId = existingDocId,
+  LinkedEntityId    = newLoanId,
+  ShareType         = 'V',       // V=Viewer, C=Collaborator, I=Inferred
+  Visibility        = 'AllUsers' // AllUsers, InternalUsers, SharedUsers
+);
+insert link;</pre>
+
+</div></div>
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How do you validate file types and sizes before upload in LWC?</span><span class="qa-q-label lbl-lwc">FILE UPLOAD</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<pre class="code">// Client-side validation before upload
+import { LightningElement } from 'lwc';
+const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+const ALLOWED_TYPES = ['application/pdf', 'image/jpeg', 'image/png', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
+
+export default class DocumentUploader extends LightningElement {
+  handleFileChange(event) {
+    const files = [...event.target.files];
+    const errors = [];
+
+    for (const file of files) {
+      if (file.size &gt; MAX_FILE_SIZE)
+        errors.push(`${file.name} exceeds 5MB limit (${(file.size/1024/1024).toFixed(1)}MB)`);
+      if (!ALLOWED_TYPES.includes(file.type))
+        errors.push(`${file.name} is not an allowed file type. Use PDF, JPEG, PNG, or DOCX.`);
+    }
+
+    if (errors.length &gt; 0) {
+      this.dispatchEvent(new ShowToastEvent({ title:'Upload Error', message:errors.join('\n'), variant:'error', mode:'sticky' }));
+      event.target.value = ''; // clear the file input
+      return;
+    }
+
+    // Valid files &mdash; proceed with upload
+    this.uploadFiles(files);
+  }
+}</pre>
+
+</div></div>
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How do you upload files to Google Drive from Salesforce?</span><span class="qa-q-label lbl-intg">FILE UPLOAD</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<pre class="code">// Pattern: Salesforce → Google Drive via Google Drive API
+// Prerequisites: Connected App + Named Credential for Google OAuth2
+
+public class GoogleDriveService {
+  // Step 1: Get OAuth access token via Named Credential
+  // Step 2: Create file in Drive
+  public static String uploadToDrive(Blob fileContent, String fileName, String mimeType, String folderId) {
+    // Multipart upload to Drive API
+    String boundary = '---boundary' + String.valueOf(DateTime.now().getTime());
+
+    // Build multipart body &mdash; metadata part + file content part
+    String metadata = JSON.serialize(new Map&lt;String,Object&gt;{
+      'name' =&gt; fileName,
+      'parents' =&gt; new List&lt;String&gt;{ folderId },
+      'mimeType' =&gt; mimeType
+    });
+
+    HttpRequest req = new HttpRequest();
+    req.setEndpoint('callout:Google_Drive_NC/upload/drive/v3/files?uploadType=multipart');
+    req.setMethod('POST');
+    req.setHeader('Content-Type', 'multipart/related; boundary="' + boundary + '"');
+
+    // Combine metadata + file bytes
+    String body = '--' + boundary + '\nContent-Type: application/json\n\n' + metadata;
+    body += '\n--' + boundary + '\nContent-Type: ' + mimeType + '\n\n';
+    Blob combinedBody = Blob.valueOf(body);
+    // Note: for binary files, use EncodingUtil to handle the binary portion
+
+    req.setBodyAsBlob(combinedBody);
+    req.setTimeout(30000);
+
+    HttpResponse res = new Http().send(req);
+    if (res.getStatusCode() == 200) {
+      Map&lt;String,Object&gt; result = (Map&lt;String,Object&gt;) JSON.deserializeUntyped(res.getBody());
+      return (String) result.get('id'); // Google Drive file ID
+    }
+    throw new IntegrationException('Drive upload failed: ' + res.getStatusCode() + ' ' + res.getBody());
+  }
+}</pre>
+
+</div></div>
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How do you generate a download link for a Salesforce file in LWC?</span><span class="qa-q-label lbl-lwc">FILE UPLOAD</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<pre class="code">// Generate download URL for ContentVersion
+// URL pattern: /sfc/servlet.shepherd/document/download/{ContentDocumentId}
+// OR for version: /sfc/servlet.shepherd/version/download/{ContentVersionId}
+
+// In Apex &mdash; return file metadata with download URL
+@AuraEnabled(cacheable=true)
+public static List&lt;Map&lt;String,Object&gt;&gt; getLoanDocuments(Id loanId) {
+  String baseUrl = URL.getOrgDomainUrl().toExternalForm();
+  List&lt;Map&lt;String,Object&gt;&gt; files = new List&lt;Map&lt;String,Object&gt;&gt;();
+  for (ContentDocumentLink cdl : [SELECT ContentDocumentId, ContentDocument.Title,
+      ContentDocument.LatestPublishedVersionId, ContentDocument.ContentSize
+      FROM ContentDocumentLink WHERE LinkedEntityId=:loanId]) {
+    files.add(new Map&lt;String,Object&gt;{
+      'id'          =&gt; cdl.ContentDocumentId,
+      'title'       =&gt; cdl.ContentDocument.Title,
+      'downloadUrl' =&gt; baseUrl + '/sfc/servlet.shepherd/document/download/' + cdl.ContentDocumentId,
+      'size'        =&gt; cdl.ContentDocument.ContentSize
+    });
+  }
+  return files;
+}
+
+// In LWC template &mdash; clickable download link
+// &lt;a href={file.downloadUrl} target="_blank"&gt;{file.title}&lt;/a&gt;</pre>
+
+</div></div>
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How do you delete Salesforce Files programmatically?</span><span class="qa-q-label lbl-apex">FILE UPLOAD</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<pre class="code">// Delete ContentDocument (deletes all versions and all links)
+// Must have Delete permission on ContentDocument
+public static void deleteLoanDocument(Id contentDocumentId, Id loanId) {
+  // Verify the file is linked to this loan (security check)
+  List&lt;ContentDocumentLink&gt; link = [SELECT Id FROM ContentDocumentLink
+    WHERE ContentDocumentId=:contentDocumentId AND LinkedEntityId=:loanId];
+  if (link.isEmpty()) throw new SecurityException('File not linked to this loan');
+
+  // Check if file is linked to other records too
+  Integer linkCount = [SELECT COUNT() FROM ContentDocumentLink WHERE ContentDocumentId=:contentDocumentId];
+  if (linkCount &gt; 1) {
+    // Only unlink from this record &mdash; don't delete the file (it's shared with other records)
+    delete link[0]; // delete the ContentDocumentLink, not the ContentDocument
+  } else {
+    // Only linked to this record &mdash; safe to delete entirely
+    delete new ContentDocument(Id=contentDocumentId);
+  }
+}</pre>
+
+</div></div>

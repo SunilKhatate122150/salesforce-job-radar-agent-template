@@ -1,0 +1,195 @@
+<div class="page-title">Salesforce Flow &mdash; 10 Scenario Questions</div>
+<div class="page-sub">When to use Flow, how to build invocable actions, debug, and integrate with Apex</div>
+
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">Flow vs Apex Trigger &mdash; the complete decision framework with examples</span><span class="qa-q-label lbl-domain">FLOW</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<p class="ans-p"><b>Use Flow when:</b></p>
+<ul class="ans-list">
+  <li>Logic must be admin-maintainable without code deployment</li>
+  <li>Before Save field defaults or simple same-object updates (faster than After Save)</li>
+  <li>Sending email alerts, creating one related record (task, chatter post)</li>
+  <li>Calling an @InvocableMethod Apex action for a single step</li>
+  <li>Processing small record sets (under 50 records at once)</li>
+</ul>
+<p class="ans-p"><b>Use Apex Trigger when:</b></p>
+<ul class="ans-list">
+  <li>Bulk operations &mdash; triggers safely handle 200 records; Flow has governor limit risk at scale</li>
+  <li>Complex cross-object SOQL with multiple relationship levels</li>
+  <li>External API callouts required (Flow cannot make callouts natively)</li>
+  <li>Complex error handling &mdash; partial DML, retry logic</li>
+  <li>Performance-critical path &mdash; Apex triggers run faster than equivalent Flow for bulk</li>
+  <li>Logic that must be bullet-proof against governor limits regardless of data volume</li>
+</ul>
+<div class="tip-box"><div class="tip-label">Rule of thumb for interviews</div><p>"If a Salesforce admin should be able to understand and modify the logic without a code deployment, and it doesn't involve bulk operations or callouts, I use Flow. For everything that touches large data volumes, external APIs, or complex Apex logic &mdash; I use a trigger with handler pattern. The two approaches are complementary, not competing."</p></div>
+</div></div>
+
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">Before Save Flow vs After Save Flow &mdash; when to use each and what each can do?</span><span class="qa-q-label lbl-domain">FLOW</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<table class="comparison-table"><tr><th>Feature</th><th>Before Save Flow</th><th>After Save Flow</th></tr>
+<tr><td>Update same record fields</td><td>YES &mdash; directly, no DML</td><td>NO &mdash; causes recursion</td></tr>
+<tr><td>Create related records</td><td>NO &mdash; no Id on insert yet</td><td>YES &mdash; record Id available</td></tr>
+<tr><td>Send emails</td><td>NO</td><td>YES</td></tr>
+<tr><td>Call Apex action</td><td>YES (Invocable)</td><td>YES (Invocable)</td></tr>
+<tr><td>Performance</td><td>Faster &mdash; same DML transaction</td><td>Slightly slower</td></tr>
+<tr><td>Record Id available</td><td>NO for new records on insert</td><td>YES always</td></tr></table>
+<pre class="code">// Before Save Flow use case: Set LoanCategory__c based on LoanAmount__c
+// Flow: Record-Triggered → Before Save on Insert/Update
+// Decision: IF LoanAmount__c &lt;= 417000 → Set LoanCategory__c = 'Conforming'
+//           IF LoanAmount__c &lt;= 1089300 → Set LoanCategory__c = 'High Balance'
+//           ELSE → Set LoanCategory__c = 'Jumbo'
+// No DML needed &mdash; field set directly in Before Save context
+
+// After Save Flow use case: Create a Task when loan status changes to Underwriting
+// Flow: Record-Triggered → After Save on Update
+// Condition: Prior Value of Status__c != 'Underwriting' AND Status__c = 'Underwriting'
+// Action: Create Records (Task) &mdash; Subject = 'Underwriting Review', WhatId = LoanId</pre>
+</div></div>
+
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How do you create an @InvocableMethod for Flow &mdash; complete code with input and output variables?</span><span class="qa-q-label lbl-apex">FLOW</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<pre class="code">// Complete InvocableMethod &mdash; Flow calls this as an Apex Action
+public class LoanStatusNotificationAction {
+
+    public class NotifyRequest {
+        @InvocableVariable(label='Loan ID' required=true
+            description='Salesforce record ID of the Loan__c to notify about')
+        public Id loanId;
+
+        @InvocableVariable(label='New Status' required=true)
+        public String newStatus;
+
+        @InvocableVariable(label='Send Email' description='Set to true to send borrower email')
+        public Boolean sendEmail;
+    }
+
+    public class NotifyResult {
+        @InvocableVariable(label='Notification Sent')
+        public Boolean notificationSent;
+
+        @InvocableVariable(label='Error Message')
+        public String errorMessage;
+    }
+
+    // MUST accept and return List&lt;T&gt; &mdash; Flow can call in bulk
+    @InvocableMethod(
+        label='Send Loan Status Notification'
+        description='Sends email/SMS to borrower when loan status changes. Use in Record-Triggered Flow after save.'
+        category='Loan Processing'
+    )
+    public static List&lt;NotifyResult&gt; sendNotification(List&lt;NotifyRequest&gt; requests) {
+        List&lt;NotifyResult&gt; results = new List&lt;NotifyResult&gt;();
+        for(NotifyRequest req : requests) {
+            NotifyResult result = new NotifyResult();
+            try {
+                if(req.sendEmail == true) {
+                    NotificationService.sendStatusEmail(req.loanId, req.newStatus);
+                }
+                result.notificationSent = true;
+            } catch(Exception e) {
+                result.notificationSent = false;
+                result.errorMessage = e.getMessage();
+            }
+            results.add(result);
+        }
+        return results;
+    }
+}
+
+// In Flow Builder:
+// Add "Action" element → Search "Send Loan Status Notification"
+// Map: {!$Record.Id} → loanId, {!$Record.Status__c} → newStatus, {!true} → sendEmail
+// Capture output: notificationSent → {!notificationSent} variable for downstream logic</pre>
+</div></div>
+
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How do you debug a Flow that fails in production &mdash; what tools and approach?</span><span class="qa-q-label lbl-domain">FLOW</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<ul class="ans-list">
+  <li><b>Flow Builder Debug Button:</b> Click Debug in Flow Builder → enter input values manually → step through element by element &mdash; see variable values at each step, error message at failing element</li>
+  <li><b>Debug Logs:</b> Setup → Debug → Apex Debug Logs → Add trace for the user. Set FLOW = FINEST. Filter log for FLOW_ELEMENT_ERROR to find exact failure point and variable values</li>
+  <li><b>Send Flow Error Emails:</b> Setup → Process Automation Settings → "Send Flow Error Emails" &mdash; admins receive an email with which flow, which element, the error message, and variable values at time of failure. HIGHLY recommended for production</li>
+  <li><b>Fault Paths:</b> Every element that can fail (Get Records, Send Email, Apex Action) should have a Fault path. In the fault path: assign {!$Flow.FaultMessage} to a text variable, create an Error_Log__c record. Without fault paths, Flow fails silently</li>
+  <li><b>Rollback Mode:</b> Debug → Run with Rollback Mode &mdash; tests the flow logic without actually committing DML. Safe for testing on real records</li>
+</ul>
+<div class="tip-box"><div class="tip-label">Production debugging tip</div><p>Never debug a failing Flow directly on production data. Reproduce the exact record state in Full Sandbox, debug there, fix, then deploy. If you must debug in production, use Rollback Mode to avoid unintended data changes.</p></div>
+</div></div>
+
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">What are the Flow governor limit pitfalls &mdash; when does Flow become dangerous at scale?</span><span class="qa-q-label lbl-domain">FLOW</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<ul class="ans-list">
+  <li><b>Get Records inside a Loop:</b> Every iteration of a Loop with a Get Records element = one SOQL query. 100 loop iterations = 100 queries = governor limit hit. Solution: Get all records BEFORE the loop into a collection variable</li>
+  <li><b>Update Records inside a Loop:</b> Every iteration = one DML. 150 iterations = limit hit. Solution: Add records to a collection variable inside the loop, Update Records AFTER the loop with the collection</li>
+  <li><b>After Save Flow on a frequently-updated object:</b> If 1000 records are updated via Bulk API, the After Save Flow fires 1000 times. Each run shares the org's transaction limits. Solution: use "Only when a record is created or when a record meets/stops meeting filter conditions" to limit trigger firing</li>
+  <li><b>Recursive Flow:</b> Flow updates a field on the record, which re-triggers the Record-Triggered Flow. Use entry conditions carefully. Use "Only when a record is created or meets criteria for the first time" (entry type) to prevent reentry</li>
+</ul>
+<pre class="code">// BAD pattern in Flow loop &mdash; SOQL per iteration:
+// Loop: For each Loan in Loan_Collection
+//   Get Records: Get Contact WHERE Id = {!Current_Loan.BorrowerContact__c}  ← SOQL per iteration!
+
+// GOOD pattern:
+// Before loop: Get Records: Get all Contacts WHERE Id IN {!Loan_BorrowerContact_IDs}
+// Loop: For each Loan in Loan_Collection
+//   Decision: Find matching Contact in the collection (no SOQL inside loop)</pre>
+</div></div>
+
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How do you call a Flow from Apex &mdash; and from LWC?</span><span class="qa-q-label lbl-domain">FLOW SCENARIOS</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<pre class="code">// Call a Screen Flow from LWC &mdash; lightning-flow component
+// &lt;lightning-flow flow-api-name="Loan_Application_Flow" flow-input-variables={flowInputs} onstatuschange={handleFlowChange}&gt;&lt;/lightning-flow&gt;
+
+// Flow input variables
+get flowInputs() {
+  return [{ name: 'recordId', type: 'String', value: this.recordId },
+          { name: 'loanType', type: 'String', value: this.loanType }];
+}
+handleFlowChange(event) {
+  if (event.detail.status === 'FINISHED') this.dispatchEvent(new RefreshEvent());
+}
+
+// Invoke an autolaunched Flow from Apex
+Map&lt;String,Object&gt; inputs = new Map&lt;String,Object&gt;{ 'loanId' =&gt; loan.Id, 'newStatus' =&gt; 'Approved' };
+Flow.Interview interview = Flow.Interview.createInterview('Loan_Status_Update_Flow', inputs);
+interview.start();
+// Get output variables after completion:
+String result = (String) interview.getVariableValue('outputMessage');</pre>
+
+</div></div>
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">What are Flow best practices for governor limit management?</span><span class="qa-q-label lbl-domain">FLOW SCENARIOS</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<ul class="ans-list">
+  <li><b>Before-Save flows have no governor limit impact</b> &mdash; they run in same transaction as the save, no extra DML. Prefer Before-Save for simple field updates.</li>
+  <li><b>After-Save flows get 2,000 DML rows</b> &mdash; but still count against the transaction's DML statement limit (150). Multiple After-Save flows on the same object share the limit.</li>
+  <li><b>Avoid loops that do DML inside</b> &mdash; same rule as Apex. Use Collection variables to collect records, then a single Create/Update Records element outside the loop.</li>
+  <li><b>Scheduled Paths (async)</b> &mdash; After-Save flows can have async paths that run after a delay. These get a fresh governor limit set &mdash; good for time-delayed actions.</li>
+  <li><b>Flow + Apex hybrid</b> &mdash; complex logic goes in Apex @InvocableMethod, Flow handles the user interaction and orchestration. Each keeps to what it does best.</li>
+</ul>
+
+</div></div>
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">What are the differences between Flow variables, resources, and collections?</span><span class="qa-q-label lbl-domain">FLOW SCENARIOS</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<table class="comparison-table"><tr><th>Resource Type</th><th>What it stores</th><th>Example</th></tr><tr><td>Variable</td><td>Single value &mdash; text, number, boolean, record</td><td>loanId, statusValue, isApproved</td></tr><tr><td>Record Variable</td><td>Single SObject record with its fields</td><td>currentLoan (Loan__c)</td></tr><tr><td>Record Collection Variable</td><td>List of SObject records</td><td>selectedLoans (List&lt;Loan__c&gt;)</td></tr><tr><td>Text Template</td><td>Reusable formatted text with merge fields</td><td>Email body with {!currentLoan.Name}</td></tr><tr><td>Formula</td><td>Calculated value</td><td>{!TODAY() + 30} for close date</td></tr><tr><td>Constant</td><td>Fixed value used across the flow</td><td>MAX_LOAN_AMOUNT = 2000000</td></tr><tr><td>Stage</td><td>Current position in a Screen Flow wizard</td><td>Stage 1 of 4</td></tr></table>
+<div class="tip-box"><div class="tip-label">Collection performance</div><p>Use Record Collection Variables to batch DML in flows. Loop over records → add to collection variable → after loop use one Create/Update Records element on the whole collection. Never use DML elements inside loops.</p></div>
+
+</div></div>
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How do sub-flows work &mdash; when should you extract logic into a sub-flow?</span><span class="qa-q-label lbl-domain">FLOW SCENARIOS</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<p class="ans-p">Sub-flows are reusable flow components. Call them from a parent flow the same way you call a method &mdash; pass inputs, get outputs back.</p>
+<pre class="code">// When to extract to sub-flow:
+// 1. Same logic reused in 3+ flows
+// 2. A logical unit that can be tested independently
+// 3. Complex branching that makes the parent hard to read
+
+// Sub-flow pattern:
+// Parent flow: Loan Application Flow
+//   → Sub-flow: Credit Check Sub-Flow (inputs: SSN, loanAmount. outputs: score, approved)
+//   → Sub-flow: OFAC Check Sub-Flow (inputs: borrowerName, SSN. outputs: clear, matchFound)
+//   → Sub-flow: Document Generation Sub-Flow (inputs: loanId, loanType)
+
+// Benefits: each sub-flow can be updated independently without touching the parent
+// Risk: deeply nested sub-flows are hard to debug &mdash; limit to 2 levels deep</pre>
+<div class="warn-box"><div class="warn-label">Sub-flow governor limits</div><p>Sub-flows run in the SAME transaction as the parent. They share the same governor limit pool &mdash; a sub-flow that does 50 DML statements counts against the parent's 150-statement limit.</p></div>
+
+</div></div>
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">What is the Flow Orchestration &mdash; how does it differ from regular Flows?</span><span class="qa-q-label lbl-domain">FLOW SCENARIOS</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<p class="ans-p">Flow Orchestration (formerly Orchestrator) enables multi-step, multi-user approval and review processes with assigned steps, stages, and work items.</p>
+<ul class="ans-list">
+  <li><b>Stages</b> &mdash; phases of the orchestration (Application Review, Underwriting, Approval, Funding)</li>
+  <li><b>Steps</b> &mdash; individual tasks within a stage. Can be assigned to specific users, roles, or queues</li>
+  <li><b>Interactive Steps</b> &mdash; require a human to complete a screen flow (review and approve a document)</li>
+  <li><b>Background Steps</b> &mdash; run automation automatically (call Apex, run a sub-flow) without human interaction</li>
+  <li><b>Sequential vs Parallel</b> &mdash; steps in the same stage can run in sequence or in parallel</li>
+  <li><b>Work Items</b> &mdash; tasks created for assigned users. Appear in the Salesforce To-Do list and Inbox</li>
+</ul>
+<div class="tip-box"><div class="tip-label">vs Standard Approval Process</div><p>Use Flow Orchestration when: multiple sequential approvers with different tasks, mixed human review and automated steps, need to track progress through stages, need complex routing logic. Use Standard Approval Process when: simple 1-3 level approval chain, no custom steps between approvals.</p></div>
+
+</div></div>

@@ -1,0 +1,82 @@
+<div class="page-title">Agentforce &mdash; Implementation Guide</div>
+<div class="page-sub">Building autonomous agents, custom actions, and grounding strategies for Senior Developers</div>
+
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How do you trigger an Agentforce agent from LWC &mdash; can you embed it?</span><span class="qa-q-label lbl-lwc">AGENTFORCE</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<p class="ans-p">You don't "call" an agent via API normally; you use the standard <b>Lightning Messaging for Web/In-App</b> component. The agent is the backend engine. However, you can use the <code>lightning-conversational-agent-service</code> to interact with an active session.</p>
+<pre class="code"><span class="cmt">// Communicate with an active agent session in LWC</span>
+import { LightningElement, wire } from <span class="str">'lwc'</span>;
+import { getAgentSession } from <span class="str">'lightning/conversationalAgentService'</span>;
+
+export default class AgentIntegrator extends LightningElement {
+    @wire(getAgentSession)
+    session;
+
+    handleSendMessage() {
+        if(this.session.data) {
+            <span class="cmt">// Programmatically send a message as if the user typed it</span>
+            this.session.data.sendMessage(<span class="str">'Check my loan status for application 78542'</span>);
+        }
+    }
+}</pre>
+</div></div>
+
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">What is a Prompt Template and how does it work with Agentforce?</span><span class="qa-q-label lbl-apex">AGENTFORCE</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<p class="ans-p">Prompt Templates are where you define the "personality" and "logic" of an AI response. They are stored as metadata. You can include record data directly in the prompt using <code>{!$Input:Loan__c.Name}</code>.</p>
+<ul class="ans-list">
+  <li><b>Salesforce Prompt Builder:</b> Declarative tool to write prompts.</li>
+  <li><b>Grounding:</b> Drag and drop record fields or related lists into the prompt.</li>
+  <li><b>Apex Grounding:</b> Use <code>{!$Apex:MyGroundingClass.getMethod()}</code> to inject complex logic into the prompt at runtime.</li>
+  <li><b>Agent Integration:</b> The agent calls a "Prompt Action" which executes the template and returns the LLM response to the user.</li>
+</ul>
+<div class="tip-box"><div class="tip-label">Developer Task</div><p>Your job isn't just to write the Apex; it's to write the "System Prompt" &mdash; the instructions that tell the AI how to behave. "You are a senior mortgage underwriter. Summarize this loan application focusing on credit risk. Use a professional but empathetic tone."</p></div>
+</div></div>
+
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How do you handle multi-step actions in Agentforce (e.g., lookup → calculate → update)?</span><span class="qa-q-label lbl-domain">AGENTFORCE</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<p class="ans-p">The "Atlas" reasoning engine handles the sequencing. You don't write one massive Apex class; you write small, atomic actions.</p>
+<ol class="ans-list">
+  <li><b>Action 1 (Apex):</b> <code>getLoanDetails(loanId)</code> &mdash; returns the record.</li>
+  <li><b>Action 2 (Apex):</b> <code>calculatePayment(amount, rate)</code> &mdash; returns a number.</li>
+  <li><b>Action 3 (Flow/Apex):</b> <code>updateLoanEstimate(loanId, payment)</code> &mdash; performs the update.</li>
+</ol>
+<p class="ans-p">The Agent reads the user's request: "Update my loan estimate based on a 7% rate." Atlas decides: "I need to get details first, then calculate, then update." It calls your actions in that order automatically.</p>
+</div></div>
+
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">What are the security implications of Agentforce &mdash; does it respect sharing rules?</span><span class="qa-q-label lbl-domain">AGENTFORCE</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<ul class="ans-list">
+  <li><b>User Context:</b> Agentforce actions run in the context of the <b>Running User</b>. If the user doesn't have access to a record via sharing rules, the agent's Apex action (if written correctly with <code>WITH USER_MODE</code>) won't see it either.</li>
+  <li><b>Prompt Data:</b> Only data the user is allowed to see is injected into prompt templates.</li>
+  <li><b>Trust Layer:</b> As discussed, PII is masked before being sent to the LLM.</li>
+  <li><b>Permission Sets:</b> You must assign the "Einstein Agent" or "Einstein Copilot" permission set to users for them to interact with the agent.</li>
+</ul>
+<div class="warn-box"><div class="warn-label">Security Warning</div><p>If you write an Apex action with <code>without sharing</code>, the agent could potentially reveal information to a user they aren't supposed to see. ALWAYS use <code>with sharing</code> or <code>inherited sharing</code> for Agentforce actions.</p></div>
+</div></div>
+
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How do you debug an agent that is "going off track" or hallucinating?</span><span class="qa-q-label lbl-domain">AGENTFORCE</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<ul class="ans-list">
+  <li><b>Conversation Logs:</b> Check the exact transcript. See what the "System Prompt" was and what data was grounded.</li>
+  <li><b>Agent Builder Simulator:</b> Use the 'Show Runtime Details' toggle. It shows the agent's "Thought Process" &mdash; why it chose a specific action.</li>
+  <li><b>Topic Guardrails:</b> Refine the instructions. Add "Do NOT" statements. "Do not speculate on interest rates. Only provide the rates returned by the GetRates action."</li>
+  <li><b>Negative Testing:</b> Try to "jailbreak" your agent by asking out-of-scope questions. Ensure it gracefully declines or escalates.</li>
+</ul>
+</div></div>
+
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">What is the "Atlas" engine &mdash; explain it to an architect?</span><span class="qa-q-label lbl-domain">AGENTFORCE</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<p class="ans-p">Atlas is the <b>orchestration layer</b> between the user's natural language and your Salesforce logic. It replaces the old "if/then" branching of traditional bots with an <b>autonomous reasoning loop</b>.</p>
+<ol class="ans-list">
+  <li><b>Understand:</b> Uses LLM to parse intent and extract entities (e.g., Loan ID).</li>
+  <li><b>Plan:</b> Identifies which "Topics" and "Actions" are relevant.</li>
+  <li><b>Act:</b> Executes the chosen Apex or Flow action.</li>
+  <li><b>Observe:</b> Reviews the data returned by the action.</li>
+  <li><b>Reason:</b> Decides if the goal is met or if another step is needed.</li>
+  <li><b>Respond:</b> Generates the final natural language answer.</li>
+</ol>
+</div></div>
+
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How do you deploy Agentforce configurations between environments?</span><span class="qa-q-label lbl-domain">AGENTFORCE</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<ul class="ans-list">
+  <li><b>Metadata Types:</b> <code>Bot</code> (the agent definition), <code>GenAiPromptTemplate</code>, <code>GenAiPlanner</code>, <code>InvocableAction</code>.</li>
+  <li><b>Change Sets / DevOps Center:</b> You can include these metadata types in your deployment.</li>
+  <li><b>Post-Deployment:</b> Some manual activation is usually required in the target org (Setup → Agent Builder → Activate).</li>
+  <li><b>API Name Sync:</b> Ensure your Apex classes and Flows have identical API names across environments so the agent's action mappings don't break.</li>
+</ul>
+</div></div>

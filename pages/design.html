@@ -1,0 +1,325 @@
+<div class="page-title">Design Patterns in Apex</div>
+<div class="page-sub">Senior devs are expected to write maintainable, scalable code using established patterns</div>
+
+<div class="qa-block">
+  <div class="qa-question" onclick="toggleQA(this)">
+    <span class="qa-q-text">Explain the Strategy Pattern in Apex &mdash; show code with a real Salesforce example</span>
+    <span class="qa-q-label lbl-apex">PATTERNS</span>
+    <span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span>
+  </div>
+  <div class="qa-answer">
+    <p class="ans-p">The Strategy Pattern defines a family of algorithms, encapsulates each one, and makes them interchangeable. The client (caller) works with an interface and doesn't know which concrete implementation it's using.</p>
+    <pre class="code"><span class="cmt">// Real example: Different loan types have different approval algorithms</span>
+
+// 1. Interface defines the contract
+public interface <span class="cls">ILoanApprovalStrategy</span> {
+    <span class="cls">Boolean</span> isApproved(<span class="cls">Loan__c</span> loan, <span class="cls">CreditReport</span> creditReport);
+    <span class="cls">String</span> getRejectionReason();
+}
+
+// 2. Concrete strategies - one per loan type
+public class <span class="cls">ConventionalLoanStrategy</span> implements <span class="cls">ILoanApprovalStrategy</span> {
+    public <span class="cls">Boolean</span> isApproved(<span class="cls">Loan__c</span> loan, <span class="cls">CreditReport</span> cr) {
+        return cr.ficoScore >= 620 &amp;&amp; loan.DTI__c &lt;= 43 &amp;&amp; loan.LTV__c &lt;= 80;
+    }
+    public <span class="cls">String</span> getRejectionReason() { return 'Conventional: FICO min 620, DTI max 43%, LTV max 80%'; }
+}
+
+public class <span class="cls">FHALoanStrategy</span> implements <span class="cls">ILoanApprovalStrategy</span> {
+    public <span class="cls">Boolean</span> isApproved(<span class="cls">Loan__c</span> loan, <span class="cls">CreditReport</span> cr) {
+        return cr.ficoScore >= 580 &amp;&amp; loan.DTI__c &lt;= 57 &amp;&amp; loan.LTV__c &lt;= 96.5;
+    }
+    public <span class="cls">String</span> getRejectionReason() { return 'FHA: FICO min 580, DTI max 57%, LTV max 96.5%'; }
+}
+
+// 3. Factory to create the right strategy (often combined with Strategy)
+public class <span class="cls">LoanStrategyFactory</span> {
+    public static <span class="cls">ILoanApprovalStrategy</span> getStrategy(<span class="cls">String</span> loanType) {
+        switch on loanType {
+            when 'Conventional' { return new <span class="cls">ConventionalLoanStrategy</span>(); }
+            when 'FHA'          { return new <span class="cls">FHALoanStrategy</span>(); }
+            when else          { throw new <span class="cls">IllegalArgumentException</span>('Unknown loan type: ' + loanType); }
+        }
+    }
+}
+
+// 4. Client code - doesn't know which strategy is used
+public class <span class="cls">LoanApprovalService</span> {
+    public static void processApprovals(<span class="cls">List</span>&lt;<span class="cls">Loan__c</span>&gt; loans) {
+        for(<span class="cls">Loan__c</span> loan : loans) {
+            <span class="cls">ILoanApprovalStrategy</span> strategy = <span class="cls">LoanStrategyFactory</span>.getStrategy(loan.LoanType__c);
+            <span class="cls">CreditReport</span> cr = <span class="cls">ExperianService</span>.getCreditReport(loan.BorrowerId__c);
+            
+            if(strategy.isApproved(loan, cr)) {
+                loan.Status__c = 'Approved';
+            } else {
+                loan.Status__c = 'Denied';
+                loan.DenialReason__c = strategy.getRejectionReason();
+            }
+        }
+        update loans;
+    }
+}</pre>
+    <div class="tip-box"><div class="tip-label">Why this is powerful</div><p>To add a new loan type (VA loan, USDA loan), you only create a new class implementing ILoanApprovalStrategy. You don't touch the existing service code at all &mdash; Open/Closed Principle. This is what separates senior dev thinking from mid-level.</p></div>
+  </div>
+</div>
+
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">What is the Service Layer pattern &mdash; why is it the most important pattern in Salesforce?</span><span class="qa-q-label lbl-apex">PATTERNS</span><span class="qa-chevron"></span></div><div class="qa-answer">
+<p class="ans-p">Service Layer is where business logic lives. Without it, logic gets duplicated across triggers, LWC controllers, batch jobs, and APIs.</p>
+<pre class="code">// WITHOUT service layer &mdash; same logic duplicated everywhere
+// In trigger after update: sendApprovalEmail(loan); updateBorrower(loan);
+// In LWC @AuraEnabled method: same calls duplicated!
+// In batch finish: same calls duplicated again!
+
+// WITH service layer &mdash; one place, called from anywhere
+public with sharing class LoanApprovalService {
+  public static void approve(List&lt;Loan__c&gt; loans) {
+    List&lt;Loan__c&gt; toUpdate = new List&lt;Loan__c&gt;();
+    for (Loan__c l : loans) {
+      l.Status__c = 'Approved'; l.Approval_Date__c = Date.today(); toUpdate.add(l);
+    }
+    update toUpdate;
+    LoanEmailService.sendApprovalEmails(toUpdate);
+    BorrowerService.updateActiveLoanCounts(toUpdate);
+  }
+}
+// Trigger calls: LoanApprovalService.approve(changedLoans);
+// LWC @AuraEnabled calls: LoanApprovalService.approve(new List&lt;Loan__c&gt;{loan});
+// Batch calls: LoanApprovalService.approve(scope); &mdash; SAME service, no duplication</pre>
+</div></div>
+
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">What is the Trigger Handler pattern &mdash; complete implementation with framework?</span><span class="qa-q-label lbl-apex">PATTERNS</span><span class="qa-chevron"></span></div><div class="qa-answer">
+<pre class="code">// TriggerHandler.cls &mdash; virtual base (framework layer)
+public virtual class TriggerHandler {
+  public virtual void onBeforeInsert() {} public virtual void onAfterInsert() {}
+  public virtual void onBeforeUpdate() {} public virtual void onAfterUpdate() {}
+  public virtual void onBeforeDelete() {} public virtual void onAfterDelete() {}
+  public void run() {
+    if (Trigger.isBefore) {
+      if (Trigger.isInsert) onBeforeInsert();
+      if (Trigger.isUpdate) onBeforeUpdate();
+      if (Trigger.isDelete) onBeforeDelete();
+    } else {
+      if (Trigger.isInsert) onAfterInsert();
+      if (Trigger.isUpdate) onAfterUpdate();
+      if (Trigger.isDelete) onAfterDelete();
+    }
+  }
+}
+
+// LoanTriggerHandler.cls &mdash; domain-specific logic
+public class LoanTriggerHandler extends TriggerHandler {
+  private List&lt;Loan__c&gt; newLoans  = (List&lt;Loan__c&gt;) Trigger.new;
+  private Map&lt;Id,Loan__c&gt; oldMap  = (Map&lt;Id,Loan__c&gt;) Trigger.oldMap;
+  public override void onBeforeInsert() { LoanValidationService.validate(newLoans); }
+  public override void onAfterUpdate()  { LoanStatusService.handleChange(newLoans, oldMap); }
+}
+
+// LoanTrigger.trigger &mdash; one line
+trigger LoanTrigger on Loan__c (before insert, before update, after insert, after update, after delete) {
+  new LoanTriggerHandler().run();
+}</pre>
+</div></div>
+
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">What is the Strategy pattern &mdash; complete Salesforce implementation?</span><span class="qa-q-label lbl-apex">PATTERNS</span><span class="qa-chevron"></span></div><div class="qa-answer">
+<pre class="code">public interface ILoanProcessor {
+  void validate(Loan__c loan);
+  Decimal calculateRate(Loan__c loan);
+  List&lt;String&gt; requiredDocs(Loan__c loan);
+}
+public class ConventionalProcessor implements ILoanProcessor {
+  public void validate(Loan__c l)  { if (l.Credit_Score__c &lt; 620) l.addError('Need 620+ score'); }
+  public Decimal calculateRate(Loan__c l) { return 6.5 + (l.Credit_Score__c &lt; 740 ? 0.5 : 0.0); }
+  public List&lt;String&gt; requiredDocs(Loan__c l) { return new List&lt;String&gt;{'W2','Tax Return','Bank Statement'}; }
+}
+public class FHAProcessor implements ILoanProcessor {
+  public void validate(Loan__c l)  { if (l.Credit_Score__c &lt; 580) l.addError('FHA needs 580+ score'); }
+  public Decimal calculateRate(Loan__c l) { return 6.25; }
+  public List&lt;String&gt; requiredDocs(Loan__c l) { return new List&lt;String&gt;{'W2','FHA Certificate'}; }
+}
+// Factory + Strategy combined
+public class LoanProcessorFactory {
+  static Map&lt;String,ILoanProcessor&gt; MAP = new Map&lt;String,ILoanProcessor&gt;{
+    'Conventional'=&gt;new ConventionalProcessor(), 'FHA'=&gt;new FHAProcessor()
+  };
+  public static ILoanProcessor get(String type) {
+    if (!MAP.containsKey(type)) throw new LoanException('Unknown type: '+type);
+    return MAP.get(type);
+  }
+}
+// Usage &mdash; caller never knows which processor it's using
+ILoanProcessor proc = LoanProcessorFactory.get(loan.Loan_Type__c);
+proc.validate(loan);
+loan.Interest_Rate__c = proc.calculateRate(loan);</pre>
+</div></div>
+
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">What is the Observer pattern &mdash; how does it map to Platform Events in Salesforce?</span><span class="qa-q-label lbl-apex">PATTERNS</span><span class="qa-chevron"></span></div><div class="qa-answer">
+<p class="ans-p">Observer defines a one-to-many relationship: when subject changes, all observers are notified. Platform Events are the native Salesforce implementation.</p>
+<pre class="code">// Subject (publisher) &mdash; just publishes. Knows nothing about observers.
+trigger LoanTrigger on Loan__c (after update) {
+  List&lt;Loan_Event__e&gt; events = new List&lt;Loan_Event__e&gt;();
+  for (Loan__c l : Trigger.new)
+    if (l.Status__c != Trigger.oldMap.get(l.Id).Status__c)
+      events.add(new Loan_Event__e(Loan_Id__c=l.Id, Status__c=l.Status__c));
+  EventBus.publish(events);
+}
+
+// Observer 1 &mdash; email notifications (independent, can be deployed/removed independently)
+trigger EmailObserver on Loan_Event__e (after insert) { LoanEmailService.process(Trigger.new); }
+
+// Observer 2 &mdash; LOS sync (independent)
+trigger LOSObserver on Loan_Event__e (after insert) {
+  for (Loan_Event__e e : Trigger.new) System.enqueueJob(new LOSSyncQueueable(e.Loan_Id__c));
+}
+// Observer 3 &mdash; analytics (Flow subscriber &mdash; no code at all)
+// Adding a new observer requires ZERO changes to the trigger (open/closed principle)</pre>
+</div></div>
+
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">What is the Decorator pattern in Apex &mdash; when is it useful?</span><span class="qa-q-label lbl-apex">PATTERNS</span><span class="qa-chevron"></span></div><div class="qa-answer">
+<pre class="code">public interface IEmailService { void sendApproval(Loan__c loan); }
+
+// Base
+public class BasicEmailService implements IEmailService {
+  public void sendApproval(Loan__c loan) { /* send basic email */ }
+}
+// Decorator 1 &mdash; adds logging without changing base
+public class LoggingEmailDecorator implements IEmailService {
+  private IEmailService inner;
+  public LoggingEmailDecorator(IEmailService s) { inner = s; }
+  public void sendApproval(Loan__c loan) {
+    insert new Email_Log__c(Loan__c=loan.Id, Sent_At__c=DateTime.now());
+    inner.sendApproval(loan); // delegate
+  }
+}
+// Decorator 2 &mdash; adds CC to loan officer
+public class LoanOfficerCCDecorator implements IEmailService {
+  private IEmailService inner;
+  public LoanOfficerCCDecorator(IEmailService s) { inner = s; }
+  public void sendApproval(Loan__c loan) {
+    inner.sendApproval(loan);
+    sendLOCopy(loan); // additional behaviour
+  }
+}
+// Compose: wraps base with multiple decorators
+IEmailService service = new LoanOfficerCCDecorator(new LoggingEmailDecorator(new BasicEmailService()));
+service.sendApproval(loan); // all three layers execute</pre>
+</div></div>
+
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">What is the Facade pattern &mdash; how does it simplify complex Salesforce orchestration?</span><span class="qa-q-label lbl-apex">PATTERNS</span><span class="qa-chevron"></span></div><div class="qa-answer">
+<pre class="code">// WITHOUT Facade &mdash; LWC controller knows too much about internals:
+// CreditService.run(); OfacService.run(); DocService.generate(); NotifService.send(); LOSService.sync();
+
+// WITH Facade &mdash; single clean method hides all complexity
+public class LoanApplicationFacade {
+  @AuraEnabled
+  public static SubmitResult submit(Id loanId) {
+    try {
+      CreditService.runCreditCheck(loanId);
+      OfacService.runOfacCheck(loanId);
+      DocumentService.generateDocs(loanId);
+      NotificationService.notifyUnderwriter(loanId);
+      System.enqueueJob(new LOSSyncQueueable(loanId));
+      AuditService.log('LOAN_SUBMITTED', loanId);
+      return new SubmitResult(true, 'Application submitted');
+    } catch (Exception e) { return new SubmitResult(false, e.getMessage()); }
+  }
+}
+// LWC calls: await submitLoan({ loanId }); &mdash; one call, complete orchestration hidden</pre>
+</div></div>
+
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">What is the Singleton pattern in Apex &mdash; when does it save governor limits?</span><span class="qa-q-label lbl-apex">PATTERNS</span><span class="qa-chevron"></span></div><div class="qa-answer">
+<pre class="code">// Without Singleton &mdash; each call to getConfig() runs a SOQL query
+// In a trigger processing 200 records: 200 calls = 200 SOQL &mdash; hits the limit!
+
+// With Singleton &mdash; query happens once, result cached for the transaction
+public class LoanConfigCache {
+  private static LoanConfigCache instance;
+  private Map&lt;String, Loan_Config__mdt&gt; cache;
+
+  private LoanConfigCache() { // private &mdash; nobody can call new LoanConfigCache()
+    cache = new Map&lt;String, Loan_Config__mdt&gt;();
+    for (Loan_Config__mdt cfg : [SELECT Loan_Type__c, Max_Amount__c, Base_Rate__c FROM Loan_Config__mdt])
+      cache.put(cfg.Loan_Type__c, cfg);
+  }
+
+  public static LoanConfigCache getInstance() {
+    if (instance == null) instance = new LoanConfigCache(); // 1 SOQL total
+    return instance;
+  }
+
+  public Loan_Config__mdt getConfig(String loanType) { return cache.get(loanType); }
+}
+
+// Trigger handler &mdash; 200 records, 1 SOQL total
+for (Loan__c loan : Trigger.new) {
+  Loan_Config__mdt cfg = LoanConfigCache.getInstance().getConfig(loan.Loan_Type__c);
+  loan.Max_Rate__c = cfg.Base_Rate__c + 2.0;
+}</pre>
+</div></div>
+
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">What is the Unit of Work pattern &mdash; how does it reduce DML statements?</span><span class="qa-q-label lbl-apex">PATTERNS</span><span class="qa-chevron"></span></div><div class="qa-answer">
+<p class="ans-p">Unit of Work collects all pending DML operations across a business process and executes them in one coordinated batch at the end &mdash; minimising DML statements and ensuring transactional integrity.</p>
+<pre class="code">// Without UoW &mdash; scattered DML (3 separate statements)
+public static void approveLoan(Id loanId) {
+  Loan__c l = [SELECT Id FROM Loan__c WHERE Id=:loanId];
+  l.Status__c='Approved'; update l; // DML 1
+  Account a = [SELECT Id, Active_Loans__c FROM Account WHERE Id=:l.Account__c];
+  a.Active_Loans__c++; update a; // DML 2
+  insert new Approval_Log__c(Loan__c=l.Id); // DML 3
+}
+
+// With UoW pattern (manual implementation without fflib)
+public class UnitOfWork {
+  List&lt;SObject&gt; toInsert = new List&lt;SObject&gt;();
+  List&lt;SObject&gt; toUpdate = new List&lt;SObject&gt;();
+  List&lt;SObject&gt; toDelete = new List&lt;SObject&gt;();
+  public void registerNew(SObject obj)    { toInsert.add(obj); }
+  public void registerDirty(SObject obj)  { toUpdate.add(obj); }
+  public void registerDeleted(SObject obj){ toDelete.add(obj); }
+  public void commitWork() {
+    if (!toInsert.isEmpty()) insert toInsert; // 1 DML
+    if (!toUpdate.isEmpty()) update toUpdate; // 1 DML
+    if (!toDelete.isEmpty()) delete toDelete; // 1 DML
+  }
+}
+UnitOfWork uow = new UnitOfWork();
+uow.registerDirty(loan); uow.registerDirty(account); uow.registerNew(approvalLog);
+uow.commitWork(); // 2 DML statements instead of 3</pre>
+</div></div>
+
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">What is the Null Object pattern &mdash; how does it eliminate defensive null checks?</span><span class="qa-q-label lbl-apex">PATTERNS</span><span class="qa-chevron"></span></div><div class="qa-answer">
+<pre class="code">// WITHOUT null object &mdash; null checks everywhere
+ILoanProcessor proc = LoanProcessorFactory.get(loan.Loan_Type__c); // might return null
+if (proc != null) { proc.validate(loan); proc.calculateRate(loan); }
+else { /* default handling duplicated everywhere */ }
+
+// WITH null object &mdash; factory NEVER returns null
+public class NullLoanProcessor implements ILoanProcessor {
+  public void validate(Loan__c l) {} // no-op &mdash; does nothing safely
+  public Decimal calculateRate(Loan__c l) { return 0; }
+  public List&lt;String&gt; requiredDocs(Loan__c l) { return new List&lt;String&gt;(); }
+}
+public class LoanProcessorFactory {
+  public static ILoanProcessor get(String type) {
+    Map&lt;String,ILoanProcessor&gt; m = getMap();
+    return m.containsKey(type) ? m.get(type) : new NullLoanProcessor(); // never null
+  }
+}
+// Calling code &mdash; no null check needed ever
+ILoanProcessor proc = LoanProcessorFactory.get(loan.Loan_Type__c);
+proc.validate(loan); // safe &mdash; worst case is a no-op</pre>
+</div></div>
+
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">What is Separation of Concerns &mdash; how do you apply it across Apex layers?</span><span class="qa-q-label lbl-apex">PATTERNS</span><span class="qa-chevron"></span></div><div class="qa-answer">
+<p class="ans-p">Every class should have one reason to change. In Salesforce, the layers are:</p>
+<ul class="ans-list">
+  <li><b>Trigger</b> &mdash; dispatcher only. One line: new Handler().run(). No business logic.</li>
+  <li><b>Trigger Handler</b> &mdash; routes trigger events to the right service methods. No SOQL, no business rules.</li>
+  <li><b>Service Layer</b> &mdash; business logic. Orchestrates domain operations. Called from trigger handler, LWC controller, batch, API.</li>
+  <li><b>Selector Layer</b> &mdash; all SOQL queries for an object. No business logic, only queries.</li>
+  <li><b>Domain Layer</b> &mdash; SObject-specific business rules (validation, defaults, derivations).</li>
+  <li><b>Integration Layer</b> &mdash; HTTP callouts, JSON mapping, external system communication.</li>
+  <li><b>Controller Layer</b> &mdash; @AuraEnabled methods. Thin &mdash; calls Service layer, returns results to LWC.</li>
+</ul>
+<div class="tip-box"><div class="tip-label">Why it matters</div><p>When Loan approval logic changes, you change LoanApprovalService only. Not the trigger, not the LWC controller, not the batch. Without SoC, one business rule change requires hunting through 10 files.</p></div>
+</div></div>

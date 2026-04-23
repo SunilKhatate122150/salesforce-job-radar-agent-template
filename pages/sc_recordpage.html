@@ -1,0 +1,410 @@
+<div class="page-title">Standard Record Page + LWC &mdash; 10 Scenarios</div>
+<div class="page-sub">Adding LWC to record pages, getRecord, LMS communication between sibling components</div>
+
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How do you add a custom LWC to a standard record page &mdash; what metadata is required?</span><span class="qa-q-label lbl-lwc">RECORD PAGE</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<pre class="code"><span class="cmt">&lt;!-- loanSummaryCard.js-meta.xml &mdash; makes component visible in App Builder --&gt;</span>
+&lt;?xml version="1.0" encoding="UTF-8"?&gt;
+&lt;LightningComponentBundle xmlns="http://soap.sforce.com/2006/04/metadata"&gt;
+    &lt;apiVersion&gt;59.0&lt;/apiVersion&gt;
+    &lt;isExposed&gt;true&lt;/isExposed&gt; <span class="cmt">&lt;!-- MUST be true to appear in App Builder --&gt;</span>
+    &lt;targets&gt;
+        &lt;target&gt;lightning__RecordPage&lt;/target&gt;  <span class="cmt">&lt;!-- record detail pages --&gt;</span>
+        &lt;target&gt;lightning__AppPage&lt;/target&gt;      <span class="cmt">&lt;!-- app home pages --&gt;</span>
+        &lt;target&gt;lightning__HomePage&lt;/target&gt;     <span class="cmt">&lt;!-- home tab --&gt;</span>
+    &lt;/targets&gt;
+    &lt;targetConfigs&gt;
+        &lt;targetConfig targets="lightning__RecordPage"&gt;
+            &lt;property name="recordId" type="String" /&gt;        <span class="cmt">&lt;!-- auto-populated from page context --&gt;</span>
+            &lt;property name="objectApiName" type="String" /&gt;   <span class="cmt">&lt;!-- auto-populated --&gt;</span>
+            &lt;property name="cardTitle" type="String" label="Card Title" default="Loan Summary"/&gt;
+            &lt;!-- Admin can configure cardTitle in App Builder --&gt;
+        &lt;/targetConfig&gt;
+    &lt;/targetConfigs&gt;
+&lt;/LightningComponentBundle&gt;</pre>
+<pre class="code"><span class="cmt">// loanSummaryCard.js</span>
+import { LightningElement, api, wire } from <span class="str">'lwc'</span>;
+@api recordId;        <span class="cmt">// auto-populated from record page context</span>
+@api objectApiName;   <span class="cmt">// auto-populated &mdash; tells you which object the page is for</span>
+@api cardTitle;       <span class="cmt">// configurable by admin in App Builder</span>
+
+<span class="cmt">// After saving the component and deploying to org:</span>
+<span class="cmt">// Go to a Loan__c record → Setup (gear icon) → Edit Page</span>
+<span class="cmt">// In App Builder: find "loanSummaryCard" in Custom components panel</span>
+<span class="cmt">// Drag onto the page layout → configure cardTitle in the right panel</span>
+<span class="cmt">// Save → Activate (for all users)</span></pre>
+</div></div>
+
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">Two custom LWC components on the same record page &mdash; how do they communicate? Complete working code.</span><span class="qa-q-label lbl-lwc">RECORD PAGE</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<p class="ans-p">Sibling components on the same record page cannot use CustomEvent (that is only parent-child). Use Lightning Message Service (LMS).</p>
+<pre class="code"><span class="cmt">&lt;!-- STEP 1: Create Message Channel --&gt;</span>
+<span class="cmt">&lt;!-- force-app/main/default/messageChannels/LoanUpdate__c.messageChannel-meta.xml --&gt;</span>
+&lt;LightningMessageChannel xmlns="http://soap.sforce.com/2006/04/metadata"&gt;
+    &lt;masterLabel&gt;Loan Update Channel&lt;/masterLabel&gt;
+    &lt;isExposed&gt;true&lt;/isExposed&gt;
+    &lt;lightningMessageFields&gt;
+        &lt;fieldName&gt;loanId&lt;/fieldName&gt;&lt;description&gt;Loan record Id&lt;/description&gt;
+    &lt;/lightningMessageFields&gt;
+    &lt;lightningMessageFields&gt;
+        &lt;fieldName&gt;status&lt;/fieldName&gt;&lt;description&gt;New status value&lt;/description&gt;
+    &lt;/lightningMessageFields&gt;
+&lt;/LightningMessageChannel&gt;</pre>
+<pre class="code"><span class="cmt">// STEP 2: Component A &mdash; PUBLISHER (e.g., Status Update button component)</span>
+import { LightningElement, api, wire } from <span class="str">'lwc'</span>;
+import { publish, MessageContext } from <span class="str">'lightning/messageService'</span>;
+import LOAN_UPDATE_CHANNEL from <span class="str">'@salesforce/messageChannel/LoanUpdate__c'</span>;
+import updateStatus from <span class="str">'@salesforce/apex/LoanController.updateStatus'</span>;
+import { ShowToastEvent } from <span class="str">'lightning/platformShowToastEvent'</span>;
+
+export default class LoanStatusUpdater extends LightningElement {
+    @api recordId;
+    @wire(MessageContext) messageContext;
+    newStatus = <span class="str">''</span>;
+
+    handleStatusChange(e) { this.newStatus = e.detail.value; }
+
+    async handleSave() {
+        try {
+            await updateStatus({ loanId: this.recordId, status: this.newStatus });
+            <span class="cmt">// Publish &mdash; all subscribers on this page will receive this</span>
+            publish(this.messageContext, LOAN_UPDATE_CHANNEL, {
+                loanId: this.recordId,
+                status: this.newStatus
+            });
+            this.dispatchEvent(new ShowToastEvent({ title: <span class="str">'Updated'</span>, variant: <span class="str">'success'</span> }));
+        } catch(e) {
+            this.dispatchEvent(new ShowToastEvent({ title: <span class="str">'Failed'</span>, message: e.body?.message, variant: <span class="str">'error'</span> }));
+        }
+    }
+}</pre>
+<pre class="code"><span class="cmt">// STEP 3: Component B &mdash; SUBSCRIBER (e.g., Loan Timeline component)</span>
+import { LightningElement, api, wire } from <span class="str">'lwc'</span>;
+import { subscribe, unsubscribe, APPLICATION_SCOPE, MessageContext } from <span class="str">'lightning/messageService'</span>;
+import { refreshApex } from <span class="str">'@salesforce/apex'</span>;
+import LOAN_UPDATE_CHANNEL from <span class="str">'@salesforce/messageChannel/LoanUpdate__c'</span>;
+import getLoanTimeline from <span class="str">'@salesforce/apex/LoanController.getLoanTimeline'</span>;
+
+export default class LoanTimeline extends LightningElement {
+    @api recordId;
+    @wire(MessageContext) messageContext;
+    subscription = null;
+    wiredTimelineResult;
+
+    @wire(getLoanTimeline, { loanId: <span class="str">'$recordId'</span> })
+    wiredTimeline(result) { this.wiredTimelineResult = result; }
+
+    connectedCallback() {
+        this.subscription = subscribe(
+            this.messageContext, LOAN_UPDATE_CHANNEL,
+            (msg) => this.handleMessage(msg),
+            { scope: APPLICATION_SCOPE }
+        );
+    }
+
+    async handleMessage(msg) {
+        if(msg.loanId !== this.recordId) return;
+        <span class="cmt">// Status updated &mdash; refresh timeline data</span>
+        await refreshApex(this.wiredTimelineResult);
+    }
+
+    disconnectedCallback() {
+        unsubscribe(this.subscription); <span class="cmt">// ALWAYS unsubscribe &mdash; prevent memory leaks</span>
+    }
+}</pre>
+</div></div>
+
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">Complete getRecord + getFieldValue implementation &mdash; all patterns explained</span><span class="qa-q-label lbl-lwc">RECORD PAGE</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<pre class="code"><span class="cmt">// loanDetailsWidget.js</span>
+import { LightningElement, api, wire } from <span class="str">'lwc'</span>;
+import { getRecord, getFieldValue } from <span class="str">'lightning/uiRecordApi'</span>;
+
+<span class="cmt">// ALWAYS import fields using schema imports &mdash; never hardcode 'Loan__c.Status__c'</span>
+import LOAN_STATUS  from <span class="str">'@salesforce/schema/Loan__c.Status__c'</span>;
+import LOAN_AMOUNT  from <span class="str">'@salesforce/schema/Loan__c.LoanAmount__c'</span>;
+import LOAN_TYPE    from <span class="str">'@salesforce/schema/Loan__c.LoanType__c'</span>;
+import OFFICER_NAME from <span class="str">'@salesforce/schema/Loan__c.LoanOfficer__r.Name'</span>; <span class="cmt">// related field</span>
+import OFFICER_EMAIL from <span class="str">'@salesforce/schema/Loan__c.LoanOfficer__r.Email'</span>;
+
+const FIELDS = [LOAN_STATUS, LOAN_AMOUNT, LOAN_TYPE, OFFICER_NAME, OFFICER_EMAIL];
+
+export default class LoanDetailsWidget extends LightningElement {
+    @api recordId;
+    error;
+    wiredRecord;
+
+    <span class="cmt">// Pattern 1: Wire as function (gives you both data and error)</span>
+    @wire(getRecord, { recordId: <span class="str">'$recordId'</span>, fields: FIELDS })
+    wiredLoan(result) {
+        this.wiredRecord = result;  <span class="cmt">// store for refreshApex</span>
+        if(result.error) this.error = result.error.body?.message;
+    }
+
+    <span class="cmt">// Pattern 2: Wire as property (simpler syntax)</span>
+    @wire(getRecord, { recordId: <span class="str">'$recordId'</span>, fields: FIELDS })
+    loan; <span class="cmt">// this.loan.data and this.loan.error</span>
+
+    <span class="cmt">// Use getFieldValue to safely extract values &mdash; handles null/undefined gracefully</span>
+    get loanStatus()  { return getFieldValue(this.loan.data, LOAN_STATUS); }
+    get loanAmount()  { return getFieldValue(this.loan.data, LOAN_AMOUNT); }
+    get officerName() { return getFieldValue(this.loan.data, OFFICER_NAME); }
+
+    get formattedAmount() {
+        const amt = this.loanAmount;
+        if(!amt) return <span class="str">'--'</span>;
+        return new Intl.NumberFormat(<span class="str">'en-US'</span>, { style: <span class="str">'currency'</span>, currency: <span class="str">'USD'</span> }).format(amt);
+    }
+
+    get statusBadgeClass() {
+        const map = { <span class="str">'Approved'</span>: <span class="str">'slds-badge slds-theme_success'</span>, <span class="str">'Denied'</span>: <span class="str">'slds-badge slds-theme_error'</span> };
+        return map[this.loanStatus] || <span class="str">'slds-badge'</span>;
+    }
+
+    get isLoading() { return !this.loan?.data &amp;&amp; !this.loan?.error; }
+
+    <span class="cmt">// Refresh after updateRecord or DML:</span>
+    async handleAfterUpdate() {
+        await refreshApex(this.wiredRecord); <span class="cmt">// re-fetches from server</span>
+    }
+}
+<span class="cmt">// IMPORTANT: getRecord only fires when recordId is truthy</span>
+<span class="cmt">// '$recordId' &mdash; the $ prefix means reactive &mdash; wire refires when recordId changes</span>
+<span class="cmt">// If recordId is undefined (component placed on non-record page), wire does not fire</span></pre>
+</div></div>
+
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How do you use updateRecord from LWC without a form &mdash; complete pattern?</span><span class="qa-q-label lbl-lwc">RECORD PAGE</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<pre class="code"><span class="cmt">// Inline update without lightning-record-edit-form</span>
+import { LightningElement, api, wire } from <span class="str">'lwc'</span>;
+import { updateRecord } from <span class="str">'lightning/uiRecordApi'</span>;
+import { ShowToastEvent } from <span class="str">'lightning/platformShowToastEvent'</span>;
+import { refreshApex } from <span class="str">'@salesforce/apex'</span>;
+import LOAN_STATUS from <span class="str">'@salesforce/schema/Loan__c.Status__c'</span>;
+import LOAN_ID from <span class="str">'@salesforce/schema/Loan__c.Id'</span>;
+
+export default class LoanApproveButton extends LightningElement {
+    @api recordId;
+
+    async handleApprove() {
+        <span class="cmt">// Build fields object &mdash; Id field is REQUIRED</span>
+        const fields = {};
+        fields[LOAN_ID.fieldApiName] = this.recordId;
+        fields[LOAN_STATUS.fieldApiName] = <span class="str">'Approved'</span>;
+
+        try {
+            await updateRecord({ fields });
+            this.dispatchEvent(new ShowToastEvent({
+                title: <span class="str">'Approved'</span>, message: <span class="str">'Loan approved successfully'</span>, variant: <span class="str">'success'</span>
+            }));
+            <span class="cmt">// Force page to reload record data</span>
+            this.dispatchEvent(new CustomEvent(<span class="str">'recordupdated'</span>));
+        } catch(error) {
+            <span class="cmt">// Trigger addError() messages surface here automatically</span>
+            const msg = error.body?.output?.errors?.[0]?.message || error.body?.message;
+            this.dispatchEvent(new ShowToastEvent({
+                title: <span class="str">'Approval Failed'</span>, message: msg, variant: <span class="str">'error'</span>, mode: <span class="str">'sticky'</span>
+            }));
+        }
+    }
+}</pre>
+</div></div>
+
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How do you use createRecord and deleteRecord from LWC &mdash; with confirmation dialog?</span><span class="qa-q-label lbl-lwc">RECORD PAGE</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<pre class="code">import { createRecord, deleteRecord } from <span class="str">'lightning/uiRecordApi'</span>;
+import LOAN_OBJECT from <span class="str">'@salesforce/schema/Loan__c'</span>;
+import LOAN_AMOUNT from <span class="str">'@salesforce/schema/Loan__c.LoanAmount__c'</span>;
+import APPLICATION_FIELD from <span class="str">'@salesforce/schema/Loan__c.Application__c'</span>;
+
+<span class="cmt">// CREATE RECORD</span>
+async handleCreateLoan() {
+    const fields = {};
+    fields[LOAN_AMOUNT.fieldApiName] = this.loanAmount;
+    fields[APPLICATION_FIELD.fieldApiName] = this.recordId; <span class="cmt">// parent Id</span>
+    const recordInput = { apiName: LOAN_OBJECT.objectApiName, fields };
+
+    try {
+        const newRecord = await createRecord(recordInput);
+        this.dispatchEvent(new ShowToastEvent({
+            title: <span class="str">'Loan Created'</span>, message: <span class="str">'ID: '</span> + newRecord.id, variant: <span class="str">'success'</span>
+        }));
+        <span class="cmt">// Navigate to new record:</span>
+        this[NavigationMixin.Navigate]({
+            type: <span class="str">'standard__recordPage'</span>,
+            attributes: { recordId: newRecord.id, actionName: <span class="str">'view'</span> }
+        });
+    } catch(e) {
+        this.dispatchEvent(new ShowToastEvent({ title: <span class="str">'Create Failed'</span>, message: e.body?.message, variant: <span class="str">'error'</span> }));
+    }
+}
+
+<span class="cmt">// DELETE RECORD with confirmation</span>
+showDeleteConfirm = false;
+handleDeleteClick() { this.showDeleteConfirm = true; }
+handleCancelDelete() { this.showDeleteConfirm = false; }
+
+async handleConfirmDelete() {
+    this.showDeleteConfirm = false;
+    try {
+        await deleteRecord(this.recordId);
+        this.dispatchEvent(new ShowToastEvent({ title: <span class="str">'Deleted'</span>, variant: <span class="str">'success'</span> }));
+        <span class="cmt">// Navigate back to list view after delete</span>
+        this[NavigationMixin.Navigate]({ type: <span class="str">'standard__objectPage'</span>,
+            attributes: { objectApiName: <span class="str">'Loan__c'</span>, actionName: <span class="str">'list'</span> }
+        });
+    } catch(e) {
+        this.dispatchEvent(new ShowToastEvent({ title: <span class="str">'Delete Failed'</span>, message: e.body?.message, variant: <span class="str">'error'</span> }));
+    }
+}</pre>
+</div></div>
+
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How do you use the lwc:ref directive and this.refs &mdash; what replaced querySelector in modern LWC?</span><span class="qa-q-label lbl-lwc">RECORD PAGE</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<p class="ans-p">In API version 59.0+, Salesforce introduced <code>lwc:ref</code> as a cleaner alternative to <code>this.template.querySelector()</code> for accessing DOM elements.</p>
+<pre class="code"><span class="cmt">&lt;!-- OLD pattern &mdash; still works but less elegant --&gt;</span>
+&lt;lightning-input data-id="loanAmount" label="Loan Amount"&gt;&lt;/lightning-input&gt;
+<span class="cmt">// In JS: this.template.querySelector('[data-id="loanAmount"]')</span>
+
+<span class="cmt">&lt;!-- NEW pattern &mdash; lwc:ref (API 59.0+) --&gt;</span>
+&lt;lightning-input lwc:ref="loanAmountInput" label="Loan Amount"&gt;&lt;/lightning-input&gt;
+&lt;lightning-input lwc:ref="ficoInput" label="FICO Score"&gt;&lt;/lightning-input&gt;
+
+<span class="cmt">// In JS &mdash; use this.refs.refName</span>
+handleValidate() {
+    const loanInput = this.refs.loanAmountInput;
+    const ficoInput = this.refs.ficoInput;
+
+    let isValid = loanInput.checkValidity() &amp;&amp; ficoInput.checkValidity();
+    if(!isValid) {
+        loanInput.reportValidity();
+        ficoInput.reportValidity();
+    }
+    return isValid;
+}
+
+<span class="cmt">// querySelectorAll still needed for multiple elements:</span>
+handleValidateAll() {
+    const allInputs = this.template.querySelectorAll(<span class="str">'lightning-input'</span>);
+    return [...allInputs].every(input => {
+        const valid = input.checkValidity();
+        if(!valid) input.reportValidity();
+        return valid;
+    });
+}</pre>
+</div></div>
+
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">What are the different LWC targets in js-meta.xml &mdash; what does each enable?</span><span class="qa-q-label lbl-lwc">RECORD PAGE</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<table class="comparison-table"><tr><th>Target</th><th>Where it appears</th><th>Available @api props</th></tr>
+<tr><td>lightning__RecordPage</td><td>Object record pages in App Builder</td><td>recordId, objectApiName</td></tr>
+<tr><td>lightning__AppPage</td><td>Lightning App home pages</td><td>None auto-populated</td></tr>
+<tr><td>lightning__HomePage</td><td>Salesforce Home tab</td><td>None auto-populated</td></tr>
+<tr><td>lightning__Tab</td><td>Custom tab (standalone page)</td><td>None auto-populated</td></tr>
+<tr><td>lightning__FlowScreen</td><td>Embedded in Screen Flow</td><td>Flow variables mapped in builder</td></tr>
+<tr><td>lightning__UtilityBar</td><td>Utility bar at bottom of app</td><td>None auto-populated</td></tr>
+<tr><td>lightning__Inbox</td><td>Salesforce Inbox (email)</td><td>recordId</td></tr>
+<tr><td>lightningCommunity__Page</td><td>Experience Cloud sites</td><td>recordId</td></tr></table>
+<div class="tip-box"><div class="tip-label">Important</div><p>A component without isExposed=true and at least one target is invisible in App Builder &mdash; it can only be used programmatically (embedded in another component or called from code). Setting isExposed=true without targets makes it available globally but with no specific context.</p></div>
+</div></div>
+
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How do you show a loading spinner correctly for all async scenarios in LWC?</span><span class="qa-q-label lbl-lwc">RECORD PAGE</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<pre class="code"><span class="cmt">// Handle all 3 async scenarios properly</span>
+isLoading = true;  <span class="cmt">// start as true &mdash; wire fires immediately on load</span>
+error = undefined;
+data = undefined;
+
+<span class="cmt">// Scenario 1: Wire adapter</span>
+@wire(getLoanData, { loanId: <span class="str">'$recordId'</span> })
+wiredLoan({ data, error }) {
+    this.isLoading = false;  <span class="cmt">// wire resolved &mdash; either data or error</span>
+    if(data) { this.data = data; this.error = undefined; }
+    else if(error) { this.error = error.body?.message; }
+}
+
+<span class="cmt">// Scenario 2: Imperative call &mdash; fully manual isLoading control</span>
+async handleSearch() {
+    this.isLoading = true;
+    this.error = undefined;
+    try {
+        this.data = await searchLoans({ term: this.searchTerm });
+    } catch(e) {
+        this.error = e.body?.message || <span class="str">'Search failed'</span>;
+    } finally {
+        this.isLoading = false; <span class="cmt">// ALWAYS in finally &mdash; even if error occurs</span>
+    }
+}
+
+<span class="cmt">// Scenario 3: Multiple parallel async calls</span>
+async loadAllData() {
+    this.isLoading = true;
+    try {
+        const [loans, borrowers, docs] = await Promise.all([
+            getLoans({ appId: this.recordId }),
+            getBorrowers({ appId: this.recordId }),
+            getDocuments({ appId: this.recordId })
+        ]);
+        this.loans = loans; this.borrowers = borrowers; this.docs = docs;
+    } catch(e) { this.error = e.body?.message; }
+    finally { this.isLoading = false; }
+}</pre>
+<pre class="code"><span class="cmt">&lt;!-- Template: handle all states --&gt;</span>
+&lt;template&gt;
+    &lt;lightning-card title="Loan Dashboard"&gt;
+        &lt;template lwc:if={isLoading}&gt;
+            &lt;lightning-spinner alternative-text="Loading..." size="medium"&gt;&lt;/lightning-spinner&gt;
+        &lt;/template&gt;
+        &lt;template lwc:elseif={error}&gt;
+            &lt;div class="slds-notify slds-notify_alert slds-theme_error"&gt;{error}&lt;/div&gt;
+        &lt;/template&gt;
+        &lt;template lwc:else&gt;
+            &lt;!-- render data here --&gt;
+        &lt;/template&gt;
+    &lt;/lightning-card&gt;
+&lt;/template&gt;</pre>
+</div></div>
+
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How do you embed a Visualforce page or external URL in an LWC on a record page?</span><span class="qa-q-label lbl-lwc">RECORD PAGE</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<pre class="code"><span class="cmt">// Use lightning-iframe for embedding external content securely</span>
+<span class="cmt">// NOTE: Content Security Policy (CSP) restricts what can be embedded</span>
+<span class="cmt">// Salesforce must allowlist the domain in CSP Trusted Sites (Setup)</span>
+
+<span class="cmt">// LWC template:</span>
+&lt;lightning-card title="External System"&gt;
+    &lt;iframe
+        src={iframeUrl}
+        width="100%"
+        height="600px"
+        frameborder="0"
+        title="External Loan System"
+        sandbox="allow-scripts allow-same-origin"&gt;
+    &lt;/iframe&gt;
+&lt;/lightning-card&gt;
+
+<span class="cmt">// LWC JS &mdash; dynamically build URL with recordId parameter</span>
+get iframeUrl() {
+    return <span class="str">'https://los.company.com/loan-details?sfId='</span> + this.recordId;
+}
+
+<span class="cmt">// Embedding Visualforce page:</span>
+get vfPageUrl() {
+    return <span class="str">'/apex/LoanDetailVF?id='</span> + this.recordId;
+}
+<span class="cmt">// For VF pages: no CSP trust needed &mdash; same org domain</span>
+<span class="cmt">// For external URLs: Must add domain to Setup → CSP Trusted Sites</span></pre>
+</div></div>
+
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How do you use lightning-record-view-form vs lightning-record-edit-form vs custom form &mdash; when to use each?</span><span class="qa-q-label lbl-lwc">RECORD PAGE</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<table class="comparison-table"><tr><th>Component</th><th>Use For</th><th>Validation Rules?</th><th>Custom Logic?</th></tr>
+<tr><td>lightning-record-view-form</td><td>Read-only display of record fields &mdash; respects FLS automatically</td><td>N/A (read only)</td><td>None needed</td></tr>
+<tr><td>lightning-record-edit-form</td><td>Edit form with auto-validation, auto-FLS, auto-submit</td><td>Yes &mdash; automatically</td><td>Limited &mdash; use onsubmit to intercept</td></tr>
+<tr><td>Custom lightning-input + Apex</td><td>Complex forms needing full control over data, layout, and submission</td><td>Must call manually checkValidity()</td><td>Full &mdash; any JS logic</td></tr></table>
+<pre class="code"><span class="cmt">&lt;!-- lightning-record-view-form &mdash; readonly, FLS-aware, no code needed --&gt;</span>
+&lt;lightning-record-view-form record-id={recordId} object-api-name="Loan__c"&gt;
+    &lt;lightning-output-field field-name="LoanAmount__c"&gt;&lt;/lightning-output-field&gt;
+    &lt;lightning-output-field field-name="Status__c"&gt;&lt;/lightning-output-field&gt;
+    &lt;lightning-output-field field-name="LoanOfficer__c"&gt;&lt;/lightning-output-field&gt;
+&lt;/lightning-record-view-form&gt;
+
+<span class="cmt">&lt;!-- lightning-record-edit-form &mdash; auto handles validation, FLS, required fields --&gt;</span>
+&lt;lightning-record-edit-form record-id={recordId} object-api-name="Loan__c"
+    onsuccess={handleSuccess} onerror={handleError} onsubmit={handleSubmit}&gt;
+    &lt;lightning-messages&gt;&lt;/lightning-messages&gt; <span class="cmt">&lt;!-- validation errors appear here --&gt;</span>
+    &lt;lightning-input-field field-name="LoanAmount__c"&gt;&lt;/lightning-input-field&gt;
+    &lt;lightning-input-field field-name="Status__c"&gt;&lt;/lightning-input-field&gt;
+    &lt;lightning-button type="submit" label="Save"&gt;&lt;/lightning-button&gt;
+&lt;/lightning-record-edit-form&gt;</pre>
+</div></div>

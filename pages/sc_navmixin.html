@@ -1,0 +1,322 @@
+<div class="page-title">NavigationMixin &mdash; 10 Scenario Questions</div>
+<div class="page-sub">Complete navigation patterns for LWC &mdash; record pages, new records, list views, external URLs, state passing</div>
+
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How do you import and use NavigationMixin in LWC &mdash; what is the basic pattern?</span><span class="qa-q-label lbl-lwc">NAVMIXIN</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<pre class="code">import { LightningElement, api } from 'lwc';
+import { NavigationMixin } from 'lightning/navigation';
+
+// ALWAYS extend NavigationMixin(LightningElement)
+export default class MyNavComp extends NavigationMixin(LightningElement) {
+    @api recordId;
+
+    // Navigate to the current record's view page
+    handleViewRecord() {
+        this[NavigationMixin.Navigate]({
+            type: 'standard__recordPage',
+            attributes: {
+                recordId: this.recordId,
+                actionName: 'view'   // 'view', 'edit', 'clone'
+            }
+        });
+    }
+
+    // Generate a URL without navigating (for links, sharing)
+    async handleGetUrl() {
+        const url = await this[NavigationMixin.GenerateUrl]({
+            type: 'standard__recordPage',
+            attributes: { recordId: this.recordId, actionName: 'view' }
+        });
+        // url = '/lightning/r/Loan__c/001xxx/view'
+        const fullUrl = window.location.origin + url;
+        navigator.clipboard.writeText(fullUrl);
+    }
+}</pre>
+</div></div>
+
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How do you navigate to a New Record form with pre-populated default field values?</span><span class="qa-q-label lbl-lwc">NAVMIXIN</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<pre class="code">import { encodeDefaultFieldValues } from 'lightning/pageReferenceUtils';
+
+handleCreateLoan() {
+    this[NavigationMixin.Navigate]({
+        type: 'standard__objectPage',
+        attributes: {
+            objectApiName: 'Loan__c',
+            actionName: 'new'
+        },
+        state: {
+            defaultFieldValues: encodeDefaultFieldValues({
+                Application__c: this.applicationId,  // parent lookup
+                LoanType__c: 'FHA',                   // picklist
+                LoanAmount__c: 350000                 // number
+            })
+        }
+    });
+}</pre>
+</div></div>
+
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How do you navigate to a List View, App Page, Named Page, and external URL?</span><span class="qa-q-label lbl-lwc">NAVMIXIN</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<pre class="code">// List View
+handleViewAllLoans() {
+    this[NavigationMixin.Navigate]({
+        type: 'standard__objectPage',
+        attributes: { objectApiName: 'Loan__c', actionName: 'list' },
+        state: { filterName: 'All' }  // 'All' or DeveloperName of list view
+    });
+}
+
+// Home page
+handleGoHome() {
+    this[NavigationMixin.Navigate]({
+        type: 'standard__namedPage',
+        attributes: { pageName: 'home' }
+    });
+}
+
+// External URL &mdash; opens in same tab
+handleOpenFredAPI() {
+    this[NavigationMixin.Navigate]({
+        type: 'standard__webPage',
+        attributes: { url: 'https://fred.stlouisfed.org/series/MORTGAGE30US' }
+    });
+}
+
+// External URL &mdash; open in NEW tab
+async handleOpenNewTab() {
+    const url = await this[NavigationMixin.GenerateUrl]({
+        type: 'standard__webPage',
+        attributes: { url: 'https://fred.stlouisfed.org' }
+    });
+    window.open(url, '_blank');
+}
+
+// Custom nav item / tab
+handleGoToDashboard() {
+    this[NavigationMixin.Navigate]({
+        type: 'standard__navItemPage',
+        attributes: { apiName: 'Loan_Dashboard' }
+    });
+}</pre>
+</div></div>
+
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How do you pass state/parameters between pages using NavigationMixin and CurrentPageReference?</span><span class="qa-q-label lbl-lwc">NAVMIXIN</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<pre class="code">// PUBLISHER &mdash; navigate with state params
+handleNavigateWithState() {
+    this[NavigationMixin.Navigate]({
+        type: 'standard__component',
+        attributes: { componentName: 'c__loanDetailPage' },
+        state: {
+            loanId: this.loanId,
+            mode: 'review',
+            sourceApp: 'pipeline'
+        }
+    });
+}
+
+// RECEIVER &mdash; read state from CurrentPageReference
+import { CurrentPageReference } from 'lightning/navigation';
+
+@wire(CurrentPageReference)
+pageRef(ref) {
+    if (ref) {
+        this.loanId = ref.state?.loanId;
+        this.mode = ref.state?.mode;
+        this.sourceApp = ref.state?.sourceApp;
+    }
+}</pre>
+<div class="tip-box"><div class="tip-label">State vs Attributes</div><p>state becomes query parameters in the URL (visible, bookmarkable). attributes is part of the route structure. Use state for optional context data, attributes for required routing parameters like recordId.</p></div>
+</div></div>
+
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How do you navigate to a related record from a parent record page &mdash; get the related record ID first?</span><span class="qa-q-label lbl-lwc">NAVMIXIN</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<pre class="code">import { LightningElement, api, wire } from 'lwc';
+import { NavigationMixin } from 'lightning/navigation';
+import { getRecord, getFieldValue } from 'lightning/uiRecordApi';
+import APPLICATION_FIELD from '@salesforce/schema/Loan__c.Application__c';
+import APPLICATION_NAME from '@salesforce/schema/Loan__c.Application__r.Name';
+
+export default class LoanParentNav extends NavigationMixin(LightningElement) {
+    @api recordId;
+    applicationId;
+
+    @wire(getRecord, { recordId: '$recordId', fields: [APPLICATION_FIELD, APPLICATION_NAME] })
+    wiredLoan({ data }) {
+        if (data) {
+            this.applicationId = getFieldValue(data, APPLICATION_FIELD);
+        }
+    }
+
+    handleViewApplication() {
+        if (!this.applicationId) return;
+        this[NavigationMixin.Navigate]({
+            type: 'standard__recordPage',
+            attributes: {
+                recordId: this.applicationId,
+                objectApiName: 'Application__c',
+                actionName: 'view'
+            }
+        });
+    }
+}</pre>
+</div></div>
+
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">NavigationMixin in LWC vs Aura &mdash; key differences and how to migrate?</span><span class="qa-q-label lbl-lwc">NAVMIXIN</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<table class="comparison-table"><tr><th>Feature</th><th>Aura (legacy)</th><th>LWC (current)</th></tr>
+<tr><td>Navigate to record</td><td>force:navigateToSObject event</td><td>NavigationMixin.Navigate standard__recordPage</td></tr>
+<tr><td>Navigate to URL</td><td>force:navigateToURL event</td><td>NavigationMixin.Navigate standard__webPage</td></tr>
+<tr><td>Generate URL</td><td>Not available</td><td>NavigationMixin.GenerateUrl (Promise)</td></tr>
+<tr><td>New record</td><td>force:createRecord event</td><td>standard__objectPage with actionName: 'new'</td></tr>
+<tr><td>Read page params</td><td>v.pageReference or c.PAGEREF</td><td>@wire(CurrentPageReference)</td></tr></table>
+<pre class="code">// AURA (old &mdash; still works in Aura components)
+var navEvt = $A.get("e.force:navigateToSObject");
+navEvt.setParams({ "recordId": component.get("v.recordId") });
+navEvt.fire();
+
+// LWC equivalent
+this[NavigationMixin.Navigate]({
+    type: 'standard__recordPage',
+    attributes: { recordId: this.recordId, actionName: 'view' }
+});
+
+// LWC embedded in Aura (interop) &mdash; NavigationMixin.Navigate STILL WORKS
+// The mixin is available through the Aura-LWC bridge automatically</pre>
+</div></div>
+
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How do you create a shareable link to a record and copy it to clipboard?</span><span class="qa-q-label lbl-lwc">NAVMIXIN</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<pre class="code">import { LightningElement, api } from 'lwc';
+import { NavigationMixin } from 'lightning/navigation';
+import { ShowToastEvent } from 'lightning/platformShowToastEvent';
+
+export default class ShareLoanLink extends NavigationMixin(LightningElement) {
+    @api recordId;
+    shareableUrl = '';
+
+    async connectedCallback() {
+        try {
+            const relativeUrl = await this[NavigationMixin.GenerateUrl]({
+                type: 'standard__recordPage',
+                attributes: { recordId: this.recordId, actionName: 'view' }
+            });
+            // GenerateUrl returns relative path &mdash; prepend origin for absolute URL
+            this.shareableUrl = window.location.origin + relativeUrl;
+        } catch(e) {
+            console.error('URL generation failed:', e);
+        }
+    }
+
+    handleCopyLink() {
+        navigator.clipboard.writeText(this.shareableUrl).then(() => {
+            this.dispatchEvent(new ShowToastEvent({
+                title: 'Link Copied',
+                message: 'Loan page link copied to clipboard',
+                variant: 'success'
+            }));
+        });
+    }
+}</pre>
+</div></div>
+
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">What happens when NavigationMixin.Navigate is called on a component not in Lightning Experience &mdash; how do you handle it?</span><span class="qa-q-label lbl-lwc">NAVMIXIN</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<p class="ans-p">NavigationMixin works in Lightning Experience, Salesforce Mobile App, and Experience Cloud sites. It does NOT work in Visualforce pages, standalone apps outside the Salesforce container, or in Jest tests without mocking.</p>
+<pre class="code">// Guard navigation with a try-catch
+handleNavigate() {
+    try {
+        this[NavigationMixin.Navigate]({
+            type: 'standard__recordPage',
+            attributes: { recordId: this.recordId, actionName: 'view' }
+        });
+    } catch(e) {
+        // Fallback for non-Lightning contexts
+        window.location.href = '/lightning/r/Loan__c/' + this.recordId + '/view';
+    }
+}
+
+// In Jest tests &mdash; mock NavigationMixin
+// jest.config.js moduleNameMapper:
+// '@salesforce/schema': '<rootDir>/__mocks__/sfSchema.js'
+// 'lightning/navigation': '<rootDir>/__mocks__/navigation.js'
+
+// __mocks__/navigation.js:
+const NavigationMixin = (Base) => {
+    class NavigationMixinClass extends Base {
+        navigate = jest.fn();
+        [Symbol.hasInstance](instance) { return instance instanceof NavigationMixinClass; }
+    }
+    NavigationMixinClass.Navigate = Symbol('Navigate');
+    NavigationMixinClass.GenerateUrl = Symbol('GenerateUrl');
+    return NavigationMixinClass;
+};
+export { NavigationMixin };</pre>
+</div></div>
+
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How do you track page navigation in LWC &mdash; react when the user navigates to a different record?</span><span class="qa-q-label lbl-lwc">NAVMIXIN</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<pre class="code">// CurrentPageReference wire fires every time the page URL changes
+import { CurrentPageReference } from 'lightning/navigation';
+
+@wire(CurrentPageReference)
+pageRef(newRef) {
+    if (!newRef) return;
+    const newRecordId = newRef.attributes?.recordId;
+    if (newRecordId && newRecordId !== this.currentRecordId) {
+        this.currentRecordId = newRecordId;
+        this.handleRecordChange(newRecordId);
+    }
+}
+
+handleRecordChange(recordId) {
+    // Reload data for the new record
+    this.isLoading = true;
+    getLoanData({ loanId: recordId })
+        .then(data => { this.loanData = data; })
+        .catch(err => { this.error = err.body?.message; })
+        .finally(() => { this.isLoading = false; });
+}
+
+// PageReference object structure:
+// {
+//   type: 'standard__recordPage',
+//   attributes: { recordId: '001...', objectApiName: 'Loan__c', actionName: 'view' },
+//   state: {} // query params
+// }</pre>
+</div></div>
+
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How do you navigate programmatically after a successful record save in LWC?</span><span class="qa-q-label lbl-lwc">NAVMIXIN</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<pre class="code">import { LightningElement, api } from 'lwc';
+import { NavigationMixin } from 'lightning/navigation';
+import { createRecord } from 'lightning/uiRecordApi';
+import { ShowToastEvent } from 'lightning/platformShowToastEvent';
+import LOAN_OBJECT from '@salesforce/schema/Loan__c';
+import LOAN_AMOUNT from '@salesforce/schema/Loan__c.LoanAmount__c';
+
+export default class LoanCreator extends NavigationMixin(LightningElement) {
+    @api applicationId;
+
+    async handleSave() {
+        try {
+            const fields = {
+                [LOAN_AMOUNT.fieldApiName]: this.loanAmount,
+                'Application__c': this.applicationId
+            };
+            const newRecord = await createRecord({ apiName: LOAN_OBJECT.objectApiName, fields });
+
+            // Show success toast
+            this.dispatchEvent(new ShowToastEvent({
+                title: 'Loan Created', variant: 'success',
+                message: 'Loan ' + newRecord.id + ' created successfully'
+            }));
+
+            // Navigate to the new record immediately after creation
+            this[NavigationMixin.Navigate]({
+                type: 'standard__recordPage',
+                attributes: {
+                    recordId: newRecord.id,
+                    objectApiName: 'Loan__c',
+                    actionName: 'view'
+                }
+            });
+        } catch(e) {
+            this.dispatchEvent(new ShowToastEvent({
+                title: 'Save Failed', message: e.body?.message, variant: 'error'
+            }));
+        }
+    }
+}</pre>
+</div></div>
