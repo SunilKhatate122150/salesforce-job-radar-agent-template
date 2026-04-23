@@ -2371,6 +2371,19 @@ async function showPage(id) {
 
   // 1. Try Industrial Topic Sync (TOPIC_DATA)
   const isIndustrial = renderTopicContent(id);
+  
+  // Post-injection setup for dashboard pages
+  if (id === 'job_radar') {
+      if (typeof fetchJobsList === 'function') fetchJobsList();
+      if (typeof fetchJobAnalytics === 'function') fetchJobAnalytics();
+  }
+  if (id === 'schedule') {
+      if (typeof renderSchedule === 'function') renderSchedule();
+  }
+  if (id === 'study_tracker') {
+      if (typeof updateTrackerUI === 'function') updateTrackerUI();
+  }
+
   if (isIndustrial) {
     page = document.getElementById('topic_viewer');
   } else if (!page && topicConfig[id]) {
