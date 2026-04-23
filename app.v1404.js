@@ -2378,7 +2378,10 @@ async function showPage(id) {
       if (typeof fetchJobAnalytics === 'function') fetchJobAnalytics();
   }
   if (id === 'schedule') {
-      if (typeof renderSchedule === 'function') renderSchedule();
+      if (typeof renderTimetable === 'function') renderTimetable();
+  }
+  if (id === 'study_history') {
+      if (typeof renderHistory === 'function') renderHistory();
   }
   if (id === 'study_tracker') {
       if (typeof updateTrackerUI === 'function') updateTrackerUI();
