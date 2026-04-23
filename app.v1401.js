@@ -3174,19 +3174,25 @@ function toggleLog() {
 }
 
 function renderBoard() {
+  console.log('    [BOARD] Starting renderBoard... pipelineJobs count:', pipelineJobs.length);
   const cols = ['todo', 'applied', 'interview', 'offer', 'rejected'];
   cols.forEach(col => {
     const list = document.getElementById(`list-${col}`);
     const count = document.getElementById(`count-${col}`);
-    if (!list) return;
+    if (!list) {
+      console.warn('    [BOARD] Column list element missing:', col);
+      return;
+    }
 
     const filtered = pipelineJobs.filter(j => j.status === col && (currentBoardFilter === 'all' || j.prob === currentBoardFilter));
+    console.log(`    [BOARD] Column ${col}: filtered items:`, filtered.length);
     if (count) count.textContent = filtered.length;
 
     list.innerHTML = filtered.length === 0 ? 
       `<div style="padding:20px; text-align:center; color:var(--muted); font-size:0.7rem; border:1px dashed var(--border); border-radius:10px;">No jobs here.</div>` :
       filtered.map(job => renderJobCard(job)).join('');
   });
+  console.log('    [BOARD] renderBoard complete.');
   checkOfferComparison();
 }
 
@@ -3244,6 +3250,7 @@ function moveTo(id, newStatus) {
 }
 
 function switchRadarSubTab(tab) {
+  console.log('    [RADAR] Switching Sub-Tab to:', tab);
   currentRadarSubTab = tab;
   document.querySelectorAll('.radar-tab-btn').forEach(b => {
     b.classList.remove('active');
@@ -3255,14 +3262,28 @@ function switchRadarSubTab(tab) {
     btn.classList.add('active');
     btn.style.color = 'var(--text)';
     btn.style.borderBottomColor = 'var(--blue)';
+    console.log('    [RADAR] Tab button activated:', 'tab-' + tab);
   }
 
   const pipelineView = document.getElementById('radar-pipeline-view');
   const insightsView = document.getElementById('radar-insights-view');
   const developmentView = document.getElementById('radar-development-view');
-  if (pipelineView) pipelineView.style.display = tab === 'pipeline' ? 'block' : 'none';
-  if (insightsView) insightsView.style.display = tab === 'insights' ? 'block' : 'none';
-  if (developmentView) developmentView.style.display = tab === 'development' ? 'block' : 'none';
+  
+  console.log('    [RADAR] Views found:', { pipeline: !!pipelineView, insights: !!insightsView, development: !!developmentView });
+
+  if (pipelineView) {
+    pipelineView.style.display = tab === 'pipeline' ? 'block' : 'none';
+    console.log('    [RADAR] Pipeline view display:', pipelineView.style.display);
+  }
+  if (insightsView) {
+    insightsView.style.display = tab === 'insights' ? 'block' : 'none';
+    console.log('    [RADAR] Insights view display:', insightsView.style.display);
+  }
+  if (developmentView) {
+    developmentView.style.display = tab === 'development' ? 'block' : 'none';
+    console.log('    [RADAR] Development view display:', developmentView.style.display);
+  }
+  
   if (tab === 'insights') renderInsights();
   if (tab === 'development') renderDevelopment();
 }
