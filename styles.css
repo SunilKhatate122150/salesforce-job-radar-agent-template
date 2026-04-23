@@ -3196,3 +3196,14 @@ pre.code .num {
 .kanban-body::-webkit-scrollbar { width: 4px; }
 .kanban-body::-webkit-scrollbar-thumb { background: var(--border); border-radius: 10px; }
 .jcard { min-height: 180px; display: flex !important; flex-direction: column !important; gap: 12px !important; width: 100% !important; box-sizing: border-box !important; }
+
+/* --- MOBILE RESPONSIVENESS (v1402) --- */
+@media (max-width: 768px) {
+  #board { flex-direction: column !important; gap: 30px !important; padding: 10px !important; }
+  .kanban-col { flex: 1 1 auto !important; min-width: 100% !important; max-height: none !important; }
+  .jcard { padding: 12px !important; }
+  .job-role { font-size: 0.95rem !important; }
+  .page-header { flex-direction: column !important; align-items: flex-start !important; gap: 15px !important; }
+  .radar-tabs { overflow-x: auto !important; padding-bottom: 5px !important; }
+  .radar-tab-btn { white-space: nowrap !important; padding: 10px !important; font-size: 0.8rem !important; }
+}
