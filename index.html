@@ -12800,8 +12800,8 @@ public class LoanStatusActionTest {
     </div>
     <div style="display: flex; gap: 10px; align-items: center;">
        <div id="dbStatusBadge" style="font-size: 0.6rem; padding: 4px 8px; border-radius: 6px; background: rgba(16,185,129,0.1); color: var(--green); border: 1px solid rgba(16,185,129,0.2); font-weight: 700; letter-spacing: 0.5px;">LOCAL DB</div>
-       <button class="tracker-tab" onclick="triggerJobScan()" id="btnScanJobs" style="display:flex; align-items:center; gap:6px; background:linear-gradient(135deg, var(--blue), var(--cyan)); border:none; color:white; padding:6px 16px; border-radius:8px; font-size:0.75rem; cursor:pointer; font-weight:700; box-shadow: 0 4px 12px rgba(59,130,246,0.3);">
-         <span id="scanIcon">🔄</span> Sync Dashboard
+       <button class="tracker-tab" onclick="clearAndSyncJobs()" id="btnScanJobs" style="display:flex; align-items:center; gap:6px; background:linear-gradient(135deg, var(--blue), var(--cyan)); border:none; color:white; padding:6px 16px; border-radius:8px; font-size:0.75rem; cursor:pointer; font-weight:700; box-shadow: 0 4px 12px rgba(59,130,246,0.3);">
+         <span id="scanIcon">🔄</span> Clean & Sync
        </button>
        <button class="tracker-tab" onclick="toggleLog()" style="display:flex; align-items:center; gap:6px; background:rgba(255,255,255,0.03); border:1px solid var(--border); color:var(--text); padding:6px 12px; border-radius:8px; font-size:0.75rem; cursor:pointer;">
          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;"><path d="M12 20V10M18 20V4M6 20v-6"></path></svg>
