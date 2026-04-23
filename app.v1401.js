@@ -720,8 +720,12 @@ Do not include any conversational text before or after the JSON.`;
 // DYNAMIC TOPIC RENDERING (v1391+)
 // =============================================
 function renderTopicContent(topicId) {
+  console.log('    [TOPIC] Attempting to render topic:', topicId);
   const data = TOPIC_DATA[topicId];
-  if (!data) return false;
+  if (!data) {
+    console.log('    [TOPIC] Topic ID not found in TOPIC_DATA:', topicId);
+    return false;
+  }
 
   const contentEl = document.getElementById('topicViewerContent');
   const titleEl = document.getElementById('topicViewerTitle');
@@ -2307,10 +2311,13 @@ async function showPage(id) {
   await stopTracking();
   document.querySelectorAll('.page').forEach(function(p) { p.classList.remove('active'); p.style.display = 'none'; });
   document.querySelectorAll('.nav-item').forEach(function(n) { n.classList.remove('active'); });
+  console.log('>>> [NAV] showPage triggered for ID:', id);
+  const page = document.getElementById(id);
+  console.log('    [NAV] Element found in DOM:', !!page, page);
   
-  var page = document.getElementById(id);
-  console.log('[DEBUG] showPage:', id, 'Found:', !!page);
-  
+  if (!page && !topicConfig[id]) {
+    console.warn('    [NAV] ID not found in DOM and not in topicConfig:', id);
+  }
   // 1. Try Industrial Topic Sync (TOPIC_DATA)
   const isIndustrial = renderTopicContent(id);
   if (isIndustrial) {
@@ -2338,9 +2345,14 @@ async function showPage(id) {
   if (page) { 
     page.classList.add('active'); 
     page.style.setProperty('display', 'block', 'important'); 
-    console.log('[DEBUG] Page shown:', id);
+    console.log('    [NAV] Success: Page set to active and visible:', id);
   } else {
-    console.error('[ERROR] Page NOT found:', id);
+    console.error('    [NAV] Failure: No page element or topic mapping for ID:', id);
+    // Try to show a fallback error on screen if possible
+    const mainEl = document.getElementById('main');
+    if (mainEl) {
+       showToast('Error: Page "' + id + '" not found.');
+    }
   }
   
   // Update Title and Navigation
@@ -2370,17 +2382,18 @@ async function showPage(id) {
   if (id === 'schedule') await renderTimetable();
   if (id === 'study_history') await renderHistory();
   if (id === 'job_radar') { 
-    console.log('[DEBUG] Initializing Job Radar...');
+    console.log('    [INIT] Initializing Job Radar Dashboard...');
     try {
       if (!currentRadarSubTab) currentRadarSubTab = 'pipeline';
+      console.log('    [INIT] Switching to sub-tab:', currentRadarSubTab);
       switchRadarSubTab(currentRadarSubTab);
       renderBoard(); 
       updateAnalytics(); 
       fetchJobsList(); 
       fetchJobAnalytics(); 
-      console.log('[DEBUG] Job Radar Initialized');
+      console.log('    [INIT] Job Radar Dashboard fully initialized.');
     } catch(err) {
-      console.error('[DEBUG] Job Radar Init Error:', err);
+      console.error('    [INIT] ERROR in Job Radar Dashboard:', err);
     }
   }
   if (id === 'profile_match') { if (cachedUserProfile) renderProfileMatchPage(cachedUserProfile); else loadUserProfile(); }
