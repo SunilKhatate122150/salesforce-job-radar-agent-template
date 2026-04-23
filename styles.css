@@ -3135,3 +3135,55 @@ pre.code .num {
 
 
 @media (min-width: 1025px) { .mobile-toggle { display: none !important; } }
+
+/* --- PREMIUM JOB CARD UPGRADE (v1402) --- */
+.jcard{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:16px;
+  display:flex;flex-direction:column;gap:12px;transition:all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position:relative;overflow:hidden;margin-bottom:12px;}
+.jcard:hover{border-color:var(--blue);transform:translateY(-3px);box-shadow:0 12px 30px rgba(0,0,0,0.4);}
+.jcard::before{content:" \;position:absolute;top:0;left:0;right:0;height:3px;border-radius:16px 16px 0 0;}
+.jcard[data-prob=\high\]::before{background:linear-gradient(90deg,var(--green),transparent 80%);}
+.jcard[data-prob=\medium\]::before{background:linear-gradient(90deg,var(--amber),transparent 80%);}
+.jcard[data-prob=\stretch\]::before{background:linear-gradient(90deg,var(--purple),transparent 80%);}
+
+.jcard-top{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;}
+.co-info{display:flex;align-items:center;gap:10px;min-width:0;}
+.co-logo{width:40px;height:40px;background:var(--card2);border:1px solid var(--border);
+ border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;}
+.co-name{font-family:\Syne\,sans-serif;font-size:0.9rem;font-weight:700;color:var(--text);line-height:1.2;}
+.co-type{font-size:10px;color:var(--muted);margin-top:2px;text-transform:uppercase;letter-spacing:0.5px;}
+
+.score-ring{width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;position:relative;}
+.score-ring.h{background:conic-gradient(var(--green) calc(var(--p)*1%),var(--border) 0);}
+.score-ring.m{background:conic-gradient(var(--amber) calc(var(--p)*1%),var(--border) 0);}
+.score-ring.s{background:conic-gradient(var(--purple) calc(var(--p)*1%),var(--border) 0);}
+.score-inner{width:34px;height:34px;background:var(--card);border-radius:50%;
+ display:flex;align-items:center;justify-content:center;
+ font-family:\JetBrains Mono\,monospace;font-size:0.7rem;font-weight:700;}
+.score-inner.h{color:var(--green);}.score-inner.m{color:var(--amber);}.score-inner.s{color:var(--purple);}
+
+.jcard-role{font-size:0.95rem;font-weight:700;color:var(--text);line-height:1.4;font-family:\Outfit\,sans-serif;}
+.jcard-meta{display:flex;gap:10px;flex-wrap:wrap;}
+.meta-pill{font-size:10px;color:var(--muted);display:flex;align-items:center;gap:4px;background:rgba(255,255,255,0.03);padding:3px 8px;border-radius:6px;border:1px solid var(--border);}
+.meta-pill b{color:var(--text);font-weight:600;}
+
+.jcard-skills{display:flex;gap:5px;flex-wrap:wrap;}
+.skill-tag{background:rgba(79,142,247,0.1);border:1px solid rgba(79,142,247,0.2);
+ border-radius:6px;padding:3px 8px;font-size:10px;color:var(--blue);font-family:\JetBrains Mono\,monospace;font-weight:500;}
+
+.jcard-why{background:rgba(255,255,255,0.02);border-radius:10px;padding:10px;font-size:11px;color:var(--muted);line-height:1.6;border:1px dashed var(--border);}
+.jcard-why strong{color:var(--green);font-weight:600;}
+
+.prob-badge{display:inline-flex;align-items:center;gap:4px;border-radius:100px;
+ padding:2px 8px;font-size:9px;font-family:\Syne\,sans-serif;font-weight:800;letter-spacing:0.05em;text-transform:uppercase;}
+.prob-badge.high{background:rgba(61,214,140,0.1);color:var(--green);border:1px solid rgba(61,214,140,0.2);}
+.prob-badge.medium{background:rgba(244,197,66,0.1);color:var(--amber);border:1px solid rgba(244,197,66,0.2);}
+.prob-badge.stretch{background:rgba(167,139,250,0.1);color:var(--purple);border:1px solid rgba(167,139,250,0.2);}
+
+.jcard-actions{display:flex;gap:6px;margin-top:4px;border-top:1px solid var(--border);padding-top:12px;}
+.jbtn{flex:1;display:flex;align-items:center;justify-content:center;gap:6px;padding:8px;border-radius:8px;font-size:11px;font-weight:700;font-family:\Syne\,sans-serif;cursor:pointer;transition:all 0.2s;text-decoration:none;border:none;}
+.jbtn-apply{background:var(--blue);color:white;box-shadow:0 4px 10px rgba(79,142,247,0.3);}
+.jbtn-apply:hover{transform:scale(1.02);filter:brightness(1.1);}
+.jbtn-link{background:var(--card2);color:var(--text);border:1px solid var(--border);}
+.jbtn-link:hover{border-color:var(--blue);background:rgba(79,142,247,0.1);}
+

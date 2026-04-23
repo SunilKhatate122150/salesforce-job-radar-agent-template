@@ -243,7 +243,18 @@ export default async function(req, res) {
     // 5. JOBS ENDPOINTS
     if (path === 'jobs') {
       const jobs = await JobRecord.find({ $or: [{ userId }, { userId: 'system' }] }).sort({ createdAt: -1 }).limit(100).lean();
-      const debugJobs = [{ title: 'DEBUG: DATABASE CONNECTED', company: 'ROUTER ACTIVE', status: 'new', job_hash: 'debug-router' }, ...jobs];
+      const debugJobs = [{ 
+        title: 'DEBUG: PREMIUM UI ACTIVE', 
+        company: 'ROUTER V1402', 
+        status: 'new', 
+        job_hash: 'debug-premium',
+        salary: '₹18–25 LPA',
+        company_type: 'Product Company',
+        experience: '4+ Years',
+        probability: 'high',
+        match_score: 95,
+        why_apply: '<strong>Premium UI Active:</strong> Dashboard now supports full-fidelity job cards with salary and match logic.'
+      }, ...jobs];
       return res.status(200).json({ records: debugJobs, dbStatus: true, count: jobs.length });
     }
     if (path === 'jobs/analytics') {
