@@ -1829,35 +1829,49 @@ function updateJobRadarSummary() {
 window.allJobRecords = [];
 
 async function fetchJobsList() {
+  console.log('📡 [RADAR] Fetching jobs from database...');
   try {
     const response = await apiFetch('/api/jobs');
-    if (!response.ok) throw new Error('Unauthorized');
+    if (!response.ok) throw new Error('Unauthorized or Server Down');
     const data = await response.json();
-    window.allJobRecords = data.records;
+    window.allJobRecords = data.records || [];
+    console.log(`✅ [RADAR] Received ${window.allJobRecords.length} jobs.`);
     
     // Phase 2: Sync with Radar Pipeline
-    data.records.forEach(rec => {
+    window.allJobRecords.forEach(rec => {
       if (!pipelineJobs.find(j => j.id === rec.id || (j.company === rec.company && j.role === rec.role))) {
         pipelineJobs.push({
-          id: rec.id,
+          id: rec.id || 'job_' + Math.random().toString(36).substr(2, 9),
           company: rec.company,
-          role: rec.role,
+          role: rec.role || rec.title,
           loc: rec.location || 'Remote',
           sal: rec.salary || '—',
-          score: rec.fitScore || 75,
+          score: rec.match_score || 75,
           prob: 'medium',
           status: 'todo',
-          dateTracked: new Date().toISOString()
+          created_at: rec.created_at || new Date().toISOString()
         });
       }
     });
     savePipeline();
     renderBoard();
-    
-    renderJobsList(data.records);
     updateJobRadarSummary();
+
+    // Update DB Badge
+    const dbBadge = document.getElementById('dbStatusBadge');
+    if (dbBadge) {
+      dbBadge.textContent = 'DATABASE CONNECTED';
+      dbBadge.style.background = 'rgba(16,185,129,0.1)';
+      dbBadge.style.color = 'var(--green)';
+    }
   } catch (e) {
-    console.error('Failed to fetch jobs', e);
+    console.error('❌ [RADAR] Failed to fetch jobs:', e);
+    const dbBadge = document.getElementById('dbStatusBadge');
+    if (dbBadge) {
+      dbBadge.textContent = 'OFFLINE / LOCAL ONLY';
+      dbBadge.style.background = 'rgba(239,68,68,0.1)';
+      dbBadge.style.color = 'var(--red)';
+    }
   }
 }
 
@@ -1980,41 +1994,34 @@ function renderJobsList(jobs) {
 
 async function triggerJobScan() {
   const btn = document.getElementById('btnScanJobs');
-  const status = document.getElementById('scanStatusText');
-  const radarIcon = btn.querySelector('span');
+  const radarIcon = document.getElementById('scanIcon');
   
-  btn.disabled = true;
-  btn.classList.add('radar-active');
+  if (btn) btn.disabled = true;
+  if (radarIcon) radarIcon.style.display = 'inline-block';
   if (radarIcon) radarIcon.style.animation = 'spin 2s linear infinite';
   
-  status.textContent = '📡 Global Radar Active: Scanning LinkedIn & Naukri...';
-  status.style.color = 'var(--blue)';
+  showToast('📡 Scan Started: Fetching latest Salesforce roles...');
 
   try {
     const res = await apiFetch('/api/jobs/scan', { method: 'POST' });
     const data = await res.json();
     
     if (data.success) {
-      status.textContent = '⏳ Agent analyzing matches with Gemma 4...';
-      // Simulate real progress or poll status if available
+      showToast('⏳ AI Agent Analyzing matches... Please wait.');
       setTimeout(async () => {
-        status.textContent = '✅ Scan complete. Syncing latest hits...';
-        btn.classList.remove('radar-active');
+        await fetchJobsList(); 
+        showToast('✅ Dashboard Synced! Check the board.');
+        if (btn) btn.disabled = false;
         if (radarIcon) radarIcon.style.animation = '';
-        btn.disabled = false;
-        await fetchJobs(); 
-        await updateJobRadarSummary();
-      }, 15000); 
+      }, 5000); 
     } else {
-      throw new Error(data.error || 'Scan initiation failed');
+      throw new Error(data.error || 'Scan failed');
     }
   } catch (e) {
     console.error('Scan Error:', e);
-    status.textContent = '❌ Offline: Ensure local agent is running.';
-    status.style.color = 'var(--red)';
-    btn.classList.remove('radar-active');
+    showToast('❌ Scan Failed: Local agent might be offline.');
+    if (btn) btn.disabled = false;
     if (radarIcon) radarIcon.style.animation = '';
-    btn.disabled = false;
   }
 }
 

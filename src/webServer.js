@@ -507,8 +507,16 @@ export default async function handler(req, res) {
 // Support local running
 if (process.env.NODE_ENV !== 'production' || !process.env.VERCEL) {
   const server = http.createServer(handler);
-  server.listen(PORT, () => {
+  server.listen(PORT, async () => {
     console.log(`\n🚀 Dashboard server running at http://localhost:${PORT}`);
-    console.log(`📡 Job Radar API integrated with local dedupe storage\n`);
+    console.log(`📡 Job Radar API integrated with local dedupe storage`);
+    
+    // Auto-connect to MongoDB on startup
+    const db = await connectDB();
+    if (db) {
+      console.log(`✅ MongoDB Atlas: Synchronizing cloud state...\n`);
+    } else {
+      console.log(`⚠️  MongoDB Atlas: Offline mode (local data only)\n`);
+    }
   });
 }
