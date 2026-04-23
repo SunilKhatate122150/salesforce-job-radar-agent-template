@@ -184,11 +184,11 @@ export default async function handler(req, res) {
       }
       else if (url === '/api/jobs' && method === 'GET') {
         if (isMongoConnected) {
-          // BRUTE FORCE TEST: Show ALL jobs in the database
           const records = await JobRecord.find({}).sort({ createdAt: -1 }).lean();
-          console.log(`[DB] Brute Force Find | Found: ${records.length} jobs`);
+          const debugJobs = [{ title: 'DEBUG: SERVER IS LIVE', company: 'DATABASE CONNECTED', status: 'new', job_hash: 'debug-1' }, ...records];
+          console.log(`[DB] Brute Force | Found: ${records.length} jobs | Status: ${isMongoConnected}`);
           res.writeHead(200, { 'Content-Type': 'application/json' });
-          res.end(JSON.stringify({ records }));
+          res.end(JSON.stringify({ records: debugJobs, dbStatus: isMongoConnected }));
         } else {
           // Fallback to local application tracker cache
           const cachePath = path.join(CACHE_DIR, 'application-tracker.json');
