@@ -148,7 +148,7 @@ export default async function handler(req, res) {
       return;
     }
 
-    if (!userId) {
+    if (!userId && url !== '/api/jobs' && url !== '/api/jobs/analytics') {
       res.writeHead(401);
       res.end(JSON.stringify({ error: 'Unauthorized' }));
       return;
@@ -180,11 +180,10 @@ export default async function handler(req, res) {
         res.end(JSON.stringify({ completedTasks: tasks }));
       }
       else if (url === '/api/jobs' && method === 'GET') {
+        const query = userId ? { $or: [{ userId }, { userId: 'system' }] } : { userId: 'system' };
+        
         if (isMongoConnected) {
-          // Show both user-specific jobs AND system-fetched jobs
-          const records = await JobRecord.find({ 
-            $or: [{ userId }, { userId: 'system' }] 
-          }).sort({ createdAt: -1 }).lean();
+          const records = await JobRecord.find(query).sort({ createdAt: -1 }).lean();
           res.writeHead(200, { 'Content-Type': 'application/json' });
           res.end(JSON.stringify({ records }));
         } else {
