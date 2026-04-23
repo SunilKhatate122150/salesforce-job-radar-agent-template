@@ -2309,7 +2309,10 @@ async function fetchLeaderboard() {
 async function showPage(id) {
   localStorage.setItem('last_active_tab', id);
   await stopTracking();
-  document.querySelectorAll('.page').forEach(function(p) { p.classList.remove('active'); p.style.display = 'none'; });
+  document.querySelectorAll('.page').forEach(function(p) { 
+    p.classList.remove('active'); 
+    p.style.setProperty('display', 'none', 'important'); 
+  });
   document.querySelectorAll('.nav-item').forEach(function(n) { n.classList.remove('active'); });
   console.log('>>> [NAV] showPage triggered for ID:', id);
   const page = document.getElementById(id);
@@ -2343,7 +2346,7 @@ async function showPage(id) {
   }
 
   if (page) { 
-    page.classList.add('active'); 
+    page.classList.add('active');
     page.style.setProperty('display', 'block', 'important'); 
     console.log('    [NAV] Success: Page set to active and visible:', id);
   } else {
