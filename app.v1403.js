@@ -2365,7 +2365,7 @@ async function showPage(id) {
     p.style.setProperty('display', 'none', 'important'); 
   });
   document.querySelectorAll('.nav-item').forEach(function(n) { n.classList.remove('active'); });
-  const page = document.getElementById(id);
+  let page = document.getElementById(id);
   
   if (!page && !topicConfig[id]) return;
 
