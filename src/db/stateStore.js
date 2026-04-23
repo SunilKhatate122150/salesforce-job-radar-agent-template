@@ -25,8 +25,13 @@ export function getStateBackend() {
     ""
   ).toLowerCase();
 
-  if (["local", "supabase"].includes(explicit)) {
+  if (["local", "supabase", "mongodb"].includes(explicit)) {
     return explicit;
+  }
+
+  // Auto-detect MongoDB
+  if (process.env.MONGODB_URI) {
+    return "mongodb";
   }
 
   const runtimeTarget = normalize(
@@ -38,6 +43,10 @@ export function getStateBackend() {
   }
 
   return "local";
+}
+
+export function usesMongoStateBackend() {
+  return getStateBackend() === "mongodb";
 }
 
 export function usesSupabaseStateBackend() {
@@ -85,6 +94,9 @@ function handleStateError(action, stateKey, error) {
 }
 
 export async function readSupabaseJsonState(stateKey) {
+  if (usesMongoStateBackend()) {
+     return readMongoJsonState(stateKey);
+  }
   ensureSupabaseStateReady("read", stateKey);
   if (!isSupabaseEnabled()) {
     return null;
@@ -109,6 +121,9 @@ export async function readSupabaseJsonState(stateKey) {
 }
 
 export async function writeSupabaseJsonState(stateKey, payload) {
+  if (usesMongoStateBackend()) {
+     return writeMongoJsonState(stateKey, payload);
+  }
   ensureSupabaseStateReady("write", stateKey);
   if (!isSupabaseEnabled()) {
     return false;
@@ -135,6 +150,47 @@ export async function writeSupabaseJsonState(stateKey, payload) {
     return true;
   } catch (error) {
     handleStateError("write", stateKey, error);
+    return false;
+  }
+}
+
+// ========================================
+// MONGODB STATE BACKEND (Phase 2-5)
+// ========================================
+import mongoose from 'mongoose';
+import { JobRecord } from '../models/models.js';
+
+async function readMongoJsonState(stateKey) {
+  try {
+    if (mongoose.connection.readyState === 0) await mongoose.connect(process.env.MONGODB_URI);
+    // For application tracker, we return the records array
+    if (stateKey === 'application_tracker') {
+       const records = await JobRecord.find({}).sort({ createdAt: -1 }).lean();
+       return { records };
+    }
+    return null;
+  } catch (e) {
+    console.error('❌ MongoDB State Read Error:', e);
+    return null;
+  }
+}
+
+async function writeMongoJsonState(stateKey, payload) {
+  try {
+    if (mongoose.connection.readyState === 0) await mongoose.connect(process.env.MONGODB_URI);
+    if (stateKey === 'application_tracker' && payload.records) {
+       for (const rec of payload.records) {
+         await JobRecord.findOneAndUpdate(
+           { job_hash: rec.job_hash },
+           { ...rec, userId: rec.userId || 'system' },
+           { upsert: true }
+         );
+       }
+       return true;
+    }
+    return false;
+  } catch (e) {
+    console.error('❌ MongoDB State Write Error:', e);
     return false;
   }
 }
