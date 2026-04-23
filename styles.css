@@ -3229,3 +3229,13 @@ pre.code .num {
 .score-ring.h { background: conic-gradient(var(--green) calc(var(--p) * 1%), rgba(255,255,255,0.05) 0); }
 .score-ring.m { background: conic-gradient(var(--amber) calc(var(--p) * 1%), rgba(255,255,255,0.05) 0); }
 .score-inner { width: 100%; height: 100%; background: #1e293b; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.7rem; font-weight: 800; color: white; }
+
+/* --- FINAL PREMIUM FIX (v1403) --- */
+.jcard { background: #1e293b !important; border: 1px solid rgba(255,255,255,0.15) !important; border-radius: 16px !important; padding: 20px !important; margin-bottom: 20px !important; display: block !important; height: auto !important; min-height: 200px !important; }
+.co-info { display: flex !important; align-items: center !important; gap: 15px !important; margin-bottom: 10px !important; }
+.co-logo { width: 45px !important; height: 45px !important; background: #3b82f6 !important; border-radius: 10px !important; display: flex !important; align-items: center !important; justify-content: center !important; font-weight: 900 !important; font-size: 1.4rem !important; color: white !important; flex-shrink: 0 !important; }
+.co-name { font-weight: 800 !important; font-size: 1.1rem !important; color: #ffffff !important; display: block !important; }
+.job-role { font-weight: 900 !important; font-size: 1.2rem !important; color: #60a5fa !important; margin: 10px 0 !important; display: block !important; }
+.jcard-meta { display: flex !important; gap: 10px !important; margin: 15px 0 !important; flex-wrap: wrap !important; }
+.meta-pill { background: rgba(255,255,255,0.1) !important; padding: 6px 12px !important; border-radius: 20px !important; font-size: 0.75rem !important; color: #cbd5e1 !important; }
+.jcard-why { background: rgba(59, 130, 246, 0.1) !important; border-left: 4px solid #3b82f6 !important; padding: 12px !important; border-radius: 4px !important; font-size: 0.8rem !important; color: #e2e8f0 !important; }
