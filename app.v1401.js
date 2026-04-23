@@ -2316,6 +2316,10 @@ async function showPage(id) {
   document.querySelectorAll('.nav-item').forEach(function(n) { n.classList.remove('active'); });
   console.log('>>> [NAV] showPage triggered for ID:', id);
   const page = document.getElementById(id);
+  if (page) {
+    console.log('    [NAV] Parent of', id, ':', page.parentElement);
+    console.log('    [NAV] Parent offsetWidth:', page.parentElement ? page.parentElement.offsetWidth : 'N/A');
+  }
   console.log('    [NAV] Element found in DOM:', !!page, page);
   
   if (!page && !topicConfig[id]) {
