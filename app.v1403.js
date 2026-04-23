@@ -3222,15 +3222,13 @@ function renderJobCard(job) {
     badgeHtml = `<div class="fu-badge ${followUp.class}" style="margin-bottom:8px;">${followUp.label}</div>`;
   }
 
-  const fetchDate = job.created_at ? new Date(job.created_at).toLocaleDateString() : 'New';
-
   return `
     <div class="jcard" id="card-${job.id}" data-prob="${job.prob || 'medium'}">
       <div class="jcard-top">
         <div class="co-info">
           <div class="co-logo">${job.company ? job.company.charAt(0) : '💼'}</div>
           <div>
-            <div class="co-name">${job.company}</div>
+            <div class="co-name">${job.company || 'Confidential'}</div>
             <div class="co-type">${job.company_type || 'Salesforce Partner'}</div>
           </div>
         </div>
@@ -3239,31 +3237,28 @@ function renderJobCard(job) {
         </div>
       </div>
 
-      <div class="jcard-role">${job.role}</div>
+      <div class="job-role">${job.role || 'Salesforce Developer'}</div>
       ${badgeHtml}
 
       <div class="jcard-meta">
-        <span class="meta-pill">📍 ${job.loc || 'Remote'}</span>
+        <span class="meta-pill">📍 ${job.loc || 'India'}</span>
         <span class="meta-pill">💼 ${job.experience || '3-5 Yrs'}</span>
         <span class="meta-pill">💰 <b>${job.sal || 'Competitive'}</b></span>
       </div>
 
       <div class="jcard-skills">
-        ${(job.skills || ['Apex', 'LWC']).map(s => `<span class="skill-tag">${s}</span>`).join('')}
+        ${(Array.isArray(job.skills) ? job.skills : ['Apex', 'LWC']).map(s => `<span class="skill-tag">${s}</span>`).join('')}
         <span class="prob-badge ${job.prob || 'medium'}">${probLabels[job.prob || 'medium']}</span>
       </div>
 
       <div class="jcard-why">
-        <strong>Why Apply:</strong> ${job.why_apply || 'Matches your PD2 cert and experience with LWC/Apex integration.'}
+        <strong>Why Apply:</strong> ${job.why_apply || 'Matches your PD2 profile and technical specialties.'}
       </div>
 
       <div class="jcard-actions">
         ${job.status === 'todo' ? `<button class="jbtn jbtn-apply" onclick="moveTo('${job.id}', 'applied')">Mark Applied</button>` : ''}
         <a href="${job.url || '#'}" target="_blank" class="jbtn jbtn-link">View Job</a>
         <button class="jbtn jbtn-link" onclick="openAIAssistant('${job.id}')" title="Tailor Resume">🤖</button>
-        ${job.status === 'applied' ? `<button class="jbtn jbtn-link" onclick="moveTo('${job.id}', 'interview')">📞</button>` : ''}
-        ${job.status === 'interview' ? `<button class="jbtn jbtn-link" onclick="openPrepPanel('${job.company}')">📚</button>` : ''}
-        <button class="jbtn jbtn-link" onclick="moveTo('${job.id}', 'rejected')" style="color:var(--red); border-color:rgba(239,68,68,0.1);">&times;</button>
       </div>
     </div>
   `;
