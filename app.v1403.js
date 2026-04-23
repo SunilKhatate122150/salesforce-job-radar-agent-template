@@ -1876,11 +1876,13 @@ async function fetchJobsList() {
 }
 
 function clearAndSyncJobs() {
-    console.log('🧹 Clearing old pipeline junk...');
-    localStorage.removeItem('sfpipe2026v3');
+    console.log('🧹 PERFORMING DEEP WIPE...');
+    localStorage.clear(); // Wipe EVERYTHING to be safe
     pipelineJobs = [];
-    fetchJobsList();
-    showToast('✨ Dashboard Cleared & Resynced!');
+    showToast('✨ System Wiped. Reloading for fresh sync...');
+    setTimeout(() => {
+        window.location.reload(true); // Force reload from server
+    }, 1500);
 }
 
 async function fetchJobAnalytics() {
@@ -3226,42 +3228,40 @@ function renderJobCard(job) {
   }
 
   return `
-    <div class="jcard" id="card-${job.id}" data-prob="${job.prob || 'medium'}">
-      <div class="jcard-top">
-        <div class="co-info">
-          <div class="co-logo">${job.company ? job.company.charAt(0) : '💼'}</div>
-          <div>
-            <div class="co-name">${job.company || 'Confidential'}</div>
-            <div class="co-type">${job.company_type || 'Salesforce Partner'}</div>
+    <div class="jcard" id="card-${job.id}" data-prob="${job.prob || 'medium'}" style="background:#1e293b !important; border:1px solid rgba(59,130,246,0.3) !important; padding:20px !important; margin-bottom:15px !important; display:block !important; border-radius:16px !important; color:white !important;">
+      <div class="jcard-top" style="display:flex !important; justify-content:space-between !important; align-items:center !important; margin-bottom:15px !important;">
+        <div class="co-info" style="display:flex !important; align-items:center !important; gap:12px !important;">
+          <div class="co-logo" style="width:40px !important; height:40px !important; background:#3b82f6 !important; border-radius:10px !important; display:flex !important; align-items:center !important; justify-content:center !important; font-weight:800 !important; color:white !important;">${job.company ? job.company.charAt(0) : '💼'}</div>
+          <div style="display:block !important;">
+            <div class="co-name" style="font-weight:700 !important; font-size:1rem !important; color:white !important; display:block !important;">${job.company || 'Confidential'}</div>
+            <div class="co-type" style="font-size:0.7rem !important; color:#94a3b8 !important; display:block !important;">${job.company_type || 'Salesforce Partner'}</div>
           </div>
         </div>
-        <div class="score-ring ${sc}" style="--p:${job.score || 75}">
+        <div class="score-ring ${sc}" style="--p:${job.score || 75}; width:45px; height:45px;">
           <div class="score-inner ${sc}">${job.score || 75}%</div>
         </div>
       </div>
 
-      <div class="job-role">${job.role || 'Salesforce Developer'}</div>
+      <div class="job-role" style="font-family:'Syne',sans-serif !important; font-weight:800 !important; font-size:1.15rem !important; color:#60a5fa !important; margin:10px 0 !important; display:block !important;">${job.role || 'Salesforce Developer'}</div>
       ${badgeHtml}
 
-      <div class="jcard-meta">
-        <span class="meta-pill">📍 ${job.loc || 'India'}</span>
-        <span class="meta-pill">💼 ${job.experience || '3-5 Yrs'}</span>
-        <span class="meta-pill">💰 <b>${job.sal || 'Competitive'}</b></span>
+      <div class="jcard-meta" style="display:flex !important; gap:10px !important; margin:15px 0 !important; flex-wrap:wrap !important;">
+        <span class="meta-pill" style="background:rgba(255,255,255,0.05) !important; padding:4px 12px !important; border-radius:20px !important; font-size:0.7rem !important; color:#cbd5e1 !important;">📍 ${job.loc || 'India'}</span>
+        <span class="meta-pill" style="background:rgba(255,255,255,0.05) !important; padding:4px 12px !important; border-radius:20px !important; font-size:0.7rem !important; color:#cbd5e1 !important;">💼 ${job.experience || '3-5 Yrs'}</span>
+        <span class="meta-pill" style="background:rgba(59,130,246,0.1) !important; padding:4px 12px !important; border-radius:20px !important; font-size:0.7rem !important; color:white !important; font-weight:700 !important;">💰 ${job.sal || 'Competitive'}</span>
       </div>
 
-      <div class="jcard-skills">
-        ${(Array.isArray(job.skills) ? job.skills : ['Apex', 'LWC']).map(s => `<span class="skill-tag">${s}</span>`).join('')}
-        <span class="prob-badge ${job.prob || 'medium'}">${probLabels[job.prob || 'medium']}</span>
+      <div class="jcard-skills" style="display:flex !important; flex-wrap:wrap !important; gap:6px !important; margin-bottom:15px !important;">
+        ${(Array.isArray(job.skills) ? job.skills : ['Apex', 'LWC']).map(s => `<span class="skill-tag" style="font-size:0.6rem !important; padding:3px 8px !important; background:rgba(255,255,255,0.03) !important; border:1px solid rgba(255,255,255,0.1) !important; border-radius:4px !important; color:#94a3b8 !important;">${s}</span>`).join('')}
       </div>
 
-      <div class="jcard-why">
-        <strong>Why Apply:</strong> ${job.why_apply || 'Matches your PD2 profile and technical specialties.'}
+      <div class="jcard-why" style="background:rgba(59,130,246,0.05) !important; border-left:3px solid #3b82f6 !important; padding:12px !important; border-radius:0 8px 8px 0 !important; font-size:0.75rem !important; color:#e2e8f0 !important; line-height:1.5 !important;">
+        <strong style="color:#60a5fa !important;">Why Apply:</strong> ${job.why_apply || 'Matches your PD2 profile.'}
       </div>
 
-      <div class="jcard-actions">
-        ${job.status === 'todo' ? `<button class="jbtn jbtn-apply" onclick="moveTo('${job.id}', 'applied')">Mark Applied</button>` : ''}
-        <a href="${job.url || '#'}" target="_blank" class="jbtn jbtn-link">View Job</a>
-        <button class="jbtn jbtn-link" onclick="openAIAssistant('${job.id}')" title="Tailor Resume">🤖</button>
+      <div class="jcard-actions" style="display:flex !important; gap:10px !important; margin-top:20px !important;">
+        <a href="${job.url || '#'}" target="_blank" class="jbtn jbtn-apply" style="flex:1 !important; background:#3b82f6 !important; color:white !important; padding:10px !important; border-radius:8px !important; text-align:center !important; text-decoration:none !important; font-weight:700 !important; font-size:0.8rem !important;">View Job</a>
+        <button class="jbtn jbtn-link" onclick="openAIAssistant('${job.id}')" style="background:rgba(255,255,255,0.03) !important; border:1px solid rgba(255,255,255,0.1) !important; color:white !important; padding:10px !important; border-radius:8px !important; cursor:pointer !important;">🤖</button>
       </div>
     </div>
   `;
