@@ -9,7 +9,11 @@ import { fetchNaukriJobs } from './jobs/fetchNaukri.js';
  */
 function evaluateJob(job) {
     const title = (job.title || job.role || '').toLowerCase();
-    const skills = (job.skills || []).map(s => s.toLowerCase());
+    
+    // Safety check for skills (could be array or string)
+    let rawSkills = job.skills || [];
+    if (typeof rawSkills === 'string') rawSkills = rawSkills.split(',').map(s => s.trim());
+    const skills = rawSkills.map(s => String(s).toLowerCase());
     const exp = (job.experience || '').toLowerCase();
     
     let score = 50; // Base score for being a Salesforce job
