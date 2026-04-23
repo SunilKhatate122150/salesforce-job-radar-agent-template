@@ -184,6 +184,7 @@ export default async function handler(req, res) {
         
         if (isMongoConnected) {
           const records = await JobRecord.find(query).sort({ createdAt: -1 }).lean();
+          console.log(`[DB] Query: ${JSON.stringify(query)} | Found: ${records.length} jobs`);
           res.writeHead(200, { 'Content-Type': 'application/json' });
           res.end(JSON.stringify({ records }));
         } else {
