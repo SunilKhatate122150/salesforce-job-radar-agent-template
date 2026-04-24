@@ -1,10 +1,10 @@
-<!DOCTYPE html> <!-- Pulse: v1375 - 2026-04-21 -->
+<!DOCTYPE html> <!-- Pulse: v1410 - 2026-04-21 -->
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Salesforce Job Radar</title>
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>=���</text></svg>">
+  <title>Salesforce Job Radar Agent (v1410)</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>=</text></svg>">
   <link rel="manifest" href="/manifest.json">
   <meta name="theme-color" content="#0b0d12">
   <meta name="mobile-web-app-capable" content="yes">
@@ -409,7 +409,7 @@
     </div>
   </div>
 
-  </div>
+
 
 <!-- AI Study Plan Output -->
   <div style="background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.06); border-radius:16px; padding:28px; margin-top:8px;">
@@ -419,8 +419,10 @@
       </span>
       <span style="font-weight:700; font-size:1rem; color:var(--text);">AI-Generated Study Plan</span>
       <span style="font-size:0.6rem; padding:3px 8px; background:rgba(139,92,246,0.15); border:1px solid rgba(139,92,246,0.25); border-radius:20px; color:#c4b5fd; margin-left:auto;">Gemma 4</span>
-
-</div>
+    </div> <!-- end inner flex -->
+    <div id="aiStudyPlanResult"></div> <!-- results container -->
+  </div> <!-- end AI Study Plan Output wrapper -->
+</div> <!-- end profile_match page -->
 
 <div id="schedule" class="page active">
   <div class="page-header">
@@ -655,7 +657,7 @@
 
 
 <!-- STUDY HISTORY PAGE -->
-</div>
+
 
 <div id="study_history" class="page">
   <div class="page-header">
@@ -723,7 +725,7 @@
 </div>
 
 <!-- JOB RADAR PAGE -->
-</div>
+
 
 <div id="job_radar" class="page">
   <div class="page-header" style="justify-content: space-between; border-bottom: none; margin-bottom: 0;">
@@ -1146,6 +1148,7 @@
   </div>
   
   <div id="topicQAContainer" style="margin-top:24px; display:none;"></div>
+
 </div>
 
 <!-- ULTRA-COMPACT PREMIUM FOOTER -->
@@ -1321,6 +1324,6 @@
 
 </div><!-- end #main -->
 
-<script src="app.v1409.js"></script>
+<script src="app.v1410.js"></script>
 </body>
 </html>
