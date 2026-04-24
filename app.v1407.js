@@ -2428,7 +2428,8 @@ async function showPage(id) {
       </div>
     `;
     document.getElementById('topicQAContainer').style.display = 'none';
-    document.getElementById('btnGenerateTopicQA').onclick = () => generateDynamicQA(id);
+    const btn = document.getElementById('btnGenerateTopicQA');
+    if (btn) btn.onclick = () => generateDynamicQA(id);
   }
 
   if (page) { 
@@ -2438,19 +2439,8 @@ async function showPage(id) {
     
     const computed = window.getComputedStyle(page);
     console.log(`📊 [NAV] #${page.id} COMPUTED STYLE: display=${computed.display}, visibility=${computed.visibility}, opacity=${computed.opacity}, height=${page.offsetHeight}px`);
-    
-    // Force specific init calls for dashboard pages
-    if (id === 'schedule') { console.log('📅 [NAV] Rendering Timetable...'); renderTimetable(); }
-    if (id === 'study_history') { console.log('📜 [NAV] Rendering History...'); renderHistory(); }
-    if (id === 'study_tracker') { console.log('📊 [NAV] Rendering Tracker...'); updateTrackerUI(); }
-    if (id === 'job_radar') { console.log('📡 [NAV] Rendering Job Radar...'); fetchJobsList(); }
-
-  } else {
-    console.error('❌ [NAV] FATAL: No page element or topic mapping for ID:', id);
   }
-  console.log(`--- ✅ [NAV END] Target: ${id} ---\n`);
-}
-  
+
   // Update Title and Navigation
   const headerTitle = document.getElementById('headerTitle');
   if (headerTitle) {
@@ -2466,7 +2456,6 @@ async function showPage(id) {
 
   const searchPage = document.getElementById('searchPage');
   if (searchPage) searchPage.style.display = 'none';
-  const mainEl = document.getElementById('main');
   if (mainEl) mainEl.scrollTop = 0;
   
   // Mobile Sidebar Close
@@ -2475,9 +2464,10 @@ async function showPage(id) {
     if (typeof toggleMobileSidebar === 'function') toggleMobileSidebar();
   }
   
-  if (id === 'schedule') await renderTimetable();
-  if (id === 'study_history') await renderHistory();
+  if (id === 'schedule') { console.log('📅 [NAV] Rendering Timetable...'); await renderTimetable(); }
+  if (id === 'study_history') { console.log('📜 [NAV] Rendering History...'); await renderHistory(); }
   if (id === 'job_radar') { 
+    console.log('📡 [NAV] Rendering Job Radar...');
     try {
       if (!currentRadarSubTab) currentRadarSubTab = 'pipeline';
       switchRadarSubTab(currentRadarSubTab);
@@ -2502,6 +2492,7 @@ async function showPage(id) {
   if (cfg && !cfg.noTimer) startTracking(id);
   
   renderBookmarkButtons();
+  console.log(`--- ✅ [NAV END] Target: ${id} ---\n`);
 }
 
 function toggleQA(el) { 
