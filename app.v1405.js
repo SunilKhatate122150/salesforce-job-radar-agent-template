@@ -1,7 +1,8 @@
-// Version: 2026-04-23-T2000 (Industrial Enrichment v1403)
+// Version: 2026-04-24-T1030 (Industrial Enrichment v1405)
 // =============================================
-const DASHBOARD_VERSION = "2026-04-23-T2000 (v1403)";
+const DASHBOARD_VERSION = "2026-04-24-T1030 (v1405)";
 console.log('🚀 Dashboard Version:', DASHBOARD_VERSION);
+if ('serviceWorker' in navigator) { navigator.serviceWorker.getRegistrations().then(regs => { for (let reg of regs) reg.unregister(); }); }
 var TRACKER_KEY = 'sf_prep_study_tracker_v3';
 var currentTrackedPage = null;
 var trackingStartTime = null;
@@ -3724,12 +3725,13 @@ window.addEventListener('DOMContentLoaded', function() {
   setTimeout(renderBookmarkButtons, 500);
   renderRevisionAlerts(); // v1342
 
-  // Register Service Worker (v1341 PWA)
+  // Unregister Service Worker to fix caching (v1405)
   if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-      navigator.serviceWorker.register('/sw.js')
-        .then(reg => console.log('PWA: Service Worker Registered', reg.scope))
-        .catch(err => console.error('PWA: Service Worker Registration Failed', err));
+    navigator.serviceWorker.getRegistrations().then(registrations => {
+      for (let registration of registrations) {
+        registration.unregister();
+        console.log('PWA: Service Worker Unregistered to force refresh.');
+      }
     });
   }
 });
