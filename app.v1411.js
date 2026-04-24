@@ -3237,29 +3237,32 @@ function renderBoard() {
   cols.forEach(col => {
     const list = document.getElementById(`list-${col}`);
     const count = document.getElementById(`count-${col}`);
+    const cntHeader = document.getElementById(`cnt-${col}`);
     if (!list) return;
 
     const filtered = pipelineJobs.filter(j => j.status === col && (currentBoardFilter === 'all' || j.prob === currentBoardFilter));
     if (count) count.textContent = filtered.length;
+    if (cntHeader) cntHeader.textContent = filtered.length;
 
     const limit = radarBoardLimits[col];
     const displayJobs = filtered.slice(0, limit);
     
     let html = displayJobs.length === 0 ? 
-      `<div style="padding:20px; text-align:center; color:var(--muted); font-size:0.7rem; border:1px dashed var(--border); border-radius:10px;">No jobs here.</div>` :
+      `<div style="padding:30px 20px; text-align:center; color:var(--text3); font-size:0.7rem; border:1px dashed var(--border); border-radius:12px; margin:10px 0;">No active roles here.</div>` :
       displayJobs.map(job => renderJobCard(job)).join('');
       
     if (filtered.length > limit) {
       html += `
-        <button class="card-btn" style="width:100%; margin-top:12px; border:1px solid var(--border); background:rgba(255,255,255,0.02); color:var(--muted); font-size:0.7rem;" 
+        <button style="width:100%; margin-top:12px; border:1px solid var(--border); background:var(--surface2); color:var(--text2); font-size:0.65rem; font-weight:700; padding:8px; border-radius:8px; cursor:pointer;" 
                 onclick="loadMoreJobs('${col}')">
-          View All (${filtered.length})
+          LOAD ${filtered.length - limit} MORE
         </button>
       `;
     }
     
     list.innerHTML = html;
   });
+  updateAnalytics();
   checkOfferComparison();
 }
 
@@ -3268,52 +3271,71 @@ function loadMoreJobs(col) {
   renderBoard();
 }
 
+function scrollToCol(id) {
+  const el = document.getElementById("col-" + id);
+  if (el) el.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "start" });
+}
+
+function setBoardFilter(val, btn) {
+  currentBoardFilter = val;
+  document.querySelectorAll(".fb").forEach(b => b.classList.remove("on"));
+  if (btn) btn.classList.add("on");
+  renderBoard();
+}
+
+function doBoardSearch() {
+  const val = document.getElementById("boardSearch").value.toLowerCase();
+  const cards = document.querySelectorAll(".jcard-v3");
+  cards.forEach(card => {
+    const text = card.textContent.toLowerCase();
+    card.style.display = text.includes(val) ? "flex" : "none";
+  });
+}
+
 function renderJobCard(job) {
   const followUp = getFollowUpStatus(job);
-  const sc = job.score >= 85 ? 'h' : (job.score >= 70 ? 'm' : 's');
-  const probLabels = { high: 'ðŸŸ¢ High', medium: 'ðŸŸ¡ Medium', stretch: 'ðŸŸ£ Stretch' };
+  const score = job.score || 75;
+  const scoreColor = score >= 85 ? 'var(--green)' : (score >= 70 ? 'var(--blue)' : 'var(--amber)');
   
   let badgeHtml = '';
   if (followUp && job.status === 'applied') {
-    badgeHtml = `<div class="fu-badge ${followUp.class}" style="margin-bottom:8px;">${followUp.label}</div>`;
+    badgeHtml = `<div style="background:${followUp.class==='urgent'?'var(--red-dim)':'var(--amber-dim)'}; color:${followUp.class==='urgent'?'var(--red)':'var(--amber)'}; font-size:8px; font-weight:800; padding:2px 6px; border-radius:4px; margin-bottom:5px; display:inline-block; letter-spacing:.05em;">${followUp.label}</div>`;
   }
 
   return `
-    <div class="jcard" id="card-${job.id}" data-prob="${job.prob || 'medium'}">
-      <div class="jcard-top">
-        <div class="co-info">
-          <div class="co-logo">${job.company ? job.company.trim().charAt(0).toUpperCase() : '💼'}</div>
-          <div>
-            <div class="co-name">${job.company || 'Confidential'}</div>
-            <div class="co-type">${job.company_type || 'Salesforce Partner'}</div>
-          </div>
+    <div class="jcard-v3" id="card-${job.id}" data-prob="${job.prob || 'medium'}">
+      <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+        <div style="display:flex; gap:10px; align-items:center;">
+           <div style="width:34px; height:34px; background:rgba(255,255,255,0.03); border:1px solid var(--border); border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:1.1rem;">${job.icon || '💼'}</div>
+           <div style="display:flex; flex-direction:column;">
+             <span style="font-size:0.85rem; font-weight:800; color:var(--text); line-height:1.2;">${job.company}</span>
+             <span style="font-size:0.65rem; color:var(--text3); font-weight:500;">${job.company_type || 'MNC'}</span>
+           </div>
         </div>
-        <div class="score-ring ${sc}" style="--p:${job.score || 75}">
-          <div class="score-inner ${sc}">${job.score || 75}</div>
+        <div class="goal-ring-v3" style="position:relative;">
+           <svg viewBox="0 0 36 36" style="width:100%; height:100%;">
+              <circle class="goal-track" cx="18" cy="18" r="15.9"/>
+              <circle class="goal-arc" cx="18" cy="18" r="15.9" style="stroke-dasharray: ${score} 100; stroke: ${scoreColor};"/>
+           </svg>
+           <div style="position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); font-family:'JetBrains Mono'; font-size:9px; font-weight:800; color:var(--text);">${score}</div>
         </div>
       </div>
 
-      <div class="job-role">${job.role || 'Salesforce Developer'}</div>
+      <div style="font-size:0.8rem; font-weight:700; color:var(--text); margin-top:2px; line-height:1.3;">${job.role}</div>
       ${badgeHtml}
 
-      <div class="jcard-meta">
-        <span class="meta-pill">ðŸ“ ${job.loc || 'India'}</span>
-        <span class="meta-pill">ðŸ’¼ ${job.experience || '3-5 Yrs'}</span>
-        <span class="meta-pill">ðŸ’° ${job.sal || 'Competitive'}</span>
+      <div style="display:flex; gap:5px; flex-wrap:wrap; margin-top:2px;">
+        <span style="font-size:9px; background:var(--bg2); border:1px solid var(--border); padding:2px 6px; border-radius:4px; color:var(--text2);">📍 ${job.loc || 'India'}</span>
+        <span style="font-size:9px; background:var(--bg2); border:1px solid var(--border); padding:2px 6px; border-radius:4px; color:var(--text2);">💼 ${job.experience || '3-5 Yrs'}</span>
       </div>
 
-      <div class="jcard-skills" style="display:flex; gap:4px; flex-wrap:wrap; align-items:center;">
-        ${(Array.isArray(job.skills) ? job.skills : ['Apex', 'LWC']).slice(0, 3).map(s => `<span class="skill-tag">${s}</span>`).join('')}
-        <span class="prob-badge ${job.prob || 'medium'}" style="font-size:0.55rem; font-weight:800; text-transform:uppercase; color:var(--muted); margin-left:auto;">${job.prob || 'medium'}</span>
+      <div style="background:var(--bg2); border:1px solid var(--border); border-radius:7px; padding:7px; font-size:0.7rem; color:var(--text2); line-height:1.4;">
+        ${job.why_apply || 'Matches your profile requirements.'}
       </div>
 
-      <div class="jcard-why">
-        ${job.why_apply || 'Matches your profile.'}
-      </div>
-
-      <div class="jcard-actions">
-        <a href="${job.url || '#'}" target="_blank" class="jbtn jbtn-apply">View Job</a>
-        <button class="jbtn jbtn-link" onclick="openAIAssistant('${job.id}')">ðŸ¤–</button>
+      <div style="display:flex; gap:6px; margin-top:auto;">
+        <a href="${job.url || '#'}" target="_blank" style="flex:1; background:var(--surface2); border:1px solid var(--border2); color:var(--text); text-decoration:none; font-size:0.7rem; font-weight:700; padding:6px; border-radius:7px; text-align:center;">View Job</a>
+        <button onclick="openCoach('${job.id}')" style="background:var(--blue-dim); border:1px solid rgba(59,130,246,0.2); color:var(--blue); font-size:0.7rem; font-weight:700; padding:6px 10px; border-radius:7px; cursor:pointer;">Coach</button>
       </div>
     </div>
   `;
@@ -3649,7 +3671,12 @@ function updateAnalytics() {
   const appliedCount = pipelineJobs.filter(j => j.status !== 'todo' && j.status !== 'rejected').length;
   const rate = pipelineJobs.length > 0 ? Math.round((appliedCount / pipelineJobs.length) * 100) : 0;
   
+  const interviewCount = pipelineJobs.filter(j => j.status === 'interview' || j.status === 'offer').length;
+  const offerCount = pipelineJobs.filter(j => j.status === 'offer').length;
+  const conv = interviewCount > 0 ? Math.round((offerCount / interviewCount) * 100) : 0;
+
   const elRate = document.getElementById('met-rate');
+  const elConv = document.getElementById('met-conversion');
   const elStreak = document.getElementById('met-streak');
   const elFollowup = document.getElementById('met-followup');
   const elWeekly = document.getElementById('met-weekly');
@@ -3657,10 +3684,12 @@ function updateAnalytics() {
   const elGoalPct = document.getElementById('goal-pct');
 
   if (elRate) elRate.textContent = rate + '%';
+  if (elConv) elConv.textContent = conv + '%';
   if (elStreak) elStreak.textContent = (studyStreak.current || 0) + 'd';
   if (elFollowup) elFollowup.textContent = pipelineJobs.filter(j => getFollowUpStatus(j)).length;
 
   const startOfWeek = new Date();
+  startOfWeek.setHours(0,0,0,0);
   startOfWeek.setDate(startOfWeek.getDate() - (startOfWeek.getDay() || 7) + 1);
   const weeklyCount = pipelineJobs.filter(j => j.dateApplied && new Date(j.dateApplied) >= startOfWeek).length;
   

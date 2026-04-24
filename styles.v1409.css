@@ -19,27 +19,39 @@ svg {
 }
 
 :root {
-  --bg: #0b0d12;
-  --surface: #111520;
-  --card: #171d2e;
-  --card2: #1c2438;
-  --border: #252f4a;
-  --border2: #2e3b5e;
-  --blue: #4f8ef7;
-  --green: #3dd68c;
-  --amber: #f4c542;
-  --red: #f06a6a;
-  --purple: #a78bfa;
-  --cyan: #22d3ee;
-  --pink: #f472b6;
-  --text: #dce6f8;
-  --muted: #6b7da0;
-  --dim: #3a4668;
-  --code-bg: #0e1320;
-  --header-h: clamp(60px, 8vh, 75px);
-  --sidebar-w: 270px;
-  --page-max-w: 1400px;
-  --fluid-pad: clamp(1rem, 4vw, 3rem);
+  --bg: #070c18;
+  --bg2: #0d1526;
+  --surface: #111d35;
+  --surface2: #162240;
+  --card: #111d35;
+  --card2: #162240;
+  --border: #1e3055;
+  --border2: #243a60;
+  --blue: #3b82f6;
+  --blue-dim: rgba(59, 130, 246, .12);
+  --cyan: #06b6d4;
+  --green: #10b981;
+  --green-dim: rgba(16, 185, 129, .12);
+  --amber: #f59e0b;
+  --amber-dim: rgba(245, 158, 11, .12);
+  --violet: #8b5cf6;
+  --violet-dim: rgba(139, 92, 246, .12);
+  --red: #ef4444;
+  --red-dim: rgba(239, 68, 68, .12);
+  --orange: #f97316;
+  --orange-dim: rgba(249, 115, 22, .12);
+  --pink: #ec4899;
+  --text: #e2e8f0;
+  --text2: #94a3b8;
+  --text3: #4e6a8d;
+  --muted: #4e6a8d;
+  --dim: #1e3055;
+  --radius: 14px;
+  --ease: cubic-bezier(.4, 0, .2, 1);
+  --hdr: 58px;
+  --analytics: 52px;
+  --flt: 42px;
+  --sidebar-w: 260px;
 }
 
 * {
@@ -3660,3 +3672,31 @@ pre.code .num {
   color: var(--text) !important;
   border-color: var(--border2) !important;
 }
+
+/* --- JOB RADAR V3 INDUSTRIAL --- */
+.radar-v3-header { height: var(--hdr); background: rgba(7,12,24,.96); backdrop-filter: blur(24px); border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 16px; padding: 0 20px; position: sticky; top: 0; z-index: 100; }
+.pipe-stats { display: flex; gap: 4px; flex: 1; }
+.pstat { display: flex; align-items: center; gap: 6px; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 4px 10px; cursor: pointer; transition: .2s var(--ease); flex: 1; max-width: 140px; }
+.pstat:hover { border-color: var(--border2); }
+.pdot { width: 6px; height: 6px; border-radius: 50%; }
+.pdot.todo { background: #4e6a8d; }
+.pdot.applied { background: var(--blue); box-shadow: 0 0 5px var(--blue); }
+.pdot.interview { background: var(--green); box-shadow: 0 0 5px var(--green); }
+.pdot.offer { background: var(--amber); box-shadow: 0 0 5px var(--amber); }
+.pdot.rejected { background: var(--red); }
+.pinfo { display: flex; flex-direction: column; }
+.pcount { font-family: " JetBrains Mono\, monospace; font-size: .85rem; font-weight: 500; color: var(--text); line-height: 1; }
+.plbl { font-size: 9px; color: var(--text3); font-weight: 500; text-transform: uppercase; letter-spacing: .06em; }
+.analytics-bar-v3 { height: var(--analytics); background: rgba(13,21,38,.97); border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 20px; padding: 0 20px; position: sticky; top: var(--hdr); z-index: 99; overflow-x: auto; }
+.goal-ring-v3 { width: 36px; height: 36px; }
+.goal-track { fill: none; stroke: #1e3055; stroke-width: 3; }
+.goal-arc { fill: none; stroke: var(--green); stroke-width: 3; stroke-linecap: round; transform: rotate(-90deg); transform-origin: 50% 50%; transition: stroke-dasharray .6s var(--ease); }
+.kanban-board-v3 { display: flex; gap: 12px; padding: 16px 20px; height: calc(100vh - 200px); overflow-x: auto; align-items: flex-start; }
+.kanban-col-v3 { width: 300px; flex-shrink: 0; background: rgba(255,255,255,.015); border: 1px solid var(--border); border-radius: 14px; padding: 10px 8px; display: flex; flex-direction: column; gap: 8px; max-height: 100%; }
+.kanban-header-v3 { display: flex; align-items: center; gap: 7px; padding: 7px 8px; border-radius: 9px; font-family: \Syne\, sans-serif; font-size: .78rem; font-weight: 700; }
+.jcard-v3 { background: var(--surface); border: 1px solid var(--border); border-radius: 11px; padding: 13px; display: flex; flex-direction: column; gap: 9px; transition: .22s var(--ease); position: relative; overflow: hidden; }
+.jcard-v3:hover { border-color: var(--border2); transform: translateY(-1px); box-shadow: 0 6px 28px rgba(0,0,0,.35); }
+.jcard-v3::before { content: \\; position: absolute; top: 0; left: 0; right: 0; height: 2px; }
+.jcard-v3[data-prob=\high\]::before { background: linear-gradient(90deg, var(--green), transparent 80%); }
+.jcard-v3[data-prob=\medium\]::before { background: linear-gradient(90deg, var(--amber), transparent 80%); }
+.jcard-v3[data-prob=\stretch\]::before { background: linear-gradient(90deg, var(--violet), transparent 80%); }
