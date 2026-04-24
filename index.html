@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Salesforce Job Radar Agent (v1410)</title>
+  <title>Salesforce Job Radar Agent (v1411)</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>=</text></svg>">
   <link rel="manifest" href="/manifest.json">
   <meta name="theme-color" content="#0b0d12">
@@ -1151,11 +1151,22 @@
 
 </div>
 
+
+<!-- COMMUNICATION & CAREER MODULAR CONTAINERS -->
+<div id="intro" class="page"></div>
+<div id="behavioral" class="page"></div>
+<div id="speaking" class="page"></div>
+<div id="comm" class="page"></div>
+<div id="vocab" class="page"></div>
+<div id="salary" class="page"></div>
+<div id="mock" class="page"></div>
+
 <!-- ULTRA-COMPACT PREMIUM FOOTER -->
+
 <footer style="width: 100% !important; position: relative !important; margin-top: auto !important; height: 60px; display: flex; align-items: center; justify-content: center; gap: 8px; background: transparent; padding-bottom: env(safe-area-inset-bottom); border-top: 1px solid var(--border);">
   <div style="font-size: 0.65rem; color: var(--muted); display: flex; align-items: center; gap: 6px; opacity: 0.6;">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:12px; height:12px; opacity:0.3;"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-    <span style="letter-spacing: 0.5px; font-weight: 600;">SF Prep Agent v1409</span>
+    <span style="letter-spacing: 0.5px; font-weight: 600;">SF Prep Agent v1411</span>
     <span style="opacity: 0.2;">&bull;</span>
     <span style="letter-spacing: 0.5px;">Industrial Stability Sync</span>
   </div>
@@ -1188,7 +1199,7 @@
         </div>
         <div>
           <label style="display:block; font-size:0.7rem; color:var(--muted); text-transform:uppercase; margin-bottom:6px;">Salary Range</label>
-          <input id="aj-sal" type="text" placeholder="G�15-25 LPA" style="width:100%; background:var(--bg); border:1px solid var(--border); color:var(--text); padding:10px; border-radius:8px; font-family:inherit;">
+          <input id="aj-sal" type="text" placeholder="₹15-25 LPA" style="width:100%; background:var(--bg); border:1px solid var(--border); color:var(--text); padding:10px; border-radius:8px; font-family:inherit;">
         </div>
       </div>
       <div style="margin-bottom:15px;">
@@ -1199,9 +1210,9 @@
         <div>
           <label style="display:block; font-size:0.7rem; color:var(--muted); text-transform:uppercase; margin-bottom:6px;">Probability</label>
           <select id="aj-prob" style="width:100%; background:var(--bg); border:1px solid var(--border); color:var(--text); padding:10px; border-radius:8px; font-family:inherit;">
-            <option value="high">=��� High</option>
-            <option value="medium" selected>=��� Medium</option>
-            <option value="stretch">=��� Stretch</option>
+            <option value="high">High</option>
+            <option value="medium" selected>Medium</option>
+            <option value="stretch">Stretch</option>
           </select>
         </div>
         <div>
@@ -1221,18 +1232,17 @@
   </div>
 </div>
 
-<!-- G��G��G�� AI EMAIL MODAL G��G��G�� -->
+<!-- AI EMAIL MODAL -->
 <div id="emailModal" class="modal-overlay" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; z-index:10001; background:rgba(0,0,0,0.85); backdrop-filter:blur(10px); align-items:center; justify-content:center; padding:20px;">
   <div style="background:var(--surface); border:1px solid var(--border); width:100%; max-width:650px; border-radius:20px; overflow:hidden; animation:modalPop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);">
     <div style="padding:1.2rem 1.5rem; border-bottom:1px solid var(--border); display:flex; justify-content:space-between; align-items:center; background:rgba(255,255,255,0.02);">
       <div style="font-weight:700; font-size:1.1rem; color:var(--text); display:flex; align-items:center; gap:8px;">
-        <span style="color:var(--blue);">G��n+�</span> AI Email Generator
+        <span style="color:var(--blue);">Gen-AI</span> AI Email Generator
       </div>
       <button onclick="closeModal('emailModal')" style="background:none; border:none; color:var(--muted); font-size:1.5rem; cursor:pointer;">&times;</button>
     </div>
     <div style="padding:1.5rem;">
       <div style="display:flex; gap:10px; margin-bottom:1.5rem;">
-        <button class="email-tab active" onclick="selectEmailType('followup', this)">=��� Follow-up</button>
         <button class="email-tab" onclick="selectEmailType('thankyou', this)">=��� Thank You</button>
         <button class="email-tab" onclick="selectEmailType('withdraw', this)">G� Withdraw</button>
       </div>
@@ -1324,6 +1334,6 @@
 
 </div><!-- end #main -->
 
-<script src="app.v1410.js"></script>
+<script src="app.v1411.js"></script>
 </body>
 </html>
