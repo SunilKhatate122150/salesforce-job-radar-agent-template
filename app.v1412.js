@@ -225,6 +225,8 @@ window.processGAuth = async function(response) {
       alert('Login failed: ' + data.error);
     }
   } catch (e) {
+    // Only log real errors, ignore browser blocks (ad-blockers)
+    if (e.message && e.message.includes('BLOCKED_BY_CLIENT')) return;
     console.error('Auth Error:', e);
   }
 };
@@ -2519,7 +2521,10 @@ async function ensurePageLoaded(pageId) {
 
 
 // Update showPage to include extreme telemetry
+let isNavigating = false;
 async function showPage(id) {
+  if (isNavigating) return;
+  isNavigating = true;
   console.log(`%c ðŸ“‘ [TAB SWITCH] -> ${id}`, 'background: #3b82f6; color: white; padding: 3px 8px; border-radius: 4px; font-weight: bold;');
   
   // Ensure the page content is loaded before showing
@@ -2592,6 +2597,7 @@ async function showPage(id) {
         console.log('â­  [NAV] Activating Bookmarks View...');
         if (typeof showBookmarks === 'function') showBookmarks();
     }
+    isNavigating = false;
   }
 
   // UI Updates
