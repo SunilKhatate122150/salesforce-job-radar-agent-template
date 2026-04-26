@@ -101,15 +101,18 @@ export default async function(req, res) {
         profile = await UserProfile.findOne({ userId }).lean();
         source = 'MongoDB (Legacy)';
       }
+      console.log(`[PROFILE] Fetch for ${userId} -> Source: ${source}, Found: ${!!profile}`);
       return res.status(200).json({ exists: !!profile, profile, storageSource: source });
     }
 
     if (path === 'profile/save' && req.method === 'POST') {
+      console.log(`[PROFILE] Saving data for ${userId}`);
       await TursoDB.saveProfile(userId, req.body);
       return res.status(200).json({ success: true });
     }
 
     if (path === 'profile/toggle-bookmark' && req.method === 'POST') {
+      console.log(`[BOOKMARK] Toggling for ${userId}`);
       const bookmarks = await TursoDB.toggleBookmark(userId, req.body);
       return res.status(200).json({ success: true, bookmarks });
     }
@@ -117,6 +120,7 @@ export default async function(req, res) {
     if (path === 'profile/match') {
       const profile = await TursoDB.getProfile(userId);
       const jobs = await TursoDB.getJobAnalytics(userId);
+      console.log(`[MATCH] Analyzing ${jobs.length} jobs for ${userId}`);
       const filtered = jobs.filter(j => (j.match_score || 0) >= 60);
       const topMatchedSkills = {};
       const topMissingSkills = {};
@@ -139,6 +143,8 @@ export default async function(req, res) {
       tursoJobs.forEach(j => unifiedMap.set(j.job_hash, { ...j, source: 'Primary (Turso)' }));
       const finalJobs = Array.from(unifiedMap.values()).sort((a,b) => new Date(b.created_at || b.createdAt) - new Date(a.created_at || a.createdAt));
 
+      console.log(`[JOBS] Unified Fetch -> Turso: ${tursoJobs.length}, Mongo: ${mongoJobs.length}, Total: ${finalJobs.length}`);
+
       checkAndArchiveOverflow(userId);
       const mongoCount = await JobRecord.countDocuments({ userId });
       const capacityUsed = Math.min(Math.round((mongoCount / 1500) * 100), 100);
@@ -147,6 +153,7 @@ export default async function(req, res) {
 
     if (path === 'jobs/analytics') {
       const jobs = await TursoDB.getJobAnalytics(userId);
+      console.log(`[ANALYTICS] Returning ${jobs.length} records for ${userId}`);
       return res.status(200).json(jobs);
     }
 
@@ -155,28 +162,33 @@ export default async function(req, res) {
       const tursoSessions = await TursoDB.getStudyHistory(userId);
       const mongoSessions = await StudySession.find({ userId }).sort({ startTime: -1 }).limit(100).lean();
       const combined = [...tursoSessions, ...mongoSessions].sort((a,b) => new Date(b.startTime) - new Date(a.startTime));
+      console.log(`[STUDY] History Fetch -> Turso: ${tursoSessions.length}, Mongo: ${mongoSessions.length}`);
       return res.status(200).json(combined);
     }
 
     if (path === 'study/session' && req.method === 'POST') {
+      console.log(`[STUDY] Saving new session for ${userId}`);
       await TursoDB.saveStudySession(userId, req.body);
       return res.status(200).json({ success: true });
     }
 
     if (path === 'study/tasks') {
       const profile = await TursoDB.getProfile(userId);
+      console.log(`[TASKS] Loading completed count: ${profile?.completedTasks?.length || 0}`);
       return res.status(200).json({ completedTasks: profile?.completedTasks || [] });
     }
 
     if (path === 'study/toggle-task' && req.method === 'POST') {
       const { taskId, completed } = req.body;
       const tasks = await TursoDB.toggleTask(userId, taskId, completed);
+      console.log(`[TASKS] Toggled ${taskId} -> ${completed}. New total: ${tasks.length}`);
       return res.status(200).json({ success: true, completedTasks: tasks });
     }
 
     // 5. SUMMARY ENDPOINTS
     if (path === 'summary/daily' || path === 'summary/all') {
       const sessions = await TursoDB.getFullHistory(userId);
+      console.log(`[SUMMARY] Analyzing ${sessions.length} sessions for history`);
       const historyObj = {};
       sessions.forEach(s => {
         const d = s.date;
