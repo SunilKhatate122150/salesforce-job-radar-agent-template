@@ -95,64 +95,59 @@ export default async function(req, res) {
 
     // 2. PROFILE ENDPOINTS (Hybrid Search)
     if (path === 'profile/data') {
-      // Try Turso First
       let profile = await TursoDB.getProfile(userId);
       let source = 'Turso (Primary)';
-
-      // If not in Turso, check Legacy MongoDB
       if (!profile) {
         profile = await UserProfile.findOne({ userId }).lean();
         source = 'MongoDB (Legacy)';
       }
-
       return res.status(200).json({ exists: !!profile, profile, storageSource: source });
     }
 
     if (path === 'profile/save' && req.method === 'POST') {
-      // Save to Turso (Promote to Primary)
       await TursoDB.saveProfile(userId, req.body);
       return res.status(200).json({ success: true });
     }
 
-    // 3. JOBS ENDPOINTS (Hybrid Merge)
+    if (path === 'profile/toggle-bookmark' && req.method === 'POST') {
+      const bookmarks = await TursoDB.toggleBookmark(userId, req.body);
+      return res.status(200).json({ success: true, bookmarks });
+    }
+
+    if (path === 'profile/match') {
+      const profile = await TursoDB.getProfile(userId);
+      const jobs = await TursoDB.getJobAnalytics(userId);
+      const filtered = jobs.filter(j => (j.match_score || 0) >= 60);
+      const topMatchedSkills = {};
+      const topMissingSkills = {};
+      filtered.forEach(j => {
+        const matched = typeof j.matched_skills === 'string' ? JSON.parse(j.matched_skills) : (j.matched_skills || []);
+        const missing = typeof j.missing_skills === 'string' ? JSON.parse(j.missing_skills) : (j.missing_skills || []);
+        matched.forEach(s => topMatchedSkills[s] = (topMatchedSkills[s] || 0) + 1);
+        missing.forEach(s => topMissingSkills[s] = (topMissingSkills[s] || 0) + 1);
+      });
+      const sortSkills = (obj) => Object.entries(obj).sort((a,b) => b[1] - a[1]).slice(0, 10).map(([k,v]) => ({ _id: k, count: v }));
+      return res.status(200).json({ exists: !!profile, profile, matched_skills: sortSkills(topMatchedSkills), missing_skills: sortSkills(topMissingSkills) });
+    }
+
+    // 3. JOBS ENDPOINTS
     if (path === 'jobs') {
-      // Fetch from BOTH databases
       const tursoJobs = await TursoDB.getJobs(userId);
       const mongoJobs = await JobRecord.find({ $or: [{ userId }, { userId: 'system' }] }).sort({ createdAt: -1 }).limit(100).lean();
-      
-      // Deduplicate by job_hash (Turso wins)
       const unifiedMap = new Map();
       mongoJobs.forEach(j => unifiedMap.set(j.job_hash, { ...j, source: 'Legacy (Mongo)' }));
       tursoJobs.forEach(j => unifiedMap.set(j.job_hash, { ...j, source: 'Primary (Turso)' }));
-
       const finalJobs = Array.from(unifiedMap.values()).sort((a,b) => new Date(b.created_at || b.createdAt) - new Date(a.created_at || a.createdAt));
 
-      const debugHeader = { 
-        title: 'UNIFIED STORAGE ACTIVE', 
-        company: '9.5GB TOTAL CAPACITY', 
-        status: 'new', 
-        job_hash: 'debug-unified',
-        salary: 'Automated Overflow Tier',
-        company_type: 'Self-Healing DB',
-        experience: 'Industrial Scale',
-        probability: 'high',
-        match_score: 100,
-        why_apply: `<strong>Storage Management:</strong> The system is automatically managing your data across multiple high-capacity cloud layers for maximum reliability.`
-      };
-
-      // Trigger Vacuum in background
       checkAndArchiveOverflow(userId);
-
-      // Unified Capacity Logic: Show MongoDB fullness as a % of the vacuum threshold
       const mongoCount = await JobRecord.countDocuments({ userId });
       const capacityUsed = Math.min(Math.round((mongoCount / 1500) * 100), 100);
+      return res.status(200).json({ records: finalJobs, dbStatus: true, count: finalJobs.length, storageCapacity: `${100 - capacityUsed}% Free` });
+    }
 
-      return res.status(200).json({ 
-        records: [debugHeader, ...finalJobs], 
-        dbStatus: true, 
-        count: finalJobs.length,
-        storageCapacity: `${100 - capacityUsed}% Free`
-      });
+    if (path === 'jobs/analytics') {
+      const jobs = await TursoDB.getJobAnalytics(userId);
+      return res.status(200).json(jobs);
     }
 
     // 4. STUDY ENDPOINTS
@@ -164,9 +159,34 @@ export default async function(req, res) {
     }
 
     if (path === 'study/session' && req.method === 'POST') {
-      // Always save NEW sessions to Turso
       await TursoDB.saveStudySession(userId, req.body);
       return res.status(200).json({ success: true });
+    }
+
+    if (path === 'study/tasks') {
+      const profile = await TursoDB.getProfile(userId);
+      return res.status(200).json({ completedTasks: profile?.completedTasks || [] });
+    }
+
+    if (path === 'study/toggle-task' && req.method === 'POST') {
+      const { taskId, completed } = req.body;
+      const tasks = await TursoDB.toggleTask(userId, taskId, completed);
+      return res.status(200).json({ success: true, completedTasks: tasks });
+    }
+
+    // 5. SUMMARY ENDPOINTS
+    if (path === 'summary/daily' || path === 'summary/all') {
+      const sessions = await TursoDB.getFullHistory(userId);
+      const historyObj = {};
+      sessions.forEach(s => {
+        const d = s.date;
+        if (!historyObj[d]) historyObj[d] = { date: d, study: { totalSeconds: 0, topicList: [], sessionsCount: 0 }, jobs: { newCount: 0, topMatches: [] } };
+        historyObj[d].study.totalSeconds += (s.duration || 0);
+        historyObj[d].study.sessionsCount++;
+      });
+      const todayStr = new Date().toISOString().split('T')[0];
+      if (path === 'summary/daily') return res.status(200).json(historyObj[todayStr] || { date: todayStr, study: { totalSeconds: 0 }, jobs: { newCount: 0 } });
+      return res.status(200).json(historyObj);
     }
 
     return res.status(404).json({ error: 'Route not found' });
