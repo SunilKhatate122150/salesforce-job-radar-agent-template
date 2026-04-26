@@ -1974,16 +1974,18 @@ async function fetchJobsList() {
 
     const dbBadge = document.getElementById('dbStatusBadge');
     if (dbBadge) {
-      dbBadge.textContent = 'Hybrid Storage Active';
-      dbBadge.style.background = 'rgba(59,130,246,0.1)';
-      dbBadge.style.color = 'var(--blue)';
+      dbBadge.textContent = 'Cloud Active';
+      dbBadge.style.background = 'rgba(16,185,129,0.1)';
+      dbBadge.style.color = 'var(--green)';
     }
 
     const archiveBadge = document.getElementById('archiveStatusBadge');
-    if (archiveBadge && data.storageStats) {
+    if (archiveBadge && data.storageCapacity) {
       archiveBadge.style.display = 'inline-block';
-      archiveBadge.textContent = `${data.storageStats.turso} Turso / ${data.storageStats.mongo} Mongo`;
-      archiveBadge.title = 'Data merged from both SQL and NoSQL layers';
+      archiveBadge.textContent = `Capacity: ${data.storageCapacity}`;
+      archiveBadge.title = 'Automated high-capacity cloud storage is active';
+      archiveBadge.style.background = 'rgba(139,92,246,0.1)';
+      archiveBadge.style.color = '#c4b5fd';
     }
 
     if (addedCount > 0) {

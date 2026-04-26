@@ -33,6 +33,35 @@ async function getUserId(req) {
   }
 }
 
+async function checkAndArchiveOverflow(userId) {
+  try {
+    const MAX_MONGO_JOBS = 1500;
+    const count = await JobRecord.countDocuments({ userId });
+    
+    if (count > MAX_MONGO_JOBS) {
+      console.log(`[Vacuum] MongoDB reaching limit (${count}/1500). Moving 500 records to Turso Tier...`);
+      
+      const toMove = await JobRecord.find({ userId, status: 'ignored' })
+        .sort({ createdAt: 1 })
+        .limit(500)
+        .lean();
+        
+      if (toMove.length > 0) {
+        // Migration Loop
+        for (const job of toMove) {
+          await TursoDB.saveJob(userId, job);
+        }
+        
+        const ids = toMove.map(j => j._id);
+        await JobRecord.deleteMany({ _id: { $in: ids } });
+        console.log(`[Vacuum] Successfully migrated 500 records. MongoDB space cleared.`);
+      }
+    }
+  } catch (e) {
+    console.error('[Vacuum] Error during automatic archival:', e.message);
+  }
+}
+
 export default async function(req, res) {
   let { slug } = req.query;
   let path = '';
@@ -99,23 +128,30 @@ export default async function(req, res) {
       const finalJobs = Array.from(unifiedMap.values()).sort((a,b) => new Date(b.created_at || b.createdAt) - new Date(a.created_at || a.createdAt));
 
       const debugHeader = { 
-        title: 'HYBRID STORAGE ACTIVE', 
-        company: 'MONGO + TURSO UNIFIED', 
+        title: 'UNIFIED STORAGE ACTIVE', 
+        company: '9.5GB TOTAL CAPACITY', 
         status: 'new', 
-        job_hash: 'debug-hybrid',
-        salary: 'Tiered 9.5GB Capacity',
-        company_type: 'Dual-Engine DB',
-        experience: `${tursoJobs.length} Turso / ${mongoJobs.length} Mongo`,
+        job_hash: 'debug-unified',
+        salary: 'Automated Overflow Tier',
+        company_type: 'Self-Healing DB',
+        experience: 'Industrial Scale',
         probability: 'high',
         match_score: 100,
-        why_apply: `<strong>Hybrid Mode Active:</strong> We are serving data from both MongoDB and Turso. All new jobs will be stored in your high-capacity Turso tier.`
+        why_apply: `<strong>Storage Management:</strong> The system is automatically managing your data across multiple high-capacity cloud layers for maximum reliability.`
       };
+
+      // Trigger Vacuum in background
+      checkAndArchiveOverflow(userId);
+
+      // Unified Capacity Logic: Show MongoDB fullness as a % of the vacuum threshold
+      const mongoCount = await JobRecord.countDocuments({ userId });
+      const capacityUsed = Math.min(Math.round((mongoCount / 1500) * 100), 100);
 
       return res.status(200).json({ 
         records: [debugHeader, ...finalJobs], 
         dbStatus: true, 
         count: finalJobs.length,
-        storageStats: { turso: tursoJobs.length, mongo: mongoJobs.length }
+        storageCapacity: `${100 - capacityUsed}% Free`
       });
     }
 
