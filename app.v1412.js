@@ -456,6 +456,10 @@ async function loadUserProfile() {
       }
       if (data.profile.bookmarks) {
         userBookmarks = data.profile.bookmarks;
+        console.log('â­ [BOOKMARKS] Total Loaded:', userBookmarks.length);
+        if (userBookmarks.length > 0) {
+          console.table(userBookmarks.map(b => ({ Question: b.q, Topic: b.topic })));
+        }
         renderBookmarkButtons();
         const countEl = document.getElementById('bookmarkCount');
         if (countEl) countEl.textContent = userBookmarks.length;
@@ -3245,9 +3249,13 @@ function renderBookmarkButtons() {
 }
 
 function showBookmarks() {
+  console.log('ðŸ“– [UI] Rendering Bookmarks Page. Current Count:', userBookmarks.length);
   showPage('bookmarks_page');
   const container = document.getElementById('bookmarksContent');
-  if (!container) return;
+  if (!container) {
+    console.error('â Œ [UI] #bookmarksContent element missing!');
+    return;
+  }
   
   if (userBookmarks.length === 0) {
     container.innerHTML = `
