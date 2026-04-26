@@ -166,7 +166,7 @@ body {
 }
 
 .search-wrap {
-  padding: 0.7rem 0.8rem;
+  padding: 0.4rem 0.8rem;
   border-bottom: 1px solid var(--border);
   position: sticky;
   top: 84px; /* Sticks immediately below the brand header */
