@@ -117,6 +117,10 @@ export default async function(req, res) {
       let tursoProfile = await TursoDB.getProfile(userId);
       let mongoProfile = await UserProfile.findOne({ userId }).lean();
       
+      console.log(`[DEBUG] Hybrid Fetch for ${userId}:`);
+      console.log(` - Turso Profile: ${tursoProfile ? 'FOUND' : 'NOT FOUND'} (Bookmarks: ${tursoProfile?.bookmarks?.length || 0})`);
+      console.log(` - Mongo Profile: ${mongoProfile ? 'FOUND' : 'NOT FOUND'} (Bookmarks: ${mongoProfile?.bookmarks?.length || 0})`);
+
       // Smart Merge: Use Turso as base, but fallback to Mongo for empty fields
       let profile = tursoProfile || mongoProfile;
       let source = tursoProfile ? 'Turso (Primary)' : 'MongoDB (Legacy)';
@@ -143,7 +147,7 @@ export default async function(req, res) {
           completedTasks: mergeUnique(tursoProfile.completedTasks, mongoProfile.completedTasks)
         };
         source = 'Unified Hybrid (Turso + Mongo)';
-        console.log(`[PROFILE] Unified Merge for ${userId}: ${profile.bookmarks?.length} total bookmarks`);
+        console.log(`[DEBUG] Unified Final Bookmarks: ${profile.bookmarks?.length}`);
       }
 
       console.log(`[PROFILE] Fetch for ${userId} -> Source: ${source}, Found: ${!!profile}`);
