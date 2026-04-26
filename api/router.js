@@ -122,12 +122,18 @@ export default async function(req, res) {
       let source = tursoProfile ? 'Turso (Primary)' : 'MongoDB (Legacy)';
 
       if (tursoProfile && mongoProfile) {
-        // If Turso exists but is "New" (no skills), pull from Mongo
-        if ((!tursoProfile.skills || tursoProfile.skills.length === 0) && mongoProfile.skills?.length > 0) {
-          console.log(`[PROFILE] Smart Merging: Borrowing skills from Legacy Mongo for ${userId}`);
-          profile = { ...mongoProfile, ...tursoProfile, skills: mongoProfile.skills, certifications: mongoProfile.certifications };
-          source = 'Hybrid (Turso + Mongo Legacy)';
-        }
+        // Deep Merge Arrays: Skills, Bookmarks, and Tasks
+        const mergeArrays = (arr1, arr2) => Array.from(new Set([...(arr1 || []), ...(arr2 || [])]));
+        
+        profile = { 
+          ...mongoProfile, 
+          ...tursoProfile, 
+          skills: mergeArrays(tursoProfile.skills, mongoProfile.skills),
+          certifications: mergeArrays(tursoProfile.certifications, mongoProfile.certifications),
+          bookmarks: mergeArrays(tursoProfile.bookmarks, mongoProfile.bookmarks),
+          completedTasks: mergeArrays(tursoProfile.completedTasks, mongoProfile.completedTasks)
+        };
+        source = 'Unified Hybrid (Turso + Mongo)';
       }
 
       console.log(`[PROFILE] Fetch for ${userId} -> Source: ${source}, Found: ${!!profile}`);
