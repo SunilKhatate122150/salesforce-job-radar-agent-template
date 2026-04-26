@@ -122,10 +122,12 @@ export default async function(req, res) {
       let source = tursoProfile ? 'Turso (Primary)' : 'MongoDB (Legacy)';
 
       if (tursoProfile && mongoProfile) {
-        // Smart Merge Arrays: Deduplicate by content, not just reference
+        // Smart Merge Arrays: Deduplicate by content
         const mergeUnique = (arr1, arr2, key) => {
           const map = new Map();
-          [...(arr1 || []), ...(arr2 || [])].forEach(item => {
+          // Process Mongo first, then Turso (Turso overwrites if duplicate)
+          [...(arr2 || []), ...(arr1 || [])].forEach(item => {
+            if (!item) return;
             const id = key ? (typeof item === 'object' ? item[key] : item) : item;
             if (id) map.set(id, item);
           });
@@ -141,6 +143,7 @@ export default async function(req, res) {
           completedTasks: mergeUnique(tursoProfile.completedTasks, mongoProfile.completedTasks)
         };
         source = 'Unified Hybrid (Turso + Mongo)';
+        console.log(`[PROFILE] Unified Merge for ${userId}: ${profile.bookmarks?.length} total bookmarks`);
       }
 
       console.log(`[PROFILE] Fetch for ${userId} -> Source: ${source}, Found: ${!!profile}`);
