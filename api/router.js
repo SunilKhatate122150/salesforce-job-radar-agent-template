@@ -183,31 +183,42 @@ export default async function(req, res) {
     }
 
     if (path === 'study/tasks') {
-      const profile = await TursoDB.getProfile(userId);
-      console.log(`[TASKS] Loading completed count: ${profile?.completedTasks?.length || 0}`);
-      return res.status(200).json({ completedTasks: profile?.completedTasks || [] });
+      const tursoProfile = await TursoDB.getProfile(userId);
+      const mongoProfile = await UserProfile.findOne({ userId }).lean();
+      const combinedTasks = Array.from(new Set([
+        ...(tursoProfile?.completedTasks || []),
+        ...(mongoProfile?.completedTasks || [])
+      ]));
+      console.log(`[TASKS] Hybrid Loading: ${combinedTasks.length} total completed tasks`);
+      return res.status(200).json({ completedTasks: combinedTasks });
     }
 
     if (path === 'study/toggle-task' && req.method === 'POST') {
       const { taskId, completed } = req.body;
       const tasks = await TursoDB.toggleTask(userId, taskId, completed);
-      console.log(`[TASKS] Toggled ${taskId} -> ${completed}. New total: ${tasks.length}`);
       return res.status(200).json({ success: true, completedTasks: tasks });
     }
 
-    // 5. SUMMARY ENDPOINTS
+    // 5. SUMMARY ENDPOINTS (Hybrid History)
     if (path === 'summary/daily' || path === 'summary/all') {
-      const sessions = await TursoDB.getFullHistory(userId);
-      console.log(`[SUMMARY] Analyzing ${sessions.length} sessions for history`);
+      const tursoSessions = await TursoDB.getFullHistory(userId);
+      const mongoSessions = await StudySession.find({ userId }).sort({ startTime: -1 }).limit(1000).lean();
+      
+      const allSessions = [...tursoSessions, ...mongoSessions];
+      console.log(`[SUMMARY] Hybrid Analyzing ${allSessions.length} total sessions`);
+      
       const historyObj = {};
-      sessions.forEach(s => {
-        const d = s.date;
+      allSessions.forEach(s => {
+        const d = s.date || new Date(s.startTime).toISOString().split('T')[0];
         if (!historyObj[d]) historyObj[d] = { date: d, study: { totalSeconds: 0, topicList: [], sessionsCount: 0 }, jobs: { newCount: 0, topMatches: [] } };
         historyObj[d].study.totalSeconds += (s.duration || 0);
         historyObj[d].study.sessionsCount++;
       });
+      
       const todayStr = new Date().toISOString().split('T')[0];
       if (path === 'summary/daily') return res.status(200).json(historyObj[todayStr] || { date: todayStr, study: { totalSeconds: 0 }, jobs: { newCount: 0 } });
+      return res.status(200).json(historyObj);
+    }
       return res.status(200).json(historyObj);
     }
 
