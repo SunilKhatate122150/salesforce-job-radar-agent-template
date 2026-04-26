@@ -134,7 +134,7 @@ body {
   border-bottom: 1px solid var(--border);
   position: sticky;
   top: 0;
-  z-index: 100;
+  z-index: 101;
   background: var(--surface);
 }
 
@@ -165,10 +165,10 @@ body {
   padding: 0.7rem 0.8rem;
   border-bottom: 1px solid var(--border);
   position: sticky;
-  top: 98px; /* Sticks below the header */
+  top: 104px; /* Sticks below the header after items above it scroll past */
   z-index: 99;
   background: var(--surface);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
 }
 
 #searchInput {

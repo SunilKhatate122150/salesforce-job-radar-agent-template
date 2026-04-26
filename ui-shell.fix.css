@@ -340,9 +340,9 @@ code,
 @media (max-width: 768px) {
   #sidebar .search-wrap {
     position: sticky !important;
-    top: 98px !important; /* Adjusted to stick below the mobile sidebar brand header */
+    top: 104px !important; /* Adjusted to sit below the brand header without overlap */
     background: var(--surface) !important;
-    z-index: 10 !important;
+    z-index: 99 !important;
   }
   #sidebar .sidebar-header {
     position: sticky !important;
