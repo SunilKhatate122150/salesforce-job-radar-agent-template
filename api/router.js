@@ -85,9 +85,6 @@ export default async function(req, res) {
       try { req.body = JSON.parse(req.body); } catch(e) { console.error('Body parse fail:', e); }
     }
 
-    // ... rest of the logic ...
-
-  try {
     // 1. AUTH ENDPOINTS
     if (path === 'auth/google' && req.method === 'POST') {
       try {
