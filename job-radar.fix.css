@@ -24,7 +24,7 @@
   background: var(--jr-bg);
   color: var(--jr-text);
   font-family: 'Outfit', 'Plus Jakarta Sans', sans-serif;
-  min-height: calc(100vh - var(--header-h, 58px));
+  min-height: calc(100vh - var(--header-h, 48px));
   padding: 0 !important;
   overflow: hidden;
 }
@@ -48,7 +48,7 @@
   gap: 16px !important;
   padding: 0 20px !important;
   position: sticky !important;
-  top: 0 !important;
+  top: var(--header-h, 48px) !important;
   z-index: 30 !important;
   overflow: hidden;
 }
@@ -184,7 +184,7 @@
   gap: 20px !important;
   padding: 0 20px !important;
   position: sticky !important;
-  top: var(--jr-header-h) !important;
+  top: calc(var(--header-h, 48px) + var(--jr-header-h)) !important;
   z-index: 29 !important;
   overflow-x: auto;
   overflow-y: hidden;
@@ -356,7 +356,7 @@
   flex-wrap: nowrap !important;
   padding: 7px 20px !important;
   position: sticky !important;
-  top: calc(var(--jr-header-h) + var(--jr-analytics-h) + 38px) !important;
+  top: calc(var(--header-h, 48px) + var(--jr-header-h) + var(--jr-analytics-h) + 38px) !important;
   z-index: 28 !important;
 }
 
