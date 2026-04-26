@@ -25,7 +25,9 @@ let sessionFeedbackProvided = new Set();
 let pipelineJobs = JSON.parse(localStorage.getItem('sfpipe2026v3')) || [];
 let activityLog = JSON.parse(localStorage.getItem('sfActivityLog')) || [];
 let currentBoardFilter = 'all';
+let currentBoardSearch = '';
 let currentRadarSubTab = 'pipeline';
+let currentPrepCompany = 'Cognizant';
 
 const PREP_REGISTRY = {
   "Cognizant": {
@@ -1794,20 +1796,137 @@ async function resetTracker() {
 // =============================================
 function updateJobRadarSummary() {
   try {
-    const jobs = window.allJobRecords || [];
+    const dbJobs = window.allJobRecords || [];
+    const submittedCount = pipelineJobs.filter(job => job.status !== 'todo').length;
     const elDedupe = document.getElementById('dedupeCount');
     const elTracked = document.getElementById('trackedCount');
     const elApplied = document.getElementById('appliedCount');
 
-    if (elDedupe) elDedupe.textContent = jobs.length;
-    if (elTracked) elTracked.textContent = jobs.length;
-    if (elApplied) elApplied.textContent = jobs.filter(j => j.status === 'applied').length;
+    if (elDedupe) elDedupe.textContent = String(dbJobs.length);
+    if (elTracked) elTracked.textContent = String(pipelineJobs.length);
+    if (elApplied) elApplied.textContent = String(submittedCount);
   } catch (e) {
     console.error('Failed to update job summary', e);
   }
 }
 
 window.allJobRecords = [];
+
+function escapeHtml(value) {
+  return String(value ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+function encodeInlineArg(value) {
+  return encodeURIComponent(String(value ?? ''));
+}
+
+function safeUrl(value) {
+  if (!value) return '#';
+  try {
+    const parsed = new URL(value, window.location.origin);
+    if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') return '#';
+    return parsed.href;
+  } catch (e) {
+    return '#';
+  }
+}
+
+function normalizeProbability(probability, score) {
+  const value = String(probability || '').toLowerCase();
+  if (value === 'high' || value === 'medium' || value === 'stretch') return value;
+  if (score >= 85) return 'high';
+  if (score >= 70) return 'medium';
+  return 'stretch';
+}
+
+function mapRecordStatusToBoardStatus(status) {
+  const normalized = String(status || '').toLowerCase();
+  if (normalized === 'applied') return 'applied';
+  if (normalized === 'ignored' || normalized === 'rejected') return 'rejected';
+  if (normalized === 'interview' || normalized === 'offer' || normalized === 'todo') return normalized;
+  return 'todo';
+}
+
+function buildPipelineJobFromRecord(record, existingJob) {
+  const existing = existingJob || {};
+  const score = Number(record.match_score || existing.score || 75);
+  const mappedStatus = existing.status || mapRecordStatusToBoardStatus(record.status);
+  const jobHash = record.job_hash || existing.job_hash || btoa([
+    record.company || existing.company || '',
+    record.role || record.title || existing.role || '',
+    record.location || existing.loc || ''
+  ].join('|'));
+
+  return {
+    ...existing,
+    id: existing.id || record.id || ('job_' + Math.random().toString(36).slice(2, 11)),
+    job_hash: jobHash,
+    company: record.company || existing.company || 'Confidential',
+    role: record.role || record.title || existing.role || 'Salesforce Role',
+    loc: record.location || existing.loc || 'India',
+    sal: record.salary || existing.sal || 'Competitive',
+    experience: record.experience || existing.experience || '3-5 Yrs',
+    company_type: record.company_type || existing.company_type || 'MNC',
+    why_apply: record.why_apply || existing.why_apply || 'Matches your current Salesforce profile and target path.',
+    skills: Array.isArray(record.matched_skills) && record.matched_skills.length
+      ? record.matched_skills
+      : (existing.skills || ['Apex', 'LWC']),
+    matched_skills: Array.isArray(record.matched_skills) ? record.matched_skills : (existing.matched_skills || []),
+    missing_skills: Array.isArray(record.missing_skills) ? record.missing_skills : (existing.missing_skills || []),
+    resume_actions: Array.isArray(record.resume_actions) ? record.resume_actions : (existing.resume_actions || []),
+    score,
+    prob: normalizeProbability(record.probability, score),
+    status: mappedStatus,
+    url: safeUrl(record.apply_link || record.url || existing.url || '#'),
+    created_at: record.created_at || existing.created_at || new Date().toISOString(),
+    match_level: record.match_level || existing.match_level || '',
+    dateApplied: existing.dateApplied || (mappedStatus === 'applied' ? new Date().toISOString() : ''),
+    outreach: existing.outreach || null,
+    icon: existing.icon || record.icon || 'SF'
+  };
+}
+
+function getBoardSearchTerm() {
+  return currentBoardSearch.trim().toLowerCase();
+}
+
+function jobMatchesBoardSearch(job, term) {
+  if (!term) return true;
+  const haystack = [
+    job.company,
+    job.role,
+    job.loc,
+    job.company_type,
+    job.why_apply,
+    ...(job.skills || []),
+    ...(job.missing_skills || [])
+  ].join(' ').toLowerCase();
+  return haystack.includes(term);
+}
+
+function getProbabilityMeta(probability) {
+  if (probability === 'high') return { label: 'High fit', cls: 'high' };
+  if (probability === 'stretch') return { label: 'Stretch', cls: 'stretch' };
+  return { label: 'Medium fit', cls: 'medium' };
+}
+
+function sortBoardJobs(a, b) {
+  const followA = getFollowUpStatus(a);
+  const followB = getFollowUpStatus(b);
+  const followWeight = { ghost: 3, urgent: 2, warn: 1 };
+  const followDelta = (followWeight[followB?.class] || 0) - (followWeight[followA?.class] || 0);
+  if (followDelta !== 0) return followDelta;
+
+  const scoreDelta = Number(b.score || 0) - Number(a.score || 0);
+  if (scoreDelta !== 0) return scoreDelta;
+
+  return new Date(b.created_at || 0) - new Date(a.created_at || 0);
+}
 
 async function fetchJobsList() {
   console.log('ðŸ“¡ [RADAR] Fetching jobs from database...');
@@ -1818,57 +1937,74 @@ async function fetchJobsList() {
     console.log('ðŸ“¦ [RADAR] Raw Server Response:', data);
     window.allJobRecords = data.records || [];
     console.log(`âœ… [RADAR] Received ${window.allJobRecords.length} jobs. DB Status: ${data.dbStatus}`);
-    
-    // Phase 2: Sync with Radar Pipeline (with Duplicate Protection)
+
+    let addedCount = 0;
+    let updatedCount = 0;
+
     window.allJobRecords.forEach(rec => {
-      const jobHash = rec.job_hash || btoa(rec.company + rec.role + rec.location);
-      const isDuplicate = pipelineJobs.some(j => j.id === rec.id || j.job_hash === jobHash || (j.company === rec.company && j.role === rec.role));
-      
-      if (!isDuplicate) {
-        pipelineJobs.push({
-          id: rec.id || 'job_' + Math.random().toString(36).substr(2, 9),
-          job_hash: jobHash,
-          company: rec.company || 'Confidential',
-          role: rec.role || rec.title,
-          loc: rec.location || 'India',
-          sal: rec.salary || 'Competitive',
-          experience: rec.experience || '3â€“5 Yrs',
-          company_type: rec.company_type || 'MNC',
-          why_apply: rec.why_apply || 'Matches your PD2 profile.',
-          skills: rec.matched_skills || ['Apex', 'LWC'],
-          score: rec.match_score || 75,
-          prob: rec.probability || 'medium',
-          status: rec.status || 'todo',
-          url: rec.apply_link || rec.url || '#',
-          created_at: rec.created_at || new Date().toISOString()
-        });
+      const fallbackHash = rec.job_hash || btoa([
+        rec.company || '',
+        rec.role || rec.title || '',
+        rec.location || ''
+      ].join('|'));
+
+      const existingIndex = pipelineJobs.findIndex(job =>
+        job.id === rec.id ||
+        job.job_hash === fallbackHash ||
+        (job.company === rec.company && job.role === (rec.role || rec.title))
+      );
+
+      if (existingIndex >= 0) {
+        pipelineJobs[existingIndex] = buildPipelineJobFromRecord(rec, pipelineJobs[existingIndex]);
+        updatedCount += 1;
+      } else {
+        pipelineJobs.unshift(buildPipelineJobFromRecord(rec));
+        addedCount += 1;
       }
     });
+
     savePipeline();
     renderBoard();
     updateJobRadarSummary();
+    fetchJobAnalytics();
+    renderLog();
+    switchRadarSubTab(currentRadarSubTab);
 
-    // Update DB Badge
     const dbBadge = document.getElementById('dbStatusBadge');
     if (dbBadge) {
-      dbBadge.textContent = 'DATABASE CONNECTED';
-      dbBadge.style.background = 'rgba(16,185,129,0.1)';
-      dbBadge.style.color = 'var(--green)';
+      dbBadge.textContent = data.dbStatus ? 'Database Connected' : 'Cache Mode';
+      dbBadge.style.background = data.dbStatus ? 'rgba(16,185,129,0.1)' : 'rgba(245,158,11,0.12)';
+      dbBadge.style.color = data.dbStatus ? 'var(--green)' : 'var(--amber)';
+    }
+
+    if (addedCount > 0) {
+      logActivity(`Synced ${addedCount} new jobs into the board and refreshed ${updatedCount} existing cards.`, 'success');
     }
   } catch (e) {
     console.error('âŒ [RADAR] Error fetching jobs:', e);
-    showToast('Failed to load jobs from database.');
+    const dbBadge = document.getElementById('dbStatusBadge');
+    if (dbBadge) {
+      dbBadge.textContent = 'Sync Failed';
+      dbBadge.style.background = 'rgba(239,68,68,0.12)';
+      dbBadge.style.color = 'var(--red)';
+    }
+    showToast('Failed to load jobs from the database.');
   }
 }
 
 function clearAndSyncJobs() {
-    console.log('ðŸ§¹ PERFORMING DEEP WIPE...');
-    localStorage.clear(); // Wipe EVERYTHING to be safe
+    console.log('ðŸ§¹ Resetting Job Radar cache only...');
+    localStorage.removeItem('sfpipe2026v3');
+    localStorage.removeItem('sfActivityLog');
     pipelineJobs = [];
-    showToast('âœ¨ System Wiped. Reloading for fresh sync...');
+    activityLog = [];
+    currentBoardSearch = '';
+    currentBoardFilter = 'all';
+    radarBoardLimits = { todo: 10, applied: 10, interview: 10, offer: 10, rejected: 10 };
+    showToast('Job Radar cache cleared. Rebuilding from the latest scan...');
     setTimeout(() => {
-        window.location.reload(true); // Force reload from server
-    }, 1500);
+        window.location.reload();
+    }, 1200);
 }
 
 async function fetchJobAnalytics() {
@@ -1899,36 +2035,11 @@ async function fetchJobAnalytics() {
 }
 
 async function fetchJobs() {
-  const container = document.getElementById('jobsListContainer');
-  if (!container) return;
-  
-  try {
-    const res = await apiFetch('/api/jobs');
-    const data = await res.json();
-    window.allJobRecords = data.records || [];
-    filterJobsList(); // Render with current filters
-  } catch (e) {
-    console.error('Failed to fetch jobs', e);
-  }
+  return fetchJobsList();
 }
 
 function filterJobsList() {
-  const minScore = parseInt(document.getElementById('matchFilter')?.value || '0');
-  const priority = document.getElementById('priorityFilter')?.value || 'all';
-  
-  let filtered = (window.allJobRecords || []);
-  
-  // Apply Match Score filter
-  filtered = filtered.filter(j => (j.match_score || 0) >= minScore);
-  
-  // Apply Priority filter
-  if (priority === 'high') {
-    filtered = filtered.filter(j => (j.match_score || 0) >= 75);
-  } else if (priority === 'must') {
-    filtered = filtered.filter(j => j.match_level === 'high' || (j.match_score || 0) >= 85);
-  }
-  
-  renderJobsList(filtered);
+  renderBoard();
 }
 
 function renderJobsList(jobs) {
@@ -1941,83 +2052,62 @@ function renderJobsList(jobs) {
   }
   
   container.innerHTML = jobs.map(job => `
-    <div class="job-card" style="background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); padding: 1.2rem; border-radius: 12px; margin-bottom: 1rem;">
+    <div class="job-card">
       <div class="job-info">
-        <div class="job-title" style="font-size: 1.1rem; font-weight: 700; color: var(--text);">${job.title}</div>
-        <div class="job-company" style="font-size: 0.85rem; color: var(--muted); margin-top: 0.2rem;">${job.company} Â· ${job.location}</div>
-        <div style="margin-top:0.8rem; display:flex; gap: 10px; align-items:center;">
-          <span class="job-status-badge job-status-${job.status}">${job.status}</span>
-          <span style="font-size:0.75rem; font-weight: 700; color: ${job.match_score > 70 ? 'var(--green)' : 'var(--blue)'};">Match: ${job.match_score || 0}%</span>
-        </div>
+        <div class="job-title">${escapeHtml(job.title || job.role || 'Salesforce role')}</div>
+        <div class="job-company">${escapeHtml(job.company || 'Confidential')} · ${escapeHtml(job.location || job.loc || 'India')}</div>
       </div>
-      
-      ${job.resume_actions && job.resume_actions.length > 0 ? `
-      <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid rgba(255,255,255,0.05);">
-        <div style="font-size: 0.65rem; color: var(--blue); font-weight: 700; margin-bottom: 0.5rem; letter-spacing: 1px; font-family: 'IBM Plex Mono', monospace;">ðŸ§  GEMMA 4 AI ANALYSIS</div>
-        <ul style="margin: 0; padding-left: 1.2rem; font-size: 0.8rem; color: rgba(255,255,255,0.8);">
-          ${job.resume_actions.map(action => `<li style="margin-bottom: 0.3rem;">${action}</li>`).join('')}
-        </ul>
+      <div class="job-actions">
+        <a class="btn-action" href="${safeUrl(job.apply_link || job.url)}" target="_blank" rel="noopener noreferrer">Open</a>
       </div>
-      ` : ''}
-
-      ${(job.matched_skills && job.matched_skills.length > 0) || (job.missing_skills && job.missing_skills.length > 0) ? `
-      <div style="margin-top: 1rem; display:flex; flex-direction:column; gap:8px;">
-        ${job.matched_skills && job.matched_skills.length > 0 ? `
-          <div style="display:flex; flex-wrap:wrap; gap:5px;">
-            <span style="font-size:0.65rem; color:var(--green); font-weight:700; width:100%; margin-bottom:2px;">STRENGTHS MATCHED:</span>
-            ${job.matched_skills.map(s => `<span style="font-size:0.62rem; padding:2px 8px; background:rgba(34,197,94,0.1); border:1px solid rgba(34,197,94,0.2); border-radius:4px; color:#4ade80;">âœ“ ${s}</span>`).join('')}
-          </div>
-        ` : ''}
-        ${job.missing_skills && job.missing_skills.length > 0 ? `
-          <div style="display:flex; flex-wrap:wrap; gap:5px;">
-            <span style="font-size:0.65rem; color:var(--amber); font-weight:700; width:100%; margin-bottom:2px;">GAPS TO STUDY:</span>
-            ${job.missing_skills.map(s => `<span style="font-size:0.62rem; padding:2px 8px; background:rgba(245,158,11,0.1); border:1px solid rgba(245,158,11,0.2); border-radius:4px; color:#fbbf24; cursor:pointer;" onclick="showPage('profile_match')">â†— ${s}</span>`).join('')}
-          </div>
-        ` : ''}
-      </div>
-      ` : ''}
-
-      <div class="job-actions" style="margin-top: 1.2rem; display:flex; flex-wrap:wrap; gap: 10px;">
-        <button class="btn-action" onclick="window.open('${job.apply_link || job.url}', '_blank')" style="background: var(--blue); border: none; padding: 8px 16px; border-radius: 8px; color: white; cursor: pointer; font-weight: 600; font-size: 0.8rem;">Apply Now</button>
-        <button class="btn-action" onclick="smartApply('${job.job_hash}')" style="background: linear-gradient(135deg,#8b5cf6,#6d28d9); border: none; padding: 8px 16px; border-radius: 8px; color: white; cursor: pointer; font-weight: 700; font-size: 0.8rem; display:flex; align-items:center; gap:5px;">ðŸš€ Smart Apply</button>
-        <button class="btn-action" onclick="updateJobStatus('${job.job_hash}', 'applied')" style="background: transparent; border: 1px solid var(--blue); padding: 8px 16px; border-radius: 8px; color: var(--blue); cursor: pointer; font-weight: 600; font-size: 0.8rem;">Mark Applied</button>
-        <button class="btn-action" onclick="generateCoverLetter('${job.job_hash}')" style="background: transparent; border: 1px solid var(--green); padding: 8px 16px; border-radius: 8px; color: var(--green); cursor: pointer; font-weight: 600; font-size: 0.8rem; display:flex; align-items:center; gap:5px;"><span id="cl_icon_${job.job_hash}">âœ¨</span> Auto Cover Letter</button>
-      </div>
-      <div id="cl_output_${job.job_hash}" style="display:none; margin-top:1rem; padding:1rem; background:rgba(0,0,0,0.2); border-left:3px solid var(--green); border-radius:8px; font-size:0.8rem; color:var(--text); white-space:pre-wrap; line-height:1.5;"></div>
     </div>
   `).join('');
 }
 
 async function triggerJobScan() {
   const btn = document.getElementById('btnScanJobs');
-  const radarIcon = document.getElementById('scanIcon');
-  
-  if (btn) btn.disabled = true;
-  if (radarIcon) radarIcon.style.display = 'inline-block';
-  if (radarIcon) radarIcon.style.animation = 'spin 2s linear infinite';
-  
-  showToast('ðŸ“¡ Scan Started: Fetching latest Salesforce roles...');
+  const statusText = document.getElementById('scanStatusText');
+  const originalHtml = btn ? (btn.dataset.originalHtml || btn.innerHTML) : '';
+
+  if (btn) {
+    btn.dataset.originalHtml = originalHtml;
+    btn.disabled = true;
+    btn.style.opacity = '0.7';
+    btn.innerHTML = 'SCANNING JOB SOURCES...';
+  }
+  if (statusText) statusText.textContent = 'Running fresh job scan and profile match analysis...';
+
+  showToast('Scan started. Fetching the latest Salesforce roles.');
 
   try {
     const res = await apiFetch('/api/jobs/scan', { method: 'POST' });
     const data = await res.json();
     
     if (data.success) {
-      showToast('â³ AI Agent Analyzing matches... Please wait.');
+      if (statusText) statusText.textContent = 'Scan started. Waiting for the background agent to finish...';
+      showToast('AI agent is analyzing job matches now.');
       setTimeout(async () => {
         await fetchJobsList(); 
-        showToast('âœ… Dashboard Synced! Check the board.');
-        if (btn) btn.disabled = false;
-        if (radarIcon) radarIcon.style.animation = '';
+        showToast('Dashboard synced with the latest job scan.');
+        if (statusText) statusText.textContent = 'Last sync completed successfully.';
+        if (btn) {
+          btn.disabled = false;
+          btn.style.opacity = '1';
+          btn.innerHTML = btn.dataset.originalHtml || originalHtml;
+        }
       }, 5000); 
     } else {
       throw new Error(data.error || 'Scan failed');
     }
   } catch (e) {
     console.error('Scan Error:', e);
-    showToast('âŒ Scan Failed: Local agent might be offline.');
-    if (btn) btn.disabled = false;
-    if (radarIcon) radarIcon.style.animation = '';
+    showToast('Scan failed. The local job agent may be offline.');
+    if (statusText) statusText.textContent = 'Scan failed. Check local agent health and try again.';
+    if (btn) {
+      btn.disabled = false;
+      btn.style.opacity = '1';
+      btn.innerHTML = btn.dataset.originalHtml || originalHtml;
+    }
   }
 }
 
@@ -2080,19 +2170,53 @@ Do not include placeholders like [Your Name] or [Date], just write the core body
 
 
 async function updateJobStatus(hash, status) {
-  try {
-    const response = await apiFetch(`/api/jobs/status`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ hash, status })
-    });
-    if (response.ok) {
-      fetchJobsList();
-      updateJobRadarSummary();
-    }
-  } catch (e) {
-    console.error('Failed to update status', e);
+  const boardStatus = mapRecordStatusToBoardStatus(status);
+  const target = pipelineJobs.find(job => job.job_hash === hash);
+  if (!target) return;
+  moveTo(target.id, boardStatus);
+}
+
+function getActionSetForJob(job) {
+  if (job.status === 'todo') {
+    return [
+      { label: 'Open Job', cls: 'primary', href: safeUrl(job.url) },
+      { label: 'Mark Applied', cls: 'success', onClick: `moveTo(decodeURIComponent('${encodeInlineArg(job.id)}'), 'applied')` },
+      { label: 'Prep', cls: 'secondary', onClick: `openPrepPanel(decodeURIComponent('${encodeInlineArg(job.company)}'))` },
+      { label: 'Coach', cls: 'secondary', onClick: `openCoach(decodeURIComponent('${encodeInlineArg(job.id)}'))` }
+    ];
   }
+
+  if (job.status === 'applied') {
+    return [
+      { label: 'Open Job', cls: 'primary', href: safeUrl(job.url) },
+      { label: 'Interview', cls: 'success', onClick: `moveTo(decodeURIComponent('${encodeInlineArg(job.id)}'), 'interview')` },
+      { label: 'Outreach', cls: 'secondary', onClick: `openOutreach(decodeURIComponent('${encodeInlineArg(job.id)}'))` },
+      { label: 'Email', cls: 'secondary', onClick: `openEmailModal(decodeURIComponent('${encodeInlineArg(job.id)}'))` }
+    ];
+  }
+
+  if (job.status === 'interview') {
+    return [
+      { label: 'Open Job', cls: 'primary', href: safeUrl(job.url) },
+      { label: 'Offer', cls: 'success', onClick: `moveTo(decodeURIComponent('${encodeInlineArg(job.id)}'), 'offer')` },
+      { label: 'Reject', cls: 'danger', onClick: `moveTo(decodeURIComponent('${encodeInlineArg(job.id)}'), 'rejected')` },
+      { label: 'Coach', cls: 'secondary', onClick: `openCoach(decodeURIComponent('${encodeInlineArg(job.id)}'))` }
+    ];
+  }
+
+  if (job.status === 'offer') {
+    return [
+      { label: 'Open Job', cls: 'primary', href: safeUrl(job.url) },
+      { label: 'Prep', cls: 'secondary', onClick: `openPrepPanel(decodeURIComponent('${encodeInlineArg(job.company)}'))` },
+      { label: 'Reject', cls: 'danger', onClick: `moveTo(decodeURIComponent('${encodeInlineArg(job.id)}'), 'rejected')` }
+    ];
+  }
+
+  return [
+    { label: 'Open Job', cls: 'primary', href: safeUrl(job.url) },
+    { label: 'Reopen', cls: 'secondary', onClick: `moveTo(decodeURIComponent('${encodeInlineArg(job.id)}'), 'todo')` },
+    { label: 'Prep', cls: 'secondary', onClick: `openPrepPanel(decodeURIComponent('${encodeInlineArg(job.company)}'))` }
+  ];
 }
 
 const SCHEDULE_DATA = [
@@ -3227,6 +3351,7 @@ function renderLog() {
 
 function toggleLog() {
   const panel = document.getElementById('logPanel');
+  renderLog();
   if (panel) panel.classList.toggle('open');
 }
 
@@ -3234,13 +3359,20 @@ let radarBoardLimits = { todo: 10, applied: 10, interview: 10, offer: 10, reject
 
 function renderBoard() {
   const cols = ['todo', 'applied', 'interview', 'offer', 'rejected'];
+  const searchTerm = getBoardSearchTerm();
+
   cols.forEach(col => {
     const list = document.getElementById(`list-${col}`);
     const count = document.getElementById(`count-${col}`);
     const cntHeader = document.getElementById(`cnt-${col}`);
     if (!list) return;
 
-    const filtered = pipelineJobs.filter(j => j.status === col && (currentBoardFilter === 'all' || j.prob === currentBoardFilter));
+    const filtered = pipelineJobs
+      .filter(j => j.status === col)
+      .filter(j => currentBoardFilter === 'all' || j.prob === currentBoardFilter)
+      .filter(j => jobMatchesBoardSearch(j, searchTerm))
+      .sort(sortBoardJobs);
+
     if (count) count.textContent = filtered.length;
     if (cntHeader) cntHeader.textContent = filtered.length;
 
@@ -3248,7 +3380,7 @@ function renderBoard() {
     const displayJobs = filtered.slice(0, limit);
     
     let html = displayJobs.length === 0 ? 
-      `<div style="padding:30px 20px; text-align:center; color:var(--text3); font-size:0.7rem; border:1px dashed var(--border); border-radius:12px; margin:10px 0;">No active roles here.</div>` :
+      `<div class="radar-empty-state">No matching roles in this stage.</div>` :
       displayJobs.map(job => renderJobCard(job)).join('');
       
     if (filtered.length > limit) {
@@ -3284,58 +3416,90 @@ function setBoardFilter(val, btn) {
 }
 
 function doBoardSearch() {
-  const val = document.getElementById("boardSearch").value.toLowerCase();
-  const cards = document.querySelectorAll(".jcard-v3");
-  cards.forEach(card => {
-    const text = card.textContent.toLowerCase();
-    card.style.display = text.includes(val) ? "flex" : "none";
-  });
+  currentBoardSearch = document.getElementById("boardSearch")?.value || '';
+  renderBoard();
 }
 
 function renderJobCard(job) {
   const followUp = getFollowUpStatus(job);
-  const score = job.score || 75;
+  const score = Number(job.score || 75);
   const scoreColor = score >= 85 ? 'var(--green)' : (score >= 70 ? 'var(--blue)' : 'var(--amber)');
-  
-  let badgeHtml = '';
-  if (followUp && job.status === 'applied') {
-    badgeHtml = `<div style="background:${followUp.class==='urgent'?'var(--red-dim)':'var(--amber-dim)'}; color:${followUp.class==='urgent'?'var(--red)':'var(--amber)'}; font-size:8px; font-weight:800; padding:2px 6px; border-radius:4px; margin-bottom:5px; display:inline-block; letter-spacing:.05em;">${followUp.label}</div>`;
-  }
+  const probability = getProbabilityMeta(job.prob || 'medium');
+  const actions = getActionSetForJob(job);
+  const matchedSkills = (job.skills || job.matched_skills || []).slice(0, 4);
+  const gapSkills = (job.missing_skills || []).slice(0, 3);
+  const resumeActions = (job.resume_actions || []).slice(0, 2);
+  const createdAt = job.created_at ? new Date(job.created_at) : null;
+  const createdLabel = createdAt && !Number.isNaN(createdAt.getTime())
+    ? createdAt.toLocaleDateString([], { month: 'short', day: 'numeric' })
+    : 'Recent';
 
   return `
     <div class="jcard-v3" id="card-${job.id}" data-prob="${job.prob || 'medium'}">
-      <div style="display:flex; justify-content:space-between; align-items:flex-start;">
-        <div style="display:flex; gap:10px; align-items:center;">
-           <div style="width:34px; height:34px; background:rgba(255,255,255,0.03); border:1px solid var(--border); border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:1.1rem;">${job.icon || '💼'}</div>
-           <div style="display:flex; flex-direction:column;">
-             <span style="font-size:0.85rem; font-weight:800; color:var(--text); line-height:1.2;">${job.company}</span>
-             <span style="font-size:0.65rem; color:var(--text3); font-weight:500;">${job.company_type || 'MNC'}</span>
+      <div class="jcard-top">
+        <div class="jcard-company-block">
+           <div class="jcard-icon">${escapeHtml(job.icon || 'SF')}</div>
+           <div class="jcard-company-copy">
+             <span class="jcard-company">${escapeHtml(job.company)}</span>
+             <span class="jcard-company-type">${escapeHtml(job.company_type || 'MNC')}</span>
            </div>
         </div>
-        <div class="goal-ring-v3" style="position:relative;">
+        <div class="goal-ring-v3 score-chip" style="position:relative;">
            <svg viewBox="0 0 36 36" style="width:100%; height:100%;">
               <circle class="goal-track" cx="18" cy="18" r="15.9"/>
               <circle class="goal-arc" cx="18" cy="18" r="15.9" style="stroke-dasharray: ${score} 100; stroke: ${scoreColor};"/>
            </svg>
-           <div style="position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); font-family:'JetBrains Mono'; font-size:9px; font-weight:800; color:var(--text);">${score}</div>
+           <div class="score-chip-value">${score}</div>
         </div>
       </div>
 
-      <div style="font-size:0.8rem; font-weight:700; color:var(--text); margin-top:2px; line-height:1.3;">${job.role}</div>
-      ${badgeHtml}
-
-      <div style="display:flex; gap:5px; flex-wrap:wrap; margin-top:2px;">
-        <span style="font-size:9px; background:var(--bg2); border:1px solid var(--border); padding:2px 6px; border-radius:4px; color:var(--text2);">📍 ${job.loc || 'India'}</span>
-        <span style="font-size:9px; background:var(--bg2); border:1px solid var(--border); padding:2px 6px; border-radius:4px; color:var(--text2);">💼 ${job.experience || '3-5 Yrs'}</span>
+      <div class="jcard-stage-row">
+        <span class="prob-badge ${probability.cls}">${probability.label}</span>
+        <span class="jcard-age">Added ${escapeHtml(createdLabel)}</span>
       </div>
 
-      <div style="background:var(--bg2); border:1px solid var(--border); border-radius:7px; padding:7px; font-size:0.7rem; color:var(--text2); line-height:1.4;">
-        ${job.why_apply || 'Matches your profile requirements.'}
+      <div class="jcard-role">${escapeHtml(job.role)}</div>
+
+      ${followUp && job.status === 'applied' ? `
+        <div class="followup-inline ${followUp.class}">${escapeHtml(followUp.label)}</div>
+      ` : ''}
+
+      <div class="jcard-meta-grid">
+        <span class="meta-pill">Location: <b>${escapeHtml(job.loc || 'India')}</b></span>
+        <span class="meta-pill">Experience: <b>${escapeHtml(job.experience || '3-5 Yrs')}</b></span>
+        <span class="meta-pill">Comp: <b>${escapeHtml(job.sal || 'Competitive')}</b></span>
       </div>
 
-      <div style="display:flex; gap:6px; margin-top:auto;">
-        <a href="${job.url || '#'}" target="_blank" style="flex:1; background:var(--surface2); border:1px solid var(--border2); color:var(--text); text-decoration:none; font-size:0.7rem; font-weight:700; padding:6px; border-radius:7px; text-align:center;">View Job</a>
-        <button onclick="openCoach('${job.id}')" style="background:var(--blue-dim); border:1px solid rgba(59,130,246,0.2); color:var(--blue); font-size:0.7rem; font-weight:700; padding:6px 10px; border-radius:7px; cursor:pointer;">Coach</button>
+      ${matchedSkills.length ? `
+        <div class="jcard-skill-row">
+          ${matchedSkills.map(skill => `<span class="skill-tag">${escapeHtml(skill)}</span>`).join('')}
+        </div>
+      ` : ''}
+
+      ${gapSkills.length ? `
+        <div class="jcard-skill-row gaps">
+          ${gapSkills.map(skill => `<span class="skill-gap-tag" onclick="showPage('profile_match')">${escapeHtml(skill)}</span>`).join('')}
+        </div>
+      ` : ''}
+
+      <div class="jcard-why">
+        <strong>Why this role:</strong> ${escapeHtml(job.why_apply || 'Matches your profile requirements.')}
+      </div>
+
+      ${resumeActions.length ? `
+        <div class="jcard-resume">
+          <div class="jcard-resume-title">AI resume actions</div>
+          <ul class="jcard-resume-list">
+            ${resumeActions.map(action => `<li>${escapeHtml(action)}</li>`).join('')}
+          </ul>
+        </div>
+      ` : ''}
+
+      <div class="jcard-actions">
+        ${actions.map(action => action.href
+          ? `<a href="${action.href}" target="_blank" rel="noopener noreferrer" class="jcard-btn ${action.cls}">${escapeHtml(action.label)}</a>`
+          : `<button class="jcard-btn ${action.cls}" onclick="${action.onClick}">${escapeHtml(action.label)}</button>`
+        ).join('')}
       </div>
     </div>
   `;
@@ -3481,7 +3645,7 @@ function renderDevelopment() {
     readinessEl.innerHTML = phases.map(p => `
       <div style="display:flex; align-items:flex-start; gap:12px; margin-bottom:15px;">
         <div style="width:24px; height:24px; border-radius:50%; background:${p.status==='completed'?'var(--green)':p.status==='in-progress'?'var(--blue)':'rgba(255,255,255,0.05)'}; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
-          ${p.status==='completed'?'?':p.status==='in-progress'?'?':'?'}
+          ${p.status==='completed'?'OK':p.status==='in-progress'?'GO':'..'}
         </div>
         <div>
           <div style="font-size:0.8rem; font-weight:700; color:${p.status==='pending'?'var(--muted)':'var(--text)'}">${p.name}</div>
@@ -3496,6 +3660,10 @@ function renderDevelopment() {
 let selectedJobForCoach = null;
 function openCoach(jobId) {
   selectedJobForCoach = pipelineJobs.find(j => j.id === jobId);
+  if (!selectedJobForCoach) {
+    showToast('That card is no longer available in the pipeline.');
+    return;
+  }
   document.getElementById('coachModal').style.display = 'flex';
   const chat = document.getElementById('coachChat');
   chat.innerHTML = `<div style="background: var(--blue); color: white; padding: 12px; border-radius: 12px 12px 12px 0; max-width: 85%; font-size: 0.85rem;">
@@ -3526,6 +3694,10 @@ async function sendToCoach() {
 let selectedJobForOutreach = null;
 function openOutreach(jobId) {
   selectedJobForOutreach = pipelineJobs.find(j => j.id === jobId);
+  if (!selectedJobForOutreach) {
+    showToast('Open outreach from a valid card.');
+    return;
+  }
   document.getElementById('out-name').value = selectedJobForOutreach.outreach?.name || '';
   document.getElementById('out-status').value = selectedJobForOutreach.outreach?.status || 'sent';
   document.getElementById('outreachModal').style.display = 'flex';
@@ -3588,6 +3760,10 @@ let currentEmailType = 'followup';
 
 function openEmailModal(jobId) {
   selectedJobForEmail = pipelineJobs.find(j => j.id === jobId);
+  if (!selectedJobForEmail) {
+    showToast('Open email generation from a valid card.');
+    return;
+  }
   document.getElementById('emailModal').style.display = 'flex';
   document.getElementById('emailBody').textContent = `Ready to compose for ${selectedJobForEmail.company}...`;
 }
@@ -3628,6 +3804,7 @@ function copyGeneratedEmail() {
 }
 
 function openPrepPanel(company) {
+  currentPrepCompany = company || 'Cognizant';
   const prep = PREP_REGISTRY[company] || PREP_REGISTRY["Cognizant"]; 
   const content = document.getElementById('prepContent');
   content.innerHTML = `
@@ -3643,6 +3820,45 @@ function openPrepPanel(company) {
     </div>
   `;
   document.getElementById('prepPanel').style.display = 'flex';
+}
+
+function generateMoreQuestions() {
+  const prep = PREP_REGISTRY[currentPrepCompany] || PREP_REGISTRY["Cognizant"];
+  const content = document.getElementById('prepContent');
+  if (!content) return;
+
+  const existing = document.getElementById('prepExtraQuestions');
+  if (existing) {
+    existing.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    showToast('Extra interview prompts are already loaded below.');
+    return;
+  }
+
+  const extraQuestions = [
+    `How would you tailor your strongest project story for ${currentPrepCompany}?`,
+    `Which trade-off would you call out first if ${currentPrepCompany} asked for faster delivery and lower risk?`,
+    `What architecture guardrails would you put in place before the first production release?`,
+    `How would you explain your testing strategy to a delivery manager in one minute?`,
+    `Which failure scenario would you proactively mention to show seniority in the interview?`,
+    `How would you prioritize technical debt if the implementation timeline shrank by 30 percent?`,
+    `What metrics would you use to prove your solution is healthy after go-live?`,
+    `How would you adapt your mortgage domain examples for this company's business model?`,
+    `Which of your certifications adds the most credibility here, and why?`,
+    `What question should you ask the panel to expose the real complexity of the role?`
+  ];
+
+  content.innerHTML += `
+    <div id="prepExtraQuestions" style="margin-top:20px; border-top:1px solid var(--border); padding-top:18px;">
+      <h4 style="color:var(--amber); font-size:0.9rem; margin-bottom:10px;">Expansion Pack</h4>
+      <ul style="padding-left:20px; font-size:0.8rem; color:rgba(255,255,255,0.82); line-height:1.8;">
+        ${extraQuestions.map(question => `<li>${escapeHtml(question)}</li>`).join('')}
+      </ul>
+      <div style="margin-top:12px; font-size:0.72rem; color:var(--muted);">
+        Focus prompts: ${escapeHtml((prep.tips || []).join(' | '))}
+      </div>
+    </div>
+  `;
+  showToast('Added 10 extra interview prompts for this company.');
 }
 
 function openAddJobModal() {
@@ -3668,9 +3884,10 @@ function submitCustomJob() {
 }
 
 function updateAnalytics() {
-  const appliedCount = pipelineJobs.filter(j => j.status !== 'todo' && j.status !== 'rejected').length;
-  const rate = pipelineJobs.length > 0 ? Math.round((appliedCount / pipelineJobs.length) * 100) : 0;
-  
+  const submittedCount = pipelineJobs.filter(j => ['applied', 'interview', 'offer', 'rejected'].includes(j.status)).length;
+  const responseCount = pipelineJobs.filter(j => ['interview', 'offer', 'rejected'].includes(j.status)).length;
+  const rate = submittedCount > 0 ? Math.round((responseCount / submittedCount) * 100) : 0;
+
   const interviewCount = pipelineJobs.filter(j => j.status === 'interview' || j.status === 'offer').length;
   const offerCount = pipelineJobs.filter(j => j.status === 'offer').length;
   const conv = interviewCount > 0 ? Math.round((offerCount / interviewCount) * 100) : 0;
@@ -3685,7 +3902,7 @@ function updateAnalytics() {
 
   if (elRate) elRate.textContent = rate + '%';
   if (elConv) elConv.textContent = conv + '%';
-  if (elStreak) elStreak.textContent = (studyStreak.current || 0) + 'd';
+  if (elStreak) elStreak.textContent = computeApplyStreak() + 'd';
   if (elFollowup) elFollowup.textContent = pipelineJobs.filter(j => getFollowUpStatus(j)).length;
 
   const startOfWeek = new Date();
@@ -3697,6 +3914,32 @@ function updateAnalytics() {
   const pct = Math.min(Math.round((weeklyCount / 5) * 100), 100);
   if (elGoalArc) elGoalArc.style.strokeDasharray = `${pct} 100`;
   if (elGoalPct) elGoalPct.textContent = pct + '%';
+}
+
+function computeApplyStreak() {
+  const appliedDates = [...new Set(
+    pipelineJobs
+      .filter(job => job.dateApplied)
+      .map(job => {
+        const d = new Date(job.dateApplied);
+        d.setHours(0, 0, 0, 0);
+        return d.getTime();
+      })
+      .filter(Boolean)
+  )].sort((a, b) => b - a);
+
+  if (!appliedDates.length) return 0;
+
+  let streak = 1;
+  let previous = new Date(appliedDates[0]);
+  for (let index = 1; index < appliedDates.length; index += 1) {
+    const next = new Date(appliedDates[index]);
+    const gap = Math.round((previous - next) / 86400000);
+    if (gap !== 1) break;
+    streak += 1;
+    previous = next;
+  }
+  return streak;
 }
 
 function checkOfferComparison() {
@@ -3721,14 +3964,50 @@ function checkOfferComparison() {
 
 function showToast(msg) {
   const t = document.getElementById('toast');
-  t.innerHTML = `ðŸš€ ${msg}`;
+  if (!t) return;
+  t.textContent = String(msg || '');
   t.style.transform = 'translateX(-50%) translateY(0)';
   setTimeout(() => t.style.transform = 'translateX(-50%) translateY(100px)', 3000);
 }
 
 function closeModal(id) { document.getElementById(id).style.display = 'none'; }
-function exportLog() { /* CSV Logic */ }
-function clearLog() { activityLog=[]; savePipeline(); renderLog(); }
+function exportLog() {
+  if (!activityLog.length) {
+    showToast('No activity log entries to export yet.');
+    return;
+  }
+
+  const rows = [
+    ['timestamp', 'type', 'text'],
+    ...activityLog.map(entry => [
+      entry.timestamp,
+      entry.type,
+      String(entry.text || '').replace(/<[^>]+>/g, '')
+    ])
+  ];
+
+  const csv = rows
+    .map(row => row.map(value => `"${String(value).replace(/"/g, '""')}"`).join(','))
+    .join('\n');
+
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = `job-radar-activity-${new Date().toISOString().slice(0, 10)}.csv`;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
+  showToast('Activity log exported.');
+}
+
+function clearLog() {
+  activityLog = [];
+  localStorage.setItem('sfActivityLog', JSON.stringify(activityLog));
+  renderLog();
+  showToast('Activity log cleared.');
+}
 
 // Close sidebar when clicking a nav item or overlay on mobile (v1343)
 document.addEventListener('click', function(e) {

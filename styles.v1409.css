@@ -3685,7 +3685,7 @@ pre.code .num {
 .pdot.offer { background: var(--amber); box-shadow: 0 0 5px var(--amber); }
 .pdot.rejected { background: var(--red); }
 .pinfo { display: flex; flex-direction: column; }
-.pcount { font-family: " JetBrains Mono\, monospace; font-size: .85rem; font-weight: 500; color: var(--text); line-height: 1; }
+.pcount { font-family: 'JetBrains Mono', monospace; font-size: .85rem; font-weight: 500; color: var(--text); line-height: 1; }
 .plbl { font-size: 9px; color: var(--text3); font-weight: 500; text-transform: uppercase; letter-spacing: .06em; }
 .analytics-bar-v3 { height: var(--analytics); background: rgba(13,21,38,.97); border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 20px; padding: 0 20px; position: sticky; top: var(--hdr); z-index: 99; overflow-x: auto; }
 .goal-ring-v3 { width: 36px; height: 36px; }
@@ -3700,3 +3700,919 @@ pre.code .num {
 .jcard-v3[data-prob=\high\]::before { background: linear-gradient(90deg, var(--green), transparent 80%); }
 .jcard-v3[data-prob=\medium\]::before { background: linear-gradient(90deg, var(--amber), transparent 80%); }
 .jcard-v3[data-prob=\stretch\]::before { background: linear-gradient(90deg, var(--violet), transparent 80%); }
+
+/* --- JOB RADAR COMPLETION PATCH --- */
+.radar-brand {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 180px;
+}
+
+.radar-brand-kicker {
+  font-size: 0.62rem;
+  color: var(--text3);
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-family: 'IBM Plex Mono', monospace;
+}
+
+.radar-brand-title {
+  font-size: 1rem;
+  font-weight: 800;
+  font-family: 'Syne', sans-serif;
+  color: var(--text);
+}
+
+.radar-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.radar-quiet-btn {
+  appearance: none;
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.02);
+  color: var(--text2);
+  border-radius: 999px;
+  padding: 8px 12px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  transition: all 0.2s var(--ease);
+}
+
+.radar-quiet-btn:hover {
+  color: var(--text);
+  border-color: var(--border2);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.radar-divider {
+  width: 1px;
+  height: 24px;
+  background: var(--border);
+  flex: 0 0 auto;
+}
+
+.met {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.met-val {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--text);
+  line-height: 1;
+}
+
+.met-lbl {
+  font-size: 0.6rem;
+  color: var(--text3);
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+}
+
+.goal-wrap {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.goal-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.goal-count {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: var(--text);
+  line-height: 1;
+}
+
+.goal-label {
+  font-size: 0.6rem;
+  color: var(--text3);
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+}
+
+.radar-status-stack {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.db-badge,
+.goal-pct {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  padding: 6px 10px;
+  font-size: 0.64rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.db-badge {
+  background: rgba(59, 130, 246, 0.1);
+  border: 1px solid rgba(59, 130, 246, 0.2);
+  color: var(--blue);
+}
+
+.goal-pct {
+  background: rgba(16, 185, 129, 0.1);
+  border: 1px solid rgba(16, 185, 129, 0.18);
+  color: var(--green);
+}
+
+.radar-kpis {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+  padding: 18px 20px 0;
+}
+
+.radar-kpi-card {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0.01)),
+    radial-gradient(circle at top right, rgba(6, 182, 212, 0.12), transparent 55%);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-height: 118px;
+}
+
+.radar-kpi-label {
+  font-size: 0.68rem;
+  color: var(--text3);
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-family: 'IBM Plex Mono', monospace;
+}
+
+.radar-kpi-value {
+  font-family: 'Syne', sans-serif;
+  font-size: 1.8rem;
+  font-weight: 800;
+  color: var(--text);
+  line-height: 1;
+}
+
+.radar-kpi-note {
+  font-size: 0.76rem;
+  line-height: 1.5;
+  color: var(--text2);
+}
+
+.radar-tabs {
+  display: flex;
+  gap: 8px;
+  padding: 18px 20px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.radar-tab-btn {
+  appearance: none;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--text3);
+  padding: 10px 14px;
+  border-radius: 12px 12px 0 0;
+  font-weight: 700;
+  font-size: 0.78rem;
+  cursor: pointer;
+  transition: all 0.2s var(--ease);
+}
+
+.radar-tab-btn:hover {
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.radar-tab-btn.active {
+  color: var(--text);
+  background: rgba(59, 130, 246, 0.08);
+  border-color: rgba(59, 130, 246, 0.18);
+}
+
+.radar-view {
+  min-height: 0;
+}
+
+.filter-bar {
+  min-height: var(--flt);
+  background: var(--bg2);
+  border-bottom: 1px solid var(--border);
+  padding: 12px 20px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.filter-label {
+  font-size: 0.62rem;
+  font-weight: 700;
+  color: var(--text3);
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  margin-right: 4px;
+}
+
+.fb {
+  appearance: none;
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.02);
+  color: var(--text2);
+  border-radius: 999px;
+  padding: 7px 12px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s var(--ease);
+}
+
+.fb:hover,
+.fb.on {
+  color: var(--text);
+  border-color: var(--blue);
+  background: rgba(59, 130, 246, 0.1);
+}
+
+.filter-search {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 260px;
+  padding: 0 12px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.filter-search-icon {
+  font-size: 0.62rem;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--text3);
+  flex: 0 0 auto;
+}
+
+.filter-search input {
+  width: 100%;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: var(--text);
+  font-size: 0.78rem;
+  padding: 10px 0;
+}
+
+.filter-search input::placeholder {
+  color: var(--text3);
+}
+
+.filter-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.radar-inline-btn {
+  appearance: none;
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.02);
+  color: var(--text2);
+  border-radius: 10px;
+  padding: 10px 12px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s var(--ease);
+}
+
+.radar-inline-btn:hover {
+  color: var(--text);
+  border-color: var(--border2);
+}
+
+.radar-inline-btn.primary {
+  color: white;
+  border-color: rgba(59, 130, 246, 0.25);
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.86), rgba(6, 182, 212, 0.86));
+}
+
+.kanban-board-v3 {
+  display: flex;
+  gap: 14px;
+  padding: 18px 20px 24px;
+  min-height: min(72vh, 760px);
+  overflow-x: auto;
+  overflow-y: hidden;
+  align-items: stretch;
+  scroll-snap-type: x proximity;
+}
+
+.kanban-col-v3 {
+  width: 320px;
+  flex-shrink: 0;
+  background:
+    linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01)),
+    radial-gradient(circle at top, rgba(59, 130, 246, 0.08), transparent 62%);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-height: 100%;
+  scroll-snap-align: start;
+}
+
+.kanban-header-v3 {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  font-family: 'Syne', sans-serif;
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.kanban-header-v3.todo {
+  background: rgba(78, 106, 141, 0.12);
+  border: 1px solid rgba(78, 106, 141, 0.18);
+  color: #8ba4c0;
+}
+
+.kanban-header-v3.applied {
+  background: rgba(59, 130, 246, 0.1);
+  border: 1px solid rgba(59, 130, 246, 0.18);
+  color: var(--blue);
+}
+
+.kanban-header-v3.interview {
+  background: rgba(16, 185, 129, 0.1);
+  border: 1px solid rgba(16, 185, 129, 0.18);
+  color: var(--green);
+}
+
+.kanban-header-v3.offer {
+  background: rgba(245, 158, 11, 0.1);
+  border: 1px solid rgba(245, 158, 11, 0.18);
+  color: var(--amber);
+}
+
+.kanban-header-v3.rejected {
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.18);
+  color: var(--red);
+}
+
+.col-count {
+  margin-left: auto;
+  min-width: 28px;
+  text-align: center;
+  background: rgba(7, 12, 24, 0.65);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 999px;
+  padding: 2px 8px;
+  font-size: 0.65rem;
+  color: var(--text2);
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.kanban-body {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 2px;
+}
+
+.kanban-body::-webkit-scrollbar {
+  width: 5px;
+}
+
+.kanban-body::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 999px;
+}
+
+.radar-empty-state {
+  border: 1px dashed var(--border);
+  border-radius: 14px;
+  padding: 28px 16px;
+  text-align: center;
+  font-size: 0.76rem;
+  color: var(--text3);
+  background: rgba(255, 255, 255, 0.01);
+}
+
+.jcard-v3 {
+  position: relative;
+  overflow: hidden;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.035), rgba(255, 255, 255, 0.015)),
+    radial-gradient(circle at top right, rgba(6, 182, 212, 0.09), transparent 50%);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 16px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-height: 250px;
+  transition: transform 0.22s var(--ease), border-color 0.22s var(--ease), box-shadow 0.22s var(--ease);
+}
+
+.jcard-v3:hover {
+  transform: translateY(-2px);
+  border-color: rgba(59, 130, 246, 0.22);
+  box-shadow: 0 20px 32px rgba(0, 0, 0, 0.28);
+}
+
+.jcard-v3::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+}
+
+.jcard-v3[data-prob="high"]::before {
+  background: linear-gradient(90deg, var(--green), transparent 85%);
+}
+
+.jcard-v3[data-prob="medium"]::before {
+  background: linear-gradient(90deg, var(--amber), transparent 85%);
+}
+
+.jcard-v3[data-prob="stretch"]::before {
+  background: linear-gradient(90deg, var(--violet), transparent 85%);
+}
+
+.jcard-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.jcard-company-block {
+  display: flex;
+  gap: 12px;
+  min-width: 0;
+}
+
+.jcard-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.03);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.85rem;
+  font-weight: 800;
+  color: var(--text);
+  flex-shrink: 0;
+}
+
+.jcard-company-copy {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.jcard-company {
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: var(--text);
+  line-height: 1.2;
+}
+
+.jcard-company-type {
+  font-size: 0.66rem;
+  color: var(--text3);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.score-chip {
+  width: 42px;
+  height: 42px;
+  flex: 0 0 auto;
+}
+
+.score-chip-value {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.66rem;
+  font-weight: 800;
+  color: var(--text);
+}
+
+.jcard-stage-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.jcard-age {
+  font-size: 0.66rem;
+  color: var(--text3);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.jcard-role {
+  font-size: 0.94rem;
+  font-weight: 700;
+  line-height: 1.4;
+  color: var(--text);
+  font-family: 'Outfit', sans-serif;
+}
+
+.followup-inline {
+  align-self: flex-start;
+  border-radius: 999px;
+  padding: 5px 9px;
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.followup-inline.warn {
+  background: rgba(245, 158, 11, 0.12);
+  color: var(--amber);
+}
+
+.followup-inline.urgent {
+  background: rgba(239, 68, 68, 0.12);
+  color: var(--red);
+}
+
+.followup-inline.ghost {
+  background: rgba(139, 92, 246, 0.12);
+  color: var(--violet);
+}
+
+.jcard-meta-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.meta-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 5px 9px;
+  font-size: 0.66rem;
+  color: var(--text2);
+}
+
+.meta-pill b {
+  color: var(--text);
+  font-weight: 700;
+}
+
+.jcard-skill-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.skill-tag,
+.skill-gap-tag {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 5px 8px;
+  font-size: 0.64rem;
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 600;
+  border: 1px solid transparent;
+}
+
+.skill-tag {
+  background: rgba(59, 130, 246, 0.08);
+  border-color: rgba(59, 130, 246, 0.16);
+  color: #8dc0ff;
+}
+
+.skill-gap-tag {
+  background: rgba(245, 158, 11, 0.08);
+  border-color: rgba(245, 158, 11, 0.16);
+  color: var(--amber);
+  cursor: pointer;
+}
+
+.skill-gap-tag:hover {
+  background: rgba(245, 158, 11, 0.14);
+}
+
+.jcard-why {
+  background: rgba(7, 12, 24, 0.52);
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  border-radius: 12px;
+  padding: 12px;
+  font-size: 0.74rem;
+  line-height: 1.55;
+  color: var(--text2);
+}
+
+.jcard-why strong {
+  color: var(--text);
+}
+
+.jcard-resume {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.jcard-resume-title {
+  font-size: 0.64rem;
+  font-weight: 800;
+  color: var(--blue);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  font-family: 'IBM Plex Mono', monospace;
+}
+
+.jcard-resume-list {
+  margin: 0;
+  padding-left: 18px;
+  color: var(--text2);
+  font-size: 0.72rem;
+  line-height: 1.55;
+}
+
+.jcard-actions {
+  margin-top: auto;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.jcard-btn {
+  appearance: none;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  padding: 10px 12px;
+  font-size: 0.72rem;
+  font-weight: 800;
+  cursor: pointer;
+  transition: all 0.2s var(--ease);
+  text-decoration: none;
+  text-align: center;
+  flex: 1 1 calc(50% - 4px);
+}
+
+.jcard-btn.primary {
+  background: var(--blue);
+  color: white;
+  box-shadow: 0 12px 22px rgba(59, 130, 246, 0.24);
+}
+
+.jcard-btn.primary:hover {
+  filter: brightness(1.06);
+}
+
+.jcard-btn.success {
+  background: rgba(16, 185, 129, 0.12);
+  border-color: rgba(16, 185, 129, 0.18);
+  color: var(--green);
+}
+
+.jcard-btn.secondary {
+  background: rgba(255, 255, 255, 0.02);
+  border-color: var(--border);
+  color: var(--text);
+}
+
+.jcard-btn.danger {
+  background: rgba(239, 68, 68, 0.1);
+  border-color: rgba(239, 68, 68, 0.18);
+  color: var(--red);
+}
+
+.jcard-btn.success:hover,
+.jcard-btn.secondary:hover,
+.jcard-btn.danger:hover {
+  transform: translateY(-1px);
+}
+
+.insights-grid-v3 {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  padding: 18px 20px 24px;
+}
+
+.insight-card-v3 {
+  background:
+    linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.015)),
+    radial-gradient(circle at top right, rgba(139, 92, 246, 0.08), transparent 55%);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.insight-card-v3.wide-card {
+  margin: 0 20px 24px;
+}
+
+.insight-heading {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.insight-heading h3 {
+  font-size: 1rem;
+  font-weight: 800;
+  color: var(--text);
+  font-family: 'Syne', sans-serif;
+}
+
+.insight-heading p {
+  font-size: 0.76rem;
+  line-height: 1.5;
+  color: var(--text2);
+}
+
+.insight-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.insight-stack.compact {
+  padding-top: 8px;
+  border-top: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.velocity-chart {
+  min-height: 180px;
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+}
+
+.offer-matrix-wrap {
+  overflow-x: auto;
+}
+
+.dev-note-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.dev-note-item {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.dev-note-title {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.dev-note-copy {
+  font-size: 0.74rem;
+  line-height: 1.55;
+  color: var(--text2);
+}
+
+@media (max-width: 1200px) {
+  .radar-v3-header {
+    height: auto;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    padding: 16px 20px;
+  }
+
+  .pipe-stats {
+    width: 100%;
+    overflow-x: auto;
+    padding-bottom: 2px;
+  }
+
+  .radar-status-stack {
+    margin-left: 0;
+  }
+
+  .insights-grid-v3 {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 900px) {
+  .radar-kpis {
+    grid-template-columns: 1fr;
+  }
+
+  .filter-search {
+    margin-left: 0;
+    min-width: 100%;
+    order: 3;
+  }
+
+  .filter-actions {
+    width: 100%;
+    justify-content: flex-end;
+  }
+
+  .kanban-board-v3 {
+    min-height: 0;
+    height: auto;
+    padding-bottom: 28px;
+  }
+}
+
+@media (max-width: 700px) {
+  .analytics-bar-v3 {
+    height: auto;
+    flex-wrap: wrap;
+    padding: 12px 16px;
+    gap: 12px;
+  }
+
+  .radar-kpis,
+  .radar-tabs,
+  .insights-grid-v3 {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+
+  .filter-bar,
+  .kanban-board-v3 {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+
+  .radar-header-actions,
+  .filter-actions {
+    width: 100%;
+    justify-content: stretch;
+  }
+
+  .radar-quiet-btn,
+  .radar-inline-btn {
+    flex: 1 1 auto;
+    text-align: center;
+  }
+
+  .kanban-col-v3 {
+    width: min(88vw, 320px);
+  }
+
+  .jcard-btn {
+    flex-basis: 100%;
+  }
+}

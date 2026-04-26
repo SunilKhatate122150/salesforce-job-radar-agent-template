@@ -1,6 +1,8 @@
 <div class="radar-v3-header">
-  <div class="logo" style="font-family:'Syne',sans-serif; font-weight:800; font-size:0.9rem; background:linear-gradient(135deg,#fff 20%,var(--cyan) 100%); -webkit-background-clip:text; -webkit-text-fill-color:transparent;">Job Radar <span style="opacity:0.4; font-weight:400;">/</span> SF Agent <span style="opacity:0.4; font-weight:400;">2026</span></div>
-  <div style="width:1px; height:20px; background:var(--border);"></div>
+  <div class="radar-brand">
+    <div class="radar-brand-kicker">Salesforce job command center</div>
+    <div class="radar-brand-title">Job Radar / SF Agent 2026</div>
+  </div>
   <div class="pipe-stats">
     <div class="pstat" onclick="scrollToCol('todo')">
       <span class="pdot todo"></span>
@@ -23,78 +25,211 @@
       <div class="pinfo"><span class="pcount" id="cnt-rejected">0</span><span class="plbl">Rejected</span></div>
     </div>
   </div>
-  <div style="display:flex; gap:6px;">
-    <button class="btn-sm" onclick="clearAndSyncJobs()" style="background:transparent; border:1px solid var(--border); color:var(--text3); padding:4px 12px; border-radius:7px; font-size:10px; font-weight:700; cursor:pointer;">↺ Sync</button>
-    <button class="btn-sm" onclick="toggleLog()" style="background:transparent; border:1px solid var(--border); color:var(--text3); padding:4px 12px; border-radius:7px; font-size:10px; font-weight:700; cursor:pointer;">📊 Log</button>
+  <div class="radar-header-actions">
+    <button class="radar-quiet-btn" onclick="clearAndSyncJobs()">Reset Cache</button>
+    <button class="radar-quiet-btn" onclick="toggleLog()">Activity Log</button>
   </div>
 </div>
 
 <div class="analytics-bar-v3">
   <div class="met"><span class="met-val" id="met-rate">0%</span><span class="met-lbl">Response Rate</span></div>
-  <div style="width:1px; height:24px; background:var(--border);"></div>
-  <div class="met"><span class="met-val" id="met-conversion">0%</span><span class="met-lbl">Intrv → Offer</span></div>
-  <div style="width:1px; height:24px; background:var(--border);"></div>
+  <div class="radar-divider"></div>
+  <div class="met"><span class="met-val" id="met-conversion">0%</span><span class="met-lbl">Interview to Offer</span></div>
+  <div class="radar-divider"></div>
   <div class="met"><span class="met-val" id="met-followup">0</span><span class="met-lbl">Follow-ups Due</span></div>
-  <div style="width:1px; height:24px; background:var(--border);"></div>
-  <div class="goal-wrap" style="display:flex; align-items:center; gap:10px;">
+  <div class="radar-divider"></div>
+  <div class="goal-wrap">
     <svg class="goal-ring-v3" viewBox="0 0 36 36">
-      <circle class="goal-track" cx="18" cy="18" r="15.9"/>
-      <circle class="goal-arc" id="goal-arc" cx="18" cy="18" r="15.9" stroke-dasharray="0 100"/>
+      <circle class="goal-track" cx="18" cy="18" r="15.9"></circle>
+      <circle class="goal-arc" id="goal-arc" cx="18" cy="18" r="15.9" stroke-dasharray="0 100"></circle>
     </svg>
-    <div style="display:flex; flex-direction:column;">
-      <span class="goal-count" id="met-weekly" style="font-family:'JetBrains Mono',monospace; font-size:.85rem; font-weight:600; color:var(--text); line-height:1;">0/5</span>
-      <span style="font-size:9px; color:var(--text3); text-transform:uppercase; letter-spacing:.05em; margin-top:2px;">This Week</span>
+    <div class="goal-copy">
+      <span class="goal-count" id="met-weekly">0/5</span>
+      <span class="goal-label">This Week</span>
     </div>
   </div>
-  <div style="width:1px; height:24px; background:var(--border);"></div>
+  <div class="radar-divider"></div>
   <div class="met"><span class="met-val" id="met-streak">0d</span><span class="met-lbl">Apply Streak</span></div>
-</div>
-
-<div class="filter-bar" style="height:var(--flt); background:var(--bg2); border-bottom:1px solid var(--border); padding:0 20px; display:flex; align-items:center; gap:6px;">
-  <span style="font-size:10px; font-weight:600; color:var(--text3); text-transform:uppercase; letter-spacing:.08em;">Filter:</span>
-  <button class="fb on" onclick="setBoardFilter('all', this)">All</button>
-  <button class="fb high" onclick="setBoardFilter('high', this)">🟢 High</button>
-  <button class="fb mid" onclick="setBoardFilter('medium', this)">🟡 Mid</button>
-  <button class="fb str" onclick="setBoardFilter('stretch', this)">🟣 Stretch</button>
-  <div style="margin-left:auto; position:relative;">
-    <span style="position:absolute; left:9px; top:50%; transform:translateY(-50%); color:var(--text3); font-size:10px;">🔍</span>
-    <input type="text" id="boardSearch" placeholder="Search company, role..." oninput="doBoardSearch()" style="background:var(--surface); border:1px solid var(--border); border-radius:7px; padding:4px 10px 4px 28px; font-size:11.5px; color:var(--text); width:180px; outline:none;">
+  <div class="radar-status-stack">
+    <span class="db-badge" id="dbStatusBadge">Syncing</span>
+    <span class="goal-pct" id="goal-pct">0%</span>
   </div>
 </div>
 
-<div class="kanban-board-v3">
-  <div class="kanban-col-v3" id="col-todo">
-    <div class="kanban-header-v3" style="background:rgba(78,106,141,.1); border:1px solid rgba(78,106,141,.18); color:#7191b5;">
-      <span>📋</span> To Apply <span class="col-count" id="count-todo" style="margin-left:auto; background:var(--surface); border:1px solid var(--border); border-radius:100px; padding:1px 7px; color:var(--text2); font-size:0.65rem;">0</span>
-    </div>
-    <div class="kanban-body" id="list-todo" style="display:flex; flex-direction:column; gap:8px;"></div>
+<div class="radar-kpis">
+  <div class="radar-kpi-card">
+    <span class="radar-kpi-label">Database Roles</span>
+    <span class="radar-kpi-value" id="dedupeCount">0</span>
+    <span class="radar-kpi-note">Fresh roles discovered by the scanner</span>
   </div>
-  
-  <div class="kanban-col-v3" id="col-applied">
-    <div class="kanban-header-v3" style="background:rgba(59,130,246,.09); border:1px solid rgba(59,130,246,.22); color:var(--blue);">
-      <span>✅</span> Applied <span class="col-count" id="count-applied" style="margin-left:auto; background:var(--surface); border:1px solid var(--border); border-radius:100px; padding:1px 7px; color:var(--text2); font-size:0.65rem;">0</span>
+  <div class="radar-kpi-card">
+    <span class="radar-kpi-label">Tracked in Pipeline</span>
+    <span class="radar-kpi-value" id="trackedCount">0</span>
+    <span class="radar-kpi-note">Cards currently managed in the board</span>
+  </div>
+  <div class="radar-kpi-card">
+    <span class="radar-kpi-label">Submitted</span>
+    <span class="radar-kpi-value" id="appliedCount">0</span>
+    <span class="radar-kpi-note">Roles moved past the backlog</span>
+  </div>
+</div>
+
+<div class="radar-tabs">
+  <button id="tab-pipeline" class="radar-tab-btn active" onclick="switchRadarSubTab('pipeline')">Pipeline</button>
+  <button id="tab-insights" class="radar-tab-btn" onclick="switchRadarSubTab('insights')">Insights</button>
+  <button id="tab-development" class="radar-tab-btn" onclick="switchRadarSubTab('development')">Readiness</button>
+</div>
+
+<div id="radar-pipeline-view" class="radar-view">
+  <div class="filter-bar">
+    <span class="filter-label">Filter</span>
+    <button class="fb on" onclick="setBoardFilter('all', this)">All</button>
+    <button class="fb high" onclick="setBoardFilter('high', this)">High</button>
+    <button class="fb mid" onclick="setBoardFilter('medium', this)">Medium</button>
+    <button class="fb str" onclick="setBoardFilter('stretch', this)">Stretch</button>
+    <div class="filter-search">
+      <span class="filter-search-icon">Search</span>
+      <input type="text" id="boardSearch" placeholder="Company, role, skill..." oninput="doBoardSearch()">
     </div>
-    <div class="kanban-body" id="list-applied" style="display:flex; flex-direction:column; gap:8px;"></div>
+    <div class="filter-actions">
+      <button class="radar-inline-btn" onclick="requestNotifications()">Reminders</button>
+      <button class="radar-inline-btn primary" onclick="openAddJobModal()">Add Custom Role</button>
+    </div>
   </div>
 
-  <div class="kanban-col-v3" id="col-interview">
-    <div class="kanban-header-v3" style="background:rgba(16,185,129,.09); border:1px solid rgba(16,185,129,.22); color:var(--green);">
-      <span>📞</span> Interview <span class="col-count" id="count-interview" style="margin-left:auto; background:var(--surface); border:1px solid var(--border); border-radius:100px; padding:1px 7px; color:var(--text2); font-size:0.65rem;">0</span>
+  <div class="kanban-board-v3">
+    <div class="kanban-col-v3" id="col-todo">
+      <div class="kanban-header-v3 todo">
+        <span>Backlog</span>
+        <span class="col-count" id="count-todo">0</span>
+      </div>
+      <div class="kanban-body" id="list-todo"></div>
     </div>
-    <div class="kanban-body" id="list-interview" style="display:flex; flex-direction:column; gap:8px;"></div>
+
+    <div class="kanban-col-v3" id="col-applied">
+      <div class="kanban-header-v3 applied">
+        <span>Applied</span>
+        <span class="col-count" id="count-applied">0</span>
+      </div>
+      <div class="kanban-body" id="list-applied"></div>
+    </div>
+
+    <div class="kanban-col-v3" id="col-interview">
+      <div class="kanban-header-v3 interview">
+        <span>Interview</span>
+        <span class="col-count" id="count-interview">0</span>
+      </div>
+      <div class="kanban-body" id="list-interview"></div>
+    </div>
+
+    <div class="kanban-col-v3" id="col-offer">
+      <div class="kanban-header-v3 offer">
+        <span>Offer</span>
+        <span class="col-count" id="count-offer">0</span>
+      </div>
+      <div class="kanban-body" id="list-offer"></div>
+    </div>
+
+    <div class="kanban-col-v3" id="col-rejected">
+      <div class="kanban-header-v3 rejected">
+        <span>Rejected</span>
+        <span class="col-count" id="count-rejected">0</span>
+      </div>
+      <div class="kanban-body" id="list-rejected"></div>
+    </div>
+  </div>
+</div>
+
+<div id="radar-insights-view" class="radar-view" style="display:none;">
+  <div class="insights-grid-v3">
+    <section class="insight-card-v3">
+      <div class="insight-heading">
+        <h3>Pipeline Funnel</h3>
+        <p>Stage depth and drop-off across the board.</p>
+      </div>
+      <div id="funnel-container" class="insight-stack"></div>
+    </section>
+
+    <section class="insight-card-v3">
+      <div class="insight-heading">
+        <h3>Matched Skills</h3>
+        <p>Most common profile strengths from fetched roles.</p>
+      </div>
+      <div id="matchedSkillsTrends" class="insight-stack"></div>
+    </section>
+
+    <section class="insight-card-v3">
+      <div class="insight-heading">
+        <h3>Skill Gaps</h3>
+        <p>Repeated capability gaps worth turning into study blocks.</p>
+      </div>
+      <div id="missingSkillsTrends" class="insight-stack"></div>
+    </section>
+
+    <section class="insight-card-v3">
+      <div class="insight-heading">
+        <h3>Company Mix</h3>
+        <p>Where your current opportunities are concentrated.</p>
+      </div>
+      <div id="dist-container" class="insight-stack"></div>
+      <div id="topCompaniesTrends" class="insight-stack compact"></div>
+    </section>
+
+    <section class="insight-card-v3">
+      <div class="insight-heading">
+        <h3>Weekly Velocity</h3>
+        <p>Visual pace of applications this week.</p>
+      </div>
+      <div id="velocity-container" class="velocity-chart"></div>
+    </section>
   </div>
 
-  <div class="kanban-col-v3" id="col-offer">
-    <div class="kanban-header-v3" style="background:rgba(245,158,11,.09); border:1px solid rgba(245,158,11,.22); color:var(--amber);">
-      <span>🎉</span> Offer <span class="col-count" id="count-offer" style="margin-left:auto; background:var(--surface); border:1px solid var(--border); border-radius:100px; padding:1px 7px; color:var(--text2); font-size:0.65rem;">0</span>
+  <section id="offer-comparison" class="insight-card-v3 wide-card" style="display:none;">
+    <div class="insight-heading">
+      <h3>Offer Comparison Matrix</h3>
+      <p>Side-by-side compensation and fit once two offers are active.</p>
     </div>
-    <div class="kanban-body" id="list-offer" style="display:flex; flex-direction:column; gap:8px;"></div>
-  </div>
+    <div id="offer-matrix-container" class="offer-matrix-wrap"></div>
+  </section>
+</div>
 
-  <div class="kanban-col-v3" id="col-rejected">
-    <div class="kanban-header-v3" style="background:rgba(239,68,68,.08); border:1px solid rgba(239,68,68,.18); color:var(--red);">
-      <span>❌</span> Rejected <span class="col-count" id="count-rejected" style="margin-left:auto; background:var(--surface); border:1px solid var(--border); border-radius:100px; padding:1px 7px; color:var(--text2); font-size:0.65rem;">0</span>
-    </div>
-    <div class="kanban-body" id="list-rejected" style="display:flex; flex-direction:column; gap:8px;"></div>
+<div id="radar-development-view" class="radar-view" style="display:none;">
+  <div class="insights-grid-v3">
+    <section class="insight-card-v3">
+      <div class="insight-heading">
+        <h3>AI Skill Readiness</h3>
+        <p>Current capability map based on synced profile and target roles.</p>
+      </div>
+      <div id="skillProficiencyList" class="insight-stack"></div>
+    </section>
+
+    <section class="insight-card-v3">
+      <div class="insight-heading">
+        <h3>Radar Build Roadmap</h3>
+        <p>What is done, what is in motion, and what is next.</p>
+      </div>
+      <div id="readyForDeploymentList" class="insight-stack"></div>
+    </section>
+
+    <section class="insight-card-v3">
+      <div class="insight-heading">
+        <h3>Operating Notes</h3>
+        <p>Keep the board healthy while you search and prepare.</p>
+      </div>
+      <div class="dev-note-list">
+        <div class="dev-note-item">
+          <span class="dev-note-title">Use the backlog column as your clean intake.</span>
+          <span class="dev-note-copy">Only move a card forward once you have actually applied or deliberately rejected it.</span>
+        </div>
+        <div class="dev-note-item">
+          <span class="dev-note-title">Track outreach on active applications.</span>
+          <span class="dev-note-copy">Recruiter follow-ups become visible once cards sit in Applied long enough to need attention.</span>
+        </div>
+        <div class="dev-note-item">
+          <span class="dev-note-title">Let the insights tab drive study focus.</span>
+          <span class="dev-note-copy">Repeated missing skills should turn into study topics and profile updates instead of staying passive observations.</span>
+        </div>
+      </div>
+    </section>
   </div>
 </div>
