@@ -75,42 +75,41 @@ export const TursoDB = {
 
   async toggleBookmark(userId, bookmark) {
     let profile = await this.getProfile(userId);
-    // If no profile in Turso, we MUST initialize it first to prevent vanishing data
-    if (!profile) {
-      console.log(`[TURSO] Initializing new profile for ${userId} during bookmark toggle.`);
-      await this.saveProfile(userId, { bookmarks: [] });
-      profile = { bookmarks: [] };
-    }
+    let bookmarks = profile?.bookmarks || [];
     
-    let bookmarks = profile.bookmarks || [];
     const exists = bookmarks.some(b => b.q === bookmark.q);
-    
     if (exists) {
       bookmarks = bookmarks.filter(b => b.q !== bookmark.q);
     } else {
       bookmarks.push({ ...bookmark, date: new Date().toISOString() });
     }
     
-    const sql = "UPDATE user_profiles SET bookmarks = ? WHERE userId = ?";
-    await this.execute(sql, [JSON.stringify(bookmarks), userId]);
+    // Surgical Update: If record doesn't exist, create a skeleton one. If it does, update ONLY bookmarks.
+    const sql = `
+      INSERT INTO user_profiles (userId, bookmarks) 
+      VALUES (?, ?)
+      ON CONFLICT(userId) DO UPDATE SET bookmarks = excluded.bookmarks
+    `;
+    await this.execute(sql, [userId, JSON.stringify(bookmarks)]);
     return bookmarks;
   },
 
   async toggleTask(userId, taskId, completed) {
     let profile = await this.getProfile(userId);
-    if (!profile) {
-      await this.saveProfile(userId, { completedTasks: [] });
-      profile = { completedTasks: [] };
-    }
-
-    let tasks = profile.completedTasks || [];
+    let tasks = profile?.completedTasks || [];
+    
     if (completed) {
       if (!tasks.includes(taskId)) tasks.push(taskId);
     } else {
       tasks = tasks.filter(id => id !== taskId);
     }
-    const sql = "UPDATE user_profiles SET completedTasks = ? WHERE userId = ?";
-    await this.execute(sql, [JSON.stringify(tasks), userId]);
+
+    const sql = `
+      INSERT INTO user_profiles (userId, completedTasks) 
+      VALUES (?, ?)
+      ON CONFLICT(userId) DO UPDATE SET completedTasks = excluded.completedTasks
+    `;
+    await this.execute(sql, [userId, JSON.stringify(tasks)]);
     return tasks;
   },
 
