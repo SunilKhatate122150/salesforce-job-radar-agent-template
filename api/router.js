@@ -43,26 +43,27 @@ async function getUserId(req) {
 
 async function checkAndArchiveOverflow(userId) {
   try {
+    // 1. ARCHIVE JOBS
     const MAX_MONGO_JOBS = 1500;
-    const count = await JobRecord.countDocuments({ userId });
-    
-    if (count > MAX_MONGO_JOBS) {
-      console.log(`[Vacuum] MongoDB reaching limit (${count}/1500). Moving 500 records to Turso Tier...`);
-      
-      const toMove = await JobRecord.find({ userId, status: 'ignored' })
-        .sort({ createdAt: 1 })
-        .limit(500)
-        .lean();
-        
+    const jobCount = await JobRecord.countDocuments({ userId });
+    if (jobCount > MAX_MONGO_JOBS) {
+      console.log(`[Vacuum] Jobs limit reached (${jobCount}/1500). Archiving 500...`);
+      const toMove = await JobRecord.find({ userId, status: 'ignored' }).sort({ createdAt: 1 }).limit(500).lean();
       if (toMove.length > 0) {
-        // Migration Loop
-        for (const job of toMove) {
-          await TursoDB.saveJob(userId, job);
-        }
-        
-        const ids = toMove.map(j => j._id);
-        await JobRecord.deleteMany({ _id: { $in: ids } });
-        console.log(`[Vacuum] Successfully migrated 500 records. MongoDB space cleared.`);
+        for (const job of toMove) await TursoDB.saveJob(userId, job);
+        await JobRecord.deleteMany({ _id: { $in: toMove.map(j => j._id) } });
+      }
+    }
+
+    // 2. ARCHIVE STUDY SESSIONS
+    const MAX_MONGO_SESSIONS = 500;
+    const sessionCount = await StudySession.countDocuments({ userId });
+    if (sessionCount > MAX_MONGO_SESSIONS) {
+      console.log(`[Vacuum] Sessions limit reached (${sessionCount}/500). Archiving 200...`);
+      const sessionsToMove = await StudySession.find({ userId }).sort({ startTime: 1 }).limit(200).lean();
+      if (sessionsToMove.length > 0) {
+        for (const s of sessionsToMove) await TursoDB.saveStudySession(userId, s);
+        await StudySession.deleteMany({ _id: { $in: sessionsToMove.map(s => s._id) } });
       }
     }
   } catch (e) {
