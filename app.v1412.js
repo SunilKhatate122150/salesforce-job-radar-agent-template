@@ -2588,6 +2588,10 @@ async function showPage(id) {
         if (cachedUserProfile) renderProfileMatchPage(cachedUserProfile); 
         else loadUserProfile(); 
     }
+    if (id === 'bookmarks_page') {
+        console.log('â­  [NAV] Activating Bookmarks View...');
+        if (typeof showBookmarks === 'function') showBookmarks();
+    }
   }
 
   // UI Updates
