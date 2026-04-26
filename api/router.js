@@ -9,9 +9,17 @@ const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 let cachedDb = null;
 async function connectDB() {
   if (cachedDb) return cachedDb;
-  const db = await mongoose.connect(process.env.MONGODB_URI);
-  cachedDb = db;
-  return db;
+  try {
+    const db = await mongoose.connect(process.env.MONGODB_URI, {
+      serverSelectionTimeoutMS: 5000 // 5 second timeout
+    });
+    cachedDb = db;
+    console.log('[DB] MongoDB Connected');
+    return db;
+  } catch (err) {
+    console.error('[DB] MongoDB Connection Failed (Skipping):', err.message);
+    return null; 
+  }
 }
 
 async function getUserId(req) {
@@ -63,17 +71,21 @@ async function checkAndArchiveOverflow(userId) {
 }
 
 export default async function(req, res) {
-  let { slug } = req.query;
-  let path = '';
-  if (slug && Array.isArray(slug)) { path = slug.join('/'); } 
-  else { path = req.url.replace('/api/', '').split('?')[0]; }
+  try {
+    let { slug } = req.query;
+    let path = '';
+    if (slug && Array.isArray(slug)) { path = slug.join('/'); } 
+    else { path = (req.url || '').replace('/api/', '').split('?')[0]; }
 
-  await connectDB();
+    // Soft Connect to Legacy DB
+    await connectDB();
 
-  // GLOBAL BODY PARSER
-  if (req.method === 'POST' && req.body && typeof req.body === 'string') {
-    try { req.body = JSON.parse(req.body); } catch(e) { console.error('Body parse fail:', e); }
-  }
+    // GLOBAL BODY PARSER
+    if (req.method === 'POST' && req.body && typeof req.body === 'string') {
+      try { req.body = JSON.parse(req.body); } catch(e) { console.error('Body parse fail:', e); }
+    }
+
+    // ... rest of the logic ...
 
   try {
     // 1. AUTH ENDPOINTS
@@ -227,8 +239,6 @@ export default async function(req, res) {
       
       const todayStr = new Date().toISOString().split('T')[0];
       if (path === 'summary/daily') return res.status(200).json(historyObj[todayStr] || { date: todayStr, study: { totalSeconds: 0 }, jobs: { newCount: 0 } });
-      return res.status(200).json(historyObj);
-    }
       return res.status(200).json(historyObj);
     }
 
