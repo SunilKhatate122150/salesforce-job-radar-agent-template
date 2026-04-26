@@ -136,6 +136,11 @@ body {
   top: 0;
   z-index: 101;
   background: var(--surface);
+  order: 1; /* Force to top in flex container */
+}
+
+#sidebar > * {
+  order: 3; /* Push all other content below header and search */
 }
 
 .stat-value {
@@ -165,10 +170,11 @@ body {
   padding: 0.7rem 0.8rem;
   border-bottom: 1px solid var(--border);
   position: sticky;
-  top: 104px; /* Sticks below the header after items above it scroll past */
+  top: 84px; /* Sticks immediately below the brand header */
   z-index: 99;
   background: var(--surface);
   box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+  order: 2; /* Force below header but above other content */
 }
 
 #searchInput {

@@ -340,15 +340,20 @@ code,
 @media (max-width: 768px) {
   #sidebar .search-wrap {
     position: sticky !important;
-    top: 104px !important; /* Adjusted to sit below the brand header without overlap */
+    top: 92px !important; 
     background: var(--surface) !important;
     z-index: 99 !important;
+    order: 2 !important;
   }
   #sidebar .sidebar-header {
     position: sticky !important;
     top: 0 !important;
-    z-index: 11 !important;
+    z-index: 101 !important;
     background: var(--surface) !important;
+    order: 1 !important;
+  }
+  #sidebar > * {
+    order: 3 !important;
   }
 
   .page {
