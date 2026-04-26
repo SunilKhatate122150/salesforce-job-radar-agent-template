@@ -2617,6 +2617,53 @@ document.querySelectorAll('.qa-block').forEach(function(block) {
   if (q && page) searchData.push({ question: q.textContent.trim(), answerEl: block, pageId: page.id, pageName: page.querySelector('.page-title') ? page.querySelector('.page-title').textContent : '' });
 });
 
+function filterSidebar(val) {
+  const query = val.toLowerCase().trim();
+  const items = document.querySelectorAll('#sidebar .nav-item');
+  const sections = document.querySelectorAll('#sidebar .nav-parent-section');
+  const sectionTitles = document.querySelectorAll('#sidebar .nav-parent-title');
+  
+  if (!query) {
+    items.forEach(el => el.style.display = 'flex');
+    sections.forEach(el => el.style.display = 'block');
+    sectionTitles.forEach(el => el.style.display = 'block');
+    return;
+  }
+
+  // Hide all titles initially
+  sectionTitles.forEach(el => el.style.display = 'none');
+
+  sections.forEach(section => {
+    const navItems = section.querySelectorAll('.nav-item');
+    let hasMatch = false;
+    
+    navItems.forEach(item => {
+      const text = item.textContent.toLowerCase();
+      if (text.includes(query)) {
+        item.style.display = 'flex';
+        hasMatch = true;
+      } else {
+        item.style.display = 'none';
+      }
+    });
+
+    if (hasMatch) {
+      section.style.display = 'block';
+      const title = section.querySelector('.nav-parent-title');
+      if (title) title.style.display = 'block';
+    } else {
+      section.style.display = 'none';
+    }
+  });
+
+  // Also filter standalone titles if any (like "100 Scenario Mix")
+  sectionTitles.forEach(title => {
+    if (title.textContent.toLowerCase().includes(query)) {
+      title.style.display = 'block';
+    }
+  });
+}
+
 function searchContent(val) {
   if (!val || val.length < 2) { document.getElementById('searchPage').style.display = 'none'; return; }
   var lower = val.toLowerCase();
