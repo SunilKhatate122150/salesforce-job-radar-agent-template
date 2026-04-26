@@ -335,6 +335,13 @@ code,
 }
 
 @media (max-width: 1024px) {
+  body {
+    display: block !important;
+  }
+  #main {
+    width: 100% !important;
+    margin-left: 0 !important;
+  }
   #sidebar {
     width: 284px !important;
     min-width: 284px !important;
@@ -347,6 +354,13 @@ code,
 }
 
 @media (max-width: 768px) {
+  body {
+    display: block !important; /* Switch from flex-row to block for mobile overlay mode */
+  }
+  #main {
+    width: 100% !important;
+    margin-left: 0 !important;
+  }
   #sidebar .search-wrap {
     position: sticky !important;
     top: 88px !important; /* Calibrated for mobile brand header */
