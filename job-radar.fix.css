@@ -463,8 +463,8 @@ body:has(#job_radar.active) #headerTitle {
   height: calc(100vh - var(--header-h, 58px) - var(--jr-header-h) - var(--jr-analytics-h) - var(--jr-filter-h)) !important;
   min-height: 420px !important;
   overflow-x: auto !important;
-  overflow-y: auto !important;
-  padding: 16px 20px 28px !important;
+  overflow-y: hidden !important; /* Board itself shouldn't scroll vertically */
+  padding: 16px 20px 10px !important;
   background: var(--jr-bg);
 }
 
@@ -475,12 +475,12 @@ body:has(#job_radar.active) #headerTitle {
   flex: 0 0 300px !important;
   display: flex !important;
   flex-direction: column !important;
-  gap: 8px !important;
-  background: rgba(255, 255, 255, 0.015) !important;
+  background: rgba(255, 255, 255, 0.01) !important;
   border: 1px solid var(--jr-border) !important;
   border-radius: 14px !important;
-  padding: 10px 8px 14px !important;
-  max-height: none !important;
+  padding: 0 !important; /* Remove padding to handle internal scroll */
+  height: 100% !important; /* Match board height */
+  overflow: hidden !important;
   position: relative !important;
 }
 
@@ -488,19 +488,20 @@ body:has(#job_radar.active) #headerTitle {
   display: flex !important;
   align-items: center !important;
   gap: 7px !important;
-  padding: 8px 9px !important;
-  border-radius: 9px !important;
+  padding: 12px 14px !important;
+  border-bottom: 1px solid var(--jr-border) !important;
   font-family: 'Syne', 'Plus Jakarta Sans', sans-serif !important;
   font-size: 12px !important;
   line-height: 1.2 !important;
   font-weight: 800 !important;
+  background: rgba(17, 29, 53, 0.4) !important;
 }
 
-#job_radar .kanban-header-v3.todo { background: rgba(78, 106, 141, 0.1) !important; border: 1px solid rgba(78, 106, 141, 0.18) !important; color: #7191b5 !important; }
-#job_radar .kanban-header-v3.applied { background: rgba(59, 130, 246, 0.09) !important; border: 1px solid rgba(59, 130, 246, 0.22) !important; color: var(--jr-blue) !important; }
-#job_radar .kanban-header-v3.interview { background: rgba(16, 185, 129, 0.09) !important; border: 1px solid rgba(16, 185, 129, 0.22) !important; color: var(--jr-green) !important; }
-#job_radar .kanban-header-v3.offer { background: rgba(245, 158, 11, 0.09) !important; border: 1px solid rgba(245, 158, 11, 0.22) !important; color: var(--jr-amber) !important; }
-#job_radar .kanban-header-v3.rejected { background: rgba(239, 68, 68, 0.08) !important; border: 1px solid rgba(239, 68, 68, 0.18) !important; color: var(--jr-red) !important; }
+#job_radar .kanban-header-v3.todo { color: #7191b5 !important; }
+#job_radar .kanban-header-v3.applied { color: var(--jr-blue) !important; }
+#job_radar .kanban-header-v3.interview { color: var(--jr-green) !important; }
+#job_radar .kanban-header-v3.offer { color: var(--jr-amber) !important; }
+#job_radar .kanban-header-v3.rejected { color: var(--jr-red) !important; }
 
 #job_radar .col-count {
   margin-left: auto !important;
@@ -518,10 +519,19 @@ body:has(#job_radar.active) #headerTitle {
 #job_radar .kanban-body {
   display: flex !important;
   flex-direction: column !important;
-  gap: 7px !important;
+  gap: 10px !important;
   flex: 1 1 auto !important;
-  overflow: visible !important;
-  padding: 0 !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  padding: 14px 10px !important;
+}
+
+#job_radar .kanban-pager {
+  padding: 10px 14px !important;
+  background: rgba(13, 21, 38, 0.8) !important;
+  backdrop-filter: blur(8px);
+  border-top: 1px solid var(--jr-border) !important;
+  flex-shrink: 0;
 }
 
 #job_radar .radar-empty-state {

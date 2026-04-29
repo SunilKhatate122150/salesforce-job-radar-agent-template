@@ -2298,7 +2298,7 @@ function buildPipelineJobFromRecord(record, existingJob) {
     prob: normalizeProbability(record.probability, score),
     status: mappedStatus,
     url: safeUrl(record.apply_link || record.url || existing.url || '#'),
-    created_at: record.created_at || existing.created_at || new Date().toISOString(),
+    created_at: record.createdAt || record.date_added || record.created_at || existing.created_at || new Date().toISOString(),
     match_level: record.match_level || existing.match_level || '',
     dateApplied: existing.dateApplied || (mappedStatus === 'applied' ? new Date().toISOString() : ''),
     outreach: existing.outreach || null,
@@ -2340,7 +2340,10 @@ function sortBoardJobs(a, b) {
   const scoreDelta = Number(b.score || 0) - Number(a.score || 0);
   if (scoreDelta !== 0) return scoreDelta;
 
-  return new Date(b.created_at || 0) - new Date(a.created_at || 0);
+  // Use the most precise date available: updatedAt, createdAt, date_added, or created_at
+  const dateA = new Date(a.updatedAt || a.createdAt || a.date_added || a.created_at || 0);
+  const dateB = new Date(b.updatedAt || b.createdAt || b.date_added || b.created_at || 0);
+  return dateB - dateA;
 }
 
 async function fetchJobsList() {
@@ -3989,20 +3992,21 @@ function renderBoard() {
     const start = radarBoardPages[col] * JOB_BOARD_PAGE_SIZE;
     const displayJobs = filtered.slice(start, start + JOB_BOARD_PAGE_SIZE);
     
-    let html = displayJobs.length === 0 ? 
+    list.innerHTML = displayJobs.length === 0 ? 
       `<div class="radar-empty-state">No matching roles in this stage.</div>` :
       displayJobs.map(job => renderJobCard(job)).join('');
       
-    html += renderPager(
-      filtered.length,
-      radarBoardPages[col] || 0,
-      JOB_BOARD_PAGE_SIZE,
-      `setBoardPage('${col}', -1)`,
-      `setBoardPage('${col}', 1)`,
-      true
-    );
-    
-    list.innerHTML = html;
+    const pager = document.getElementById(`pager-${col}`);
+    if (pager) {
+      pager.innerHTML = renderPager(
+        filtered.length,
+        radarBoardPages[col] || 0,
+        JOB_BOARD_PAGE_SIZE,
+        `setBoardPage('${col}', -1)`,
+        `setBoardPage('${col}', 1)`,
+        true
+      );
+    }
   });
   updateAnalytics();
   checkOfferComparison();
@@ -4045,7 +4049,7 @@ function renderJobCard(job) {
   const matchedSkills = (job.skills || job.matched_skills || []).slice(0, 4);
   const gapSkills = (job.missing_skills || []).slice(0, 3);
   const resumeActions = (job.resume_actions || []).slice(0, 2);
-  const createdAt = job.created_at ? new Date(job.created_at) : null;
+  const createdAt = (job.createdAt || job.date_added || job.created_at) ? new Date(job.createdAt || job.date_added || job.created_at) : null;
   const createdLabel = createdAt && !Number.isNaN(createdAt.getTime())
     ? createdAt.toLocaleDateString([], { month: 'short', day: 'numeric' })
     : 'Recent';
