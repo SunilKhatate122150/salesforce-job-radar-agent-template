@@ -2,7 +2,7 @@
 <div class="page-sub">Complex real-world implementation involving Queueable, Platform Events, and External APIs</div>
 
 <div class="qa-block">
-<div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">Design a high-reliability credit pull system for a mortgage company. How do you handle failures?</span><span class="qa-q-label lbl-domain">ASYNC</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">Design a high-reliability credit pull system for a mortgage company. How do you handle failures?</span><span class="qa-q-label lbl-domain">ASYNC</span><span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span></div><div class="qa-answer">
 <p class="ans-p"><b>The Business Problem:</b> Experian API takes 15-45 seconds to return a full mortgage credit report. You can't do this in a standard trigger or LWC wire call without blocking the UI or hitting CPU limits.</p>
 <p class="ans-p"><b>The Solution:</b> Decoupled Event-Driven Architecture.</p>
 <ol class="ans-list">
@@ -36,7 +36,7 @@
 </div></div>
 
 <div class="qa-block">
-<div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">Why use Platform Events to trigger the Queueable? Why not call Queueable directly from the trigger?</span><span class="qa-q-label lbl-apex">ASYNC</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">Why use Platform Events to trigger the Queueable? Why not call Queueable directly from the trigger?</span><span class="qa-q-label lbl-apex">ASYNC</span><span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span></div><div class="qa-answer">
 <p class="ans-p">Calling Queueable directly from a trigger is okay for low volumes, but Platform Events offer <b>Transaction Isolation</b> and <b>Governor Limit Resets</b>.</p>
 <ul class="ans-list">
   <li><b>Isolation:</b> If the main loan save fails and rolls back, the Platform Event (if set to "Publish After Commit") won't fire. We don't pull credit for a loan that wasn't actually saved.</li>
@@ -46,7 +46,7 @@
 </div></div>
 
 <div class="qa-block">
-<div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How do you handle "Read Timeout" or "API Unavailable" errors in a production batch sync?</span><span class="qa-q-label lbl-intg">ASYNC</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How do you handle "Read Timeout" or "API Unavailable" errors in a production batch sync?</span><span class="qa-q-label lbl-intg">ASYNC</span><span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span></div><div class="qa-answer">
 <p class="ans-p"><b>Exponential Backoff Retry Pattern.</b></p>
 <ol class="ans-list">
   <li>Store failed attempts in a <code>Integration_Log__c</code> record related to the Loan.</li>
@@ -64,7 +64,7 @@ public void execute(SchedulableContext sc) {
 </div></div>
 
 <div class="qa-block">
-<div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">Difference between Database.executeBatch and System.enqueueJob? When to pick which?</span><span class="qa-q-label lbl-apex">ASYNC</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">Difference between Database.executeBatch and System.enqueueJob? When to pick which?</span><span class="qa-q-label lbl-apex">ASYNC</span><span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span></div><div class="qa-answer">
 <table class="comparison-table">
   <tr><th>Feature</th><th>Batch Apex</th><th>Queueable</th></tr>
   <tr><td>Max Records</td><td>50 Million (via QueryLocator)</td><td>Usually 1 or small set</td></tr>
@@ -74,3 +74,4 @@ public void execute(SchedulableContext sc) {
 </table>
 <div class="tip-box"><div class="tip-label">Senior Architect Rule</div><p>If you're processing a list of things from a query → <b>Batch</b>. If you're reacting to a single user action or trigger event → <b>Queueable</b>.</p></div>
 </div></div>
+

@@ -1,7 +1,7 @@
 <div class="page-title">Standard Record Page + LWC &mdash; 10 Scenarios</div>
 <div class="page-sub">Adding LWC to record pages, getRecord, LMS communication between sibling components</div>
 
-<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How do you add a custom LWC to a standard record page &mdash; what metadata is required?</span><span class="qa-q-label lbl-lwc">RECORD PAGE</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How do you add a custom LWC to a standard record page &mdash; what metadata is required?</span><span class="qa-q-label lbl-lwc">RECORD PAGE</span><span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span></div><div class="qa-answer">
 <pre class="code"><span class="cmt">&lt;!-- loanSummaryCard.js-meta.xml &mdash; makes component visible in App Builder --&gt;</span>
 &lt;?xml version="1.0" encoding="UTF-8"?&gt;
 &lt;LightningComponentBundle xmlns="http://soap.sforce.com/2006/04/metadata"&gt;
@@ -34,7 +34,7 @@ import { LightningElement, api, wire } from <span class="str">'lwc'</span>;
 <span class="cmt">// Save → Activate (for all users)</span></pre>
 </div></div>
 
-<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">Two custom LWC components on the same record page &mdash; how do they communicate? Complete working code.</span><span class="qa-q-label lbl-lwc">RECORD PAGE</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">Two custom LWC components on the same record page &mdash; how do they communicate? Complete working code.</span><span class="qa-q-label lbl-lwc">RECORD PAGE</span><span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span></div><div class="qa-answer">
 <p class="ans-p">Sibling components on the same record page cannot use CustomEvent (that is only parent-child). Use Lightning Message Service (LMS).</p>
 <pre class="code"><span class="cmt">&lt;!-- STEP 1: Create Message Channel --&gt;</span>
 <span class="cmt">&lt;!-- force-app/main/default/messageChannels/LoanUpdate__c.messageChannel-meta.xml --&gt;</span>
@@ -112,7 +112,7 @@ export default class LoanTimeline extends LightningElement {
 }</pre>
 </div></div>
 
-<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">Complete getRecord + getFieldValue implementation &mdash; all patterns explained</span><span class="qa-q-label lbl-lwc">RECORD PAGE</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">Complete getRecord + getFieldValue implementation &mdash; all patterns explained</span><span class="qa-q-label lbl-lwc">RECORD PAGE</span><span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span></div><div class="qa-answer">
 <pre class="code"><span class="cmt">// loanDetailsWidget.js</span>
 import { LightningElement, api, wire } from <span class="str">'lwc'</span>;
 import { getRecord, getFieldValue } from <span class="str">'lightning/uiRecordApi'</span>;
@@ -170,7 +170,7 @@ export default class LoanDetailsWidget extends LightningElement {
 <span class="cmt">// If recordId is undefined (component placed on non-record page), wire does not fire</span></pre>
 </div></div>
 
-<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How do you use updateRecord from LWC without a form &mdash; complete pattern?</span><span class="qa-q-label lbl-lwc">RECORD PAGE</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How do you use updateRecord from LWC without a form &mdash; complete pattern?</span><span class="qa-q-label lbl-lwc">RECORD PAGE</span><span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span></div><div class="qa-answer">
 <pre class="code"><span class="cmt">// Inline update without lightning-record-edit-form</span>
 import { LightningElement, api, wire } from <span class="str">'lwc'</span>;
 import { updateRecord } from <span class="str">'lightning/uiRecordApi'</span>;
@@ -206,7 +206,7 @@ export default class LoanApproveButton extends LightningElement {
 }</pre>
 </div></div>
 
-<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How do you use createRecord and deleteRecord from LWC &mdash; with confirmation dialog?</span><span class="qa-q-label lbl-lwc">RECORD PAGE</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How do you use createRecord and deleteRecord from LWC &mdash; with confirmation dialog?</span><span class="qa-q-label lbl-lwc">RECORD PAGE</span><span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span></div><div class="qa-answer">
 <pre class="code">import { createRecord, deleteRecord } from <span class="str">'lightning/uiRecordApi'</span>;
 import LOAN_OBJECT from <span class="str">'@salesforce/schema/Loan__c'</span>;
 import LOAN_AMOUNT from <span class="str">'@salesforce/schema/Loan__c.LoanAmount__c'</span>;
@@ -254,7 +254,7 @@ async handleConfirmDelete() {
 }</pre>
 </div></div>
 
-<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How do you use the lwc:ref directive and this.refs &mdash; what replaced querySelector in modern LWC?</span><span class="qa-q-label lbl-lwc">RECORD PAGE</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How do you use the lwc:ref directive and this.refs &mdash; what replaced querySelector in modern LWC?</span><span class="qa-q-label lbl-lwc">RECORD PAGE</span><span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span></div><div class="qa-answer">
 <p class="ans-p">In API version 59.0+, Salesforce introduced <code>lwc:ref</code> as a cleaner alternative to <code>this.template.querySelector()</code> for accessing DOM elements.</p>
 <pre class="code"><span class="cmt">&lt;!-- OLD pattern &mdash; still works but less elegant --&gt;</span>
 &lt;lightning-input data-id="loanAmount" label="Loan Amount"&gt;&lt;/lightning-input&gt;
@@ -288,7 +288,7 @@ handleValidateAll() {
 }</pre>
 </div></div>
 
-<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">What are the different LWC targets in js-meta.xml &mdash; what does each enable?</span><span class="qa-q-label lbl-lwc">RECORD PAGE</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">What are the different LWC targets in js-meta.xml &mdash; what does each enable?</span><span class="qa-q-label lbl-lwc">RECORD PAGE</span><span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span></div><div class="qa-answer">
 <table class="comparison-table"><tr><th>Target</th><th>Where it appears</th><th>Available @api props</th></tr>
 <tr><td>lightning__RecordPage</td><td>Object record pages in App Builder</td><td>recordId, objectApiName</td></tr>
 <tr><td>lightning__AppPage</td><td>Lightning App home pages</td><td>None auto-populated</td></tr>
@@ -301,7 +301,7 @@ handleValidateAll() {
 <div class="tip-box"><div class="tip-label">Important</div><p>A component without isExposed=true and at least one target is invisible in App Builder &mdash; it can only be used programmatically (embedded in another component or called from code). Setting isExposed=true without targets makes it available globally but with no specific context.</p></div>
 </div></div>
 
-<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How do you show a loading spinner correctly for all async scenarios in LWC?</span><span class="qa-q-label lbl-lwc">RECORD PAGE</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How do you show a loading spinner correctly for all async scenarios in LWC?</span><span class="qa-q-label lbl-lwc">RECORD PAGE</span><span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span></div><div class="qa-answer">
 <pre class="code"><span class="cmt">// Handle all 3 async scenarios properly</span>
 isLoading = true;  <span class="cmt">// start as true &mdash; wire fires immediately on load</span>
 error = undefined;
@@ -357,7 +357,7 @@ async loadAllData() {
 &lt;/template&gt;</pre>
 </div></div>
 
-<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How do you embed a Visualforce page or external URL in an LWC on a record page?</span><span class="qa-q-label lbl-lwc">RECORD PAGE</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How do you embed a Visualforce page or external URL in an LWC on a record page?</span><span class="qa-q-label lbl-lwc">RECORD PAGE</span><span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span></div><div class="qa-answer">
 <pre class="code"><span class="cmt">// Use lightning-iframe for embedding external content securely</span>
 <span class="cmt">// NOTE: Content Security Policy (CSP) restricts what can be embedded</span>
 <span class="cmt">// Salesforce must allowlist the domain in CSP Trusted Sites (Setup)</span>
@@ -387,7 +387,7 @@ get vfPageUrl() {
 <span class="cmt">// For external URLs: Must add domain to Setup → CSP Trusted Sites</span></pre>
 </div></div>
 
-<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How do you use lightning-record-view-form vs lightning-record-edit-form vs custom form &mdash; when to use each?</span><span class="qa-q-label lbl-lwc">RECORD PAGE</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How do you use lightning-record-view-form vs lightning-record-edit-form vs custom form &mdash; when to use each?</span><span class="qa-q-label lbl-lwc">RECORD PAGE</span><span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span></div><div class="qa-answer">
 <table class="comparison-table"><tr><th>Component</th><th>Use For</th><th>Validation Rules?</th><th>Custom Logic?</th></tr>
 <tr><td>lightning-record-view-form</td><td>Read-only display of record fields &mdash; respects FLS automatically</td><td>N/A (read only)</td><td>None needed</td></tr>
 <tr><td>lightning-record-edit-form</td><td>Edit form with auto-validation, auto-FLS, auto-submit</td><td>Yes &mdash; automatically</td><td>Limited &mdash; use onsubmit to intercept</td></tr>
@@ -408,3 +408,4 @@ get vfPageUrl() {
     &lt;lightning-button type="submit" label="Save"&gt;&lt;/lightning-button&gt;
 &lt;/lightning-record-edit-form&gt;</pre>
 </div></div>
+

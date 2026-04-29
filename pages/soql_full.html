@@ -1,7 +1,7 @@
 <div class="page-title">SOQL &amp; SOSL &mdash; Master Reference Guide</div>
 <div class="page-sub">Query patterns for Senior Developers &mdash; parent-to-child, child-to-parent, semi-joins, anti-joins, SOSL optimization, dynamic SOQL</div>
 
-<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">Query child records from a parent (Parent-to-Child subquery) &mdash; list active loans on Account?</span><span class="qa-q-label lbl-apex">SOQL</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">Query child records from a parent (Parent-to-Child subquery) &mdash; list active loans on Account?</span><span class="qa-q-label lbl-apex">SOQL</span><span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span></div><div class="qa-answer">
 <p class="ans-p">Use a subquery in the SELECT clause. For custom relationships, use the plural Relationship Name + <code>__r</code>.</p>
 <pre class="code"><span class="cmt">// Get Accounts with their related Loan records in ONE query</span>
 <span class="cls">List</span>&lt;<span class="cls">Account</span>&gt; accs = [
@@ -22,7 +22,7 @@
 <div class="tip-box"><div class="tip-label">Key Developer Tip</div><p>Relationship Name: Standard objects often use the plural name (Contacts, Opportunities). Custom objects use the relationship name defined on the Lookup/Master-Detail field + __r. If you are unsure, find the field in Setup → Field Name → Child Relationship Name.</p></div>
 </div></div>
 
-<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">Query parent data from a child (Child-to-Parent) &mdash; get Loan Officer name from Loan record?</span><span class="qa-q-label lbl-apex">SOQL</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">Query parent data from a child (Child-to-Parent) &mdash; get Loan Officer name from Loan record?</span><span class="qa-q-label lbl-apex">SOQL</span><span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span></div><div class="qa-answer">
 <p class="ans-p">Use dot-notation in the SELECT clause. You can navigate up to 5 levels up. For custom objects, use <code>__r</code> instead of <code>__c</code> for the parent reference.</p>
 <pre class="code"><span class="cmt">// Get Loan with parent Application and parent Loan Officer info</span>
 <span class="cls">List</span>&lt;<span class="cls">Loan__c</span>&gt; loans = [
@@ -42,7 +42,7 @@
 }</pre>
 </div></div>
 
-<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">What are Semi-Joins and Anti-Joins in SOQL &mdash; why use them?</span><span class="qa-q-label lbl-apex">SOQL</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">What are Semi-Joins and Anti-Joins in SOQL &mdash; why use them?</span><span class="qa-q-label lbl-apex">SOQL</span><span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span></div><div class="qa-answer">
 <p class="ans-p">These use a subquery in the WHERE clause instead of the SELECT clause. They are more efficient when you only need parent records that have (or don't have) specific children.</p>
 <pre class="code"><span class="cmt">// SEMI-JOIN (IN subquery)</span>
 <span class="cmt">// Goal: Get Accounts that have at least one active Loan</span>
@@ -60,7 +60,7 @@
 <div class="tip-box"><div class="tip-label">Why use these over regular subqueries?</div><p>Regular subqueries (SELECT ... (SELECT...)) include the child data in the result set, consuming more memory. Semi-joins and Anti-joins filter the parent list WITHOUT returning child data, which is faster and cleaner when you don't actually need to process the child records.</p></div>
 </div></div>
 
-<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How do you use Aggregate Functions in SOQL &mdash; COUNT, SUM, GROUP BY?</span><span class="qa-q-label lbl-apex">SOQL</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How do you use Aggregate Functions in SOQL &mdash; COUNT, SUM, GROUP BY?</span><span class="qa-q-label lbl-apex">SOQL</span><span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span></div><div class="qa-answer">
 <p class="ans-p">Aggregate queries return <code>List&lt;AggregateResult&gt;</code>. You must use <code>.get('alias')</code> and cast the result.</p>
 <pre class="code"><span class="cmt">// Get total loan amount and count per Status</span>
 <span class="cls">List</span>&lt;<span class="cls">AggregateResult</span>&gt; stats = [
@@ -86,7 +86,7 @@
 ];</pre>
 </div></div>
 
-<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">What is SOSL (Salesforce Object Search Language) &mdash; when to use it over SOQL?</span><span class="qa-q-label lbl-apex">SOSL</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">What is SOSL (Salesforce Object Search Language) &mdash; when to use it over SOQL?</span><span class="qa-q-label lbl-apex">SOSL</span><span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span></div><div class="qa-answer">
 <p class="ans-p">SOSL is used for keyword-based search across multiple objects at once. It is faster than SOQL when searching across text fields and when the field you are searching is not indexed.</p>
 <pre class="code"><span class="cmt">// SOSL search for "Smith" across Leads, Contacts, and Loans</span>
 <span class="cls">List</span>&lt;<span class="cls">List</span>&lt;<span class="cls">SObject</span>&gt;&gt; searchResults = [
@@ -103,7 +103,7 @@
 <table class="comparison-table"><tr><th>Feature</th><th>SOQL</th><th>SOSL</th></tr><tr><td>Best for</td><td>Exact matches on single objects</td><td>Fuzzy/keyword search across multi-objects</td></tr><tr><td>Syntax</td><td>SELECT... FROM... WHERE</td><td>FIND... IN... RETURNING</td></tr><tr><td>Search indices</td><td>Fastest on indexed fields</td><td>Fastest on ALL text fields</td></tr><tr><td>Joins</td><td>Supports P2C and C2P joins</td><td>Does not support joins</td></tr><tr><td>Trigger/Process</td><td>Trigger/Process friendly</td><td>NOT available in triggers/processes</td></tr></table>
 </div></div>
 
-<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How do you implement Dynamic SOQL &mdash; security best practices (SQL Injection)?</span><span class="qa-q-label lbl-apex">SOQL</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How do you implement Dynamic SOQL &mdash; security best practices (SQL Injection)?</span><span class="qa-q-label lbl-apex">SOQL</span><span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span></div><div class="qa-answer">
 <p class="ans-p">Dynamic SOQL is built as a string at runtime. You MUST use bind variables (preferred) or <code>String.escapeSingleQuotes()</code> to prevent SQL Injection.</p>
 <pre class="code"><span class="cmt">// DYNAMIC SOQL with Bind Variables (Safe &amp; Clean)</span>
 <span class="cls">String</span> status = <span class="str">'Approved'</span>;
@@ -123,7 +123,7 @@
 }</pre>
 </div></div>
 
-<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How do you handle Large Data Volumes (LDV) in SOQL &mdash; use Query Locators and Offset?</span><span class="qa-q-label lbl-apex">SOQL</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How do you handle Large Data Volumes (LDV) in SOQL &mdash; use Query Locators and Offset?</span><span class="qa-q-label lbl-apex">SOQL</span><span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span></div><div class="qa-answer">
 <pre class="code"><span class="cmt">// 1. Standard SOQL limit: 50,000 records per transaction</span>
 <span class="cmt">// 2. For Batch Apex &mdash; use QueryLocator (up to 50 million records)</span>
 <span class="kw{global} <span class="cls{Database.QueryLocator} start(<span class="cls{Database.BatchableContext} BC) {
@@ -143,7 +143,7 @@
 <div class="tip-box"><div class="tip-label">LDV Interview Point</div><p>When dealing with 1M+ records, mention "Selective Queries." A query is selective when its WHERE clause filters on an indexed field (like External ID, Id, Name, or any custom indexed field) and the result set is below the platform threshold (typically 10% of total records).</p></div>
 </div></div>
 
-<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">What is the "WITH SECURITY_ENFORCED" clause &mdash; why use it in SOQL?</span><span class="qa-q-label lbl-apex">SOQL</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">What is the "WITH SECURITY_ENFORCED" clause &mdash; why use it in SOQL?</span><span class="qa-q-label lbl-apex">SOQL</span><span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span></div><div class="qa-answer">
 <p class="ans-p">This clause enforces field-level security (FLS) in SOQL queries. If the running user doesn't have access to ANY field in the SELECT or WHERE clause, the query throws an exception.</p>
 <pre class="code"><span class="cmt">// SECURE QUERY &mdash; throws System.QueryException if user cannot see 'LoanAmount__c'</span>
 <span class="cls">List</span>&lt;<span class="cls">Loan__c</span>&gt; loans = [
@@ -161,7 +161,7 @@
 <span class="cmt">// USER_MODE is the new recommended approach (2024+) &mdash; it enforces both Object (CRUD) and Field (FLS) access</span></pre>
 </div></div>
 
-<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">Querying polymorphic relationships &mdash; how do you query 'Who' and 'What' on Tasks/Events?</span><span class="qa-q-label lbl-apex">SOQL</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">Querying polymorphic relationships &mdash; how do you query 'Who' and 'What' on Tasks/Events?</span><span class="qa-q-label lbl-apex">SOQL</span><span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span></div><div class="qa-answer">
 <p class="ans-p">Polymorphic fields like <code>WhoId</code> (Lead/Contact) and <code>WhatId</code> (Account/Loan/Case) can point to multiple object types. Use <code>TYPEOF</code> for specific field access.</p>
 <pre class="code"><span class="cls">List</span>&lt;<span class="cls">Task</span>&gt; tasks = [
     <span class="kw{SELECT} Id, Subject,
@@ -182,7 +182,7 @@
 }</pre>
 </div></div>
 
-<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How do you query Big Objects in Salesforce &mdash; what are the limitations?</span><span class="qa-q-label lbl-apex">SOQL</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How do you query Big Objects in Salesforce &mdash; what are the limitations?</span><span class="qa-q-label lbl-apex">SOQL</span><span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span></div><div class="qa-answer">
 <p class="ans-p">Big Objects (e.g., <code>Loan_History__b</code>) store billions of records but have extremely limited SOQL support.</p>
 <ul class="ans-list"><li>WHERE clause MUST use fields in the defined Index, in order.</li><li>Operators: <code>=</code>, <code>&lt;</code>, <code>&gt;</code>, <code>&lt;=</code>, <code>&gt;=</code>, <code>IN</code>. No <code>LIKE</code>, <code>NOT IN</code>, <code>OR</code>.</li><li>No Aggregate functions (COUNT, SUM).</li><li>Pagination: use <code>LIMIT</code> and filter on the Index for the next page.</li></ul>
 <pre class="code"><span class="cmt">// Correct Big Object Query &mdash; using defined index (Borrower__c, Date__c)</span>
@@ -194,3 +194,4 @@
     <span class="kw{LIMIT} <span class="num}100
 ];</pre>
 </div></div>
+

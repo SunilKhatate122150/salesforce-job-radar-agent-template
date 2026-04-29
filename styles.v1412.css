@@ -753,7 +753,10 @@ body {
 .qa-chevron {
   color: var(--muted);
   font-size: 0.75rem;
-  margin-top: 3px;
+  margin-top: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   flex-shrink: 0;
   transition: transform 0.2s;
 }

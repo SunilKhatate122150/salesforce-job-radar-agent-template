@@ -1,13 +1,13 @@
-﻿  <div class="page-title">Advanced Apex â€” Senior Level Questions</div>
-  <div class="page-sub">18 deeper questions â€” these come up in final rounds and architecture discussions</div>
+  <div class="page-title">Advanced Apex — Senior Level Questions</div>
+  <div class="page-sub">18 deeper questions — these come up in final rounds and architecture discussions</div>
 
   <div class="qa-block">
     <div class="qa-question" onclick="toggleQA(this)">
       <span class="qa-q-text">What is the difference between Database.Stateful and without Database.Stateful in Batch Apex? When does it matter?</span>
-      <span class="qa-q-label lbl-apex">ADVANCED APEX</span><span class="qa-chevron">â–¼</span>
+      <span class="qa-q-label lbl-apex">ADVANCED APEX</span><span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span>
     </div>
     <div class="qa-answer">
-      <p class="ans-p">By default, each execute() chunk of a batch job runs in a fresh, isolated transaction. All instance variables are reset between chunks. <b>Database.Stateful</b> changes this â€” instance variables are preserved across all execute() calls for the lifetime of the batch job.</p>
+      <p class="ans-p">By default, each execute() chunk of a batch job runs in a fresh, isolated transaction. All instance variables are reset between chunks. <b>Database.Stateful</b> changes this — instance variables are preserved across all execute() calls for the lifetime of the batch job.</p>
       <table class="comparison-table">
         <tr><th>Feature</th><th>Without Stateful (default)</th><th>With Database.Stateful</th></tr>
         <tr><td>Instance variables between chunks</td><td>Reset to null/default</td><td>Preserved</td></tr>
@@ -39,23 +39,23 @@
         <span class="cls">EmailService</span>.sendReport(totalProcessed, totalApproved, errorMessages);
     }
 }</pre>
-      <div class="tip-box"><div class="tip-label">Without Stateful â€” the bug trap</div><p>Without Stateful, if you have a counter variable and increment it in execute(), it resets to 0 for every chunk. Your finish() method sees 0 or only the count from the last chunk â€” not the true total. This is a very common production bug for developers who don't understand batch state.</p></div>
+      <div class="tip-box"><div class="tip-label">Without Stateful — the bug trap</div><p>Without Stateful, if you have a counter variable and increment it in execute(), it resets to 0 for every chunk. Your finish() method sees 0 or only the count from the last chunk — not the true total. This is a very common production bug for developers who don't understand batch state.</p></div>
     </div>
   </div>
 
   <div class="qa-block">
     <div class="qa-question" onclick="toggleQA(this)">
-      <span class="qa-q-text">Explain Apex CPU time optimisation â€” what consumes CPU and how do you reduce it?</span>
-      <span class="qa-q-label lbl-apex">ADVANCED APEX</span><span class="qa-chevron">â–¼</span>
+      <span class="qa-q-text">Explain Apex CPU time optimisation — what consumes CPU and how do you reduce it?</span>
+      <span class="qa-q-label lbl-apex">ADVANCED APEX</span><span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span>
     </div>
     <div class="qa-answer">
-      <p class="ans-p">CPU time limit is 10,000ms synchronous / 60,000ms async. It measures actual Apex execution time â€” not waiting for SOQL or callouts (those don't count toward CPU). The most common causes of CPU limit errors:</p>
+      <p class="ans-p">CPU time limit is 10,000ms synchronous / 60,000ms async. It measures actual Apex execution time — not waiting for SOQL or callouts (those don't count toward CPU). The most common causes of CPU limit errors:</p>
       <ul class="ans-list">
-        <li><b>String concatenation in loops</b> â€” String is immutable in Apex. Concatenating in a loop creates a new String object every iteration. Use List and String.join() instead.</li>
-        <li><b>Nested loops over large collections</b> â€” O(nÂ²) complexity. Replace inner loop lookups with a Map for O(1).</li>
-        <li><b>JSON serialization of large objects</b> â€” JSON.serialize() on deep object graphs is expensive. Serialize only what you need.</li>
-        <li><b>Regex operations in loops</b> â€” Pattern.compile() is expensive. Compile once, reuse the Matcher.</li>
-        <li><b>Complex formula fields in SOQL result loops</b> â€” Avoid querying formula fields when you don't need them.</li>
+        <li><b>String concatenation in loops</b> — String is immutable in Apex. Concatenating in a loop creates a new String object every iteration. Use List and String.join() instead.</li>
+        <li><b>Nested loops over large collections</b> — O(n²) complexity. Replace inner loop lookups with a Map for O(1).</li>
+        <li><b>JSON serialization of large objects</b> — JSON.serialize() on deep object graphs is expensive. Serialize only what you need.</li>
+        <li><b>Regex operations in loops</b> — Pattern.compile() is expensive. Compile once, reuse the Matcher.</li>
+        <li><b>Complex formula fields in SOQL result loops</b> — Avoid querying formula fields when you don't need them.</li>
       </ul>
       <pre class="code"><span class="cmt">// BAD - String concatenation in loop = new object every iteration</span>
 <span class="cls">String</span> result = <span class="str">''</span>;
@@ -66,7 +66,7 @@
 <span class="kw">for</span>(<span class="cls">Loan__c</span> l : loans) { parts.add(String.valueOf(l.LoanAmount__c)); }
 <span class="cls">String</span> result = <span class="cls">String</span>.join(parts, <span class="str">','</span>); <span class="cmt">// single operation</span>
 
-<span class="cmt">// BAD - nested loop = O(nÂ²)</span>
+<span class="cmt">// BAD - nested loop = O(n²)</span>
 <span class="kw">for</span>(<span class="cls">Loan__c</span> l : loans) {
     <span class="kw">for</span>(<span class="cls">Account</span> a : accounts) { <span class="cmt">// checks every account for every loan</span>
         <span class="kw">if</span>(a.Id == l.AccountId__c) { l.BrokerName__c = a.Name; }
@@ -90,13 +90,13 @@
 
   <div class="qa-block">
     <div class="qa-question" onclick="toggleQA(this)">
-      <span class="qa-q-text">What is Apex Managed Sharing â€” when and how do you implement it?</span>
-      <span class="qa-q-label lbl-apex">ADVANCED APEX</span><span class="qa-chevron">â–¼</span>
+      <span class="qa-q-text">What is Apex Managed Sharing — when and how do you implement it?</span>
+      <span class="qa-q-label lbl-apex">ADVANCED APEX</span><span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span>
     </div>
     <div class="qa-answer">
       <p class="ans-p">Apex Managed Sharing allows you to programmatically grant record access beyond what OWD and sharing rules provide, using a custom RowCause. This is more powerful than manual sharing because it persists across record ownership changes and can be fully automated.</p>
       <pre class="code"><span class="cmt">// Every custom object gets a __Share object automatically</span>
-<span class="cmt">// Loan__c â†’ Loan__Share</span>
+<span class="cmt">// Loan__c → Loan__Share</span>
 <span class="cmt">// Fields: ParentId (record), UserOrGroupId (who gets access), AccessLevel, RowCause</span>
 
 <span class="kw">public class</span> <span class="cls">LoanSharingService</span> {
@@ -133,8 +133,8 @@
 
   <div class="qa-block">
     <div class="qa-question" onclick="toggleQA(this)">
-      <span class="qa-q-text">Explain the difference between addError() on a field vs on the record â€” and when you use each</span>
-      <span class="qa-q-label lbl-apex">ADVANCED APEX</span><span class="qa-chevron">â–¼</span>
+      <span class="qa-q-text">Explain the difference between addError() on a field vs on the record — and when you use each</span>
+      <span class="qa-q-label lbl-apex">ADVANCED APEX</span><span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span>
     </div>
     <div class="qa-answer">
       <pre class="code"><span class="cmt">// addError() on the RECORD - shows error at the top of the page</span>
@@ -166,11 +166,11 @@ loan.addError(<span class="str">'&lt;b&gt;TRID Violation:&lt;/b&gt; Closing date
 
   <div class="qa-block">
     <div class="qa-question" onclick="toggleQA(this)">
-      <span class="qa-q-text">What is Queueable chaining â€” how do you chain 3 jobs and handle failures in the chain?</span>
-      <span class="qa-q-label lbl-apex">ADVANCED APEX</span><span class="qa-chevron">â–¼</span>
+      <span class="qa-q-text">What is Queueable chaining — how do you chain 3 jobs and handle failures in the chain?</span>
+      <span class="qa-q-label lbl-apex">ADVANCED APEX</span><span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span>
     </div>
     <div class="qa-answer">
-      <pre class="code"><span class="cmt">// Chain: CreditCheck â†’ OFACScreening â†’ DocuSignTrigger</span>
+      <pre class="code"><span class="cmt">// Chain: CreditCheck → OFACScreening → DocuSignTrigger</span>
 <span class="cmt">// Each job chains the next only if it succeeds</span>
 
 <span class="kw">public class</span> <span class="cls">CreditCheckJob</span> <span class="kw">implements</span> <span class="cls">Queueable</span>, <span class="cls">Database</span>.<span class="cls">AllowsCallouts</span> {
@@ -213,26 +213,26 @@ loan.addError(<span class="str">'&lt;b&gt;TRID Violation:&lt;/b&gt; Closing date
 
 <span class="cmt">// To start the chain:</span>
 System.enqueueJob(<span class="kw">new</span> <span class="cls">CreditCheckJob</span>(loan.Id));</pre>
-      <div class="tip-box"><div class="tip-label">Use your project story</div><p>Say: "In our mortgage platform, after a loan application was submitted I used a Queueable chain â€” credit check first, then OFAC screening, then DocuSign envelope generation. Each step only chained the next if the current step passed. This way a failed credit check stopped the chain early without triggering document signing for a loan that would be denied."</p></div>
+      <div class="tip-box"><div class="tip-label">Use your project story</div><p>Say: "In our mortgage platform, after a loan application was submitted I used a Queueable chain — credit check first, then OFAC screening, then DocuSign envelope generation. Each step only chained the next if the current step passed. This way a failed credit check stopped the chain early without triggering document signing for a loan that would be denied."</p></div>
     </div>
   </div>
 
   <div class="qa-block">
     <div class="qa-question" onclick="toggleQA(this)">
-      <span class="qa-q-text">What are custom metadata types vs custom settings vs custom objects â€” when do you use each?</span>
-      <span class="qa-q-label lbl-apex">ADVANCED APEX</span><span class="qa-chevron">â–¼</span>
+      <span class="qa-q-text">What are custom metadata types vs custom settings vs custom objects — when do you use each?</span>
+      <span class="qa-q-label lbl-apex">ADVANCED APEX</span><span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span>
     </div>
     <div class="qa-answer">
       <table class="comparison-table">
         <tr><th>Feature</th><th>Custom Metadata Types</th><th>Custom Settings</th><th>Custom Objects</th></tr>
-        <tr><td>Deployable via changesets/SFDX</td><td>Yes â€” full metadata</td><td>No â€” data not deployed</td><td>Object yes, data no</td></tr>
+        <tr><td>Deployable via changesets/SFDX</td><td>Yes — full metadata</td><td>No — data not deployed</td><td>Object yes, data no</td></tr>
         <tr><td>Available in formulas/flows</td><td>Yes</td><td>Yes (Hierarchy type)</td><td>No</td></tr>
-        <tr><td>Queried in Apex</td><td>Yes â€” no SOQL limit</td><td>Yes â€” no SOQL limit (cached)</td><td>Yes â€” counts toward SOQL limit</td></tr>
+        <tr><td>Queried in Apex</td><td>Yes — no SOQL limit</td><td>Yes — no SOQL limit (cached)</td><td>Yes — counts toward SOQL limit</td></tr>
         <tr><td>Packagable</td><td>Yes with data</td><td>Yes, no data</td><td>Yes, no data</td></tr>
         <tr><td>Use for</td><td>Configuration, mappings, feature flags</td><td>Org-wide or user-level config</td><td>Business data, transactional records</td></tr>
       </table>
       <pre class="code"><span class="cmt">// Custom Metadata Type - query with NO SOQL limit</span>
-<span class="cmt">// Created in: Setup â†’ Custom Metadata Types â†’ Loan_Config__mdt</span>
+<span class="cmt">// Created in: Setup → Custom Metadata Types → Loan_Config__mdt</span>
 <span class="cls">Loan_Config__mdt</span> config = [
     <span class="kw">SELECT</span> Min_FICO_Score__c, Max_DTI_Ratio__c, Max_Loan_Amount__c
     <span class="kw">FROM</span> Loan_Config__mdt
@@ -246,7 +246,8 @@ System.enqueueJob(<span class="kw">new</span> <span class="cls">CreditCheckJob</
 
 <span class="cmt">// Or user/profile specific value (Hierarchy type)</span>
 <span class="cls">Loan_Settings__c</span> userSettings = <span class="cls">Loan_Settings__c</span>.getInstance(); <span class="cmt">// gets for current user</span></pre>
-      <div class="tip-box"><div class="tip-label">Recommendation for interviews</div><p>Say: "I prefer Custom Metadata Types for configuration data because they're deployable as metadata â€” they move between sandboxes and production automatically. In our mortgage platform, we stored loan type configurations (min FICO, max DTI, max LTV) as Custom Metadata records. This meant threshold changes were a metadata deploy, not a data load."</p></div>
+      <div class="tip-box"><div class="tip-label">Recommendation for interviews</div><p>Say: "I prefer Custom Metadata Types for configuration data because they're deployable as metadata — they move between sandboxes and production automatically. In our mortgage platform, we stored loan type configurations (min FICO, max DTI, max LTV) as Custom Metadata records. This meant threshold changes were a metadata deploy, not a data load."</p></div>
     </div>
   </div>
+
 

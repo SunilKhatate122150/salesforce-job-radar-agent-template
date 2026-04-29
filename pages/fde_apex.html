@@ -1,7 +1,7 @@
 <div class="page-title">FDE Prep &mdash; Apex &amp; LWC in Agentforce Context</div>
 <div class="page-sub">6 questions connecting your existing Apex/LWC skills to Agentforce development</div>
 
-<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How does @InvocableMethod work differently in Agentforce vs Flow?</span><span class="qa-q-label lbl-fde-code">CODE</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How does @InvocableMethod work differently in Agentforce vs Flow?</span><span class="qa-q-label lbl-fde-code">CODE</span><span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span></div><div class="qa-answer">
     <p class="ans-p"><b>Every Apex agent action IS an @InvocableMethod</b> &mdash; you already know this pattern. But in Agentforce: agent calls it dynamically based on reasoning, inputs are populated by Atlas from conversation context, and output is used for next reasoning step.</p>
     <p class="ans-p"><b>CRITICAL:</b> <code>description</code> on @InvocableVariable is cosmetic in Flows but <b>functional in Agentforce</b> &mdash; Atlas reads it to understand parameters.</p>
     <pre class="code">public class LoanStatusAction {
@@ -35,7 +35,7 @@
     <div class="tip-box"><div class="tip-label">Key insight</div><p>"Descriptions aren't just documentation &mdash; they're instructions to the AI reasoning engine."</p></div>
 </div></div>
 
-<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How should you handle errors in Agentforce Apex actions?</span><span class="qa-q-label lbl-fde-code">CODE</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How should you handle errors in Agentforce Apex actions?</span><span class="qa-q-label lbl-fde-code">CODE</span><span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span></div><div class="qa-answer">
     <p class="ans-p"><b>NEVER</b> let actions throw raw exceptions &mdash; return structured error responses instead.</p>
     <pre class="code">@InvocableMethod(label='Get Loan Balance')
 public static List&lt;Response&gt; getLoanBalance(List&lt;Request&gt; requests) {
@@ -59,7 +59,7 @@ public static List&lt;Response&gt; getLoanBalance(List&lt;Request&gt; requests) 
     <div class="tip-box"><div class="tip-label">UX principle</div><p>"Graceful errors in agent actions are critical &mdash; a raw exception becomes a confusing 'Something went wrong' to the customer."</p></div>
 </div></div>
 
-<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">Agent actions must be synchronous &mdash; how do you handle long-running processes?</span><span class="qa-q-label lbl-fde-code">CODE</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">Agent actions must be synchronous &mdash; how do you handle long-running processes?</span><span class="qa-q-label lbl-fde-code">CODE</span><span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span></div><div class="qa-answer">
     <ul class="ans-list">
       <li>Actions execute within reasoning loop &mdash; must return synchronously</li>
       <li>But an action can ENQUEUE a Queueable for downstream processing</li>
@@ -69,7 +69,7 @@ public static List&lt;Response&gt; getLoanBalance(List&lt;Request&gt; requests) 
     <div class="tip-box"><div class="tip-label">Your advantage</div><p>"The action is the front door &mdash; fast and responsive. The Queueable is the back office &mdash; heavy lifting happens async."</p></div>
 </div></div>
 
-<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">Your trigger framework &mdash; how does it interact with Agentforce?</span><span class="qa-q-label lbl-fde-code">CODE</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">Your trigger framework &mdash; how does it interact with Agentforce?</span><span class="qa-q-label lbl-fde-code">CODE</span><span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span></div><div class="qa-answer">
     <ul class="ans-list">
       <li>Agent actions create/update CRM records → <b>your triggers WILL fire</b></li>
       <li><b>Critical:</b> If action creates a Case and you have a before-insert trigger → runs in action's execution context → same governor limits</li>
@@ -79,7 +79,7 @@ public static List&lt;Response&gt; getLoanBalance(List&lt;Request&gt; requests) 
     <div class="tip-box"><div class="tip-label">Competitive edge</div><p>"This is where my Apex experience gives me a real advantage &mdash; order of execution, recursion prevention, governor limits from day one."</p></div>
 </div></div>
 
-<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How can LWC be used alongside Agentforce?</span><span class="qa-q-label lbl-fde-code">CODE</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How can LWC be used alongside Agentforce?</span><span class="qa-q-label lbl-fde-code">CODE</span><span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span></div><div class="qa-answer">
     <ul class="ans-list">
       <li><b>Embedded agent:</b> lightning-messaging-utility component embeds agent chat in any LWC page</li>
       <li><b>Custom rich output:</b> Agent returns structured data → your LWC renders it as a loan dashboard or payment timeline</li>
@@ -88,7 +88,7 @@ public static List&lt;Response&gt; getLoanBalance(List&lt;Request&gt; requests) 
     </ul>
 </div></div>
 
-<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">Agent Testing Framework &mdash; how do you write tests?</span><span class="qa-q-label lbl-fde-arch">ARCHITECTURE</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">Agent Testing Framework &mdash; how do you write tests?</span><span class="qa-q-label lbl-fde-arch">ARCHITECTURE</span><span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span></div><div class="qa-answer">
     <ul class="ans-list">
       <li><b>Conversation-level:</b> Agent Conversation Simulator to replay conversations, verify topic routing + action invocation</li>
       <li><b>Action-level:</b> Each Apex action = @InvocableMethod → write standard Apex test classes</li>
@@ -117,3 +117,4 @@ public class LoanStatusActionTest {
     }
 }</pre>
 </div></div>
+

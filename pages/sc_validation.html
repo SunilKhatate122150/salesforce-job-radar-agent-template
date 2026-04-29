@@ -1,7 +1,7 @@
 <div class="page-title">Validation &mdash; UI and Backend Scenarios</div>
 <div class="page-sub">10 scenarios enforcing data quality from LWC form to Apex trigger to database &mdash; complete end-to-end</div>
 
-<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How do you validate a custom LWC form with multiple lightning-input fields before calling Apex?</span><span class="qa-q-label lbl-lwc">VALIDATION</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How do you validate a custom LWC form with multiple lightning-input fields before calling Apex?</span><span class="qa-q-label lbl-lwc">VALIDATION</span><span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span></div><div class="qa-answer">
 <pre class="code">// loanApplicationForm.js
 import { LightningElement, track } from 'lwc';
 import { ShowToastEvent } from 'lightning/platformShowToastEvent';
@@ -64,7 +64,7 @@ export default class LoanApplicationForm extends LightningElement {
 }</pre>
 </div></div>
 
-<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How does trigger addError() surface to LWC &mdash; show the complete flow from trigger to UI toast?</span><span class="qa-q-label lbl-lwc">VALIDATION</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How does trigger addError() surface to LWC &mdash; show the complete flow from trigger to UI toast?</span><span class="qa-q-label lbl-lwc">VALIDATION</span><span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span></div><div class="qa-answer">
 <pre class="code">// APEX TRIGGER &mdash; addError prevents DML and returns error to caller
 trigger LoanTrigger on Loan__c (before insert, before update) {
     for(Loan__c loan : Trigger.new) {
@@ -103,7 +103,7 @@ async handleSaveLoan() {
 // No extra error handling code needed for trigger validation!</pre>
 </div></div>
 
-<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">Validation Rule vs Apex before trigger &mdash; which runs first and when to use each?</span><span class="qa-q-label lbl-apex">VALIDATION</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">Validation Rule vs Apex before trigger &mdash; which runs first and when to use each?</span><span class="qa-q-label lbl-apex">VALIDATION</span><span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span></div><div class="qa-answer">
 <table class="comparison-table"><tr><th>Feature</th><th>Validation Rule</th><th>Apex Before Trigger</th></tr>
 <tr><td>Runs on ALL DML (API, UI, Data Loader)</td><td>Yes</td><td>Yes</td></tr>
 <tr><td>Can query other objects</td><td>No (formula only)</td><td>Yes</td></tr>
@@ -114,7 +114,7 @@ async handleSaveLoan() {
 <div class="tip-box"><div class="tip-label">Execution order</div><p>Full Salesforce save order: System validation → Before triggers → Custom validation rules → Duplicate rules → After triggers → Workflow rules → Processes → Flows. Apex before trigger runs BEFORE validation rules &mdash; so if your trigger throws an error, validation rules never run for that record.</p></div>
 </div></div>
 
-<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How do you prevent duplicate records using an Apex trigger &mdash; complete bulkified code?</span><span class="qa-q-label lbl-apex">VALIDATION</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How do you prevent duplicate records using an Apex trigger &mdash; complete bulkified code?</span><span class="qa-q-label lbl-apex">VALIDATION</span><span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span></div><div class="qa-answer">
 <pre class="code">trigger ContactDuplicateTrigger on Contact (before insert, before update) {
 
     // Step 1: Collect emails from new/updated records
@@ -147,7 +147,7 @@ async handleSaveLoan() {
 }</pre>
 </div></div>
 
-<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How do you validate file uploads in LWC &mdash; restrict type and size before sending to server?</span><span class="qa-q-label lbl-lwc">VALIDATION</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How do you validate file uploads in LWC &mdash; restrict type and size before sending to server?</span><span class="qa-q-label lbl-lwc">VALIDATION</span><span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span></div><div class="qa-answer">
 <pre class="code">const MAX_SIZE = 10 * 1024 * 1024;  // 10 MB in bytes
 const ALLOWED_EXTS = ['.pdf', '.jpg', '.jpeg', '.png'];
 
@@ -194,7 +194,7 @@ export default class FileValidator extends LightningElement {
 }</pre>
 </div></div>
 
-<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How does lightning-record-edit-form handle validation automatically &mdash; show onsubmit, onsuccess, onerror pattern?</span><span class="qa-q-label lbl-lwc">VALIDATION</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How does lightning-record-edit-form handle validation automatically &mdash; show onsubmit, onsuccess, onerror pattern?</span><span class="qa-q-label lbl-lwc">VALIDATION</span><span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span></div><div class="qa-answer">
 <pre class="code">&lt;!-- loanEditForm.html --&gt;
 &lt;lightning-record-edit-form
     record-id={recordId}
@@ -240,7 +240,7 @@ handleError(event) {
 }</pre>
 </div></div>
 
-<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How do you handle Database.SaveResult errors in Apex and return them clearly to LWC?</span><span class="qa-q-label lbl-apex">VALIDATION</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How do you handle Database.SaveResult errors in Apex and return them clearly to LWC?</span><span class="qa-q-label lbl-apex">VALIDATION</span><span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span></div><div class="qa-answer">
 <pre class="code">// Apex &mdash; partial DML with error collection
 @AuraEnabled
 public static Map&lt;String,Object&gt; bulkSaveLoans(List&lt;Loan__c&gt; loans) {
@@ -264,3 +264,4 @@ public static Map&lt;String,Object&gt; bulkSaveLoans(List&lt;Loan__c&gt; loans) 
     return new Map&lt;String,Object&gt;{ 'successIds' =&gt; successIds, 'errors' =&gt; errors };
 }</pre>
 </div></div>
+

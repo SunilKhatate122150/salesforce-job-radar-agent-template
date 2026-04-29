@@ -1,7 +1,7 @@
 <div class="page-title">FDE Prep &mdash; Data Cloud Advanced &amp; Scenarios</div>
 <div class="page-sub">7 advanced scenario and architecture questions on Data Cloud</div>
 
-<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">Mortgage company has data in CRM, legacy LOS, and payments system. Build a unified profile.</span><span class="qa-q-label lbl-fde-scenario">SCENARIO</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">Mortgage company has data in CRM, legacy LOS, and payments system. Build a unified profile.</span><span class="qa-q-label lbl-fde-scenario">SCENARIO</span><span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span></div><div class="qa-answer">
     <ul class="ans-list">
       <li>Step 1: CRM data via Salesforce CRM Connector &mdash; Contact, Account, Opportunity → Individual DMO + Loan_Application DMO</li>
       <li>Step 2: LOS data via S3 batch connector &mdash; nightly export; DLO → Loan_Account DMO + Individual DMO</li>
@@ -13,7 +13,7 @@
     <div class="tip-box"><div class="tip-label">Personal connection</div><p>This maps directly to your Mortgage Origination Platform &mdash; connect it in your answer.</p></div>
 </div></div>
 
-<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How would you use Data Cloud to trigger a real-time journey when a borrower's ARM rate is about to adjust?</span><span class="qa-q-label lbl-fde-scenario">SCENARIO</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How would you use Data Cloud to trigger a real-time journey when a borrower's ARM rate is about to adjust?</span><span class="qa-q-label lbl-fde-scenario">SCENARIO</span><span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span></div><div class="qa-answer">
     <ul class="ans-list">
       <li>Rate adjustment date stored in Loan_Account DMO. Create Calculated Insight: days_until_rate_adjustment</li>
       <li>Build Streaming Insight rule: when days_until_rate_adjustment = 90, fire trigger event</li>
@@ -24,7 +24,7 @@
     <div class="tip-box"><div class="tip-label">End-to-end</div><p>This shows Data Cloud → Marketing Cloud → Sales Cloud → Agentforce working together. Exactly what FDE interviews reward.</p></div>
 </div></div>
 
-<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">Duplicate Unified Individuals in Data Cloud. How do you investigate and fix?</span><span class="qa-q-label lbl-fde-arch">ARCHITECTURE</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">Duplicate Unified Individuals in Data Cloud. How do you investigate and fix?</span><span class="qa-q-label lbl-fde-arch">ARCHITECTURE</span><span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span></div><div class="qa-answer">
     <ul class="ans-list">
       <li>Step 1: Check Identity Resolution job logs &mdash; did the job run? Are match rules processing all DMOs?</li>
       <li>Step 2: Match rules too narrow &mdash; only exact email misses records where email is blank</li>
@@ -35,7 +35,7 @@
     </ul>
 </div></div>
 
-<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How does Data Cloud help Agentforce give personalized responses to a returning mortgage customer?</span><span class="qa-q-label lbl-fde-scenario">SCENARIO</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How does Data Cloud help Agentforce give personalized responses to a returning mortgage customer?</span><span class="qa-q-label lbl-fde-scenario">SCENARIO</span><span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span></div><div class="qa-answer">
     <ul class="ans-list">
       <li><b>Without Data Cloud:</b> agent only has CRM data &mdash; limited to one system's view</li>
       <li><b>With Data Cloud:</b> agent retrieves Unified Individual &mdash; includes CRM, LOS, payments, web behavior across ALL touchpoints</li>
@@ -45,7 +45,7 @@
     <p class="ans-p">This is the Agentforce + Data Cloud core value &mdash; grounding enables personalization at scale without human involvement.</p>
 </div></div>
 
-<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">What are Data Graphs in Data Cloud? Why critical for Agentforce?</span><span class="qa-q-label lbl-fde">CONCEPT</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">What are Data Graphs in Data Cloud? Why critical for Agentforce?</span><span class="qa-q-label lbl-fde">CONCEPT</span><span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span></div><div class="qa-answer">
     <ul class="ans-list">
       <li><b>Data Graphs</b> = pre-built, optimized views of related Data Cloud objects in a single retrievable entity</li>
       <li>Think of them as <b>materialized views</b> &mdash; pre-joined data for fast retrieval</li>
@@ -56,7 +56,7 @@
     <div class="tip-box"><div class="tip-label">Performance insight</div><p>"Data Graphs make Agentforce grounding fast at scale &mdash; pre-join data so the agent doesn't pay query cost at conversation time."</p></div>
 </div></div>
 
-<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">What is Data Cloud's Vector Database / Embeddings? How does RAG actually work?</span><span class="qa-q-label lbl-fde-arch">ARCHITECTURE</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">What is Data Cloud's Vector Database / Embeddings? How does RAG actually work?</span><span class="qa-q-label lbl-fde-arch">ARCHITECTURE</span><span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span></div><div class="qa-answer">
     <p class="ans-p">Data Cloud has a <b>native vector database</b> for storing embeddings (numerical representations of text).</p>
     <div class="fde-flow-diagram">RAG Flow:
 1. Upload knowledge docs (policy PDFs, FAQ) to Data Cloud
@@ -72,7 +72,7 @@ Result: Accurate, sourced answer from authoritative content</div>
     <div class="tip-box"><div class="tip-label">Key definition</div><p>"RAG is an architecture pattern connecting generative AI to authoritative knowledge. Vector search is the retrieval mechanism."</p></div>
 </div></div>
 
-<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">What is the Zero Copy Partner Network? Why is it significant?</span><span class="qa-q-label lbl-fde">CONCEPT</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">What is the Zero Copy Partner Network? Why is it significant?</span><span class="qa-q-label lbl-fde">CONCEPT</span><span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span></div><div class="qa-answer">
     <ul class="ans-list">
       <li><b>Zero Copy</b> = data accessed in-place without physically copying to Data Cloud</li>
       <li><b>Partners:</b> Snowflake, Google BigQuery, Databricks, Amazon Redshift</li>
@@ -82,3 +82,4 @@ Result: Accurate, sourced answer from authoritative content</div>
     </ul>
     <div class="tip-box"><div class="tip-label">Architecture position</div><p>"Zero Copy is Salesforce's answer to the lakehouse architecture &mdash; federate queries instead of moving data."</p></div>
 </div></div>
+

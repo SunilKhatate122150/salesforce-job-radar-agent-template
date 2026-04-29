@@ -60,7 +60,7 @@ trigger LoanStatusUpdateTrigger on Loan_Status_Update__e (after insert) {
   </div>
 </div>
 
-<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">What is Change Data Capture (CDC) &mdash; how is it different from Platform Events?</span><span class="qa-q-label lbl-intg">PLATFORM EVENTS</span><span class="qa-chevron"></span></div><div class="qa-answer">
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">What is Change Data Capture (CDC) &mdash; how is it different from Platform Events?</span><span class="qa-q-label lbl-intg">PLATFORM EVENTS</span><span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span></div><div class="qa-answer">
 <table class="comparison-table"><tr><th>Feature</th><th>Platform Events</th><th>Change Data Capture</th></tr><tr><td>Who creates it</td><td>You publish via EventBus.publish()</td><td>Salesforce auto-generates on record DML</td></tr><tr><td>What triggers it</td><td>Your explicit publish call</td><td>Any Insert/Update/Delete/Undelete on subscribed object</td></tr><tr><td>Payload</td><td>Custom fields you define</td><td>ChangeEventHeader: changed fields, change type, record IDs</td></tr><tr><td>Use for</td><td>Business process events, decoupling, notifications</td><td>Real-time data sync to external systems</td></tr><tr><td>Retention</td><td>72 hours</td><td>3 days</td></tr><tr><td>Setup</td><td>Create custom PE object</td><td>Enable per-object in Setup ΓåÆ Change Data Capture</td></tr></table>
 <pre class="code">// Subscribe to Loan__c CDC changes in Apex trigger
 trigger LoanCDCTrigger on LoanChangeEvent (after insert) {
@@ -76,7 +76,7 @@ trigger LoanCDCTrigger on LoanChangeEvent (after insert) {
 }</pre>
 </div></div>
 
-<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">What is the ReplayId in Platform Events &mdash; how does event replay work?</span><span class="qa-q-label lbl-intg">PLATFORM EVENTS</span><span class="qa-chevron"></span></div><div class="qa-answer">
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">What is the ReplayId in Platform Events &mdash; how does event replay work?</span><span class="qa-q-label lbl-intg">PLATFORM EVENTS</span><span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span></div><div class="qa-answer">
 <p class="ans-p">Every Platform Event gets a monotonically increasing ReplayId. Subscribers use it to resume from a specific point in the 72-hour retention window &mdash; critical for disaster recovery.</p>
 <pre class="code">// empApi in LWC &mdash; replay options
 // -1 = new events only (default)
@@ -93,7 +93,7 @@ subscribe('/event/Loan_Status_Change__e', 12345, callback); // replay from event
 <div class="tip-box"><div class="tip-label">Disaster recovery</div><p>If your external system is down for 2 hours it can resubscribe with the last processed ReplayId and receive every missed event. This is the killer advantage of Platform Events over custom polling tables.</p></div>
 </div></div>
 
-<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">Publish Immediately vs Publish After Commit &mdash; which to use and when?</span><span class="qa-q-label lbl-intg">PLATFORM EVENTS</span><span class="qa-chevron"></span></div><div class="qa-answer">
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">Publish Immediately vs Publish After Commit &mdash; which to use and when?</span><span class="qa-q-label lbl-intg">PLATFORM EVENTS</span><span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span></div><div class="qa-answer">
 <table class="comparison-table"><tr><th></th><th>Publish Immediately</th><th>Publish After Commit</th></tr><tr><td>When fires</td><td>The moment EventBus.publish() is called</td><td>Only when enclosing transaction commits successfully</td></tr><tr><td>If tx rolls back</td><td>Event still published &mdash; subscribers may act on rolled-back data</td><td>Event NOT published &mdash; consistent with data</td></tr><tr><td>Set where</td><td>Platform Event definition ΓåÆ Publish Behavior</td><td>Same</td></tr><tr><td>Use for</td><td>Logging, monitoring, non-critical notifications</td><td>Business events tied to data state changes</td></tr></table>
 <pre class="code">// Trigger with Publish After Commit PE (correct for data-driven events)
 trigger LoanTrigger on Loan__c (after update) {
@@ -106,7 +106,7 @@ trigger LoanTrigger on Loan__c (after update) {
 }</pre>
 </div></div>
 
-<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How do you subscribe to Platform Events in LWC using empApi?</span><span class="qa-q-label lbl-intg">PLATFORM EVENTS</span><span class="qa-chevron"></span></div><div class="qa-answer">
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How do you subscribe to Platform Events in LWC using empApi?</span><span class="qa-q-label lbl-intg">PLATFORM EVENTS</span><span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span></div><div class="qa-answer">
 <pre class="code">import { LightningElement } from 'lwc';
 import { subscribe, unsubscribe, onError } from 'lightning/empApi';
 
@@ -134,7 +134,7 @@ export default class LoanStatusMonitor extends LightningElement {
 }</pre>
 </div></div>
 
-<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">What are Platform Event governor limits and how do you handle publish failures?</span><span class="qa-q-label lbl-intg">PLATFORM EVENTS</span><span class="qa-chevron"></span></div><div class="qa-answer">
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">What are Platform Event governor limits and how do you handle publish failures?</span><span class="qa-q-label lbl-intg">PLATFORM EVENTS</span><span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span></div><div class="qa-answer">
 <table class="comparison-table"><tr><th>Limit</th><th>Value</th></tr><tr><td>Events published per transaction</td><td>150 (same as DML limit)</td></tr><tr><td>Max event message size</td><td>1 MB per event</td></tr><tr><td>Daily volume (Enterprise)</td><td>250,000 / day</td></tr><tr><td>Daily volume (Unlimited)</td><td>500,000 / day</td></tr><tr><td>Subscriber trigger limits</td><td>Standard async Apex limits (200 SOQL, 150 DML per chunk)</td></tr></table>
 <pre class="code">// Always check publish results
 List&lt;Loan_Status_Change__e&gt; events = buildEvents(loans);
@@ -147,7 +147,7 @@ for (Integer i = 0; i &lt; results.size(); i++) {
 }</pre>
 </div></div>
 
-<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How do you use Platform Events to decouple a trigger from complex post-processing?</span><span class="qa-q-label lbl-intg">PLATFORM EVENTS</span><span class="qa-chevron"></span></div><div class="qa-answer">
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How do you use Platform Events to decouple a trigger from complex post-processing?</span><span class="qa-q-label lbl-intg">PLATFORM EVENTS</span><span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span></div><div class="qa-answer">
 <p class="ans-p">Classic pattern: trigger publishes a Platform Event ΓåÆ separate subscriber trigger handles downstream work. The original trigger stays thin and fast.</p>
 <pre class="code">// Thin trigger &mdash; just publishes, no logic
 trigger LoanTrigger on Loan__c (after update) {
@@ -171,7 +171,7 @@ trigger LoanLOSObserver on Loan_Event__e (after insert) {
 }</pre>
 </div></div>
 
-<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">What is the Streaming API &mdash; what are all its event types?</span><span class="qa-q-label lbl-intg">PLATFORM EVENTS</span><span class="qa-chevron"></span></div><div class="qa-answer">
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">What is the Streaming API &mdash; what are all its event types?</span><span class="qa-q-label lbl-intg">PLATFORM EVENTS</span><span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span></div><div class="qa-answer">
 <ul class="ans-list">
   <li><b>PushTopic Events (legacy)</b> &mdash; define a SOQL query, subscribers notified when matching records change. Being replaced by CDC.</li>
   <li><b>Generic Streaming Events</b> &mdash; lightweight, schema-less JSON messages. No retention. Good for simple real-time notifications.</li>
@@ -181,7 +181,7 @@ trigger LoanLOSObserver on Loan_Event__e (after insert) {
 </ul>
 </div></div>
 
-<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How do you test Platform Event publishing and subscribing in Apex tests?</span><span class="qa-q-label lbl-intg">PLATFORM EVENTS</span><span class="qa-chevron"></span></div><div class="qa-answer">
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How do you test Platform Event publishing and subscribing in Apex tests?</span><span class="qa-q-label lbl-intg">PLATFORM EVENTS</span><span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span></div><div class="qa-answer">
 <pre class="code">// Testing publishing &mdash; verify events were enqueued
 @isTest
 static void testEventPublish() {
@@ -208,7 +208,7 @@ static void testSubscriberTrigger() {
 }</pre>
 </div></div>
 
-<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">What are Platform Events vs Custom Notifications vs In-App Notifications?</span><span class="qa-q-label lbl-intg">PLATFORM EVENTS</span><span class="qa-chevron"></span></div><div class="qa-answer">
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">What are Platform Events vs Custom Notifications vs In-App Notifications?</span><span class="qa-q-label lbl-intg">PLATFORM EVENTS</span><span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span></div><div class="qa-answer">
 <table class="comparison-table"><tr><th>Feature</th><th>Platform Events</th><th>Custom Notifications</th><th>In-App Notifications</th></tr><tr><td>Primary use</td><td>System integration, event-driven architecture</td><td>Push notifications to Salesforce users</td><td>Bell icon notifications in Salesforce UI</td></tr><tr><td>Channel</td><td>Streaming API, Apex triggers, LWC</td><td>Salesforce mobile app, desktop</td><td>Salesforce UI bell icon</td></tr><tr><td>Sent from</td><td>Apex, Flow, API</td><td>Apex, Flow</td><td>Flow, Process Builder</td></tr><tr><td>External systems?</td><td>Yes &mdash; via Streaming API</td><td>No &mdash; Salesforce users only</td><td>No &mdash; Salesforce users only</td></tr><tr><td>Code</td><td>EventBus.publish()</td><td>Messaging.CustomNotification</td><td>Native Flow action</td></tr></table>
 <pre class="code">// Send Custom Notification from Apex (push to mobile/desktop)
 Messaging.CustomNotification notification = new Messaging.CustomNotification();
@@ -218,3 +218,4 @@ notification.setNotificationTypeId([SELECT Id FROM CustomNotificationType WHERE 
 notification.setTargetId(loan.Id); // opens this record when tapped
 notification.send(new Set&lt;String&gt;{loan.OwnerId}); // send to loan officer</pre>
 </div></div>
+

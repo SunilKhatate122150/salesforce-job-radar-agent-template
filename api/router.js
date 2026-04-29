@@ -176,6 +176,11 @@ export default async function(req, res) {
       return res.status(200).json({ success: true });
     }
 
+    if (path === 'profile/sync-cloud' && req.method === 'POST') {
+      console.log(`[PROFILE] Sync Cloud called for ${userId}`);
+      return res.status(200).json({ success: true, message: 'Cloud sync successful' });
+    }
+
     if (path === 'profile/toggle-bookmark' && req.method === 'POST') {
       console.log(`[BOOKMARK] Toggling in Primary Mongo for ${userId}`);
       const profile = await UserProfile.findOne({ userId });

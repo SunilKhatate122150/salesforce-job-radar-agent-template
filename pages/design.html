@@ -64,7 +64,7 @@ public class <span class="cls">LoanApprovalService</span> {
   </div>
 </div>
 
-<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">What is the Service Layer pattern &mdash; why is it the most important pattern in Salesforce?</span><span class="qa-q-label lbl-apex">PATTERNS</span><span class="qa-chevron"></span></div><div class="qa-answer">
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">What is the Service Layer pattern &mdash; why is it the most important pattern in Salesforce?</span><span class="qa-q-label lbl-apex">PATTERNS</span><span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span></div><div class="qa-answer">
 <p class="ans-p">Service Layer is where business logic lives. Without it, logic gets duplicated across triggers, LWC controllers, batch jobs, and APIs.</p>
 <pre class="code">// WITHOUT service layer &mdash; same logic duplicated everywhere
 // In trigger after update: sendApprovalEmail(loan); updateBorrower(loan);
@@ -88,7 +88,7 @@ public with sharing class LoanApprovalService {
 // Batch calls: LoanApprovalService.approve(scope); &mdash; SAME service, no duplication</pre>
 </div></div>
 
-<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">What is the Trigger Handler pattern &mdash; complete implementation with framework?</span><span class="qa-q-label lbl-apex">PATTERNS</span><span class="qa-chevron"></span></div><div class="qa-answer">
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">What is the Trigger Handler pattern &mdash; complete implementation with framework?</span><span class="qa-q-label lbl-apex">PATTERNS</span><span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span></div><div class="qa-answer">
 <pre class="code">// TriggerHandler.cls &mdash; virtual base (framework layer)
 public virtual class TriggerHandler {
   public virtual void onBeforeInsert() {} public virtual void onAfterInsert() {}
@@ -121,7 +121,7 @@ trigger LoanTrigger on Loan__c (before insert, before update, after insert, afte
 }</pre>
 </div></div>
 
-<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">What is the Strategy pattern &mdash; complete Salesforce implementation?</span><span class="qa-q-label lbl-apex">PATTERNS</span><span class="qa-chevron"></span></div><div class="qa-answer">
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">What is the Strategy pattern &mdash; complete Salesforce implementation?</span><span class="qa-q-label lbl-apex">PATTERNS</span><span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span></div><div class="qa-answer">
 <pre class="code">public interface ILoanProcessor {
   void validate(Loan__c loan);
   Decimal calculateRate(Loan__c loan);
@@ -153,7 +153,7 @@ proc.validate(loan);
 loan.Interest_Rate__c = proc.calculateRate(loan);</pre>
 </div></div>
 
-<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">What is the Observer pattern &mdash; how does it map to Platform Events in Salesforce?</span><span class="qa-q-label lbl-apex">PATTERNS</span><span class="qa-chevron"></span></div><div class="qa-answer">
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">What is the Observer pattern &mdash; how does it map to Platform Events in Salesforce?</span><span class="qa-q-label lbl-apex">PATTERNS</span><span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span></div><div class="qa-answer">
 <p class="ans-p">Observer defines a one-to-many relationship: when subject changes, all observers are notified. Platform Events are the native Salesforce implementation.</p>
 <pre class="code">// Subject (publisher) &mdash; just publishes. Knows nothing about observers.
 trigger LoanTrigger on Loan__c (after update) {
@@ -175,7 +175,7 @@ trigger LOSObserver on Loan_Event__e (after insert) {
 // Adding a new observer requires ZERO changes to the trigger (open/closed principle)</pre>
 </div></div>
 
-<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">What is the Decorator pattern in Apex &mdash; when is it useful?</span><span class="qa-q-label lbl-apex">PATTERNS</span><span class="qa-chevron"></span></div><div class="qa-answer">
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">What is the Decorator pattern in Apex &mdash; when is it useful?</span><span class="qa-q-label lbl-apex">PATTERNS</span><span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span></div><div class="qa-answer">
 <pre class="code">public interface IEmailService { void sendApproval(Loan__c loan); }
 
 // Base
@@ -205,7 +205,7 @@ IEmailService service = new LoanOfficerCCDecorator(new LoggingEmailDecorator(new
 service.sendApproval(loan); // all three layers execute</pre>
 </div></div>
 
-<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">What is the Facade pattern &mdash; how does it simplify complex Salesforce orchestration?</span><span class="qa-q-label lbl-apex">PATTERNS</span><span class="qa-chevron"></span></div><div class="qa-answer">
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">What is the Facade pattern &mdash; how does it simplify complex Salesforce orchestration?</span><span class="qa-q-label lbl-apex">PATTERNS</span><span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span></div><div class="qa-answer">
 <pre class="code">// WITHOUT Facade &mdash; LWC controller knows too much about internals:
 // CreditService.run(); OfacService.run(); DocService.generate(); NotifService.send(); LOSService.sync();
 
@@ -227,7 +227,7 @@ public class LoanApplicationFacade {
 // LWC calls: await submitLoan({ loanId }); &mdash; one call, complete orchestration hidden</pre>
 </div></div>
 
-<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">What is the Singleton pattern in Apex &mdash; when does it save governor limits?</span><span class="qa-q-label lbl-apex">PATTERNS</span><span class="qa-chevron"></span></div><div class="qa-answer">
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">What is the Singleton pattern in Apex &mdash; when does it save governor limits?</span><span class="qa-q-label lbl-apex">PATTERNS</span><span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span></div><div class="qa-answer">
 <pre class="code">// Without Singleton &mdash; each call to getConfig() runs a SOQL query
 // In a trigger processing 200 records: 200 calls = 200 SOQL &mdash; hits the limit!
 
@@ -257,7 +257,7 @@ for (Loan__c loan : Trigger.new) {
 }</pre>
 </div></div>
 
-<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">What is the Unit of Work pattern &mdash; how does it reduce DML statements?</span><span class="qa-q-label lbl-apex">PATTERNS</span><span class="qa-chevron"></span></div><div class="qa-answer">
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">What is the Unit of Work pattern &mdash; how does it reduce DML statements?</span><span class="qa-q-label lbl-apex">PATTERNS</span><span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span></div><div class="qa-answer">
 <p class="ans-p">Unit of Work collects all pending DML operations across a business process and executes them in one coordinated batch at the end &mdash; minimising DML statements and ensuring transactional integrity.</p>
 <pre class="code">// Without UoW &mdash; scattered DML (3 separate statements)
 public static void approveLoan(Id loanId) {
@@ -287,7 +287,7 @@ uow.registerDirty(loan); uow.registerDirty(account); uow.registerNew(approvalLog
 uow.commitWork(); // 2 DML statements instead of 3</pre>
 </div></div>
 
-<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">What is the Null Object pattern &mdash; how does it eliminate defensive null checks?</span><span class="qa-q-label lbl-apex">PATTERNS</span><span class="qa-chevron"></span></div><div class="qa-answer">
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">What is the Null Object pattern &mdash; how does it eliminate defensive null checks?</span><span class="qa-q-label lbl-apex">PATTERNS</span><span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span></div><div class="qa-answer">
 <pre class="code">// WITHOUT null object &mdash; null checks everywhere
 ILoanProcessor proc = LoanProcessorFactory.get(loan.Loan_Type__c); // might return null
 if (proc != null) { proc.validate(loan); proc.calculateRate(loan); }
@@ -310,7 +310,7 @@ ILoanProcessor proc = LoanProcessorFactory.get(loan.Loan_Type__c);
 proc.validate(loan); // safe &mdash; worst case is a no-op</pre>
 </div></div>
 
-<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">What is Separation of Concerns &mdash; how do you apply it across Apex layers?</span><span class="qa-q-label lbl-apex">PATTERNS</span><span class="qa-chevron"></span></div><div class="qa-answer">
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">What is Separation of Concerns &mdash; how do you apply it across Apex layers?</span><span class="qa-q-label lbl-apex">PATTERNS</span><span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span></div><div class="qa-answer">
 <p class="ans-p">Every class should have one reason to change. In Salesforce, the layers are:</p>
 <ul class="ans-list">
   <li><b>Trigger</b> &mdash; dispatcher only. One line: new Handler().run(). No business logic.</li>
@@ -323,3 +323,4 @@ proc.validate(loan); // safe &mdash; worst case is a no-op</pre>
 </ul>
 <div class="tip-box"><div class="tip-label">Why it matters</div><p>When Loan approval logic changes, you change LoanApprovalService only. Not the trigger, not the LWC controller, not the batch. Without SoC, one business rule change requires hunting through 10 files.</p></div>
 </div></div>
+

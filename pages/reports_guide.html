@@ -1,7 +1,7 @@
 <div class="page-title">Reports &amp; Dashboards &mdash; Master Reference Guide</div>
 <div class="page-sub">Analytics for the Mortgage Domain &mdash; report types, dynamic dashboards, and Analytics API</div>
 
-<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">What are the 4 Report Formats in Salesforce &mdash; when do you use each?</span><span class="qa-q-label lbl-domain">REPORTS</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">What are the 4 Report Formats in Salesforce &mdash; when do you use each?</span><span class="qa-q-label lbl-domain">REPORTS</span><span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span></div><div class="qa-answer">
 <ul class="ans-list">
   <li><b>Tabular:</b> Simple list of records. No groupings. Like an Excel sheet. (e.g., "Mailing list of all borrowers").</li>
   <li><b>Summary:</b> Groupings by rows. Includes subtotals. (e.g., "Loans grouped by Status").</li>
@@ -11,7 +11,7 @@
 <div class="tip-box"><div class="tip-label">Dashboard Tip</div><p>Only Summary and Matrix reports can be used as source data for dashboard components (charts, gauges).</p></div>
 </div></div>
 
-<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How do you access Report Data in Apex &mdash; "Reports and Dashboards API"?</span><span class="qa-q-label lbl-apex">REPORTS</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How do you access Report Data in Apex &mdash; "Reports and Dashboards API"?</span><span class="qa-q-label lbl-apex">REPORTS</span><span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span></div><div class="qa-answer">
 <p class="ans-p">You can run reports programmatically from Apex to get real-time data for custom LWC charts or automated calculations.</p>
 <pre class="code"><span class="cmt">// Run a report synchronously</span>
 <span class="cls">String</span> reportId = <span class="str">'00O...'</span>;
@@ -32,7 +32,7 @@ System.debug(<span class="str">'Report Name: '</span> + meta.getName());
 }</pre>
 </div></div>
 
-<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">Report Types &mdash; standard vs custom, joined reports, cross-filters?</span><span class="qa-q-label lbl-domain">REPORTS MASTER</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">Report Types &mdash; standard vs custom, joined reports, cross-filters?</span><span class="qa-q-label lbl-domain">REPORTS MASTER</span><span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span></div><div class="qa-answer">
 <p class="ans-p"><b>Custom Report Types (CRT)</b> &mdash; define which objects and fields are available in a report. Necessary when standard report types don't include the fields or relationships you need.</p>
 <ul class="ans-list">
   <li><b>Create CRT</b> &mdash; Setup → Report Types → New. Define primary object, related objects, and which fields are available</li>
@@ -53,7 +53,7 @@ for (Reports.ReportDetailRow row : facts.getRows()) {
 }</pre>
 </div></div>
 
-<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">Dynamic Dashboards and Dashboard Filters &mdash; how do they work?</span><span class="qa-q-label lbl-domain">REPORTS MASTER</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">Dynamic Dashboards and Dashboard Filters &mdash; how do they work?</span><span class="qa-q-label lbl-domain">REPORTS MASTER</span><span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span></div><div class="qa-answer">
 <ul class="ans-list">
   <li><b>Dynamic Dashboards</b> &mdash; show data as the viewing user (respects their sharing and visibility). Standard dashboards show data as the dashboard's running user (one fixed view for all).</li>
   <li><b>When to use Dynamic</b> &mdash; each user should see only their data (loan officers see their own loans). When to use Standard &mdash; executive dashboards where everyone needs the same org-wide view.</li>
@@ -64,7 +64,7 @@ for (Reports.ReportDetailRow row : facts.getRows()) {
 <div class="tip-box"><div class="tip-label">Dashboard component limit</div><p>Each dashboard supports up to 20 components. For complex executive dashboards, use Analytics Studio (Einstein Analytics/CRM Analytics) which has no such limit and supports more chart types.</p></div>
 </div></div>
 
-<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How do you schedule report exports from Apex &mdash; complete class?</span><span class="qa-q-label lbl-apex">REPORTS</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How do you schedule report exports from Apex &mdash; complete class?</span><span class="qa-q-label lbl-apex">REPORTS</span><span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span></div><div class="qa-answer">
 <pre class="code"><span class="kw{public class} <span class="cls{ScheduledLoanReport} <span class="kw{implements} <span class="cls{Schedulable} {
     <span class="kw{public void} execute(<span class="cls{SchedulableContext} ctx) {
         <span class="cls">Reports.ReportResults</span> r = <span class="cls">Reports.ReportManager</span>.runReport(<span class="str">'00O...'</span>, <span class="kw{true});
@@ -81,3 +81,4 @@ for (Reports.ReportDetailRow row : facts.getRows()) {
 }
 <span class="cmt">// Schedule: System.schedule('Daily Report', '0 0 7 * * ?', new ScheduledLoanReport());</span></pre>
 </div></div>
+

@@ -4,7 +4,7 @@
   <div class="qa-block">
     <div class="qa-question" onclick="toggleQA(this)">
       <span class="qa-q-text">Design a notification system in Salesforce that sends emails, SMS, and push notifications based on loan status changes â€” how would you architect this?</span>
-      <span class="qa-q-label lbl-domain">SCENARIO</span><span class="qa-chevron">â–¼</span>
+      <span class="qa-q-label lbl-domain">SCENARIO</span><span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span>
     </div>
     <div class="qa-answer">
       <p class="ans-p"><b>Step 1 â€” Identify the trigger:</b> Record-Triggered Flow or After Update trigger on Loan__c fires when Status__c changes.</p>
@@ -19,7 +19,7 @@
   <div class="qa-block">
     <div class="qa-question" onclick="toggleQA(this)">
       <span class="qa-q-text">A batch job that processes 2 million loan records is timing out. How do you diagnose and fix it?</span>
-      <span class="qa-q-label lbl-domain">SCENARIO</span><span class="qa-chevron">â–¼</span>
+      <span class="qa-q-label lbl-domain">SCENARIO</span><span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span>
     </div>
     <div class="qa-answer">
       <p class="ans-p"><b>Step 1 â€” Diagnose first:</b> Check the AsyncApexJob record to see which chunk failed. Enable debug logs for the batch user. Look at which line hits the time limit â€” use Limits.getCpuTime() at different points to narrow it down.</p>
@@ -45,7 +45,7 @@
   <div class="qa-block">
     <div class="qa-question" onclick="toggleQA(this)">
       <span class="qa-q-text">How would you migrate 500,000 records from a legacy system into Salesforce without affecting production users?</span>
-      <span class="qa-q-label lbl-domain">SCENARIO</span><span class="qa-chevron">â–¼</span>
+      <span class="qa-q-label lbl-domain">SCENARIO</span><span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span>
     </div>
     <div class="qa-answer">
       <p class="ans-p"><b>Strategy: Phased migration with validation gates</b></p>
@@ -59,7 +59,7 @@
       </ul>
     </div>
   </div>
-  <div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How would you design bidirectional sync between Salesforce and a Loan Origination System?</span><span class="qa-q-label lbl-intg">SCENARIO</span><span class="qa-chevron">&#9660;</span></div><div class="qa-answer">
+  <div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How would you design bidirectional sync between Salesforce and a Loan Origination System?</span><span class="qa-q-label lbl-intg">SCENARIO</span><span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span></div><div class="qa-answer">
   <p class="ans-p"><b>Salesforce to LOS (outbound):</b></p>
   <ul class="ans-list">
     <li>After-Save Record-Triggered Flow or trigger detects change on Loan__c</li>
@@ -77,4 +77,5 @@
   <p class="ans-p"><b>Conflict resolution:</b> Last_Sync_Source__c field (LOS or SFDC) + Last_Sync_Timestamp__c. Business rule: Salesforce wins for status changes, LOS wins for rate locks and financial figures.</p>
   </div></div>
 </div>
+
 

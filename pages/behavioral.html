@@ -142,51 +142,51 @@
     </div>
 </div>
 
-<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">Tell me about a time you had to learn a complex new technology quickly?</span><span class="qa-q-label lbl-behav">BEHAVIORAL</span><span class="qa-chevron"></span></div><div class="qa-answer">
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">Tell me about a time you had to learn a complex new technology quickly?</span><span class="qa-q-label lbl-behav">BEHAVIORAL</span><span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span></div><div class="qa-answer">
 <p class="ans-p"><b>Situation:</b> Three months into my project, the client added a requirement to integrate with Experian credit bureau API. I had never worked with credit bureau APIs or FCRA compliance requirements.</p>
 <p class="ans-p"><b>Task:</b> Design and build a production-grade credit pull integration in six weeks, including FCRA-compliant data handling, error handling, and retry logic.</p>
 <p class="ans-p"><b>Action:</b> I broke it into three tracks. First, read Experian documentation end-to-end and built a proof-of-concept callout in Developer Org within week one. Second, studied FCRA requirements and documented how our implementation needed to comply. Third, called two Salesforce partners who had done credit bureau integrations to learn their architecture decisions.</p>
 <p class="ans-p"><b>Result:</b> Integration went live week five &mdash; one week early. Handles 200+ credit pulls daily with 99.2% success rate. The FCRA approach I designed became the standard for all subsequent integrations.</p>
 </div></div>
 
-<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">Describe a time you disagreed with a senior technical decision?</span><span class="qa-q-label lbl-behav">BEHAVIORAL</span><span class="qa-chevron"></span></div><div class="qa-answer">
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">Describe a time you disagreed with a senior technical decision?</span><span class="qa-q-label lbl-behav">BEHAVIORAL</span><span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span></div><div class="qa-answer">
 <p class="ans-p"><b>Situation:</b> During architecture review, the tech lead proposed using Workflow Rules and polling every 5 minutes for the LOS sync. I believed Platform Events would be significantly better.</p>
 <p class="ans-p"><b>Task:</b> Make the case diplomatically without undermining the tech lead.</p>
 <p class="ans-p"><b>Action:</b> I asked for 20 minutes in the next design session. I prepared a comparison: the polling approach would execute 288 scheduled jobs per day and make 288 API calls regardless of whether data changed. Platform Events would only trigger when data changed and scale from 10 to 10,000 loan changes per day without architecture change. I framed it as considering all options, not criticising.</p>
 <p class="ans-p"><b>Result:</b> Tech lead agreed to pilot the Platform Event approach. We adopted it for production. I learned that HOW you raise a disagreement matters as much as whether you are technically right.</p>
 </div></div>
 
-<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">Tell me about the most complex bug you debugged?</span><span class="qa-q-label lbl-behav">BEHAVIORAL</span><span class="qa-chevron"></span></div><div class="qa-answer">
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">Tell me about the most complex bug you debugged?</span><span class="qa-q-label lbl-behav">BEHAVIORAL</span><span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span></div><div class="qa-answer">
 <p class="ans-p"><b>Situation:</b> In production, loan status intermittently did not update even though LWC showed Save Successful. Happened 3% of the time &mdash; no reproducible steps.</p>
 <p class="ans-p"><b>Action:</b> I ruled out obvious causes &mdash; no failed DML, no validation failures, no sharing issues. The 3% rate correlated with concurrent edits &mdash; two users updating the same record within seconds. Found that our static variable recursion guard was set to true even when the first trigger invocation failed, and was never reset in a finally block. When User B saved immediately after, the guard was still true and the handler exited early.</p>
 <p class="ans-p"><b>Result:</b> After resetting the flag in a finally block, the failure rate dropped to zero over 30 days. Lesson: intermittent bugs almost always have a concurrency or state management root cause.</p>
 </div></div>
 
-<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">Describe a time you delivered difficult news to a client?</span><span class="qa-q-label lbl-behav">BEHAVIORAL</span><span class="qa-chevron"></span></div><div class="qa-answer">
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">Describe a time you delivered difficult news to a client?</span><span class="qa-q-label lbl-behav">BEHAVIORAL</span><span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span></div><div class="qa-answer">
 <p class="ans-p"><b>Situation:</b> Two weeks before go-live, I found a logic error in pro-rated interest calculations affecting 23 of 180 test records. CFO had already signed off on UAT.</p>
 <p class="ans-p"><b>Action:</b> I requested a live call with the project sponsor and CFO the same day. I prepared: exact scope of the problem, root cause, complete fix plan, and two options &mdash; delay one week or go-live with documented manual workaround for 23 affected loan types. I led with facts: 'In validation we found a calculation error affecting 12% of records. Here are your two options.'</p>
 <p class="ans-p"><b>Result:</b> Client chose the one-week delay. CFO said: 'This is exactly how I want issues raised &mdash; facts, impact, options.' We went live one week later with zero calculation issues in production.</p>
 </div></div>
 
-<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">Tell me about mentoring a junior developer?</span><span class="qa-q-label lbl-behav">BEHAVIORAL</span><span class="qa-chevron"></span></div><div class="qa-answer">
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">Tell me about mentoring a junior developer?</span><span class="qa-q-label lbl-behav">BEHAVIORAL</span><span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span></div><div class="qa-answer">
 <p class="ans-p"><b>Situation:</b> A junior developer was writing trigger logic directly in .trigger files with SOQL inside loops. Their trigger would have hit the governor limit at 50+ records.</p>
 <p class="ans-p"><b>Action:</b> Instead of just commenting 'fix the SOQL', I scheduled a 45-minute pairing session. I explained WHY the limit exists &mdash; Salesforce multi-tenant architecture means one org's runaway Apex impacts all orgs on the same server. Then we refactored together &mdash; I asked questions rather than gave answers: 'What information do we need from Account? Can we get all of it at once?'</p>
 <p class="ans-p"><b>Result:</b> In the next sprint, zero bulkification issues in their code reviews. They later became the person on our team who explained bulkification to new joiners. Most effective mentoring asks questions that guide discovery, not gives answers directly.</p>
 </div></div>
 
-<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">Describe balancing technical quality with deadline pressure?</span><span class="qa-q-label lbl-behav">BEHAVIORAL</span><span class="qa-chevron"></span></div><div class="qa-answer">
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">Describe balancing technical quality with deadline pressure?</span><span class="qa-q-label lbl-behav">BEHAVIORAL</span><span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span></div><div class="qa-answer">
 <p class="ans-p"><b>Situation:</b> On day 8 of a 10-day sprint, I realised my DocuSign polling approach would not handle webhook failures &mdash; no retry mechanism.</p>
 <p class="ans-p"><b>Action:</b> I assessed the real risk: the polling worked for 95% of cases. Webhook miss was rare and required manual follow-up. I documented the gap clearly: frequency of impact and 3-day effort to fix properly. I brought this to the product owner with two clear options and let them decide &mdash; making sure they understood the risk they were accepting, not protecting myself.</p>
 <p class="ans-p"><b>Result:</b> Product owner chose to deliver on time. Fixed properly in Sprint 4. The limitation was hit twice before the fix &mdash; both handled manually with no customer impact. Technical debt is sometimes the right call, but only when risk is quantified and the stakeholder consciously accepts it.</p>
 </div></div>
 
-<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">Tell me about working with legacy code and technical debt?</span><span class="qa-q-label lbl-behav">BEHAVIORAL</span><span class="qa-chevron"></span></div><div class="qa-answer">
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">Tell me about working with legacy code and technical debt?</span><span class="qa-q-label lbl-behav">BEHAVIORAL</span><span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span></div><div class="qa-answer">
 <p class="ans-p"><b>Situation:</b> Joined a project with an Account trigger that was 800 lines of procedural code in the .trigger file &mdash; no handler pattern, SOQL scattered throughout, 65% test coverage.</p>
 <p class="ans-p"><b>Action:</b> First two days: mapping all automations and dependencies before touching anything. Then wrote tests for existing behaviour to lock in a baseline. For new features, created a new handler class and restructured the trigger to call it &mdash; not touching existing logic. Over four sprints, proposed two story points per sprint for debt reduction, framed in business terms: 'This refactoring reduces deployment time from 4 hours to 45 minutes.'</p>
 <p class="ans-p"><b>Result:</b> After four sprints: fully converted to handler pattern, test coverage 91%, Account deployment time dropped from 4+ hours to under one hour.</p>
 </div></div>
 
-<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">Describe your approach to code reviews &mdash; giving and receiving?</span><span class="qa-q-label lbl-behav">BEHAVIORAL</span><span class="qa-chevron"></span></div><div class="qa-answer">
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">Describe your approach to code reviews &mdash; giving and receiving?</span><span class="qa-q-label lbl-behav">BEHAVIORAL</span><span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span></div><div class="qa-answer">
 <p class="ans-p"><b>Giving reviews &mdash; my framework:</b></p>
 <ul class="ans-list">
   <li><b>Severity labels:</b> Must Fix (blocker), Should Fix (important), Consider (suggestion). No ambiguity about what is required.</li>
@@ -203,19 +203,19 @@
 </ul>
 </div></div>
 
-<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">Tell me about handling a production incident?</span><span class="qa-q-label lbl-behav">BEHAVIORAL</span><span class="qa-chevron"></span></div><div class="qa-answer">
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">Tell me about handling a production incident?</span><span class="qa-q-label lbl-behav">BEHAVIORAL</span><span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span></div><div class="qa-answer">
 <p class="ans-p"><b>Situation:</b> At 9 AM Monday, loan officers reported the LWC loan form was throwing errors for all FHA loans. Production impact &mdash; officers could not submit FHA applications.</p>
 <p class="ans-p"><b>Action:</b> First 5 minutes: set up debug log, reproduced the error, captured the stack trace. Error: NullPointerException in FHALoanProcessor.calculateRate() &mdash; a Custom Metadata deployment from Friday had accidentally wiped the FHA rate configuration row. Fix: added the missing metadata record directly in Setup &mdash; no deployment needed for CMDT records. Total time: 23 minutes from first report to resolution.</p>
 <p class="ans-p"><b>Result:</b> Loan officers back to full operation in 23 minutes. Post-incident: added metadata validation check to deployment checklist and created Scheduled Apex that verifies required CMDT records exist and alerts admins if any are missing.</p>
 </div></div>
 
-<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">Where do you see yourself in 3-5 years &mdash; how does this role fit?</span><span class="qa-q-label lbl-behav">BEHAVIORAL</span><span class="qa-chevron"></span></div><div class="qa-answer">
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">Where do you see yourself in 3-5 years &mdash; how does this role fit?</span><span class="qa-q-label lbl-behav">BEHAVIORAL</span><span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span></div><div class="qa-answer">
 <p class="ans-p">In 3 to 5 years, I want to be making architecture decisions for complex Salesforce implementations &mdash; not just executing them. I want to be the person who can say 'here is why Platform Events serve us better than polling, and here is the risk we accept' with full technical credibility.</p>
 <p class="ans-p">This role fits specifically because: the US mortgage domain requires FCRA and RESPA compliance &mdash; those constraints force you to build correctly. The senior developer position means real design decisions. And I am working toward the Salesforce Architect certification &mdash; the complexity of this work is the fastest path to that knowledge.</p>
 <div class="tip-box"><div class="tip-label">Key elements of strong answer</div><p>1. Specific &mdash; name what you want to do, not vague growth. 2. Connected to THIS role specifically. 3. Ambitious but realistic. 4. Shows long-term commitment.</p></div>
 </div></div>
 
-<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How do you stay current with Salesforce releases and new features?</span><span class="qa-q-label lbl-behav">BEHAVIORAL</span><span class="qa-chevron"></span></div><div class="qa-answer">
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How do you stay current with Salesforce releases and new features?</span><span class="qa-q-label lbl-behav">BEHAVIORAL</span><span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span></div><div class="qa-answer">
 <p class="ans-p">Salesforce releases 3 major updates per year: Spring (February), Summer (June), Winter (October).</p>
 <ul class="ans-list">
   <li><b>Release Notes:</b> Read for every release &mdash; focus on Apex API changes, LWC new capabilities, Flow enhancements, deprecated features and their retirement timelines.</li>
@@ -226,3 +226,4 @@
 </ul>
 <div class="tip-box"><div class="tip-label">Interview answer</div><p>Say: I stay current through release notes and the Salesforce Developer Blog, and I test major features in sandbox before they reach production. I also track the Process Builder deprecation timeline because we have existing automations that need migration to Flow &mdash; I want to stay ahead of forced retirements rather than scramble at the deadline.</p></div>
 </div></div>
+

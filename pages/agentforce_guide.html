@@ -1,7 +1,7 @@
 <div class="page-title">Agentforce &mdash; Implementation Guide</div>
 <div class="page-sub">Building autonomous agents, custom actions, and grounding strategies for Senior Developers</div>
 
-<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How do you trigger an Agentforce agent from LWC &mdash; can you embed it?</span><span class="qa-q-label lbl-lwc">AGENTFORCE</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How do you trigger an Agentforce agent from LWC &mdash; can you embed it?</span><span class="qa-q-label lbl-lwc">AGENTFORCE</span><span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span></div><div class="qa-answer">
 <p class="ans-p">You don't "call" an agent via API normally; you use the standard <b>Lightning Messaging for Web/In-App</b> component. The agent is the backend engine. However, you can use the <code>lightning-conversational-agent-service</code> to interact with an active session.</p>
 <pre class="code"><span class="cmt">// Communicate with an active agent session in LWC</span>
 import { LightningElement, wire } from <span class="str">'lwc'</span>;
@@ -20,7 +20,7 @@ export default class AgentIntegrator extends LightningElement {
 }</pre>
 </div></div>
 
-<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">What is a Prompt Template and how does it work with Agentforce?</span><span class="qa-q-label lbl-apex">AGENTFORCE</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">What is a Prompt Template and how does it work with Agentforce?</span><span class="qa-q-label lbl-apex">AGENTFORCE</span><span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span></div><div class="qa-answer">
 <p class="ans-p">Prompt Templates are where you define the "personality" and "logic" of an AI response. They are stored as metadata. You can include record data directly in the prompt using <code>{!$Input:Loan__c.Name}</code>.</p>
 <ul class="ans-list">
   <li><b>Salesforce Prompt Builder:</b> Declarative tool to write prompts.</li>
@@ -31,7 +31,7 @@ export default class AgentIntegrator extends LightningElement {
 <div class="tip-box"><div class="tip-label">Developer Task</div><p>Your job isn't just to write the Apex; it's to write the "System Prompt" &mdash; the instructions that tell the AI how to behave. "You are a senior mortgage underwriter. Summarize this loan application focusing on credit risk. Use a professional but empathetic tone."</p></div>
 </div></div>
 
-<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How do you handle multi-step actions in Agentforce (e.g., lookup → calculate → update)?</span><span class="qa-q-label lbl-domain">AGENTFORCE</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How do you handle multi-step actions in Agentforce (e.g., lookup → calculate → update)?</span><span class="qa-q-label lbl-domain">AGENTFORCE</span><span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span></div><div class="qa-answer">
 <p class="ans-p">The "Atlas" reasoning engine handles the sequencing. You don't write one massive Apex class; you write small, atomic actions.</p>
 <ol class="ans-list">
   <li><b>Action 1 (Apex):</b> <code>getLoanDetails(loanId)</code> &mdash; returns the record.</li>
@@ -41,7 +41,7 @@ export default class AgentIntegrator extends LightningElement {
 <p class="ans-p">The Agent reads the user's request: "Update my loan estimate based on a 7% rate." Atlas decides: "I need to get details first, then calculate, then update." It calls your actions in that order automatically.</p>
 </div></div>
 
-<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">What are the security implications of Agentforce &mdash; does it respect sharing rules?</span><span class="qa-q-label lbl-domain">AGENTFORCE</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">What are the security implications of Agentforce &mdash; does it respect sharing rules?</span><span class="qa-q-label lbl-domain">AGENTFORCE</span><span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span></div><div class="qa-answer">
 <ul class="ans-list">
   <li><b>User Context:</b> Agentforce actions run in the context of the <b>Running User</b>. If the user doesn't have access to a record via sharing rules, the agent's Apex action (if written correctly with <code>WITH USER_MODE</code>) won't see it either.</li>
   <li><b>Prompt Data:</b> Only data the user is allowed to see is injected into prompt templates.</li>
@@ -51,7 +51,7 @@ export default class AgentIntegrator extends LightningElement {
 <div class="warn-box"><div class="warn-label">Security Warning</div><p>If you write an Apex action with <code>without sharing</code>, the agent could potentially reveal information to a user they aren't supposed to see. ALWAYS use <code>with sharing</code> or <code>inherited sharing</code> for Agentforce actions.</p></div>
 </div></div>
 
-<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How do you debug an agent that is "going off track" or hallucinating?</span><span class="qa-q-label lbl-domain">AGENTFORCE</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How do you debug an agent that is "going off track" or hallucinating?</span><span class="qa-q-label lbl-domain">AGENTFORCE</span><span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span></div><div class="qa-answer">
 <ul class="ans-list">
   <li><b>Conversation Logs:</b> Check the exact transcript. See what the "System Prompt" was and what data was grounded.</li>
   <li><b>Agent Builder Simulator:</b> Use the 'Show Runtime Details' toggle. It shows the agent's "Thought Process" &mdash; why it chose a specific action.</li>
@@ -60,7 +60,7 @@ export default class AgentIntegrator extends LightningElement {
 </ul>
 </div></div>
 
-<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">What is the "Atlas" engine &mdash; explain it to an architect?</span><span class="qa-q-label lbl-domain">AGENTFORCE</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">What is the "Atlas" engine &mdash; explain it to an architect?</span><span class="qa-q-label lbl-domain">AGENTFORCE</span><span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span></div><div class="qa-answer">
 <p class="ans-p">Atlas is the <b>orchestration layer</b> between the user's natural language and your Salesforce logic. It replaces the old "if/then" branching of traditional bots with an <b>autonomous reasoning loop</b>.</p>
 <ol class="ans-list">
   <li><b>Understand:</b> Uses LLM to parse intent and extract entities (e.g., Loan ID).</li>
@@ -72,7 +72,7 @@ export default class AgentIntegrator extends LightningElement {
 </ol>
 </div></div>
 
-<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How do you deploy Agentforce configurations between environments?</span><span class="qa-q-label lbl-domain">AGENTFORCE</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How do you deploy Agentforce configurations between environments?</span><span class="qa-q-label lbl-domain">AGENTFORCE</span><span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span></div><div class="qa-answer">
 <ul class="ans-list">
   <li><b>Metadata Types:</b> <code>Bot</code> (the agent definition), <code>GenAiPromptTemplate</code>, <code>GenAiPlanner</code>, <code>InvocableAction</code>.</li>
   <li><b>Change Sets / DevOps Center:</b> You can include these metadata types in your deployment.</li>
@@ -80,3 +80,4 @@ export default class AgentIntegrator extends LightningElement {
   <li><b>API Name Sync:</b> Ensure your Apex classes and Flows have identical API names across environments so the agent's action mappings don't break.</li>
 </ul>
 </div></div>
+

@@ -3,7 +3,7 @@
 
 <div style="margin:2rem 0 1rem;padding:0.8rem 1.2rem;background:var(--card2);border-left:3px solid var(--blue);border-radius:8px;"><div style="font-size:0.88rem;font-weight:700;color:var(--blue);font-family:'IBM Plex Mono',monospace;">ARAGO &mdash; Senior Salesforce Developer (4 Years)</div><div style="font-size:0.75rem;color:var(--muted);margin-top:4px;">27 core technical questions from the actual interview</div></div>
 
-<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How do you control trigger execution order if multiple triggers exist on the same object?</span><span class="qa-q-label lbl-apex">ARAGO</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How do you control trigger execution order if multiple triggers exist on the same object?</span><span class="qa-q-label lbl-apex">ARAGO</span><span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span></div><div class="qa-answer">
 <p class="ans-p">Salesforce does <b>not guarantee execution order</b> when multiple triggers exist on the same object. The only reliable solution is the <b>one trigger per object rule</b>.</p>
 <pre class="code">// One trigger &mdash; acts as dispatcher only
 trigger LoanTrigger on Loan__c (before insert, before update, after insert, after update, after delete) {
@@ -24,7 +24,7 @@ public class LoanTriggerHandler extends TriggerHandler {
 <div class="tip-box"><div class="tip-label">Interview answer</div><p>Say: 'I enforce one trigger per object in every project. Execution order is controlled within the handler class &mdash; the order method calls are made is explicit and fully predictable.'</p></div>
 
 </div></div>
-<div class="qa-block"><div class="qa-question" onclick="onclick=toggleQA(this)"><span class="qa-q-text">How do you handle bulk insert/update operations efficiently in triggers?</span><span class="qa-q-label lbl-apex">ARAGO</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<div class="qa-block"><div class="qa-question" onclick="onclick=toggleQA(this)"><span class="qa-q-text">How do you handle bulk insert/update operations efficiently in triggers?</span><span class="qa-q-label lbl-apex">ARAGO</span><span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span></div><div class="qa-answer">
 <p class="ans-p">Core rule: <b>never put SOQL or DML inside a for loop</b>. Always process the full Trigger.new batch collectively.</p>
 <pre class="code">// BAD &mdash; hits 101-query limit with 101 records
 for (Loan__c l : Trigger.new) {
@@ -51,7 +51,7 @@ update accMap.values(); // one DML for all accounts</pre>
 </ul>
 
 </div></div>
-<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">Explain the difference between before and after triggers with an example.</span><span class="qa-q-label lbl-apex">ARAGO</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">Explain the difference between before and after triggers with an example.</span><span class="qa-q-label lbl-apex">ARAGO</span><span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span></div><div class="qa-answer">
 <table class="comparison-table"><tr><th></th><th>Before Trigger</th><th>After Trigger</th></tr><tr><td>When</td><td>Before record saved to DB</td><td>After record saved to DB</td></tr><tr><td>Record Id available?</td><td>No (Insert) / Yes (Update)</td><td>Yes always</td></tr><tr><td>Can modify Trigger.new?</td><td>Yes &mdash; auto-saved</td><td>No &mdash; must use DML</td></tr><tr><td>Primary use</td><td>Set defaults, validate, derive fields</td><td>Create child records, callouts, events</td></tr><tr><td>Extra DML?</td><td>No &mdash; changes saved automatically</td><td>Yes &mdash; explicit DML required</td></tr></table>
 <pre class="code">// Before insert &mdash; no DML needed
 trigger BeforeEx on Loan__c (before insert) {
@@ -68,7 +68,7 @@ trigger AfterEx on Loan__c (after insert) {
 }</pre>
 
 </div></div>
-<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How can you prevent recursion in triggers?</span><span class="qa-q-label lbl-apex">ARAGO</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How can you prevent recursion in triggers?</span><span class="qa-q-label lbl-apex">ARAGO</span><span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span></div><div class="qa-answer">
 <p class="ans-p"><b>Pattern 1 &mdash; Static boolean (simplest):</b></p>
 <pre class="code">public class TriggerHelper { public static Boolean loanTriggerRan = false; }
 trigger LoanTrigger on Loan__c (after update) {
@@ -87,7 +87,7 @@ trigger LoanTrigger on Loan__c (after update) {
 <div class="tip-box"><div class="tip-label">Why it works</div><p>Static variables persist for the entire transaction but reset between transactions. A workflow re-entry sees the same static variable &mdash; the guard stops the loop.</p></div>
 
 </div></div>
-<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">What is a trigger execution context?</span><span class="qa-q-label lbl-apex">ARAGO</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">What is a trigger execution context?</span><span class="qa-q-label lbl-apex">ARAGO</span><span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span></div><div class="qa-answer">
 <p class="ans-p">The execution context defines which DML event fired the trigger and which phase (before/after) is running.</p>
 <table class="comparison-table"><tr><th>Variable</th><th>True when</th></tr><tr><td>Trigger.isInsert</td><td>INSERT DML</td></tr><tr><td>Trigger.isUpdate</td><td>UPDATE DML</td></tr><tr><td>Trigger.isDelete</td><td>DELETE DML</td></tr><tr><td>Trigger.isUndelete</td><td>Record restored</td></tr><tr><td>Trigger.isBefore</td><td>Before DB save</td></tr><tr><td>Trigger.isAfter</td><td>After DB save</td></tr><tr><td>Trigger.size</td><td>Count of records in batch</td></tr></table>
 <pre class="code">trigger Ex on Loan__c (before insert, after update) {
@@ -99,7 +99,7 @@ trigger LoanTrigger on Loan__c (after update) {
 }</pre>
 
 </div></div>
-<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How would you structure a Trigger Framework?</span><span class="qa-q-label lbl-apex">ARAGO</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How would you structure a Trigger Framework?</span><span class="qa-q-label lbl-apex">ARAGO</span><span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span></div><div class="qa-answer">
 <p class="ans-p"><b>Layers: Trigger → Handler → Service → Selector → Helper</b></p>
 <pre class="code">// Trigger &mdash; dispatcher only, no business logic
 trigger LoanTrigger on Loan__c (before insert, before update, after insert, after update, after delete) {
@@ -122,7 +122,7 @@ public with sharing class LoansSelector {
 }</pre>
 
 </div></div>
-<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">Best practices for reusable and maintainable triggers?</span><span class="qa-q-label lbl-apex">ARAGO</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">Best practices for reusable and maintainable triggers?</span><span class="qa-q-label lbl-apex">ARAGO</span><span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span></div><div class="qa-answer">
 <ul class="ans-list">
   <li><b>One trigger per object</b> &mdash; eliminates ordering ambiguity</li>
   <li><b>Fully bulkified</b> &mdash; no SOQL/DML in loops, always works with collections</li>
@@ -135,13 +135,13 @@ public with sharing class LoansSelector {
 </ul>
 
 </div></div>
-<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">When would you choose Flow over Apex?</span><span class="qa-q-label lbl-apex">ARAGO</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">When would you choose Flow over Apex?</span><span class="qa-q-label lbl-apex">ARAGO</span><span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span></div><div class="qa-answer">
 <table class="comparison-table"><tr><th>Scenario</th><th>Flow</th><th>Apex</th></tr><tr><td>Simple field update</td><td>✓ Before-Save Flow</td><td>Overkill</td></tr><tr><td>Email on status change</td><td>✓ After-Save + Email Action</td><td>More code</td></tr><tr><td>Admin-maintainable</td><td>✓</td><td>✗</td></tr><tr><td>Complex SOQL/logic</td><td>✗</td><td>✓</td></tr><tr><td>Millions of records</td><td>Batch-limited</td><td>✓ Batch Apex</td></tr><tr><td>External API (complex)</td><td>✗</td><td>✓</td></tr></table>
 <p class="ans-p"><b>Real scenario:</b> A Flow failed with CPU limit errors during a 50,000-record data load. Replaced with Batch Apex &mdash; no more CPU failures.</p>
 <div class="tip-box"><div class="tip-label">Salesforce guidance</div><p>Flow-first. Use Apex when logic is too complex for Flow, performance is critical, or integration patterns require it.</p></div>
 
 </div></div>
-<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How can you avoid SOQL injection?</span><span class="qa-q-label lbl-sec">ARAGO</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How can you avoid SOQL injection?</span><span class="qa-q-label lbl-sec">ARAGO</span><span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span></div><div class="qa-answer">
 <pre class="code">// VULNERABLE &mdash; raw concatenation
 String q = 'SELECT Id FROM Loan__c WHERE Name = \'' + userInput + '\'';
 // Attack: userInput = "' OR Id != null OR Name = '"  →  returns ALL records
@@ -159,7 +159,7 @@ if (!Schema.getGlobalDescribe().containsKey(objectName))
 <div class="warn-box"><div class="warn-label">Bind variables are safest</div><p>They're handled directly by Salesforce's query engine &mdash; never interpreted as SOQL syntax regardless of content.</p></div>
 
 </div></div>
-<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">Difference between SOQL and SOSL?</span><span class="qa-q-label lbl-apex">ARAGO</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">Difference between SOQL and SOSL?</span><span class="qa-q-label lbl-apex">ARAGO</span><span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span></div><div class="qa-answer">
 <table class="comparison-table"><tr><th></th><th>SOQL</th><th>SOSL</th></tr><tr><td>Queries</td><td>One object at a time</td><td>Multiple objects simultaneously</td></tr><tr><td>Index</td><td>Database columns</td><td>Full-text search index</td></tr><tr><td>Best for</td><td>Structured WHERE filters</td><td>Free-text search across fields/objects</td></tr><tr><td>Governor limit</td><td>100 sync / 200 async</td><td>20 sync / 100 async</td></tr></table>
 <pre class="code">// SOQL &mdash; specific structured query
 [SELECT Id FROM Loan__c WHERE Status__c='Active' AND Amount__c > 100000]
@@ -169,7 +169,7 @@ List&lt;List&lt;SObject&gt;&gt; r = [FIND 'Johnson*' IN NAME FIELDS
     RETURNING Contact(Id,Name), Lead(Id,Name) LIMIT 20];</pre>
 
 </div></div>
-<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How to query parent-child relationships in SOQL?</span><span class="qa-q-label lbl-apex">ARAGO</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How to query parent-child relationships in SOQL?</span><span class="qa-q-label lbl-apex">ARAGO</span><span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span></div><div class="qa-answer">
 <pre class="code">// Child → Parent (dot notation &mdash; up to 5 levels)
 SELECT Id, Account.Name, Account.Owner.Name FROM Contact  // standard field AccountId → Account
 SELECT Id, Account__r.Name FROM Loan__c  // custom field Account__c → Account__r
@@ -184,13 +184,13 @@ for (Account acc : [SELECT Id,(SELECT Id FROM Loans__r) FROM Account]) {
 }</pre>
 
 </div></div>
-<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">Difference between Custom Metadata Types and Custom Settings?</span><span class="qa-q-label lbl-apex">ARAGO</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">Difference between Custom Metadata Types and Custom Settings?</span><span class="qa-q-label lbl-apex">ARAGO</span><span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span></div><div class="qa-answer">
 <table class="comparison-table"><tr><th>Feature</th><th>Custom Metadata</th><th>Custom Settings</th></tr><tr><td>Deployable?</td><td>✓ Yes &mdash; moves with code</td><td>✗ No &mdash; data stays</td></tr><tr><td>Free SOQL?</td><td>✓ Yes</td><td>✓ Yes (cached)</td></tr><tr><td>Profile/user overrides?</td><td>✗ No</td><td>✓ Hierarchy type</td></tr><tr><td>Best for</td><td>Config deployed with code</td><td>Per-user/org preferences</td></tr></table>
 <pre class="code">Loan_Config__mdt cfg = [SELECT Base_Rate__c FROM Loan_Config__mdt WHERE Loan_Type__c='FHA' LIMIT 1];
 Loan_Settings__c s = Loan_Settings__c.getInstance(); // hierarchy &mdash; per user</pre>
 
 </div></div>
-<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">Difference between DML statements and Database methods?</span><span class="qa-q-label lbl-apex">ARAGO</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">Difference between DML statements and Database methods?</span><span class="qa-q-label lbl-apex">ARAGO</span><span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span></div><div class="qa-answer">
 <table class="comparison-table"><tr><th></th><th>DML</th><th>Database Method</th></tr><tr><td>On error</td><td>Throws &mdash; ALL rollback</td><td>Returns SaveResult[] &mdash; partial success</td></tr><tr><td>Partial success</td><td>No</td><td>Yes (false param)</td></tr><tr><td>Use when</td><td>All must succeed</td><td>Some may fail</td></tr></table>
 <pre class="code">insert loanList; // all-or-nothing
 
@@ -200,7 +200,7 @@ for (Integer i=0; i&lt;r.size(); i++)
         insert new Error_Log__c(Message__c=r[i].getErrors()[0].getMessage());</pre>
 
 </div></div>
-<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How to control partial success with Database methods?</span><span class="qa-q-label lbl-apex">ARAGO</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How to control partial success with Database methods?</span><span class="qa-q-label lbl-apex">ARAGO</span><span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span></div><div class="qa-answer">
 <pre class="code">// false = partial success &mdash; failed records skipped, successful commit
 List&lt;Database.SaveResult&gt; results = Database.insert(records, false);
 // true = same as plain DML &mdash; throws on any failure
@@ -217,7 +217,7 @@ for (Integer i=0; i&lt;results.size(); i++) {
 if (!errors.isEmpty()) insert errors;</pre>
 
 </div></div>
-<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">What is a Savepoint and how does rollback work?</span><span class="qa-q-label lbl-apex">ARAGO</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">What is a Savepoint and how does rollback work?</span><span class="qa-q-label lbl-apex">ARAGO</span><span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span></div><div class="qa-answer">
 <pre class="code">Savepoint sp = Database.setSavepoint();
 try {
     Loan__c l = new Loan__c(Status__c='Processing'); insert l;
@@ -230,7 +230,7 @@ try {
 <div class="warn-box"><div class="warn-label">Callouts + Savepoints</div><p>Cannot callout after DML in same tx. Cannot use savepoint after callout. Order must be: callout → DML, or use async for callout.</p></div>
 
 </div></div>
-<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">Explain OOP concepts in Apex.</span><span class="qa-q-label lbl-apex">ARAGO</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">Explain OOP concepts in Apex.</span><span class="qa-q-label lbl-apex">ARAGO</span><span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span></div><div class="qa-answer">
 <pre class="code">// 1. ENCAPSULATION &mdash; hide state, expose via methods
 public class LoanCalc {
     private Decimal rate;
@@ -257,7 +257,7 @@ public abstract class LoanProcessor {
 }</pre>
 
 </div></div>
-<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">Difference between static and non-static in Apex?</span><span class="qa-q-label lbl-apex">ARAGO</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">Difference between static and non-static in Apex?</span><span class="qa-q-label lbl-apex">ARAGO</span><span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span></div><div class="qa-answer">
 <table class="comparison-table"><tr><th></th><th>Static</th><th>Non-Static (Instance)</th></tr><tr><td>Scope</td><td>Shared across all instances in transaction</td><td>Unique per class instance</td></tr><tr><td>Access</td><td>ClassName.method() &mdash; no instance needed</td><td>new MyClass().method()</td></tr><tr><td>Use for</td><td>Utility methods, tx-wide flags, singletons</td><td>Object-specific state</td></tr></table>
 <pre class="code">public class LoanHelper {
     public static Integer callCount = 0; // shared across all calls
@@ -270,17 +270,17 @@ new LoanHelper(0.065).instanceRate; // non-static &mdash; needs instance</pre>
 <div class="warn-box"><div class="warn-label">Recursion risk</div><p>Improper static boolean flags can suppress legitimate trigger runs. Use Set-based approach for finer control.</p></div>
 
 </div></div>
-<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">What are access modifiers in Apex?</span><span class="qa-q-label lbl-apex">ARAGO</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">What are access modifiers in Apex?</span><span class="qa-q-label lbl-apex">ARAGO</span><span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span></div><div class="qa-answer">
 <table class="comparison-table"><tr><th>Modifier</th><th>Accessible from</th></tr><tr><td>private</td><td>Same class only</td></tr><tr><td>protected</td><td>Same class + subclasses</td></tr><tr><td>public</td><td>Any class in same namespace/org</td></tr><tr><td>global</td><td>Any namespace &mdash; managed packages, external</td></tr></table>
 <div class="tip-box"><div class="tip-label">Rule</div><p>Use the most restrictive modifier that still makes your code work. private by default, global only for managed package public APIs.</p></div>
 
 </div></div>
-<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">What are the types of Salesforce sandboxes?</span><span class="qa-q-label lbl-apex">ARAGO</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">What are the types of Salesforce sandboxes?</span><span class="qa-q-label lbl-apex">ARAGO</span><span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span></div><div class="qa-answer">
 <table class="comparison-table"><tr><th>Type</th><th>Data</th><th>Storage</th><th>Refresh</th><th>Use for</th></tr><tr><td>Developer</td><td>None</td><td>200MB</td><td>1 day</td><td>Individual dev work</td></tr><tr><td>Developer Pro</td><td>None</td><td>1GB</td><td>1 day</td><td>Larger dev/testing</td></tr><tr><td>Partial Copy</td><td>Subset</td><td>5GB</td><td>5 days</td><td>QA with realistic data</td></tr><tr><td>Full</td><td>Complete copy</td><td>Same as prod</td><td>29 days</td><td>Performance, UAT, regression</td></tr></table>
 <p class="ans-p"><b>Can you create a sandbox in a Developer Org?</b> No. Sandboxes are copies of production orgs. Developer Orgs are standalone and cannot have sandboxes.</p>
 
 </div></div>
-<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How do you analyze debug logs?</span><span class="qa-q-label lbl-apex">ARAGO</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How do you analyze debug logs?</span><span class="qa-q-label lbl-apex">ARAGO</span><span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span></div><div class="qa-answer">
 <ul class="ans-list">
   <li><b>SOQL count</b> &mdash; 'Number of SOQL queries'. Close to 100? Find SOQL in loops.</li>
   <li><b>DML count</b> &mdash; 'Number of DML statements'. Close to 150? Bulk your DML.</li>
@@ -294,11 +294,11 @@ System.debug('CPU:  '+Limits.getCpuTime()+'ms/'+Limits.getLimitCpuTime()+'ms');
 System.debug('DML:  '+Limits.getDMLStatements()+'/'+Limits.getLimitDMLStatements());</pre>
 
 </div></div>
-<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">Differences between Future, Queueable, Batch, and Schedulable Apex?</span><span class="qa-q-label lbl-apex">ARAGO</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">Differences between Future, Queueable, Batch, and Schedulable Apex?</span><span class="qa-q-label lbl-apex">ARAGO</span><span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span></div><div class="qa-answer">
 <table class="comparison-table"><tr><th>Feature</th><th>@future</th><th>Queueable</th><th>Batch</th><th>Schedulable</th></tr><tr><td>SObject params</td><td>No</td><td>Yes</td><td>Yes</td><td>Yes</td></tr><tr><td>Callouts</td><td>callout=true</td><td>AllowsCallouts</td><td>AllowsCallouts</td><td>Use Batch</td></tr><tr><td>Chaining</td><td>No</td><td>Yes</td><td>In finish()</td><td>Recurring</td></tr><tr><td>Monitoring</td><td>No</td><td>AsyncApexJob</td><td>AsyncApexJob</td><td>CronTrigger</td></tr><tr><td>Records limit</td><td>&mdash;</td><td>&mdash;</td><td>50M (QueryLocator)</td><td>&mdash;</td></tr><tr><td>Best for</td><td>Simple callout</td><td>Complex/chain</td><td>Millions of records</td><td>Recurring jobs</td></tr></table>
 
 </div></div>
-<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">What are governor limits and how do you work within them?</span><span class="qa-q-label lbl-apex">ARAGO</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">What are governor limits and how do you work within them?</span><span class="qa-q-label lbl-apex">ARAGO</span><span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span></div><div class="qa-answer">
 <table class="comparison-table"><tr><th>Limit</th><th>Sync</th><th>Async</th></tr><tr><td>SOQL</td><td>100</td><td>200</td></tr><tr><td>DML</td><td>150</td><td>150</td></tr><tr><td>CPU</td><td>10,000ms</td><td>60,000ms</td></tr><tr><td>Heap</td><td>6MB</td><td>12MB</td></tr></table>
 <ul class="ans-list">
   <li>Bulkify &mdash; no SOQL/DML in loops</li>
@@ -308,7 +308,7 @@ System.debug('DML:  '+Limits.getDMLStatements()+'/'+Limits.getLimitDMLStatements
 </ul>
 
 </div></div>
-<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">What is Shadow DOM in LWC?</span><span class="qa-q-label lbl-lwc">ARAGO</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">What is Shadow DOM in LWC?</span><span class="qa-q-label lbl-lwc">ARAGO</span><span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span></div><div class="qa-answer">
 <p class="ans-p">Browser-native feature that encapsulates each LWC component's HTML, CSS, and JS &mdash; preventing leakage between components.</p>
 <pre class="code">/* CSS in loanCard.css &mdash; ONLY applies inside c-loan-card shadow root */
 .badge { color: green; }
@@ -323,7 +323,7 @@ this.template.querySelector('c-child').refresh(); // @api method &mdash; OK</pre
 <div class="tip-box"><div class="tip-label">CSS across shadow boundary</div><p>Use CSS custom properties (variables). Parent sets --color: blue; child uses var(--color). This is the only cross-shadow styling mechanism by design.</p></div>
 
 </div></div>
-<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">What types of exceptions exist in Apex and how do you handle them?</span><span class="qa-q-label lbl-apex">ARAGO</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">What types of exceptions exist in Apex and how do you handle them?</span><span class="qa-q-label lbl-apex">ARAGO</span><span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span></div><div class="qa-answer">
 <table class="comparison-table"><tr><th>Type</th><th>Cause</th><th>Catchable?</th></tr><tr><td>DmlException</td><td>DML fails &mdash; validation, required field</td><td>Yes</td></tr><tr><td>QueryException</td><td>getSingleResult() 0 or 2+ rows</td><td>Yes</td></tr><tr><td>NullPointerException</td><td>Access on null reference</td><td>Yes</td></tr><tr><td>LimitException</td><td>Governor limit exceeded</td><td>No</td></tr><tr><td>CalloutException</td><td>HTTP timeout or failure</td><td>Yes</td></tr><tr><td>AuraHandledException</td><td>User-friendly error to LWC</td><td>Yes</td></tr></table>
 <pre class="code">public class LoanException extends Exception {}
 try {
@@ -335,14 +335,14 @@ try {
   catch (CalloutException e){ insert new Error_Log__c(Message__c=e.getMessage()); }</pre>
 
 </div></div>
-<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">Explain synchronous vs asynchronous Apex execution.</span><span class="qa-q-label lbl-apex">ARAGO</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">Explain synchronous vs asynchronous Apex execution.</span><span class="qa-q-label lbl-apex">ARAGO</span><span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span></div><div class="qa-answer">
 <table class="comparison-table"><tr><th></th><th>Synchronous</th><th>Asynchronous</th></tr><tr><td>CPU limit</td><td>10,000ms</td><td>60,000ms</td></tr><tr><td>SOQL</td><td>100</td><td>200</td></tr><tr><td>Heap</td><td>6MB</td><td>12MB</td></tr><tr><td>Callouts in trigger?</td><td>No</td><td>Yes (AllowsCallouts)</td></tr><tr><td>Types</td><td>Triggers, LWC controllers</td><td>@future, Queueable, Batch, Schedulable</td></tr></table>
 <ul class="ans-list">
   <li>Use async when: callout from trigger, processing large records, long computations, chained multi-step operations</li>
 </ul>
 
 </div></div>
-<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How do you design large-scale async processing?</span><span class="qa-q-label lbl-apex">ARAGO</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How do you design large-scale async processing?</span><span class="qa-q-label lbl-apex">ARAGO</span><span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span></div><div class="qa-answer">
 <pre class="code">// Scheduled → Batch → Queueable chain
 public class NightlySync implements Schedulable {
     public void execute(SchedulableContext ctx) { Database.executeBatch(new LoanSyncBatch(), 200); }
@@ -376,7 +376,7 @@ public class LoanSyncBatch implements Database.Batchable&lt;SObject&gt;, Databas
 <div style="margin:2rem 0 1rem;padding:0.8rem 1.2rem;background:var(--card2);border-left:3px solid var(--blue);border-radius:8px;"><div style="font-size:0.88rem;font-weight:700;color:var(--blue);font-family:'IBM Plex Mono',monospace;">MORGAN STANLEY &mdash; Salesforce Developer Interview</div><div style="font-size:0.75rem;color:var(--muted);margin-top:4px;">3 Rounds: Technical Round 1 + Technical Round 2 + Managerial/Behavioral</div></div>
 <div style="margin:2rem 0 1rem;padding:0.8rem 1.2rem;background:var(--card2);border-left:3px solid var(--blue);border-radius:8px;"><div style="font-size:0.88rem;font-weight:700;color:var(--blue);font-family:'IBM Plex Mono',monospace;">▼ Round 1 &mdash; Technical (Edge Cases & Platform Behavior)</div></div>
 
-<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">What happens if a child dispatches an event before the parent is rendered?</span><span class="qa-q-label lbl-lwc">MS ROUND 1</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">What happens if a child dispatches an event before the parent is rendered?</span><span class="qa-q-label lbl-lwc">MS ROUND 1</span><span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span></div><div class="qa-answer">
 <p class="ans-p">The event will <b>not be captured by the parent</b>. Events propagate through an existing, connected DOM tree &mdash; if the parent isn't in the DOM yet when the event fires, there is nothing to receive it.</p>
 <pre class="code">// PROBLEM &mdash; event may fire before parent listener is attached
 connectedCallback() {
@@ -400,7 +400,7 @@ renderedCallback() {
 <div class="tip-box"><div class="tip-label">Interview insight</div><p>This tests your understanding of LWC's async rendering model &mdash; the DOM tree must exist for event propagation to work. Timing matters in component trees.</p></div>
 
 </div></div>
-<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How is a component affected when it re-renders inside a for:each loop?</span><span class="qa-q-label lbl-lwc">MS ROUND 1</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How is a component affected when it re-renders inside a for:each loop?</span><span class="qa-q-label lbl-lwc">MS ROUND 1</span><span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span></div><div class="qa-answer">
 <table class="comparison-table"><tr><th>key attribute</th><th>What happens</th><th>Performance</th></tr><tr><td>key changes</td><td>Component destroyed and recreated &mdash; full lifecycle</td><td>Slow</td></tr><tr><td>key same, data changes</td><td>Only data/props update &mdash; component stays mounted</td><td>Fast</td></tr><tr><td>item moves in list</td><td>Component moves without recreate if key follows item</td><td>Efficient</td></tr></table>
 <pre class="code">&lt;template for:each={loans} for:item="loan"&gt;
   &lt;c-loan-card key={loan.Id} loan-id={loan.Id}&gt;&lt;/c-loan-card&gt;
@@ -408,7 +408,7 @@ renderedCallback() {
 <div class="warn-box"><div class="warn-label">Never use index as key</div><p>key={index} forces all components to re-render on any data change. Always use a stable unique ID like loan.Id.</p></div>
 
 </div></div>
-<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How does Salesforce handle callout responses that arrive after a timeout?</span><span class="qa-q-label lbl-intg">MS ROUND 1</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How does Salesforce handle callout responses that arrive after a timeout?</span><span class="qa-q-label lbl-intg">MS ROUND 1</span><span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span></div><div class="qa-answer">
 <p class="ans-p">Once the timeout is reached Salesforce marks the request <b>failed</b> and throws a CalloutException. Any late response from the server is <b>completely ignored</b>.</p>
 <ul class="ans-list">
   <li><b>Max timeout</b> &mdash; 120,000ms. Default is 10,000ms if not set.</li>
@@ -427,19 +427,19 @@ renderedCallback() {
 }</pre>
 
 </div></div>
-<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">Why can the same SOQL query return different results within one transaction?</span><span class="qa-q-label lbl-apex">MS ROUND 1</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">Why can the same SOQL query return different results within one transaction?</span><span class="qa-q-label lbl-apex">MS ROUND 1</span><span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span></div><div class="qa-answer">
 <p class="ans-p">Within a transaction, SOQL reflects <b>uncommitted in-memory changes</b>. Insert or update records in Apex, and the next SOQL query sees those changes &mdash; even before commit.</p>
 <pre class="code">List&lt;Loan__c&gt; before = [SELECT Id FROM Loan__c WHERE Status__c='Applied'];
 Loan__c newLoan = new Loan__c(Status__c='Applied', Amount__c=100000); insert newLoan;
 List&lt;Loan__c&gt; after = [SELECT Id FROM Loan__c WHERE Status__c='Applied']; // sees uncommitted insert</pre>
 
 </div></div>
-<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">What happens if a @future method is invoked from another async context?</span><span class="qa-q-label lbl-apex">MS ROUND 1</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">What happens if a @future method is invoked from another async context?</span><span class="qa-q-label lbl-apex">MS ROUND 1</span><span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span></div><div class="qa-answer">
 <p class="ans-p">Salesforce throws a runtime exception. <b>@future cannot be called from @future, Batch, or Queueable</b>.</p>
 <table class="comparison-table"><tr><th>From \ To</th><th>@future</th><th>Queueable</th><th>Batch</th></tr><tr><td>Sync Apex</td><td>✓</td><td>✓</td><td>✓</td></tr><tr><td>@future</td><td>✗ Error</td><td>✗ Error</td><td>✗ Error</td></tr><tr><td>Queueable</td><td>✗ Error</td><td>✓ Chain</td><td>✓</td></tr></table>
 
 </div></div>
-<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">Why canouts not allowed after DML in the same transaction?</span><span class="qa-q-label lbl-intg">MS ROUND 1</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">Why canouts not allowed after DML in the same transaction?</span><span class="qa-q-label lbl-intg">MS ROUND 1</span><span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span></div><div class="qa-answer">
 <ul class="ans-list">
   <li><b>Record locking</b> &mdash; DML may lock records. A callout can take up to 120 seconds, holding those locks and blocking other users.</li>
   <li><b>Inconsistent state risk</b> &mdash; if callout never returns, DML already ran &mdash; partial committed state.</li>
@@ -452,7 +452,7 @@ update loan;</pre>
 
 <div style="margin:2rem 0 1rem;padding:0.8rem 1.2rem;background:var(--card2);border-left:3px solid var(--blue);border-radius:8px;"><div style="font-size:0.88rem;font-weight:700;color:var(--blue);font-family:'IBM Plex Mono',monospace;">▼ Round 2 &mdash; Technical (Advanced Platform Behavior)</div></div>
 
-<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">What happens if a Batch Apex job is aborted while an execute() is in progress?</span><span class="qa-q-label lbl-apex">MS ROUND 2</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">What happens if a Batch Apex job is aborted while an execute() is in progress?</span><span class="qa-q-label lbl-apex">MS ROUND 2</span><span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span></div><div class="qa-answer">
 <ul class="ans-list">
   <li><b>Current execute() chunk completes</b> &mdash; the in-progress chunk finishes its transaction.</li>
   <li><b>No further batches run</b> &mdash; engine stops after current chunk.</li>
@@ -460,42 +460,43 @@ update loan;</pre>
 </ul>
 
 </div></div>
-<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">Why does a before insert trigger not have record IDs but after insert does?</span><span class="qa-q-label lbl-apex">MS ROUND 2</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">Why does a before insert trigger not have record IDs but after insert does?</span><span class="qa-q-label lbl-apex">MS ROUND 2</span><span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span></div><div class="qa-answer">
 <p class="ans-p">IDs are <b>generated by the database engine when a record is saved</b>. Before insert runs <em>before</em> the save &mdash; no ID exists yet.</p>
 
 </div></div>
-<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">An LWC has a @track object. If you reassign the same reference, will the UI re-render?</span><span class="qa-q-label lbl-lwc">MS ROUND 2</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">An LWC has a @track object. If you reassign the same reference, will the UI re-render?</span><span class="qa-q-label lbl-lwc">MS ROUND 2</span><span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span></div><div class="qa-answer">
 <p class="ans-p"><b>No.</b> LWC tracks changes by <b>object reference</b>. Same reference = no change detected = no re-render.</p>
 <pre class="code">this.loanData = { ...this.loanData, status: 'Approved' }; // CORRECT - new reference</pre>
 
 </div></div>
-<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">An external API changes its response format without notice. How do you adapt?</span><span class="qa-q-label lbl-intg">MS ROUND 2</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">An external API changes its response format without notice. How do you adapt?</span><span class="qa-q-label lbl-intg">MS ROUND 2</span><span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span></div><div class="qa-answer">
 <pre class="code">// RESILIENT &mdash; untyped with defensive fallback
 Map&lt;String,Object&gt; raw = (Map&lt;String,Object&gt;) JSON.deserializeUntyped(body);
 String status = raw.containsKey('loanStatus') ? (String)raw.get('loanStatus') : (String)raw.get('status');</pre>
 
 </div></div>
-<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">What happens if a trigger on a Platform Event performs DML?</span><span class="qa-q-label lbl-apex">MS ROUND 2</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">What happens if a trigger on a Platform Event performs DML?</span><span class="qa-q-label lbl-apex">MS ROUND 2</span><span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span></div><div class="qa-answer">
 <p class="ans-p"><b>DML is allowed</b> &mdash; PE triggers run asynchronously with async governor limits. If it fails, Salesforce retries the trigger up to 3 times.</p>
 
 </div></div>
-<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">What happens if finish() enqueues another Batch or Queueable job?</span><span class="qa-q-label lbl-apex">MS ROUND 2</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">What happens if finish() enqueues another Batch or Queueable job?</span><span class="qa-q-label lbl-apex">MS ROUND 2</span><span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span></div><div class="qa-answer">
 <p class="ans-p"><b>Fully supported and a common chaining pattern.</b> Guarantees step 2 only starts after ALL of step 1 completes.</p>
 
 </div></div>
 
 <div style="margin:2rem 0 1rem;padding:0.8rem 1.2rem;background:var(--card2);border-left:3px solid var(--blue);border-radius:8px;"><div style="font-size:0.88rem;font-weight:700;color:var(--blue);font-family:'IBM Plex Mono',monospace;">Round 3 &mdash; Managerial / Behavioral</div></div>
-<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">Tell me about a time you handled a production issue under pressure.</span><span class="qa-q-label lbl-behav">MS BEHAVIORAL</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">Tell me about a time you handled a production issue under pressure.</span><span class="qa-q-label lbl-behav">MS BEHAVIORAL</span><span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span></div><div class="qa-answer">
 <p class="ans-p"><b>Situation:</b> Batch job failed on Friday. <b>Task:</b> Restore service. <b>Action:</b> Identified NPE, deployed hotfix, reprocessed records. <b>Result:</b> Service restored in 52 mins, implemented better testing.</p>
 </div></div>
-<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How do you explain technical solutions to non-technical clients?</span><span class="qa-q-label lbl-behav">MS BEHAVIORAL</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How do you explain technical solutions to non-technical clients?</span><span class="qa-q-label lbl-behav">MS BEHAVIORAL</span><span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span></div><div class="qa-answer">
 <p class="ans-p">Lead with business outcomes, use domain analogies, avoid jargon, and use visual aids.</p>
 </div></div>
 
 <div style="margin:2rem 0 1rem;padding:0.8rem 1.2rem;background:var(--card2);border-left:3px solid var(--blue);border-radius:8px;"><div style="font-size:0.88rem;font-weight:700;color:var(--blue);font-family:'IBM Plex Mono',monospace;">Additional Questions &mdash; Arago Extended Set</div></div>
-<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">What is the SOQL clause execution order?</span><span class="qa-q-label lbl-apex">ARAGO</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">What is the SOQL clause execution order?</span><span class="qa-q-label lbl-apex">ARAGO</span><span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span></div><div class="qa-answer">
 <p class="ans-p">FROM → WHERE → GROUP BY → HAVING → SELECT → ORDER BY → LIMIT</p>
 </div></div>
-<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How do you implement roll-up summary on a Lookup relationship?</span><span class="qa-q-label lbl-apex">ARAGO</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How do you implement roll-up summary on a Lookup relationship?</span><span class="qa-q-label lbl-apex">ARAGO</span><span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span></div><div class="qa-answer">
 <p class="ans-p">Use an Apex Trigger or Flow to aggregate child records and update the parent lookup field.</p>
 </div></div>
+

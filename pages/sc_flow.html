@@ -1,7 +1,7 @@
 <div class="page-title">Salesforce Flow &mdash; 10 Scenario Questions</div>
 <div class="page-sub">When to use Flow, how to build invocable actions, debug, and integrate with Apex</div>
 
-<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">Flow vs Apex Trigger &mdash; the complete decision framework with examples</span><span class="qa-q-label lbl-domain">FLOW</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">Flow vs Apex Trigger &mdash; the complete decision framework with examples</span><span class="qa-q-label lbl-domain">FLOW</span><span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span></div><div class="qa-answer">
 <p class="ans-p"><b>Use Flow when:</b></p>
 <ul class="ans-list">
   <li>Logic must be admin-maintainable without code deployment</li>
@@ -22,7 +22,7 @@
 <div class="tip-box"><div class="tip-label">Rule of thumb for interviews</div><p>"If a Salesforce admin should be able to understand and modify the logic without a code deployment, and it doesn't involve bulk operations or callouts, I use Flow. For everything that touches large data volumes, external APIs, or complex Apex logic &mdash; I use a trigger with handler pattern. The two approaches are complementary, not competing."</p></div>
 </div></div>
 
-<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">Before Save Flow vs After Save Flow &mdash; when to use each and what each can do?</span><span class="qa-q-label lbl-domain">FLOW</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">Before Save Flow vs After Save Flow &mdash; when to use each and what each can do?</span><span class="qa-q-label lbl-domain">FLOW</span><span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span></div><div class="qa-answer">
 <table class="comparison-table"><tr><th>Feature</th><th>Before Save Flow</th><th>After Save Flow</th></tr>
 <tr><td>Update same record fields</td><td>YES &mdash; directly, no DML</td><td>NO &mdash; causes recursion</td></tr>
 <tr><td>Create related records</td><td>NO &mdash; no Id on insert yet</td><td>YES &mdash; record Id available</td></tr>
@@ -43,7 +43,7 @@
 // Action: Create Records (Task) &mdash; Subject = 'Underwriting Review', WhatId = LoanId</pre>
 </div></div>
 
-<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How do you create an @InvocableMethod for Flow &mdash; complete code with input and output variables?</span><span class="qa-q-label lbl-apex">FLOW</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How do you create an @InvocableMethod for Flow &mdash; complete code with input and output variables?</span><span class="qa-q-label lbl-apex">FLOW</span><span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span></div><div class="qa-answer">
 <pre class="code">// Complete InvocableMethod &mdash; Flow calls this as an Apex Action
 public class LoanStatusNotificationAction {
 
@@ -98,7 +98,7 @@ public class LoanStatusNotificationAction {
 // Capture output: notificationSent → {!notificationSent} variable for downstream logic</pre>
 </div></div>
 
-<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How do you debug a Flow that fails in production &mdash; what tools and approach?</span><span class="qa-q-label lbl-domain">FLOW</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How do you debug a Flow that fails in production &mdash; what tools and approach?</span><span class="qa-q-label lbl-domain">FLOW</span><span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span></div><div class="qa-answer">
 <ul class="ans-list">
   <li><b>Flow Builder Debug Button:</b> Click Debug in Flow Builder → enter input values manually → step through element by element &mdash; see variable values at each step, error message at failing element</li>
   <li><b>Debug Logs:</b> Setup → Debug → Apex Debug Logs → Add trace for the user. Set FLOW = FINEST. Filter log for FLOW_ELEMENT_ERROR to find exact failure point and variable values</li>
@@ -109,7 +109,7 @@ public class LoanStatusNotificationAction {
 <div class="tip-box"><div class="tip-label">Production debugging tip</div><p>Never debug a failing Flow directly on production data. Reproduce the exact record state in Full Sandbox, debug there, fix, then deploy. If you must debug in production, use Rollback Mode to avoid unintended data changes.</p></div>
 </div></div>
 
-<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">What are the Flow governor limit pitfalls &mdash; when does Flow become dangerous at scale?</span><span class="qa-q-label lbl-domain">FLOW</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">What are the Flow governor limit pitfalls &mdash; when does Flow become dangerous at scale?</span><span class="qa-q-label lbl-domain">FLOW</span><span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span></div><div class="qa-answer">
 <ul class="ans-list">
   <li><b>Get Records inside a Loop:</b> Every iteration of a Loop with a Get Records element = one SOQL query. 100 loop iterations = 100 queries = governor limit hit. Solution: Get all records BEFORE the loop into a collection variable</li>
   <li><b>Update Records inside a Loop:</b> Every iteration = one DML. 150 iterations = limit hit. Solution: Add records to a collection variable inside the loop, Update Records AFTER the loop with the collection</li>
@@ -126,7 +126,7 @@ public class LoanStatusNotificationAction {
 //   Decision: Find matching Contact in the collection (no SOQL inside loop)</pre>
 </div></div>
 
-<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How do you call a Flow from Apex &mdash; and from LWC?</span><span class="qa-q-label lbl-domain">FLOW SCENARIOS</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How do you call a Flow from Apex &mdash; and from LWC?</span><span class="qa-q-label lbl-domain">FLOW SCENARIOS</span><span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span></div><div class="qa-answer">
 <pre class="code">// Call a Screen Flow from LWC &mdash; lightning-flow component
 // &lt;lightning-flow flow-api-name="Loan_Application_Flow" flow-input-variables={flowInputs} onstatuschange={handleFlowChange}&gt;&lt;/lightning-flow&gt;
 
@@ -147,7 +147,7 @@ interview.start();
 String result = (String) interview.getVariableValue('outputMessage');</pre>
 
 </div></div>
-<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">What are Flow best practices for governor limit management?</span><span class="qa-q-label lbl-domain">FLOW SCENARIOS</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">What are Flow best practices for governor limit management?</span><span class="qa-q-label lbl-domain">FLOW SCENARIOS</span><span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span></div><div class="qa-answer">
 <ul class="ans-list">
   <li><b>Before-Save flows have no governor limit impact</b> &mdash; they run in same transaction as the save, no extra DML. Prefer Before-Save for simple field updates.</li>
   <li><b>After-Save flows get 2,000 DML rows</b> &mdash; but still count against the transaction's DML statement limit (150). Multiple After-Save flows on the same object share the limit.</li>
@@ -157,12 +157,12 @@ String result = (String) interview.getVariableValue('outputMessage');</pre>
 </ul>
 
 </div></div>
-<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">What are the differences between Flow variables, resources, and collections?</span><span class="qa-q-label lbl-domain">FLOW SCENARIOS</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">What are the differences between Flow variables, resources, and collections?</span><span class="qa-q-label lbl-domain">FLOW SCENARIOS</span><span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span></div><div class="qa-answer">
 <table class="comparison-table"><tr><th>Resource Type</th><th>What it stores</th><th>Example</th></tr><tr><td>Variable</td><td>Single value &mdash; text, number, boolean, record</td><td>loanId, statusValue, isApproved</td></tr><tr><td>Record Variable</td><td>Single SObject record with its fields</td><td>currentLoan (Loan__c)</td></tr><tr><td>Record Collection Variable</td><td>List of SObject records</td><td>selectedLoans (List&lt;Loan__c&gt;)</td></tr><tr><td>Text Template</td><td>Reusable formatted text with merge fields</td><td>Email body with {!currentLoan.Name}</td></tr><tr><td>Formula</td><td>Calculated value</td><td>{!TODAY() + 30} for close date</td></tr><tr><td>Constant</td><td>Fixed value used across the flow</td><td>MAX_LOAN_AMOUNT = 2000000</td></tr><tr><td>Stage</td><td>Current position in a Screen Flow wizard</td><td>Stage 1 of 4</td></tr></table>
 <div class="tip-box"><div class="tip-label">Collection performance</div><p>Use Record Collection Variables to batch DML in flows. Loop over records → add to collection variable → after loop use one Create/Update Records element on the whole collection. Never use DML elements inside loops.</p></div>
 
 </div></div>
-<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How do sub-flows work &mdash; when should you extract logic into a sub-flow?</span><span class="qa-q-label lbl-domain">FLOW SCENARIOS</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How do sub-flows work &mdash; when should you extract logic into a sub-flow?</span><span class="qa-q-label lbl-domain">FLOW SCENARIOS</span><span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span></div><div class="qa-answer">
 <p class="ans-p">Sub-flows are reusable flow components. Call them from a parent flow the same way you call a method &mdash; pass inputs, get outputs back.</p>
 <pre class="code">// When to extract to sub-flow:
 // 1. Same logic reused in 3+ flows
@@ -180,7 +180,7 @@ String result = (String) interview.getVariableValue('outputMessage');</pre>
 <div class="warn-box"><div class="warn-label">Sub-flow governor limits</div><p>Sub-flows run in the SAME transaction as the parent. They share the same governor limit pool &mdash; a sub-flow that does 50 DML statements counts against the parent's 150-statement limit.</p></div>
 
 </div></div>
-<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">What is the Flow Orchestration &mdash; how does it differ from regular Flows?</span><span class="qa-q-label lbl-domain">FLOW SCENARIOS</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">What is the Flow Orchestration &mdash; how does it differ from regular Flows?</span><span class="qa-q-label lbl-domain">FLOW SCENARIOS</span><span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span></div><div class="qa-answer">
 <p class="ans-p">Flow Orchestration (formerly Orchestrator) enables multi-step, multi-user approval and review processes with assigned steps, stages, and work items.</p>
 <ul class="ans-list">
   <li><b>Stages</b> &mdash; phases of the orchestration (Application Review, Underwriting, Approval, Funding)</li>
@@ -193,3 +193,4 @@ String result = (String) interview.getVariableValue('outputMessage');</pre>
 <div class="tip-box"><div class="tip-label">vs Standard Approval Process</div><p>Use Flow Orchestration when: multiple sequential approvers with different tasks, mixed human review and automated steps, need to track progress through stages, need complex routing logic. Use Standard Approval Process when: simple 1-3 level approval chain, no custom steps between approvals.</p></div>
 
 </div></div>
+

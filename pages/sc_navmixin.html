@@ -1,7 +1,7 @@
 <div class="page-title">NavigationMixin &mdash; 10 Scenario Questions</div>
 <div class="page-sub">Complete navigation patterns for LWC &mdash; record pages, new records, list views, external URLs, state passing</div>
 
-<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How do you import and use NavigationMixin in LWC &mdash; what is the basic pattern?</span><span class="qa-q-label lbl-lwc">NAVMIXIN</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How do you import and use NavigationMixin in LWC &mdash; what is the basic pattern?</span><span class="qa-q-label lbl-lwc">NAVMIXIN</span><span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span></div><div class="qa-answer">
 <pre class="code">import { LightningElement, api } from 'lwc';
 import { NavigationMixin } from 'lightning/navigation';
 
@@ -33,7 +33,7 @@ export default class MyNavComp extends NavigationMixin(LightningElement) {
 }</pre>
 </div></div>
 
-<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How do you navigate to a New Record form with pre-populated default field values?</span><span class="qa-q-label lbl-lwc">NAVMIXIN</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How do you navigate to a New Record form with pre-populated default field values?</span><span class="qa-q-label lbl-lwc">NAVMIXIN</span><span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span></div><div class="qa-answer">
 <pre class="code">import { encodeDefaultFieldValues } from 'lightning/pageReferenceUtils';
 
 handleCreateLoan() {
@@ -54,7 +54,7 @@ handleCreateLoan() {
 }</pre>
 </div></div>
 
-<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How do you navigate to a List View, App Page, Named Page, and external URL?</span><span class="qa-q-label lbl-lwc">NAVMIXIN</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How do you navigate to a List View, App Page, Named Page, and external URL?</span><span class="qa-q-label lbl-lwc">NAVMIXIN</span><span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span></div><div class="qa-answer">
 <pre class="code">// List View
 handleViewAllLoans() {
     this[NavigationMixin.Navigate]({
@@ -98,7 +98,7 @@ handleGoToDashboard() {
 }</pre>
 </div></div>
 
-<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How do you pass state/parameters between pages using NavigationMixin and CurrentPageReference?</span><span class="qa-q-label lbl-lwc">NAVMIXIN</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How do you pass state/parameters between pages using NavigationMixin and CurrentPageReference?</span><span class="qa-q-label lbl-lwc">NAVMIXIN</span><span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span></div><div class="qa-answer">
 <pre class="code">// PUBLISHER &mdash; navigate with state params
 handleNavigateWithState() {
     this[NavigationMixin.Navigate]({
@@ -126,7 +126,7 @@ pageRef(ref) {
 <div class="tip-box"><div class="tip-label">State vs Attributes</div><p>state becomes query parameters in the URL (visible, bookmarkable). attributes is part of the route structure. Use state for optional context data, attributes for required routing parameters like recordId.</p></div>
 </div></div>
 
-<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How do you navigate to a related record from a parent record page &mdash; get the related record ID first?</span><span class="qa-q-label lbl-lwc">NAVMIXIN</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How do you navigate to a related record from a parent record page &mdash; get the related record ID first?</span><span class="qa-q-label lbl-lwc">NAVMIXIN</span><span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span></div><div class="qa-answer">
 <pre class="code">import { LightningElement, api, wire } from 'lwc';
 import { NavigationMixin } from 'lightning/navigation';
 import { getRecord, getFieldValue } from 'lightning/uiRecordApi';
@@ -158,7 +158,7 @@ export default class LoanParentNav extends NavigationMixin(LightningElement) {
 }</pre>
 </div></div>
 
-<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">NavigationMixin in LWC vs Aura &mdash; key differences and how to migrate?</span><span class="qa-q-label lbl-lwc">NAVMIXIN</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">NavigationMixin in LWC vs Aura &mdash; key differences and how to migrate?</span><span class="qa-q-label lbl-lwc">NAVMIXIN</span><span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span></div><div class="qa-answer">
 <table class="comparison-table"><tr><th>Feature</th><th>Aura (legacy)</th><th>LWC (current)</th></tr>
 <tr><td>Navigate to record</td><td>force:navigateToSObject event</td><td>NavigationMixin.Navigate standard__recordPage</td></tr>
 <tr><td>Navigate to URL</td><td>force:navigateToURL event</td><td>NavigationMixin.Navigate standard__webPage</td></tr>
@@ -180,7 +180,7 @@ this[NavigationMixin.Navigate]({
 // The mixin is available through the Aura-LWC bridge automatically</pre>
 </div></div>
 
-<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How do you create a shareable link to a record and copy it to clipboard?</span><span class="qa-q-label lbl-lwc">NAVMIXIN</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How do you create a shareable link to a record and copy it to clipboard?</span><span class="qa-q-label lbl-lwc">NAVMIXIN</span><span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span></div><div class="qa-answer">
 <pre class="code">import { LightningElement, api } from 'lwc';
 import { NavigationMixin } from 'lightning/navigation';
 import { ShowToastEvent } from 'lightning/platformShowToastEvent';
@@ -214,7 +214,7 @@ export default class ShareLoanLink extends NavigationMixin(LightningElement) {
 }</pre>
 </div></div>
 
-<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">What happens when NavigationMixin.Navigate is called on a component not in Lightning Experience &mdash; how do you handle it?</span><span class="qa-q-label lbl-lwc">NAVMIXIN</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">What happens when NavigationMixin.Navigate is called on a component not in Lightning Experience &mdash; how do you handle it?</span><span class="qa-q-label lbl-lwc">NAVMIXIN</span><span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span></div><div class="qa-answer">
 <p class="ans-p">NavigationMixin works in Lightning Experience, Salesforce Mobile App, and Experience Cloud sites. It does NOT work in Visualforce pages, standalone apps outside the Salesforce container, or in Jest tests without mocking.</p>
 <pre class="code">// Guard navigation with a try-catch
 handleNavigate() {
@@ -247,7 +247,7 @@ const NavigationMixin = (Base) => {
 export { NavigationMixin };</pre>
 </div></div>
 
-<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How do you track page navigation in LWC &mdash; react when the user navigates to a different record?</span><span class="qa-q-label lbl-lwc">NAVMIXIN</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How do you track page navigation in LWC &mdash; react when the user navigates to a different record?</span><span class="qa-q-label lbl-lwc">NAVMIXIN</span><span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span></div><div class="qa-answer">
 <pre class="code">// CurrentPageReference wire fires every time the page URL changes
 import { CurrentPageReference } from 'lightning/navigation';
 
@@ -278,7 +278,7 @@ handleRecordChange(recordId) {
 // }</pre>
 </div></div>
 
-<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How do you navigate programmatically after a successful record save in LWC?</span><span class="qa-q-label lbl-lwc">NAVMIXIN</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How do you navigate programmatically after a successful record save in LWC?</span><span class="qa-q-label lbl-lwc">NAVMIXIN</span><span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span></div><div class="qa-answer">
 <pre class="code">import { LightningElement, api } from 'lwc';
 import { NavigationMixin } from 'lightning/navigation';
 import { createRecord } from 'lightning/uiRecordApi';
@@ -320,3 +320,4 @@ export default class LoanCreator extends NavigationMixin(LightningElement) {
     }
 }</pre>
 </div></div>
+

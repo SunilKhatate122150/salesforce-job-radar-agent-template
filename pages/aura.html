@@ -22,7 +22,7 @@
   </div>
 </div>
 
-<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How do you call Apex from an Aura component &mdash; complete callback pattern?</span><span class="qa-q-label lbl-lwc">AURA</span><span class="qa-chevron"></span></div><div class="qa-answer">
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How do you call Apex from an Aura component &mdash; complete callback pattern?</span><span class="qa-q-label lbl-lwc">AURA</span><span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span></div><div class="qa-answer">
 <p class="ans-p">All Aura Apex calls are asynchronous and use a callback pattern (unlike LWC async/await).</p>
 <pre class="code">// MyComp.cmp
 &lt;aura:component controller="LoanController"&gt;
@@ -55,7 +55,7 @@
 })</pre>
 </div></div>
 
-<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">What are Aura component events vs application events &mdash; when to use each?</span><span class="qa-q-label lbl-lwc">AURA</span><span class="qa-chevron"></span></div><div class="qa-answer">
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">What are Aura component events vs application events &mdash; when to use each?</span><span class="qa-q-label lbl-lwc">AURA</span><span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span></div><div class="qa-answer">
 <table class="comparison-table"><tr><th>Type</th><th>Scope</th><th>Direction</th><th>Use when</th></tr><tr><td>Component Event</td><td>Bubbles up through component hierarchy</td><td>Child ΓåÆ Parent ancestor only</td><td>Parent needs to react to child action</td></tr><tr><td>Application Event</td><td>Broadcast to ALL handlers in entire app</td><td>Any component ΓåÆ any other component</td><td>Truly unrelated components need to communicate</td></tr></table>
 <pre class="code">// Component Event (preferred &mdash; more contained)
 // LoanSelectedEvt.evt: &lt;aura:event type="COMPONENT"&gt;&lt;aura:attribute name="loanId" type="String"/&gt;&lt;/aura:event&gt;
@@ -69,7 +69,7 @@
 <div class="warn-box"><div class="warn-label">Application events create tight coupling</div><p>They fire to every registered handler in the app. In large orgs this makes debugging very hard. Prefer Component Events or migrate to LWC + Lightning Message Service.</p></div>
 </div></div>
 
-<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">What is Aura Locker Service &mdash; what restrictions does it impose?</span><span class="qa-q-label lbl-lwc">AURA</span><span class="qa-chevron"></span></div><div class="qa-answer">
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">What is Aura Locker Service &mdash; what restrictions does it impose?</span><span class="qa-q-label lbl-lwc">AURA</span><span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span></div><div class="qa-answer">
 <p class="ans-p">Locker Service is Salesforce's JavaScript security sandbox for Aura. It wraps DOM elements in SecureElement proxies to prevent cross-component DOM access and XSS.</p>
 <ul class="ans-list">
   <li><b>Cannot use document.querySelector()</b> &mdash; blocked. Use component.find('aura:id') instead</li>
@@ -87,7 +87,7 @@ var input = component.find('myInput'); // find by aura:id
 if (input.getElement().tagName === 'INPUT') { } // check tagName not instanceof</pre>
 </div></div>
 
-<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How do Aura components communicate with Lightning Web Components?</span><span class="qa-q-label lbl-lwc">AURA</span><span class="qa-chevron"></span></div><div class="qa-answer">
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How do Aura components communicate with Lightning Web Components?</span><span class="qa-q-label lbl-lwc">AURA</span><span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span></div><div class="qa-answer">
 <p class="ans-p">LWC components can be used inside Aura components but the reverse is not true &mdash; you cannot use Aura inside LWC.</p>
 <pre class="code">// Using LWC inside Aura &mdash; works natively
 &lt;aura:component&gt;
@@ -105,7 +105,7 @@ if (input.getElement().tagName === 'INPUT') { } // check tagName not instanceof<
 <div class="tip-box"><div class="tip-label">Migration strategy</div><p>Wrap existing Aura components in LWC wrappers gradually. New features = LWC. Existing Aura = maintain until full replacement. Use LMS as the communication bridge during transition.</p></div>
 </div></div>
 
-<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">What are Aura attributes &mdash; types, defaults, access modifiers?</span><span class="qa-q-label lbl-lwc">AURA</span><span class="qa-chevron"></span></div><div class="qa-answer">
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">What are Aura attributes &mdash; types, defaults, access modifiers?</span><span class="qa-q-label lbl-lwc">AURA</span><span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span></div><div class="qa-answer">
 <pre class="code">&lt;aura:component access="global"&gt;
   &lt;!-- Basic types --&gt;
   &lt;aura:attribute name="loanId"    type="String"    default=""/&gt;
@@ -127,7 +127,7 @@ component.get('v.loanId');           // read
 component.set('v.isLoading', true);  // write</pre>
 </div></div>
 
-<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">What is the Aura component lifecycle &mdash; init, render, rerender?</span><span class="qa-q-label lbl-lwc">AURA</span><span class="qa-chevron"></span></div><div class="qa-answer">
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">What is the Aura component lifecycle &mdash; init, render, rerender?</span><span class="qa-q-label lbl-lwc">AURA</span><span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span></div><div class="qa-answer">
 <table class="comparison-table"><tr><th>Event</th><th>When</th><th>Use for</th></tr><tr><td>init</td><td>Component created, attributes set, not yet in DOM</td><td>Initialize data, make first Apex call</td></tr><tr><td>render</td><td>Returns markup &mdash; override only for complex DOM manipulation</td><td>Rarely overridden</td></tr><tr><td>afterRender</td><td>Component in DOM after initial render</td><td>Access DOM elements, init third-party JS</td></tr><tr><td>rerender</td><td>Called on every re-render (attribute change)</td><td>Update third-party libraries on data change</td></tr><tr><td>unrender</td><td>Component destroyed</td><td>Cleanup &mdash; timers, listeners, subscriptions</td></tr></table>
 <pre class="code">// Aura handler declarations in .cmp
 &lt;aura:handler name="init" value="{!this}" action="{!c.doInit}"/&gt;
@@ -136,7 +136,7 @@ component.set('v.isLoading', true);  // write</pre>
 // Note: in LWC these are connectedCallback, renderedCallback, disconnectedCallback</pre>
 </div></div>
 
-<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How do you use $A.createComponent() for dynamic component creation?</span><span class="qa-q-label lbl-lwc">AURA</span><span class="qa-chevron"></span></div><div class="qa-answer">
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How do you use $A.createComponent() for dynamic component creation?</span><span class="qa-q-label lbl-lwc">AURA</span><span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span></div><div class="qa-answer">
 <pre class="code">// Dynamically create a component at runtime (no LWC equivalent &mdash; Aura-only)
 ({
   createLoanModal: function(component, event, helper) {
@@ -161,7 +161,7 @@ component.set('v.isLoading', true);  // write</pre>
 <div class="tip-box"><div class="tip-label">When used</div><p>$A.createComponent is used for modal dialogs, dynamic content areas, and wizard steps where the component type is determined at runtime. In LWC, use conditional templates (if:true) or dynamic imports instead.</p></div>
 </div></div>
 
-<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">What is Aura helper &mdash; how does it differ from controller?</span><span class="qa-q-label lbl-lwc">AURA</span><span class="qa-chevron"></span></div><div class="qa-answer">
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">What is Aura helper &mdash; how does it differ from controller?</span><span class="qa-q-label lbl-lwc">AURA</span><span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span></div><div class="qa-answer">
 <p class="ans-p">Every Aura component has a Controller (event handlers, bound to markup) and a Helper (shared utility functions). The Helper is a singleton &mdash; one instance shared across all instances of the component.</p>
 <pre class="code">// Controller &mdash; handles events from markup, delegates to helper
 ({
@@ -190,7 +190,7 @@ component.set('v.isLoading', true);  // write</pre>
 <div class="tip-box"><div class="tip-label">Best practice</div><p>Keep Controller functions thin &mdash; they just call Helper methods. This makes Helper functions easily testable and reusable.</p></div>
 </div></div>
 
-<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How do you handle errors in Aura &mdash; force:showToast and error events?</span><span class="qa-q-label lbl-lwc">AURA</span><span class="qa-chevron"></span></div><div class="qa-answer">
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How do you handle errors in Aura &mdash; force:showToast and error events?</span><span class="qa-q-label lbl-lwc">AURA</span><span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span></div><div class="qa-answer">
 <pre class="code">// Show toast notification
 ({
   showSuccess: function(component) {
@@ -225,3 +225,4 @@ component.set('v.isLoading', true);  // write</pre>
   }
 })</pre>
 </div></div>
+

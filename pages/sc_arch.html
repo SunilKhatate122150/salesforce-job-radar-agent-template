@@ -1,7 +1,7 @@
 <div class="page-title">Architecture &amp; Mixed Scenarios &mdash; 10 Questions</div>
 <div class="page-sub">Senior-level architectural decision questions &mdash; explain your reasoning, not just the answer</div>
 
-<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How do you decide between Flow vs Apex Trigger vs Process Builder for a new automation requirement?</span><span class="qa-q-label lbl-domain">ARCHITECTURE</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How do you decide between Flow vs Apex Trigger vs Process Builder for a new automation requirement?</span><span class="qa-q-label lbl-domain">ARCHITECTURE</span><span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span></div><div class="qa-answer">
 <pre class="code">// DECISION FRAMEWORK &mdash; ask these questions in order:
 
 // 1. Is this logic admin-maintainable and simple enough for Flow?
@@ -24,7 +24,7 @@
 // ❌ Process Builder for new logic &mdash; deprecated, replacing with Flow</pre>
 </div></div>
 
-<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How do you approach performance testing before a large Salesforce deployment?</span><span class="qa-q-label lbl-apex">ARCHITECTURE</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How do you approach performance testing before a large Salesforce deployment?</span><span class="qa-q-label lbl-apex">ARCHITECTURE</span><span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span></div><div class="qa-answer">
 <ul class="ans-list">
   <li><b>Query Plan analysis:</b> Run all SOQL from triggers and LWC wire calls through Developer Console with EXPLAIN. Fix any TableScan before deployment</li>
   <li><b>Bulk trigger test at 200 records:</b> ALWAYS test triggers inserting exactly 200 records. If test only uses 1 record, governor limit issues will not surface until production</li>
@@ -40,7 +40,7 @@ Long elapsed = Limits.getCpuTime() - startCpu;
 System.debug('CPU used for operation: ' + elapsed + 'ms of ' + Limits.getLimitCpuTime() + 'ms total');</pre>
 </div></div>
 
-<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How do you manage technical debt in an existing Salesforce org with outdated automation?</span><span class="qa-q-label lbl-domain">ARCHITECTURE</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How do you manage technical debt in an existing Salesforce org with outdated automation?</span><span class="qa-q-label lbl-domain">ARCHITECTURE</span><span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span></div><div class="qa-answer">
 <ul class="ans-list">
   <li><b>Audit with Salesforce Optimizer:</b> Run the free Salesforce Optimizer report (Setup → Optimizer). It identifies unused fields, inactive flows, low-coverage Apex, duplicate rules, excessive objects</li>
   <li><b>Migrate Process Builder and Workflow to Flow:</b> Both are deprecated. Salesforce retirement dates are announced &mdash; start migration before forced retirement causes failures</li>
@@ -52,7 +52,7 @@ System.debug('CPU used for operation: ' + elapsed + 'ms of ' + Limits.getLimitCp
 </ul>
 </div></div>
 
-<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How do you stay current with Salesforce releases as a senior developer?</span><span class="qa-q-label lbl-domain">ARCHITECTURE</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How do you stay current with Salesforce releases as a senior developer?</span><span class="qa-q-label lbl-domain">ARCHITECTURE</span><span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span></div><div class="qa-answer">
 <p class="ans-p">Salesforce releases 3 major updates per year: Spring (February), Summer (June), Winter (October/November).</p>
 <ul class="ans-list">
   <li><b>Release Notes:</b> Read for every release. Focus on: Apex API changes, LWC new capabilities, Flow enhancements, deprecated features and their timelines</li>
@@ -65,7 +65,7 @@ System.debug('CPU used for operation: ' + elapsed + 'ms of ' + Limits.getLimitCp
 <div class="tip-box"><div class="tip-label">Interview answer</div><p>Say: "I stay current through the official release notes and Salesforce Developer Blog, and I test major features in sandbox before they reach production. I also track the Process Builder and Workflow deprecation timeline because we have existing automations that need migration to Flow &mdash; I want to stay ahead of forced retirements rather than scramble at the deadline."</p></div>
 </div></div>
 
-<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">Design a real-time loan status notification system from scratch &mdash; architect the complete solution</span><span class="qa-q-label lbl-domain">ARCHITECTURE</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">Design a real-time loan status notification system from scratch &mdash; architect the complete solution</span><span class="qa-q-label lbl-domain">ARCHITECTURE</span><span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span></div><div class="qa-answer">
 <p class="ans-p"><b>Requirements: send email, SMS, and push notifications when loan status changes. Multiple loan types. Configurable rules per status change.</b></p>
 <p class="ans-p"><b>Architecture decision &mdash; Why NOT direct in trigger:</b> The trigger would need to know about every notification channel, every loan type's rules, and every recipient configuration. That is too tightly coupled.</p>
 <p class="ans-p"><b>Decoupled design:</b></p>
@@ -78,3 +78,4 @@ System.debug('CPU used for operation: ' + elapsed + 'ms of ' + Limits.getLimitCp
 </ul>
 <div class="tip-box"><div class="tip-label">Patterns demonstrated</div><p>Platform Events (decoupling), Custom Metadata (configuration-driven, deploy without code change), Strategy Pattern (INotificationChannel), Error logging, Retry logic. This answer shows senior architect thinking &mdash; decoupling, configuration-driven design, error handling, retry logic.</p></div>
 </div></div>
+

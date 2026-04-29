@@ -1,7 +1,7 @@
 <div class="page-title">File Upload + Google Drive &mdash; Scenarios</div>
 <div class="page-sub">10 scenarios covering Salesforce Files, chunked upload for large files, and external storage integration</div>
 
-<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How do you use lightning-file-upload component &mdash; complete working example?</span><span class="qa-q-label lbl-lwc">FILE UPLOAD</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How do you use lightning-file-upload component &mdash; complete working example?</span><span class="qa-q-label lbl-lwc">FILE UPLOAD</span><span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span></div><div class="qa-answer">
 <pre class="code">&lt;!-- documentUpload.html --&gt;
 &lt;lightning-card title="Upload Loan Documents"&gt;
     &lt;lightning-file-upload
@@ -52,7 +52,7 @@ export default class DocumentUpload extends LightningElement {
 }</pre>
 </div></div>
 
-<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How do you upload a 12MB file using chunked upload &mdash; LWC + Apex complete code?</span><span class="qa-q-label lbl-lwc">FILE UPLOAD</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How do you upload a 12MB file using chunked upload &mdash; LWC + Apex complete code?</span><span class="qa-q-label lbl-lwc">FILE UPLOAD</span><span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span></div><div class="qa-answer">
 <pre class="code">// LWC &mdash; chunks the file client-side before sending
 const CHUNK_SIZE = 3 * 1024 * 1024;  // 3MB per chunk (safe for Apex 6MB heap)
 
@@ -145,7 +145,7 @@ public class ChunkedUploadController {
 }</pre>
 </div></div>
 
-<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How do ContentDocument, ContentDocumentLink, and ContentVersion work together &mdash; query and manage files?</span><span class="qa-q-label lbl-apex">FILE UPLOAD</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How do ContentDocument, ContentDocumentLink, and ContentVersion work together &mdash; query and manage files?</span><span class="qa-q-label lbl-apex">FILE UPLOAD</span><span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span></div><div class="qa-answer">
 <pre class="code">// THREE OBJECTS in the Salesforce Files system:
 // ContentVersion &mdash; the actual file binary (each version = separate record)
 // ContentDocument &mdash; the logical file (parent of all ContentVersions)
@@ -188,7 +188,7 @@ List&lt;ContentDocumentLink&gt; links = [
 delete [SELECT Id FROM ContentDocument WHERE Id = :contentDocumentId];</pre>
 </div></div>
 
-<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How do you send a file from Salesforce to Google Drive using a Queueable with OAuth2 Named Credential?</span><span class="qa-q-label lbl-apex">FILE UPLOAD</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How do you send a file from Salesforce to Google Drive using a Queueable with OAuth2 Named Credential?</span><span class="qa-q-label lbl-apex">FILE UPLOAD</span><span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span></div><div class="qa-answer">
 <pre class="code">// GoogleDriveUploadQueueable.cls
 public class GoogleDriveUploadQueueable implements Queueable, Database.AllowsCallouts {
     private Id contentVersionId;
@@ -253,7 +253,7 @@ public class GoogleDriveUploadQueueable implements Queueable, Database.AllowsCal
 }</pre>
 </div></div>
 
-<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How do you display uploaded files in an LWC component with download links and delete option?</span><span class="qa-q-label lbl-lwc">FILE UPLOAD</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How do you display uploaded files in an LWC component with download links and delete option?</span><span class="qa-q-label lbl-lwc">FILE UPLOAD</span><span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span></div><div class="qa-answer">
 <pre class="code">// fileList.js
 import { LightningElement, api, wire } from 'lwc';
 import { deleteRecord } from 'lightning/uiRecordApi';
@@ -323,7 +323,7 @@ public static List&lt;Map&lt;String,Object&gt;&gt; getLinkedFiles(Id recordId) {
 }</pre>
 </div></div>
 
-<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How do you retrieve uploaded files from Salesforce Files and link them to records?</span><span class="qa-q-label lbl-lwc">FILE UPLOAD</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How do you retrieve uploaded files from Salesforce Files and link them to records?</span><span class="qa-q-label lbl-lwc">FILE UPLOAD</span><span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span></div><div class="qa-answer">
 <pre class="code">// Get all files linked to a record
 List&lt;ContentDocumentLink&gt; links = [
   SELECT ContentDocumentId, ContentDocument.Title, ContentDocument.FileExtension,
@@ -353,7 +353,7 @@ ContentDocumentLink link = new ContentDocumentLink(
 insert link;</pre>
 
 </div></div>
-<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How do you validate file types and sizes before upload in LWC?</span><span class="qa-q-label lbl-lwc">FILE UPLOAD</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How do you validate file types and sizes before upload in LWC?</span><span class="qa-q-label lbl-lwc">FILE UPLOAD</span><span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span></div><div class="qa-answer">
 <pre class="code">// Client-side validation before upload
 import { LightningElement } from 'lwc';
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
@@ -383,7 +383,7 @@ export default class DocumentUploader extends LightningElement {
 }</pre>
 
 </div></div>
-<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How do you upload files to Google Drive from Salesforce?</span><span class="qa-q-label lbl-intg">FILE UPLOAD</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How do you upload files to Google Drive from Salesforce?</span><span class="qa-q-label lbl-intg">FILE UPLOAD</span><span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span></div><div class="qa-answer">
 <pre class="code">// Pattern: Salesforce → Google Drive via Google Drive API
 // Prerequisites: Connected App + Named Credential for Google OAuth2
 
@@ -425,7 +425,7 @@ public class GoogleDriveService {
 }</pre>
 
 </div></div>
-<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How do you generate a download link for a Salesforce file in LWC?</span><span class="qa-q-label lbl-lwc">FILE UPLOAD</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How do you generate a download link for a Salesforce file in LWC?</span><span class="qa-q-label lbl-lwc">FILE UPLOAD</span><span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span></div><div class="qa-answer">
 <pre class="code">// Generate download URL for ContentVersion
 // URL pattern: /sfc/servlet.shepherd/document/download/{ContentDocumentId}
 // OR for version: /sfc/servlet.shepherd/version/download/{ContentVersionId}
@@ -452,7 +452,7 @@ public static List&lt;Map&lt;String,Object&gt;&gt; getLoanDocuments(Id loanId) {
 // &lt;a href={file.downloadUrl} target="_blank"&gt;{file.title}&lt;/a&gt;</pre>
 
 </div></div>
-<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How do you delete Salesforce Files programmatically?</span><span class="qa-q-label lbl-apex">FILE UPLOAD</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How do you delete Salesforce Files programmatically?</span><span class="qa-q-label lbl-apex">FILE UPLOAD</span><span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span></div><div class="qa-answer">
 <pre class="code">// Delete ContentDocument (deletes all versions and all links)
 // Must have Delete permission on ContentDocument
 public static void deleteLoanDocument(Id contentDocumentId, Id loanId) {
@@ -473,3 +473,4 @@ public static void deleteLoanDocument(Id contentDocumentId, Id loanId) {
 }</pre>
 
 </div></div>
+

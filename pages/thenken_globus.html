@@ -3,7 +3,7 @@
 
 <div style="margin:2rem 0 1.2rem;padding:0.9rem 1.2rem;background:var(--card2);border-left:3px solid var(--blue);border-radius:8px;"><div style="font-size:0.9rem;font-weight:700;color:var(--blue);font-family:'IBM Plex Mono',monospace;">≡ƒÆ╗ Coding Challenge 1 &mdash; Parent/Child LWC with Account Dropdown + Contacts</div></div>
 
-<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">Build two LWC components &mdash; parent shows Account dropdown, child shows related Contacts</span><span class="qa-q-label lbl-lwc">CODING CHALLENGE</span><span class="qa-chevron">Γû╝</span></div><div class="qa-answer">
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">Build two LWC components &mdash; parent shows Account dropdown, child shows related Contacts</span><span class="qa-q-label lbl-lwc">CODING CHALLENGE</span><span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span></div><div class="qa-answer">
 <p class="ans-p"><b>Requirement:</b> Parent LWC shows a dropdown of Accounts. When user selects an Account, child LWC displays that account's related Contacts list.</p>
 <pre class="code">// ΓöÇΓöÇ APEX CONTROLLER ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 public with sharing class AccountContactController {
@@ -121,7 +121,7 @@ export default class ContactList extends LightningElement {
 </div></div>
 <div style="margin:2rem 0 1.2rem;padding:0.9rem 1.2rem;background:var(--card2);border-left:3px solid var(--blue);border-radius:8px;"><div style="font-size:0.9rem;font-weight:700;color:var(--blue);font-family:'IBM Plex Mono',monospace;">≡ƒÆ╗ Coding Challenge 2 &mdash; Opportunity Count on Account + Email to Owner's Manager</div></div>
 
-<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">Show Opportunity count on Account and send email notification to owner's manager</span><span class="qa-q-label lbl-apex">CODING CHALLENGE</span><span class="qa-chevron">Γû╝</span></div><div class="qa-answer">
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">Show Opportunity count on Account and send email notification to owner's manager</span><span class="qa-q-label lbl-apex">CODING CHALLENGE</span><span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span></div><div class="qa-answer">
 <p class="ans-p"><b>Requirement:</b> When Opportunities are created/updated/deleted, update a total count field on the Account. Then send an email notification to the Opportunity owner's manager.</p>
 <pre class="code">// ΓöÇΓöÇ STEP 1: Custom field on Account ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 // Create: Account.Total_Opportunities__c  (Number, 0 decimal places)
@@ -221,7 +221,7 @@ public class OpportunityEmailService {
 </div></div>
 <div style="margin:2rem 0 1.2rem;padding:0.9rem 1.2rem;background:var(--card2);border-left:3px solid var(--blue);border-radius:8px;"><div style="font-size:0.9rem;font-weight:700;color:var(--blue);font-family:'IBM Plex Mono',monospace;">≡ƒÄñ Self Introduction &mdash; Technical Round Version</div></div>
 
-<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">Self Introduction &mdash; Technical Round (Thenken Globus style)</span><span class="qa-q-label lbl-behav">INTRO</span><span class="qa-chevron">Γû╝</span></div><div class="qa-answer">
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">Self Introduction &mdash; Technical Round (Thenken Globus style)</span><span class="qa-q-label lbl-behav">INTRO</span><span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span></div><div class="qa-answer">
 <p class="ans-p">Technical round introductions should be slightly more detailed than screening &mdash; 2 minutes, with technical depth.</p>
 <p class="ans-p">"Good morning. My name is Sunil, and I'm a Salesforce Developer with four years of experience specializing in enterprise Salesforce implementations for the US mortgage and financial services domain.<br><br>
 My technical stack: Apex (triggers, batch, Queueable, REST API callouts), Lightning Web Components, Salesforce Integrations (REST/SOAP/Platform Events), and most recently Agentforce development including custom Apex Actions and Prompt Templates.<br><br>
@@ -233,7 +233,7 @@ I'm comfortable owning technical decisions end-to-end &mdash; from design review
 </div></div>
 <div style="margin:2rem 0 1.2rem;padding:0.9rem 1.2rem;background:var(--card2);border-left:3px solid var(--blue);border-radius:8px;"><div style="font-size:0.9rem;font-weight:700;color:var(--blue);font-family:'IBM Plex Mono',monospace;">Γÿü Sales Cloud &mdash; In Depth</div></div>
 
-<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">Sales Cloud &mdash; complete deep dive for technical round</span><span class="qa-q-label lbl-domain">SALES CLOUD</span><span class="qa-chevron">Γû╝</span></div><div class="qa-answer">
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">Sales Cloud &mdash; complete deep dive for technical round</span><span class="qa-q-label lbl-domain">SALES CLOUD</span><span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span></div><div class="qa-answer">
 <p class="ans-p"><b>Lead-to-Cash full lifecycle:</b></p>
 <ul class="ans-list">
   <li><b>Lead Management</b> &mdash; web-to-lead, lead assignment rules, lead scoring (Einstein), lead conversion to Account + Contact + Opportunity</li>
@@ -262,7 +262,7 @@ FROM Opportunity WHERE Id = :oppId</pre>
 </div></div>
 <div style="margin:2rem 0 1.2rem;padding:0.9rem 1.2rem;background:var(--card2);border-left:3px solid var(--blue);border-radius:8px;"><div style="font-size:0.9rem;font-weight:700;color:var(--blue);font-family:'IBM Plex Mono',monospace;">≡ƒÄº Service Cloud &mdash; In Depth</div></div>
 
-<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">Service Cloud &mdash; complete deep dive for technical round</span><span class="qa-q-label lbl-domain">SERVICE CLOUD</span><span class="qa-chevron">Γû╝</span></div><div class="qa-answer">
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">Service Cloud &mdash; complete deep dive for technical round</span><span class="qa-q-label lbl-domain">SERVICE CLOUD</span><span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span></div><div class="qa-answer">
 <p class="ans-p"><b>Complete Case lifecycle and Service Cloud architecture:</b></p>
 <ul class="ans-list">
   <li><b>Case Origins</b> &mdash; Email-to-Case (inbound email creates Case), Web-to-Case (web form), Omni-Channel (chat, social, phone), manual creation</li>
@@ -297,7 +297,7 @@ List&lt;CaseMilestone&gt; milestones = [
 </div></div>
 <div style="margin:2rem 0 1.2rem;padding:0.9rem 1.2rem;background:var(--card2);border-left:3px solid var(--blue);border-radius:8px;"><div style="font-size:0.9rem;font-weight:700;color:var(--blue);font-family:'IBM Plex Mono',monospace;">ΓÅ░ Cron Expressions in Salesforce</div></div>
 
-<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">Cron expressions in Salesforce Scheduled Apex &mdash; complete reference</span><span class="qa-q-label lbl-apex">SCHEDULED APEX</span><span class="qa-chevron">Γû╝</span></div><div class="qa-answer">
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">Cron expressions in Salesforce Scheduled Apex &mdash; complete reference</span><span class="qa-q-label lbl-apex">SCHEDULED APEX</span><span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span></div><div class="qa-answer">
 <p class="ans-p"><b>Salesforce cron expression has 7 positions (not 5 like standard Unix cron):</b></p>
 <pre class="code">// Position:  Seconds  Minutes  Hours  Day-of-Month  Month  Day-of-Week  Year
 // Format:    0-59     0-59     0-23   1-31          1-12   1-7 or SUN-SAT  (optional)
@@ -341,7 +341,7 @@ for (CronTrigger ct : jobs) System.abortJob(ct.Id);
 </div></div>
 <div style="margin:2rem 0 1.2rem;padding:0.9rem 1.2rem;background:var(--card2);border-left:3px solid var(--blue);border-radius:8px;"><div style="font-size:0.9rem;font-weight:700;color:var(--blue);font-family:'IBM Plex Mono',monospace;">≡ƒñû Agentforce &mdash; In Depth</div></div>
 
-<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">Agentforce complete architecture &mdash; everything a developer needs to know</span><span class="qa-q-label lbl-domain">AGENTFORCE</span><span class="qa-chevron">Γû╝</span></div><div class="qa-answer">
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">Agentforce complete architecture &mdash; everything a developer needs to know</span><span class="qa-q-label lbl-domain">AGENTFORCE</span><span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span></div><div class="qa-answer">
 <p class="ans-p"><b>Agentforce = Salesforce's autonomous AI agent platform (GA: Fall 2024). Agents reason, plan, and execute multi-step tasks.</b></p>
 <table class="comparison-table"><tr><th>Component</th><th>What it is</th><th>Developer role</th></tr><tr><td>Agent</td><td>Autonomous AI with a persona, topics, and actions</td><td>Configure in Setup ΓåÆ Agents</td></tr><tr><td>Topic</td><td>Category of intent the agent handles</td><td>Define instructions + which actions belong</td></tr><tr><td>Agent Action</td><td>Specific operation the agent can perform</td><td>Build Apex @InvocableMethod or Flow</td></tr><tr><td>Prompt Template</td><td>Reusable AI prompts with merge fields</td><td>Build in Prompt Builder (Setup)</td></tr><tr><td>Atlas Reasoning Engine</td><td>The AI 'brain' that decides which action to call</td><td>Platform-provided &mdash; no code</td></tr><tr><td>Model</td><td>The LLM (OpenAI GPT-4, Anthropic Claude, etc.)</td><td>Configure in Setup ΓåÆ AI Models</td></tr></table>
 <pre class="code">// ΓöÇΓöÇ CUSTOM APEX ACTION FOR AGENTFORCE ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
@@ -410,7 +410,7 @@ public class LoanStatusAction {
 </div></div>
 <div style="margin:2rem 0 1.2rem;padding:0.9rem 1.2rem;background:var(--card2);border-left:3px solid var(--blue);border-radius:8px;"><div style="font-size:0.9rem;font-weight:700;color:var(--blue);font-family:'IBM Plex Mono',monospace;">≡ƒöù Integration &mdash; Complete Deep Dive</div></div>
 
-<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">Salesforce Integration patterns &mdash; all types with complete code</span><span class="qa-q-label lbl-intg">INTEGRATION</span><span class="qa-chevron">Γû╝</span></div><div class="qa-answer">
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">Salesforce Integration patterns &mdash; all types with complete code</span><span class="qa-q-label lbl-intg">INTEGRATION</span><span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span></div><div class="qa-answer">
 <p class="ans-p"><b>4 core integration patterns:</b></p>
 <table class="comparison-table"><tr><th>Pattern</th><th>Direction</th><th>When</th><th>Example</th></tr><tr><td>Request-Response</td><td>Salesforce Γåö External</td><td>Need immediate result</td><td>Credit check &mdash; must get score before continuing</td></tr><tr><td>Fire and Forget</td><td>Salesforce ΓåÆ External</td><td>Don't need response</td><td>Send loan data to analytics system</td></tr><tr><td>Batch/Bulk Sync</td><td>Salesforce Γåö External</td><td>Large data, scheduled</td><td>Nightly sync of 50K loan records to data warehouse</td></tr><tr><td>Event-Driven</td><td>Salesforce ΓåÆ External (CDC/PE)</td><td>React to data changes</td><td>External system notified when Loan status changes</td></tr></table>
 <pre class="code">// 1. REQUEST-RESPONSE (synchronous Queueable + Named Credential)
@@ -481,7 +481,7 @@ public class LoanDataSyncBatch implements Database.Batchable&lt;SObject&gt;, Dat
 }</pre>
 
 </div></div>
-<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">OAuth 2.0 flows &mdash; which to use when for Salesforce integrations?</span><span class="qa-q-label lbl-intg">INTEGRATION</span><span class="qa-chevron">Γû╝</span></div><div class="qa-answer">
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">OAuth 2.0 flows &mdash; which to use when for Salesforce integrations?</span><span class="qa-q-label lbl-intg">INTEGRATION</span><span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span></div><div class="qa-answer">
 <table class="comparison-table"><tr><th>Flow</th><th>Use case</th><th>How</th></tr><tr><td>Web Server (Auth Code)</td><td>User-facing web app needs Salesforce</td><td>User logs in ΓåÆ auth code ΓåÆ access+refresh tokens</td></tr><tr><td>JWT Bearer</td><td>Server-to-server, no user interaction</td><td>App signs JWT with cert ΓåÆ Salesforce issues access token</td></tr><tr><td>Client Credentials</td><td>Trusted server-to-server (API v59+)</td><td>Client ID + secret ΓåÆ access token directly</td></tr><tr><td>Refresh Token</td><td>Renew expired access token</td><td>Exchange refresh token ΓåÆ new access token</td></tr></table>
 <pre class="code">// JWT Bearer &mdash; for system integrations (recommended)
 // Setup: Connected App ΓåÆ Use Digital Signature ΓåÆ upload certificate
@@ -501,7 +501,7 @@ Map&lt;String,Object&gt; info = (Map&lt;String,Object&gt;) JSON.deserializeUntyp
 System.debug('Authenticated as: ' + info.get('preferred_username'));</pre>
 
 </div></div>
-<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">Platform Events for real-time integration &mdash; complete implementation</span><span class="qa-q-label lbl-intg">INTEGRATION</span><span class="qa-chevron">Γû╝</span></div><div class="qa-answer">
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">Platform Events for real-time integration &mdash; complete implementation</span><span class="qa-q-label lbl-intg">INTEGRATION</span><span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span></div><div class="qa-answer">
 <pre class="code">// 1. Define Platform Event: Setup ΓåÆ Platform Events ΓåÆ New
 // Fields: Loan_Id__c (Text), Status__c (Text), Timestamp__c (DateTime)
 // Publish Behavior: Publish After Commit
@@ -540,7 +540,7 @@ connectedCallback() {
 </div></div>
 <div style="margin:2rem 0 1.2rem;padding:0.9rem 1.2rem;background:var(--card2);border-left:3px solid var(--blue);border-radius:8px;"><div style="font-size:0.9rem;font-weight:700;color:var(--blue);font-family:'IBM Plex Mono',monospace;">≡ƒûÑ LWC &mdash; Complete Deep Dive</div></div>
 
-<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">LWC complete architecture &mdash; decorators, reactivity, events, lifecycle</span><span class="qa-q-label lbl-lwc">LWC DEEP DIVE</span><span class="qa-chevron">Γû╝</span></div><div class="qa-answer">
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">LWC complete architecture &mdash; decorators, reactivity, events, lifecycle</span><span class="qa-q-label lbl-lwc">LWC DEEP DIVE</span><span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span></div><div class="qa-answer">
 <p class="ans-p"><b>Everything about LWC in one comprehensive answer:</b></p>
 <pre class="code">// DECORATORS
 @api        // Public property &mdash; parent passes data in. Changes trigger re-render.
@@ -612,7 +612,7 @@ export default class LoanStatusCard extends NavigationMixin(LightningElement) {
 }</pre>
 
 </div></div>
-<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">LWC Performance optimization &mdash; what are the common issues and fixes?</span><span class="qa-q-label lbl-lwc">LWC PERFORMANCE</span><span class="qa-chevron">Γû╝</span></div><div class="qa-answer">
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">LWC Performance optimization &mdash; what are the common issues and fixes?</span><span class="qa-q-label lbl-lwc">LWC PERFORMANCE</span><span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span></div><div class="qa-answer">
 <ul class="ans-list">
   <li><b>Too many @wire calls on load</b> &mdash; load only what's needed immediately. Lazy-load secondary data on user action (button click, tab change) using imperative Apex.</li>
   <li><b>Re-rendering on every keystroke</b> &mdash; debounce input handlers. Don't fire Apex on every keypress, wait 300ms after last keystroke.</li>
@@ -639,3 +639,4 @@ handleTabActive(event) {
 }</pre>
 
 </div></div>
+

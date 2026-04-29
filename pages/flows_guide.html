@@ -1,12 +1,12 @@
 <div class="page-title">Salesforce Flow &mdash; Complete Implementation Guide</div>
 <div class="page-sub">Declarative automation for complex business processes &mdash; record-triggered, screen flows, and orchestration</div>
 
-<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">When should you use Flow vs Apex &mdash; give a concrete decision framework?</span><span class="qa-q-label lbl-domain">FLOW</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">When should you use Flow vs Apex &mdash; give a concrete decision framework?</span><span class="qa-q-label lbl-domain">FLOW</span><span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span></div><div class="qa-answer">
 <table class="comparison-table"><tr><th>Use CASE</th><th>Use FLOW</th><th>Use APEX</th></tr><tr><td>Simple CRUD on same record</td><td>YES &mdash; Fast Field Updates</td><td>No</td></tr><tr><td>Simple record creation/update on related objects</td><td>YES</td><td>Only if logic is very complex</td></tr><tr><td>External API Integrations (Callouts)</td><td>Only for simple JSON (HTTP Callout)</td><td>YES &mdash; complex JSON, multiple endpoints</td></tr><tr><td>Mass record processing (10k+)</td><td>No &mdash; Flow is slower for bulk</td><td>YES &mdash; Batch/Queueable</td></tr><tr><td>Custom UI components</td><td>Only as a wrapper</td><td>YES &mdash; LWC</td></tr><tr><td>Complex math/logic/loops</td><td>No &mdash; Flow loops are slow</td><td>YES</td></tr></table>
 <div class="tip-box"><div class="tip-label">Official Guideline</div><p>Salesforce's current stance is "Flow First." Try to build it in Flow. If you hit a limit, or the logic becomes a "spaghetti" of elements that is hard to maintain, move that specific part to an Invocable Apex action or rewrite the whole process in Apex.</p></div>
 </div></div>
 
-<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">Record-Triggered Flow: Before-Save vs After-Save &mdash; explain the difference?</span><span class="qa-q-label lbl-domain">FLOW</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">Record-Triggered Flow: Before-Save vs After-Save &mdash; explain the difference?</span><span class="qa-q-label lbl-domain">FLOW</span><span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span></div><div class="qa-answer">
 <ul class="ans-list">
   <li><b>Before-Save (Fast Field Updates):</b> Runs before the record is saved to the database. Use this for updating fields on the SAME record that triggered the flow. It is 10x faster than After-Save because it doesn't trigger a second save operation.</li>
   <li><b>After-Save (Actions and Related Records):</b> Runs after the record is saved. Use this for updating OTHER records, sending emails, making callouts, or performing any action that needs the record's ID (which is only available after save).</li>
@@ -19,7 +19,7 @@
 <span class="cmt">// 5. After-Save FLOWS</span></pre>
 </div></div>
 
-<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How do you handle Errors in Flow &mdash; use Fault Paths and custom error messages?</span><span class="qa-q-label lbl-domain">FLOW</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How do you handle Errors in Flow &mdash; use Fault Paths and custom error messages?</span><span class="qa-q-label lbl-domain">FLOW</span><span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span></div><div class="qa-answer">
 <p class="ans-p">Never let a Flow fail with a "unhandled exception" screen. Use Fault Paths.</p>
 <ul class="ans-list">
   <li><b>Fault Path:</b> Connect the 'Fault' output of a DML element (Create, Update, Delete) to a separate logic branch.</li>
@@ -29,7 +29,7 @@
 </ul>
 </div></div>
 
-<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How do you call Apex from a Flow (Invocable Methods) &mdash; show the code and the Flow setup?</span><span class="qa-q-label lbl-apex">FLOW</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How do you call Apex from a Flow (Invocable Methods) &mdash; show the code and the Flow setup?</span><span class="qa-q-label lbl-apex">FLOW</span><span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span></div><div class="qa-answer">
 <pre class="code"><span class="kw">public class</span> <span class="cls">LoanCalculator</span> {
     <span class="ann">@InvocableMethod</span>(label=<span class="str">'Calculate Interest Rate'</span> description=<span class="str">'Returns rate based on FICO'</span>)
     <span class="kw{public static} <span class="cls{List}&lt;<span class="cls{Decimal}&gt; getRates(<span class="cls{List}&lt;<span class="cls{Integer}&gt; ficoScores) {
@@ -49,7 +49,7 @@
 </ul>
 </div></div>
 
-<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">What is Flow Orchestration &mdash; when do you use it instead of a regular Flow?</span><span class="qa-q-label lbl-domain">FLOW</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">What is Flow Orchestration &mdash; when do you use it instead of a regular Flow?</span><span class="qa-q-label lbl-domain">FLOW</span><span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span></div><div class="qa-answer">
 <p class="ans-p">Orchestrator handles <b>complex, multi-user, multi-step processes</b> that take days or weeks to complete. A regular Flow is typically "one user, one session."</p>
 <ul class="ans-list">
   <li><b>Stages and Steps:</b> Orchestration is broken into Stages (e.g., "Application Review," "Underwriting," "Closing"). Each stage contains multiple Steps.</li>
@@ -59,7 +59,7 @@
 </ul>
 </div></div>
 
-<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How do you handle "Loops" in Flow without hitting governor limits?</span><span class="qa-q-label lbl-domain">FLOW</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How do you handle "Loops" in Flow without hitting governor limits?</span><span class="qa-q-label lbl-domain">FLOW</span><span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span></div><div class="qa-answer">
 <ul class="ans-list">
   <li><b>Bulkification:</b> NEVER put a "Create Records" or "Update Records" element INSIDE a loop.</li>
   <li><b>Correct Pattern:</b>
@@ -73,7 +73,7 @@
 </ul>
 </div></div>
 
-<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How do you migrate Workflow Rules and Process Builders to Flow &mdash; "Migrate to Flow" tool?</span><span class="qa-q-label lbl-domain">FLOW</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How do you migrate Workflow Rules and Process Builders to Flow &mdash; "Migrate to Flow" tool?</span><span class="qa-q-label lbl-domain">FLOW</span><span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span></div><div class="qa-answer">
 <ul class="ans-list">
   <li><b>The Tool:</b> Setup → Migrate to Flow. Select your old Workflow Rule or Process Builder and the tool generates a Flow automatically.</li>
   <li><b>Deactivation:</b> After migration, you MUST deactivate the old rule/process and activate the new Flow. Never have both running at once.</li>
@@ -81,3 +81,4 @@
   <li><b>Limitations:</b> The tool doesn't handle everything (e.g., complex formulas or certain actions). Always test the generated Flow thoroughly in a sandbox.</li>
 </ul>
 </div></div>
+

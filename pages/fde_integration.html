@@ -1,7 +1,7 @@
 <div class="page-title">FDE Prep &mdash; Integration Patterns</div>
 <div class="page-sub">5 questions on Agentforce + Data Cloud integration patterns</div>
 
-<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">3 ways an Agentforce agent retrieves Data Cloud data at runtime.</span><span class="qa-q-label lbl-fde-arch">ARCHITECTURE</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">3 ways an Agentforce agent retrieves Data Cloud data at runtime.</span><span class="qa-q-label lbl-fde-arch">ARCHITECTURE</span><span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span></div><div class="qa-answer">
     <table class="comparison-table">
       <tr><th>Method</th><th>How</th><th>Pros</th><th>Cons</th></tr>
       <tr><td><b>CRM Sync</b></td><td>Data Cloud syncs fields back to CRM → agent uses SOQL</td><td>Familiar, no special APIs</td><td>Not real-time, limited fields</td></tr>
@@ -11,7 +11,7 @@
     <div class="tip-box"><div class="tip-label">Phased approach</div><p>"CRM Sync for Phase 1 quick wins, Data Graphs for optimized grounding as the implementation matures."</p></div>
 </div></div>
 
-<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">Step-by-step: Ground an Agentforce agent with Data Cloud's unified profile.</span><span class="qa-q-label lbl-fde-scenario">SCENARIO</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">Step-by-step: Ground an Agentforce agent with Data Cloud's unified profile.</span><span class="qa-q-label lbl-fde-scenario">SCENARIO</span><span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span></div><div class="qa-answer">
     <ul class="ans-list">
       <li><b>Step 1:</b> Create Data Graph → Individual + Loans + Payments + Calculated Insights</li>
       <li><b>Step 2:</b> Build Apex Action that retrieves the Data Graph</li>
@@ -26,7 +26,7 @@ public static List&lt;Response&gt; getProfile(List&lt;Request&gt; requests) {
 }</pre>
 </div></div>
 
-<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">≡ƒÅå HERO ANSWER: Design complete Agent + Data Cloud architecture for mortgage.</span><span class="qa-q-label lbl-fde-arch">ARCHITECTURE</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">≡ƒÅå HERO ANSWER: Design complete Agent + Data Cloud architecture for mortgage.</span><span class="qa-q-label lbl-fde-arch">ARCHITECTURE</span><span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span></div><div class="qa-answer">
     <div class="fde-hero-box"><h3>≡ƒÅå This is your "Hero Answer" &mdash; rehearse out loud until it flows naturally</h3></div>
     <div class="fde-flow-diagram">┌─────────────────────────────────────┐
 │          CUSTOMER                   │
@@ -72,7 +72,7 @@ public static List&lt;Response&gt; getProfile(List&lt;Request&gt; requests) {
     <div class="tip-box"><div class="tip-label">Delivery</div><p>Walk through this naturally. Start from customer, show each layer, end with business outcomes. This is FDE-level thinking.</p></div>
 </div></div>
 
-<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How do Platform Events connect to Agentforce architecture?</span><span class="qa-q-label lbl-fde">CONCEPT</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How do Platform Events connect to Agentforce architecture?</span><span class="qa-q-label lbl-fde">CONCEPT</span><span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span></div><div class="qa-answer">
     <ul class="ans-list">
       <li><b>Agent → Platform Event:</b> Action publishes event to external systems. Agent confirms payoff → publishes Payoff_Request__e → LOS picks it up</li>
       <li><b>Platform Event → Agent:</b> External system publishes event → triggers Flow → updates CRM → affects agent grounding</li>
@@ -81,7 +81,7 @@ public static List&lt;Response&gt; getProfile(List&lt;Request&gt; requests) {
     </ul>
 </div></div>
 
-<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">What are Data Cloud Triggered Flows? How different from CRM triggers?</span><span class="qa-q-label lbl-fde">CONCEPT</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">What are Data Cloud Triggered Flows? How different from CRM triggers?</span><span class="qa-q-label lbl-fde">CONCEPT</span><span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span></div><div class="qa-answer">
     <ul class="ans-list">
       <li>Fire when <b>Data Cloud data changes</b> &mdash; similar to record-triggered flows but for DMO events</li>
       <li><b>Triggers:</b> DMO created/updated, Calculated Insight crosses threshold, streaming event received</li>
@@ -91,3 +91,4 @@ public static List&lt;Response&gt; getProfile(List&lt;Request&gt; requests) {
     </ul>
     <div class="tip-box"><div class="tip-label">Key distinction</div><p>"CRM triggers see one system's data. Data Cloud triggers see the unified, cross-system truth."</p></div>
 </div></div>
+

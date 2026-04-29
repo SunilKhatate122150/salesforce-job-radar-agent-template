@@ -1,7 +1,7 @@
 <div class="page-title">Objects &amp; Fields &mdash; 10 Scenario Questions</div>
 <div class="page-sub">Real interview scenarios on the Salesforce data model &mdash; know these cold for 4-year experience level</div>
 
-<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">What is the difference between Lookup and Master-Detail? Give a scenario for each &mdash; with code.</span><span class="qa-q-label lbl-domain">OBJECTS</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">What is the difference between Lookup and Master-Detail? Give a scenario for each &mdash; with code.</span><span class="qa-q-label lbl-domain">OBJECTS</span><span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span></div><div class="qa-answer">
 <table class="comparison-table"><tr><th>Feature</th><th>Lookup</th><th>Master-Detail</th></tr><tr><td>Parent required?</td><td>No &mdash; child can exist without parent</td><td>YES &mdash; mandatory, cannot be null</td></tr><tr><td>Delete parent</td><td>Child stays, lookup goes null</td><td>Child records DELETED (cascade delete)</td></tr><tr><td>Rollup Summary</td><td>NOT available</td><td>Available &mdash; COUNT, SUM, MIN, MAX</td></tr><tr><td>Sharing</td><td>Child has own OWD/sharing</td><td>Child inherits parent's sharing</td></tr><tr><td>Reparenting</td><td>Allowed (change parent anytime)</td><td>Restricted (controlled per MDR setting)</td></tr><tr><td>Max per object</td><td>25 lookups</td><td>2 master-detail</td></tr></table>
 <pre class="code"><span class="cmt">// Mortgage example: Lookup &mdash; Contact to Account</span>
 <span class="cmt">// Contact can exist without Account (orphan contact is valid)</span>
@@ -19,7 +19,7 @@ delete [<span class="kw">SELECT</span> Id <span class="kw">FROM</span> Applicati
 <div class="tip-box"><div class="tip-label">Interview connection</div><p>Say: "In my Mortgage Platform, Loan__c had a Master-Detail to Application__c because a loan cannot logically exist without an application, and we needed a Rollup Summary to show total funded amount on the Application record. For the Contact-to-Account relationship we used Lookup because a loan officer (Contact) could exist in the system before being assigned to a broker office (Account)."</p></div>
 </div></div>
 
-<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How do you implement a many-to-many relationship using a Junction Object &mdash; build one for the mortgage domain?</span><span class="qa-q-label lbl-domain">OBJECTS</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How do you implement a many-to-many relationship using a Junction Object &mdash; build one for the mortgage domain?</span><span class="qa-q-label lbl-domain">OBJECTS</span><span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span></div><div class="qa-answer">
 <p class="ans-p">Salesforce does not support many-to-many natively. Use a Junction Object &mdash; a custom object with two Master-Detail fields pointing to each parent.</p>
 <pre class="code"><span class="cmt">// Scenario: A Loan can have multiple Borrowers (Primary, Co-Borrower)</span>
 <span class="cmt">// A Contact (Borrower) can be on multiple Loans</span>
@@ -54,7 +54,7 @@ delete [<span class="kw">SELECT</span> Id <span class="kw">FROM</span> Applicati
 ];</pre>
 </div></div>
 
-<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">What are External ID fields &mdash; when and how do you use them in integrations?</span><span class="qa-q-label lbl-domain">OBJECTS</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">What are External ID fields &mdash; when and how do you use them in integrations?</span><span class="qa-q-label lbl-domain">OBJECTS</span><span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span></div><div class="qa-answer">
 <p class="ans-p">External ID fields store a unique identifier from an external system. Salesforce indexes them for fast lookups. They are critical for upsert operations in integrations &mdash; you can upsert by External ID instead of Salesforce Id.</p>
 <pre class="code"><span class="cmt">// Field: Loan__c.LOS_Loan_ID__c (External ID, Unique, Text)</span>
 <span class="cmt">// Stores the ID from an external Loan Origination System</span>
@@ -83,7 +83,7 @@ Database.upsert(loan, <span class="cls">Loan__c</span>.LOS_Loan_ID__c, <span cla
 <div class="tip-box"><div class="tip-label">Real use from your project</div><p>In the Mortgage Origination Platform, when syncing from the external LOS, we upserted on LOS_Loan_ID__c instead of Salesforce Id. This meant the integration never needed to query Salesforce first to find the record &mdash; just upsert with the LOS ID and Salesforce handled insert vs update automatically.</p></div>
 </div></div>
 
-<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">What is a Rollup Summary field &mdash; what are its limitations? How do you replicate it on a Lookup relationship?</span><span class="qa-q-label lbl-domain">OBJECTS</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">What is a Rollup Summary field &mdash; what are its limitations? How do you replicate it on a Lookup relationship?</span><span class="qa-q-label lbl-domain">OBJECTS</span><span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span></div><div class="qa-answer">
 <p class="ans-p">Rollup Summary fields aggregate child record values (COUNT, SUM, MIN, MAX) onto a parent object. They only work on Master-Detail relationships.</p>
 <ul class="ans-list"><li>Supported functions: COUNT, SUM, MIN, MAX</li><li>Can filter which child records to include (like a WHERE clause)</li><li>Update automatically when child records change &mdash; asynchronous on bulk loads</li><li>Cannot roll up formula fields or fields two levels away</li><li>Not available on Lookup relationships</li></ul>
 <pre class="code"><span class="cmt">// Replicating Rollup on a Lookup relationship using Apex trigger</span>
@@ -123,7 +123,7 @@ trigger ContactRollupTrigger on Contact (after insert, after update, after delet
 }</pre>
 </div></div>
 
-<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How do field dependencies (controlling and dependent picklists) work &mdash; implement in LWC?</span><span class="qa-q-label lbl-domain">OBJECTS</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How do field dependencies (controlling and dependent picklists) work &mdash; implement in LWC?</span><span class="qa-q-label lbl-domain">OBJECTS</span><span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span></div><div class="qa-answer">
 <p class="ans-p">Field dependencies link two picklist fields. The Controlling field determines which values appear in the Dependent field. With lightning-record-edit-form, this works automatically. With custom lightning-combobox elements, you must filter manually in JavaScript.</p>
 <pre class="code"><span class="cmt">// Custom LWC &mdash; filter dependent picklist manually</span>
 <span class="cmt">// Controlling: LoanType__c | Dependent: LoanProgram__c</span>
@@ -159,7 +159,7 @@ loanProgramPicklist({ data }) {
 }</pre>
 </div></div>
 
-<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How do you get all field metadata at runtime using Schema describe &mdash; use case: dynamic form builder?</span><span class="qa-q-label lbl-domain">OBJECTS</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How do you get all field metadata at runtime using Schema describe &mdash; use case: dynamic form builder?</span><span class="qa-q-label lbl-domain">OBJECTS</span><span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span></div><div class="qa-answer">
 <pre class="code"><span class="cmt">// Get all fields and their properties at runtime</span>
 <span class="cls">Map</span>&lt;<span class="cls">String</span>, <span class="cls">Schema.SObjectField</span>&gt; fieldMap =
     <span class="cls">Schema.SObjectType</span>.<span class="cls">Loan__c</span>.fields.getMap();
@@ -195,7 +195,7 @@ loanProgramPicklist({ data }) {
 }</pre>
 </div></div>
 
-<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">What are Record Types &mdash; when do you use them and how do you get the ID in Apex?</span><span class="qa-q-label lbl-domain">OBJECTS</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">What are Record Types &mdash; when do you use them and how do you get the ID in Apex?</span><span class="qa-q-label lbl-domain">OBJECTS</span><span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span></div><div class="qa-answer">
 <p class="ans-p">Record Types allow different page layouts, picklist values, and business processes per user type. In mortgage: Loan__c could have Record Types for Conventional, FHA, VA, USDA &mdash; each showing different fields and picklist values.</p>
 <pre class="code"><span class="cmt">// Get Record Type Id &mdash; ALWAYS use DeveloperName, not Name</span>
 <span class="cmt">// Name can change (admin renames it), DeveloperName is stable</span>
@@ -232,7 +232,7 @@ get recordTypeOptions() {
 }</pre>
 </div></div>
 
-<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How do you implement a self-relationship (hierarchical data) in Salesforce &mdash; example with org chart?</span><span class="qa-q-label lbl-domain">OBJECTS</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How do you implement a self-relationship (hierarchical data) in Salesforce &mdash; example with org chart?</span><span class="qa-q-label lbl-domain">OBJECTS</span><span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span></div><div class="qa-answer">
 <p class="ans-p">A self-relationship is a lookup field on an object that points back to the same object. The Account.ParentId is the classic example. You can create custom self-lookups for hierarchical data like territory trees or category trees.</p>
 <pre class="code"><span class="cmt">// Standard self-relationship: Account → ParentAccount</span>
 <span class="cls">Account</span> branch = [
@@ -261,7 +261,7 @@ get recordTypeOptions() {
 }</pre>
 </div></div>
 
-<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">What are the different Salesforce ID formats &mdash; 15-digit vs 18-digit &mdash; when does it matter in code?</span><span class="qa-q-label lbl-domain">OBJECTS</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">What are the different Salesforce ID formats &mdash; 15-digit vs 18-digit &mdash; when does it matter in code?</span><span class="qa-q-label lbl-domain">OBJECTS</span><span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span></div><div class="qa-answer">
 <p class="ans-p">Salesforce IDs have two formats. Both refer to the same record &mdash; the difference is case sensitivity handling.</p>
 <ul class="ans-list"><li><b>15-character ID:</b> Case-sensitive. Used in Salesforce UI URLs. Shorter. Comparison in Apex is case-sensitive for String comparison but case-insensitive when stored as Id type.</li><li><b>18-character ID:</b> Case-insensitive. Appends 3 checksum characters. Safe for use in Excel (which lowercases text), external systems, and case-insensitive string comparisons.</li></ul>
 <pre class="code"><span class="cmt">// Apex Id type handles both &mdash; comparison is always case-insensitive</span>
@@ -286,7 +286,7 @@ System.debug(id18digit.length()); <span class="cmt">// 18</span>
 <span class="cls">String</span> objType = Id.valueOf(someId).getSObjectType().getDescribe().getName();</pre>
 </div></div>
 
-<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How do you prevent a user from deleting a parent record if it has active child records &mdash; two approaches?</span><span class="qa-q-label lbl-domain">OBJECTS</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How do you prevent a user from deleting a parent record if it has active child records &mdash; two approaches?</span><span class="qa-q-label lbl-domain">OBJECTS</span><span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span></div><div class="qa-answer">
 <pre class="code"><span class="cmt">// APPROACH 1: Validation Rule on Parent</span>
 <span class="cmt">// Rule on Application__c object, fires on Delete:</span>
 <span class="cmt">// Condition: VLOOKUP("Loan__c Count", "Active_Loan_Count__c", Id) > 0</span>
@@ -321,8 +321,9 @@ trigger ApplicationDeleteTrigger on Application__c (before delete) {
 }</pre>
 </div></div>
 
-<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How does "Controlled by Parent" OWD work for Contact &mdash; explain the nuance?</span><span class="qa-q-label lbl-domain">OBJECTS</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How does "Controlled by Parent" OWD work for Contact &mdash; explain the nuance?</span><span class="qa-q-label lbl-domain">OBJECTS</span><span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span></div><div class="qa-answer">
 <p class="ans-p">"Controlled by Parent" is a special OWD setting for Contact. When set, Contact record access is determined by the parent Account's sharing. If a user can see the Account, they can see all its Contacts. If they cannot see the Account, they cannot see the Contacts.</p>
 <ul class="ans-list"><li>Only available for Contact (standard) when Account is the parent</li><li>Contact inherits Account's OWD &mdash; if Account is Private, Contacts are effectively Private</li><li>If Account is Public Read Only → Contacts are Read Only to everyone</li><li>Sharing rules on Account automatically extend to its Contacts</li><li>Private Contacts (no AccountId) are only visible to the owner and admins regardless of this setting</li><li>This setting simplifies sharing model management &mdash; you only maintain Account sharing, not both Account and Contact separately</li></ul>
 <div class="tip-box"><div class="tip-label">Practical implication</div><p>In a mortgage org: if Accounts (Broker Offices) are set to Private, and Contact uses "Controlled by Parent," then each loan officer only sees contacts at brokers they have access to. This prevents loan officer A from seeing loan officer B's borrower contacts &mdash; which is a FCRA/privacy best practice.</p></div>
 </div></div>
+

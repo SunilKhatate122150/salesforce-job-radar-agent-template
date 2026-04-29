@@ -1,7 +1,7 @@
 <div class="page-title">FDE Prep &mdash; Data Cloud Core Concepts</div>
 <div class="page-sub">8 questions covering the data lifecycle, identity resolution, segments, and architecture</div>
 
-<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">Walk through the complete data lifecycle in Data Cloud from ingestion to activation.</span><span class="qa-q-label lbl-fde">CONCEPT</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">Walk through the complete data lifecycle in Data Cloud from ingestion to activation.</span><span class="qa-q-label lbl-fde">CONCEPT</span><span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span></div><div class="qa-answer">
     <ul class="ans-list">
       <li><b>Step 1 &mdash; Ingestion:</b> Data enters via connectors (S3 batch, CRM direct, Streaming API, Web SDK) and lands in Data Lake Objects (DLO)</li>
       <li><b>Step 2 &mdash; Mapping:</b> DLO fields mapped to standard or custom Data Model Objects (DMO) &mdash; harmonizing data across sources</li>
@@ -12,7 +12,7 @@
     </ul>
 </div></div>
 
-<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">What is a Unified Individual and how is it created?</span><span class="qa-q-label lbl-fde">CONCEPT</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">What is a Unified Individual and how is it created?</span><span class="qa-q-label lbl-fde">CONCEPT</span><span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span></div><div class="qa-answer">
     <ul class="ans-list">
       <li>A Unified Individual is the master 360° record representing one real person, assembled from multiple source records across systems</li>
       <li>Created by Identity Resolution &mdash; configurable match rules (exact email, fuzzy name+phone, loyalty ID, cookie ID)</li>
@@ -23,7 +23,7 @@
     <div class="tip-box"><div class="tip-label">Emphasis point</div><p>Stress the non-destructive nature &mdash; source data is preserved, unified profile is a virtual construct built on top.</p></div>
 </div></div>
 
-<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">Batch vs streaming ingestion &mdash; when do you use each?</span><span class="qa-q-label lbl-fde-compare">COMPARE</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">Batch vs streaming ingestion &mdash; when do you use each?</span><span class="qa-q-label lbl-fde-compare">COMPARE</span><span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span></div><div class="qa-answer">
     <table class="comparison-table">
       <tr><th>Aspect</th><th>Batch</th><th>Streaming</th></tr>
       <tr><td>How</td><td>Files on schedule (hourly, daily) via S3, SFTP, Snowflake, CRM</td><td>Real-time events via Data Cloud Ingestion API</td></tr>
@@ -33,7 +33,7 @@
     <p class="ans-p">Streaming data triggers Streaming Insights → fires a Journey or updates a segment in real time.</p>
 </div></div>
 
-<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">What are Calculated Insights? How do you create them?</span><span class="qa-q-label lbl-fde">CONCEPT</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">What are Calculated Insights? How do you create them?</span><span class="qa-q-label lbl-fde">CONCEPT</span><span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span></div><div class="qa-answer">
     <ul class="ans-list">
       <li>Calculated Insights are metric computations run on unified Data Cloud data using SQL-style expressions</li>
       <li>They produce: total mortgage balance, number of active loans, last login date, lifetime payment total</li>
@@ -43,7 +43,7 @@
     </ul>
 </div></div>
 
-<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">What is the difference between a Segment and an Activation Target?</span><span class="qa-q-label lbl-fde-compare">COMPARE</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">What is the difference between a Segment and an Activation Target?</span><span class="qa-q-label lbl-fde-compare">COMPARE</span><span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span></div><div class="qa-answer">
     <ul class="ans-list">
       <li><b>Segment</b> &mdash; a filtered audience of Unified Individuals (e.g. "ARM borrowers with credit score above 720")</li>
       <li><b>Activation Target</b> &mdash; the destination system where segment data is pushed (Marketing Cloud, Google Ads, CRM)</li>
@@ -53,7 +53,7 @@
     </ul>
 </div></div>
 
-<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How does Data Cloud relate to a Salesforce CRM org? Same platform?</span><span class="qa-q-label lbl-fde">CONCEPT</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How does Data Cloud relate to a Salesforce CRM org? Same platform?</span><span class="qa-q-label lbl-fde">CONCEPT</span><span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span></div><div class="qa-answer">
     <ul class="ans-list">
       <li>No &mdash; Data Cloud is a separate product provisioned on top of a Salesforce org but architecturally distinct</li>
       <li>Runs on Salesforce's Hyperforce infrastructure with its own data lake and compute layer</li>
@@ -64,7 +64,7 @@
     <div class="tip-box"><div class="tip-label">Key insight</div><p>"Data Cloud is the customer intelligence layer beneath all Einstein AI features &mdash; it's the data platform, not just storage."</p></div>
 </div></div>
 
-<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">What are Data Spaces and why do they matter for enterprise customers?</span><span class="qa-q-label lbl-fde-arch">ARCHITECTURE</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">What are Data Spaces and why do they matter for enterprise customers?</span><span class="qa-q-label lbl-fde-arch">ARCHITECTURE</span><span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span></div><div class="qa-answer">
     <ul class="ans-list">
       <li>Data Spaces = logical partitions within a single Data Cloud org for different business units/brands/regions</li>
       <li>Use case: financial holding with Mortgage, Insurance, Wealth divisions &mdash; each gets isolated Data Space</li>
@@ -74,7 +74,7 @@
     </ul>
 </div></div>
 
-<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">Explain Match Rules vs Reconciliation Rules with a concrete example.</span><span class="qa-q-label lbl-fde-scenario">SCENARIO</span><span class="qa-chevron">▼</span></div><div class="qa-answer">
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">Explain Match Rules vs Reconciliation Rules with a concrete example.</span><span class="qa-q-label lbl-fde-scenario">SCENARIO</span><span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span></div><div class="qa-answer">
     <p class="ans-p"><b>Match Rules</b> = determine WHICH records belong to the same person. <b>Reconciliation Rules</b> = determine WHICH version of the truth wins when matched records conflict.</p>
     <div class="fde-flow-diagram">Source 1 (CRM):  John Smith,     john@gmail.com,  123 Main St  (Jan 2026)
 Source 2 (LOS):  Jonathan Smith,  john@gmail.com,  456 Oak Ave  (Mar 2026)
@@ -88,3 +88,4 @@ Reconciliation:
   Email   → Same across all             → "john@gmail.com"</div>
     <div class="tip-box"><div class="tip-label">Quick summary</div><p>Match = "are these the same person?" Reconciliation = "which version of the truth do we use?"</p></div>
 </div></div>
+
