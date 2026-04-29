@@ -420,14 +420,17 @@ function loadUserScopedClientState() {
   clientStateLoadedFor = userId;
 }
 
-function renderPager(total, page, pageSize, prevAction, nextAction) {
+function renderPager(total, page, pageSize, prevAction, nextAction, force = false) {
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
-  if (total <= pageSize) return '';
+  if (!force && total <= pageSize) return '';
   const current = Math.min(page + 1, totalPages);
   return `
     <div style="display:flex; align-items:center; justify-content:space-between; gap:10px; margin-top:12px; padding-top:10px; border-top:1px solid rgba(255,255,255,0.06);">
       <button onclick="${prevAction}" ${page <= 0 ? 'disabled' : ''} style="border:1px solid var(--border); background:${page <= 0 ? 'rgba(255,255,255,0.02)' : 'var(--surface2)'}; color:${page <= 0 ? 'var(--muted)' : 'var(--text)'}; font-size:0.68rem; font-weight:700; padding:7px 10px; border-radius:8px; cursor:${page <= 0 ? 'default' : 'pointer'};">Prev</button>
-      <span style="font-size:0.68rem; color:var(--muted); font-family:'IBM Plex Mono',monospace;">Page ${current} / ${totalPages}</span>
+      <div style="text-align:center;">
+        <div style="font-size:0.68rem; color:var(--muted); font-family:'IBM Plex Mono',monospace;">Page ${current} / ${totalPages}</div>
+        <div style="font-size:0.55rem; color:rgba(255,255,255,0.3); text-transform:uppercase; margin-top:2px;">Total: ${total}</div>
+      </div>
       <button onclick="${nextAction}" ${current >= totalPages ? 'disabled' : ''} style="border:1px solid var(--border); background:${current >= totalPages ? 'rgba(255,255,255,0.02)' : 'var(--surface2)'}; color:${current >= totalPages ? 'var(--muted)' : 'var(--text)'}; font-size:0.68rem; font-weight:700; padding:7px 10px; border-radius:8px; cursor:${current >= totalPages ? 'default' : 'pointer'};">Next</button>
     </div>`;
 }
@@ -3995,7 +3998,8 @@ function renderBoard() {
       radarBoardPages[col] || 0,
       JOB_BOARD_PAGE_SIZE,
       `setBoardPage('${col}', -1)`,
-      `setBoardPage('${col}', 1)`
+      `setBoardPage('${col}', 1)`,
+      true
     );
     
     list.innerHTML = html;
