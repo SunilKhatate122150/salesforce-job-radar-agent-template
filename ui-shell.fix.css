@@ -407,3 +407,324 @@ body {
     flex: 1 1 100% !important;
   }
 }
+
+/* ===== PREMIUM UI ALIGNMENT PASS (v1414) ===== */
+:root {
+  --purple: var(--violet, #8b5cf6);
+  --code-bg: #08111f;
+  --fs-xs: 0.68rem;
+  --fs-sm: 0.8rem;
+  --fs-base: 0.9rem;
+  --fs-md: 1rem;
+  --fs-lg: 1.25rem;
+  --fs-xl: 1.8rem;
+  --fs-mono-xs: 0.66rem;
+  --fs-mono-sm: 0.74rem;
+}
+
+html,
+body {
+  font-size: 15px !important;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+  max-width: 100%;
+}
+
+button {
+  line-height: 1.2;
+}
+
+/* Page headers: titles and subtitles should stack cleanly unless a page provides
+   its own grouped title/action layout. */
+.page-header {
+  align-items: flex-start !important;
+  gap: 10px 16px !important;
+}
+
+.page-header > .page-title {
+  flex: 1 1 100% !important;
+  min-width: 0 !important;
+  margin: 0 !important;
+  line-height: 1.18 !important;
+}
+
+.page-header > .page-sub {
+  flex: 1 1 100% !important;
+  width: 100% !important;
+  margin: 0 !important;
+}
+
+.page-title {
+  letter-spacing: 0 !important;
+  overflow-wrap: anywhere;
+}
+
+.page-title svg {
+  flex: 0 0 auto;
+}
+
+#mainHeader .header-zone-left,
+#mainHeader .header-zone-right {
+  min-width: 0 !important;
+}
+
+#mainHeader .header-zone-center {
+  min-width: 0 !important;
+  padding: 0 10px !important;
+}
+
+#headerTitle {
+  letter-spacing: 0 !important;
+  max-width: min(46vw, 460px) !important;
+}
+
+.floating-dropdown {
+  max-width: calc(100vw - 24px) !important;
+  right: 12px !important;
+}
+
+.fd-name,
+.fd-email,
+.profile-name-label,
+#userName,
+#userEmail {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.content-card,
+.qa-block,
+.domain-card,
+.script-card,
+.star-card,
+.suggestion-card,
+.stat-box,
+.sync-card-premium,
+.insight-card-v3,
+.radar-kpi-card {
+  min-width: 0 !important;
+}
+
+.stats-row {
+  align-items: stretch !important;
+}
+
+.stat-box {
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: center !important;
+  min-height: 96px !important;
+}
+
+.stat-value {
+  white-space: nowrap;
+}
+
+@media (min-width: 481px) {
+  .qa-question {
+    flex-wrap: nowrap !important;
+    align-items: center !important;
+  }
+
+  .qa-q-text {
+    min-width: 0 !important;
+  }
+}
+
+.comparison-table {
+  table-layout: auto;
+}
+
+.timetable-container {
+  overflow-x: clip !important;
+  padding-right: 12px !important;
+}
+
+.timetable-item.active {
+  transform: none !important;
+}
+
+pre.code,
+.script-text,
+.comparison-table {
+  max-width: 100%;
+}
+
+/* Interview room responsiveness without changing the existing JS hooks. */
+#ai_interview > .page-header + div {
+  height: min(680px, calc(100dvh - 170px)) !important;
+  min-height: 520px;
+}
+
+#interviewSetup > div,
+#interviewInputArea > div {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  align-items: flex-end !important;
+}
+
+#interviewSetup > div > div {
+  flex: 1 1 220px !important;
+  min-width: 0 !important;
+}
+
+#interviewSetup button {
+  min-height: 42px;
+}
+
+#userAnswerInput {
+  min-width: 220px !important;
+}
+
+#aiThinkingStatus {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* Modal and slide-over layering. */
+.modal-overlay,
+#historyModal,
+#confidenceModal,
+#emailModal,
+#jobCoachModal,
+#addJobModal {
+  z-index: 10005 !important;
+}
+
+.modal-box {
+  width: min(720px, calc(100vw - 28px)) !important;
+  max-height: calc(100dvh - 32px) !important;
+}
+
+#historyModal > div {
+  top: auto !important;
+  transform: none !important;
+  max-height: calc(100dvh - 36px) !important;
+  display: flex !important;
+  flex-direction: column !important;
+}
+
+#modalBody {
+  min-height: 0 !important;
+}
+
+.activity-log-panel {
+  z-index: 10002 !important;
+  width: min(360px, 100vw) !important;
+  right: min(-360px, -100vw) !important;
+}
+
+.activity-log-panel.open {
+  right: 0 !important;
+}
+
+.log-entry-text {
+  overflow-wrap: anywhere;
+}
+
+body:not(:has(#job_radar.active)) .fab-add {
+  display: none !important;
+}
+
+@media (max-width: 768px) {
+  #mainHeader .header-zone-left,
+  #mainHeader .header-zone-right {
+    flex: 0 0 44px !important;
+  }
+
+  #headerTitle {
+    max-width: calc(100vw - 120px) !important;
+    font-size: 0.82rem !important;
+  }
+
+  #job_radar.page {
+    padding-top: 60px !important;
+  }
+
+  .page-header > .page-title {
+    font-size: 1.24rem !important;
+  }
+
+  .history-tabs,
+  .radar-tabs,
+  [style*="overflow-x:auto"] {
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .tracker-tab-strip {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 8px !important;
+    overflow-x: visible !important;
+  }
+
+  .tracker-tab-strip .tracker-tab {
+    width: 100% !important;
+    justify-content: center !important;
+    padding: 9px 10px !important;
+    white-space: normal !important;
+  }
+
+  #interviewSetup > div,
+  #interviewInputArea > div {
+    flex-direction: column !important;
+    align-items: stretch !important;
+  }
+
+  #interviewSetup button,
+  #micBtn,
+  #interviewInputArea button {
+    width: 100% !important;
+    min-height: 44px !important;
+    margin-top: 0 !important;
+  }
+
+  #ai_interview > .page-header + div {
+    height: auto !important;
+    min-height: 0 !important;
+  }
+
+  #interviewChat {
+    min-height: 360px !important;
+  }
+
+  .floating-dropdown {
+    position: fixed !important;
+    top: 66px !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .page-header {
+    gap: 8px !important;
+  }
+
+  .qa-question {
+    align-items: flex-start !important;
+  }
+
+  .qa-q-text {
+    min-width: 100% !important;
+  }
+
+  .qa-q-label {
+    margin-left: 0 !important;
+  }
+
+  .summary-bar,
+  .stats-row {
+    gap: 10px !important;
+  }
+
+  .tracker-tab-strip {
+    grid-template-columns: 1fr !important;
+  }
+}

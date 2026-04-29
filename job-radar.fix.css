@@ -902,6 +902,41 @@ body:has(#job_radar.active) #headerTitle {
     margin-left: 0;
   }
 
+  #job_radar .pipe-stats {
+    display: grid !important;
+    grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
+    gap: 6px !important;
+    overflow: visible !important;
+  }
+
+  #job_radar .pstat {
+    min-width: 0 !important;
+    max-width: none !important;
+    padding: 7px 4px !important;
+    justify-content: center !important;
+    gap: 4px !important;
+  }
+
+  #job_radar .pdot {
+    display: none !important;
+  }
+
+  #job_radar .pinfo {
+    align-items: center !important;
+    width: 100% !important;
+  }
+
+  #job_radar .plbl {
+    width: 100% !important;
+    max-width: 100% !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+    text-align: center !important;
+    font-size: 7.2px !important;
+    letter-spacing: 0.25px !important;
+  }
+
   #job_radar .filter-actions,
   #job_radar .radar-header-actions {
     width: 100%;

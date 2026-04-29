@@ -159,7 +159,7 @@ body {
   color: var(--text);
   font-family: 'IBM Plex Mono', monospace;
   line-height: 1;
-  letter-spacing: -1px;
+  letter-spacing: 0;
 }
 
 .sidebar-header h2 {
@@ -606,7 +606,7 @@ body {
   font-weight: 800;
   font-size: 1.1rem;
   margin-bottom: 8px;
-  letter-spacing: -0.5px;
+  letter-spacing: 0;
 }
 
 .sync-card-premium.linkedin .sync-title { color: #60a5fa; }
@@ -2775,7 +2775,7 @@ pre.code .num {
   border-radius: 10px;
   font-size: 0.7rem;
   color: var(--muted);
-  font-family: " IBM Plex Mono\, monospace;
+  font-family: 'IBM Plex Mono', monospace;
 }
 
 .kanban-body {
@@ -2958,7 +2958,7 @@ pre.code .num {
  font-size: 9px;
  color: var(--muted);
  margin-bottom: 4px;
- font-family: \IBM Plex Mono\, monospace;
+ font-family: 'IBM Plex Mono', monospace;
 }
 
 .log-entry-text {
@@ -3358,10 +3358,10 @@ pre.code .num {
   display:flex;flex-direction:column;gap:12px;transition:all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   position:relative;overflow:hidden;margin-bottom:12px;}
 .jcard:hover{border-color:var(--blue);transform:translateY(-3px);box-shadow:0 12px 30px rgba(0,0,0,0.4);}
-.jcard::before{content:" \;position:absolute;top:0;left:0;right:0;height:3px;border-radius:16px 16px 0 0;}
-.jcard[data-prob=\high\]::before{background:linear-gradient(90deg,var(--green),transparent 80%);}
-.jcard[data-prob=\medium\]::before{background:linear-gradient(90deg,var(--amber),transparent 80%);}
-.jcard[data-prob=\stretch\]::before{background:linear-gradient(90deg,var(--purple),transparent 80%);}
+.jcard::before{content:"";position:absolute;top:0;left:0;right:0;height:3px;border-radius:16px 16px 0 0;}
+.jcard[data-prob="high"]::before{background:linear-gradient(90deg,var(--green),transparent 80%);}
+.jcard[data-prob="medium"]::before{background:linear-gradient(90deg,var(--amber),transparent 80%);}
+.jcard[data-prob="stretch"]::before{background:linear-gradient(90deg,var(--purple),transparent 80%);}
 
 .jcard-top{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;}
 .co-info{display:flex;align-items:center;gap:10px;min-width:0;}
@@ -3469,7 +3469,6 @@ pre.code .num {
   gap: 12px !important;
   align-items: center !important;
 }
- }
 .jcard-actions { display: flex !important; gap: 10px !important; margin-top: 5px !important; }
 .jbtn { flex: 1 !important; padding: 8px !important; border-radius: 8px !important; font-size: 0.75rem !important; font-weight: 700 !important; cursor: pointer !important; text-align: center !important; text-decoration: none !important; transition: 0.2s !important; }
 .jbtn-apply { background: var(--blue) !important; color: white !important; border: none !important; }
@@ -3590,6 +3589,8 @@ pre.code .num {
   overflow-y: auto !important;
   display: flex !important;
   flex-direction: column !important;
+  gap: 12px !important;
+}
 
 /* ─── PREMIUM JOB TRACKER V3 INTEGRATION ─── */
 .kanban-col {
@@ -3874,13 +3875,13 @@ pre.code .num {
 .goal-arc { fill: none; stroke: var(--green); stroke-width: 3; stroke-linecap: round; transform: rotate(-90deg); transform-origin: 50% 50%; transition: stroke-dasharray .6s var(--ease); }
 .kanban-board-v3 { display: flex; gap: 12px; padding: 16px 20px; height: calc(100vh - 200px); overflow-x: auto; align-items: flex-start; }
 .kanban-col-v3 { width: 300px; flex-shrink: 0; background: rgba(255,255,255,.015); border: 1px solid var(--border); border-radius: 14px; padding: 10px 8px; display: flex; flex-direction: column; gap: 8px; max-height: 100%; }
-.kanban-header-v3 { display: flex; align-items: center; gap: 7px; padding: 7px 8px; border-radius: 9px; font-family: \Syne\, sans-serif; font-size: .78rem; font-weight: 700; }
+.kanban-header-v3 { display: flex; align-items: center; gap: 7px; padding: 7px 8px; border-radius: 9px; font-family: 'Syne', sans-serif; font-size: .78rem; font-weight: 700; }
 .jcard-v3 { background: var(--surface); border: 1px solid var(--border); border-radius: 11px; padding: 13px; display: flex; flex-direction: column; gap: 9px; transition: .22s var(--ease); position: relative; overflow: hidden; }
 .jcard-v3:hover { border-color: var(--border2); transform: translateY(-1px); box-shadow: 0 6px 28px rgba(0,0,0,.35); }
-.jcard-v3::before { content: \\; position: absolute; top: 0; left: 0; right: 0; height: 2px; }
-.jcard-v3[data-prob=\high\]::before { background: linear-gradient(90deg, var(--green), transparent 80%); }
-.jcard-v3[data-prob=\medium\]::before { background: linear-gradient(90deg, var(--amber), transparent 80%); }
-.jcard-v3[data-prob=\stretch\]::before { background: linear-gradient(90deg, var(--violet), transparent 80%); }
+.jcard-v3::before { content: ""; position: absolute; top: 0; left: 0; right: 0; height: 2px; }
+.jcard-v3[data-prob="high"]::before { background: linear-gradient(90deg, var(--green), transparent 80%); }
+.jcard-v3[data-prob="medium"]::before { background: linear-gradient(90deg, var(--amber), transparent 80%); }
+.jcard-v3[data-prob="stretch"]::before { background: linear-gradient(90deg, var(--violet), transparent 80%); }
 
 /* --- JOB RADAR COMPLETION PATCH --- */
 .radar-brand {

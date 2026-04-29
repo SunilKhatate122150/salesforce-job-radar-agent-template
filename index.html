@@ -38,7 +38,7 @@
     <div style="width:72px; height:72px; background:linear-gradient(135deg, #3b82f6, #8b5cf6); border-radius:20px; margin:0 auto 1.5rem; display:flex; align-items:center; justify-content:center; box-shadow:0 10px 20px rgba(59,130,246,0.3);">
       <svg viewBox="0 0 24 24" fill="white" style="width:36px; height:36px;"><path d="M13 10V3L4 14H11V21L20 10H13Z"/></svg>
     </div>
-    <h1 style="font-size:2rem; font-weight:800; margin-bottom:0.75rem; font-family:'Plus Jakarta Sans',sans-serif; letter-spacing:-0.5px;">SF Prep Guide</h1>
+    <h1 style="font-size:2rem; font-weight:800; margin-bottom:0.75rem; font-family:'Plus Jakarta Sans',sans-serif; letter-spacing:0;">SF Prep Guide</h1>
     <p style="margin-bottom:2.5rem; color:rgba(255,255,255,0.5); font-size:0.95rem; line-height:1.6;">Industrial Study & Job Tracking System.<br>Sign in to sync your progress.</p>
     
     <div id="g_id_onload"
@@ -583,7 +583,7 @@
     <div class="stat-box"><div class="stat-value" id="todayTime">0h 0m</div><div class="stat-label">Today's Time</div></div>
   </div>
 
-  <div style="display:flex; gap:10px; margin-bottom:1.5rem; border-bottom:1px solid var(--border); padding-bottom:10px; overflow-x:auto;">
+  <div class="tracker-tab-strip" style="display:flex; gap:10px; margin-bottom:1.5rem; border-bottom:1px solid var(--border); padding-bottom:10px; overflow-x:auto;">
     <button class="tracker-tab active" onclick="switchTrackerTab('tab_suggestions')" style="display:flex; align-items:center; gap:6px;">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;"><path d="M9 21h6M9 18h6M10 15c-2.33-1.57-4-3.7-4-7 0-3.3 2.7-6 6-6s6 2.7 6 6c0 3.3-1.67 5.43-4 7"></path></svg>
       Suggestions
@@ -790,135 +790,7 @@
       </div>
       <div style="font-size:0.7rem; color:var(--muted); margin-top:8px; display:flex; justify-content:space-between;">
         <span>Press Ctrl+Enter to submit</span>
-        <span id="aiThinkingStatus" style="display:none; color:var(--blue);"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:12px;height:12px;vertical-align:middle;margin-right:4px;"><rect x="3" y="11" width="18" height="10" rx="2"></rect><circle cx="12" cy="5" r="2"></circle><path d="M12 7v4"></path></svg> Gemma is thinking...</span>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- FDE PREP: AGENTFORCE CORE -->
-<div id="fde_ag_concept" class="page">
-  <div class="page-title">FDE Prep: Agentforce Core Concepts</div>
-  <div class="page-sub">Master the foundations of Salesforce AI Agents, Atlas Reasoning, and the Trust Layer</div>
-  <div class="qa-block">
-    <div class="qa-question" onclick="toggleQA(this)">
-      <span class="qa-q-text">What is Agentforce and how does it differ from Einstein Bots?</span>
-      <span class="qa-q-label lbl-fde">CORE</span>
-      <span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span>
-    </div>
-    <div class="qa-answer">
-      <p class="ans-p">Agentforce is an evolution from intent-based bots to **autonomous agents**. Unlike bots that follow strict "If-Then" trees, Agentforce uses the **Atlas Reasoning Engine** to determine which "Action" to take based on the user's goal.</p>
-      <ul>
-        <li><b>Intent vs. Goal:</b> Bots respond to pre-defined intents; Agents pursue high-level goals.</li>
-        <li><b>Actions:</b> Agents can invoke Apex, Flows, and Prompt Templates autonomously.</li>
-        <li><b>Data:</b> Agents use real-time Data Cloud data for grounding without training the model.</li>
-      </ul>
-    </div>
-  </div>
-</div>
-
-<!-- FDE PREP: DATA CLOUD -->
-<div id="fde_dc_concept" class="page">
-  <div class="page-title">FDE Prep: Data Cloud Foundation</div>
-  <div class="page-sub">Understanding Ingestion, Modeling, Identity Resolution, and Calculated Insights</div>
-  <div class="qa-block">
-    <div class="qa-question" onclick="toggleQA(this)">
-      <span class="qa-q-text">Explain the Data Cloud "Ingest to Action" flow.</span>
-      <span class="qa-q-label lbl-fde">DATA CLOUD</span>
-      <span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span>
-    </div>
-    <div class="qa-answer">
-      <ol>
-        <li><b>Ingest:</b> Connect data sources (Salesforce, S3, Snowflake, Web/Mobile).</li>
-        <li><b>Map:</b> Map Data Source Objects (DSO) to Data Model Objects (DMO) using the CIM (Cloud Information Model).</li>
-        <li><b>Unify:</b> Use Identity Resolution rules to create a "Unified Individual".</li>
-        <li><b>Insight:</b> Create Calculated Insights (SQL-based) or Streaming Insights.</li>
-        <li><b>Act:</b> Trigger Flows, send to Marketing Cloud, or ground Agentforce prompts.</li>
-      </ol>
-    </div>
-  </div>
-</div>
-
-<!-- FDE PREP: ATLAS & TRUST -->
-<div id="fde_atlas" class="page">
-  <div class="page-title">Atlas Reasoning & Trust Layer</div>
-  <div class="page-sub">The brain and the safety shield of Agentforce</div>
-  <div class="qa-block">
-    <div class="qa-question" onclick="toggleQA(this)">
-      <span class="qa-q-text">How does the Atlas Reasoning Engine work?</span>
-      <span class="qa-q-label lbl-fde">REASONING</span>
-      <span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span>
-    </div>
-    <div class="qa-answer">
-      <p class="ans-p">Atlas works in a loop: **Query Analysis -> Plan Building -> Execution -> Result Evaluation**. It retrieves relevant metadata (Actions, Flows) and data (Data Cloud) to build a prompt, then interprets the LLM response to see if the goal is met or if more actions are needed.</p>
-    </div>
-  </div>
-</div>
-
-<!-- FDE PREP: TRUST LAYER -->
-<div id="fde_trust" class="page">
-  <div class="page-title">FDE Prep: Einstein Trust Layer</div>
-  <div class="page-sub">Security, Privacy, and Compliance in the Age of Generative AI</div>
-  <div class="qa-block">
-    <div class="qa-question" onclick="toggleQA(this)">
-      <span class="qa-q-text">What are the key features of the Einstein Trust Layer?</span>
-      <span class="qa-q-label lbl-fde">TRUST</span>
-      <span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span>
-    </div>
-    <div class="qa-answer">
-      <p class="ans-p">The Trust Layer sits between the Agent and the LLM. It ensures:</p>
-      <ul>
-        <li><b>Dynamic Grounding:</b> Pulls real data from Salesforce/Data Cloud to give the LLM context.</li>
-        <li><b>Data Masking:</b> Replaces PII (email, phone, SSN) with placeholders before sending to the LLM.</li>
-        <li><b>Zero Retention:</b> LLM providers (OpenAI, etc.) agree not to store or use data for training.</li>
-        <li><b>Toxicity Detection:</b> Checks both input and output for offensive content.</li>
-        <li><b>Audit Trail:</b> Logs every interaction for compliance.</li>
-      </ul>
-    </div>
-  </div>
-</div>
-
-<!-- FDE PREP: DATA CLOUD ADVANCED -->
-<div id="fde_dc_adv" class="page">
-  <div class="page-title">FDE Prep: Advanced Data Cloud</div>
-  <div class="page-sub">Transformations, Insights, and Data Spaces</div>
-  <div class="qa-block">
-    <div class="qa-question" onclick="toggleQA(this)">
-      <span class="qa-q-text">What is the difference between Calculated Insights and Streaming Insights?</span>
-      <span class="qa-q-label lbl-fde">DATA CLOUD</span>
-      <span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span>
-    </div>
-    <div class="qa-answer">
-      <table class="comparison-table">
-        <tr><th>Feature</th><th>Calculated Insights (CI)</th><th>Streaming Insights (SI)</th></tr>
-        <tr><td>Latency</td><td>Batch (every few hours)</td><td>Real-time (seconds/minutes)</td></tr>
-        <tr><td>Language</td><td>Standard SQL</td><td>Standard SQL</td></tr>
-        <tr><td>Use Case</td><td>LTV, CSAT, Total Spend</td><td>Next Best Action, Abandoned Cart</td></tr>
-        <tr><td>Windowing</td><td>N/A</td><td>Requires Windowing (e.g. 5 min)</td></tr>
-      </table>
-    </div>
-  </div>
-</div>
-
-<!-- FDE PREP: CHEAT SHEET -->
-<div id="fde_cheat" class="page">
-  <div class="page-title">FDE Prep: Final Cheat Sheet</div>
-  <div class="page-sub">Key terms, limits, and "must-knows" for the exam</div>
-  <div class="qa-block">
-    <div class="qa-question" onclick="toggleQA(this)">
-      <span class="qa-q-text">Quick Fire: Must-Know FDE Limits & Terms</span>
-      <span class="qa-q-label lbl-fde-cheat">CHEAT SHEET</span>
-      <span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span>
-    </div>
-    <div class="qa-answer">
-      <div class="fde-hero-box">
-        <h3>Key Terms to Remember:</h3>
-        <ul>
-          <li><b>CIM:</b> Cloud Information Model (The shared language of Data Cloud).</li>
-          <li><b>DSO -> DLO -> DMO:</b> Data Source -> Data Lake -> Data Model.</li>
-          <li><b>Identity Resolution:</b> Reconciliation Rules & Match Rules.</li>
-          <li><b>Prompt Template Types:</b> Sales, Field Service, Flex.</li>
-        </ul>
+        <span id="aiThinkingStatus" style="display:none; color:var(--blue);"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:12px;height:12px;vertical-align:middle;margin-right:4px;"><rect x="3" y="11" width="18" height="10" rx="2"></rect><circle cx="12" cy="5" r="2"></circle><path d="M12 7v4"></path></svg> AI is thinking...</span>
       </div>
     </div>
   </div>
@@ -943,16 +815,6 @@
   <div id="topicQAContainer" style="margin-top:24px; display:none;"></div>
 
 </div>
-
-
-<!-- COMMUNICATION & CAREER MODULAR CONTAINERS -->
-<div id="intro" class="page"></div>
-<div id="behavioral" class="page"></div>
-<div id="speaking" class="page"></div>
-<div id="comm" class="page"></div>
-<div id="vocab" class="page"></div>
-<div id="salary" class="page"></div>
-<div id="mock" class="page"></div>
 
 <!-- ULTRA-COMPACT PREMIUM FOOTER -->
 
