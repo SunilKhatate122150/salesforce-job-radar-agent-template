@@ -39,6 +39,7 @@ let radarBoardPages = { todo: 0, applied: 0, interview: 0, offer: 0, rejected: 0
 let bookmarksPage = 0;
 let activityLogPage = 0;
 let historyPage = 0;
+let modalTopicPage = 0;
 
 const PREP_REGISTRY = {
   "Cognizant": {
@@ -3199,7 +3200,7 @@ function goToResult(pageId, idx) {
 
 // cachedHistories declared at top with other globals
 
-async function showHistoryModal(date) {
+async function showHistoryModal(date, page = 0) {
   const h = cachedHistories[date];
   if (!h) {
     alert('No data found for this date. Please click Sync Dashboard first.');
@@ -3222,10 +3223,14 @@ async function showHistoryModal(date) {
     totalSeconds: b[tid].totalSeconds || 0
   }));
 
+  const TOPIC_PAGE_SIZE = 10;
+  const totalTopicPages = Math.ceil(topicList.length / TOPIC_PAGE_SIZE);
+  const slicedTopics = topicList.slice(page * TOPIC_PAGE_SIZE, (page + 1) * TOPIC_PAGE_SIZE);
+
   let topicHtml = '';
   
-  if (topicList.length > 0) {
-    topicList.forEach(t => {
+  if (slicedTopics.length > 0) {
+    slicedTopics.forEach(t => {
       const id = t.id;
       const name = t.name;
       const spent = t.totalSeconds || 0;
@@ -3253,6 +3258,17 @@ async function showHistoryModal(date) {
           </div>
         </div>`;
     });
+
+    // Pagination Controls for Topics
+    if (totalTopicPages > 1) {
+      topicHtml += `
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-top:15px; padding:10px 0;">
+          <button onclick="showHistoryModal('${date}', ${page - 1})" ${page === 0 ? 'disabled' : ''} style="background:rgba(255,255,255,0.05); border:1px solid var(--border); color:var(--text); padding:5px 15px; border-radius:6px; cursor:pointer; opacity:${page === 0 ? '0.3' : '1'}; font-size:0.75rem;">← Prev</button>
+          <span style="font-size:0.75rem; color:var(--muted);">Page ${page + 1} of ${totalTopicPages}</span>
+          <button onclick="showHistoryModal('${date}', ${page + 1})" ${page >= totalTopicPages - 1 ? 'disabled' : ''} style="background:rgba(255,255,255,0.05); border:1px solid var(--border); color:var(--text); padding:5px 15px; border-radius:6px; cursor:pointer; opacity:${page >= totalTopicPages - 1 ? '0.3' : '1'}; font-size:0.75rem;">Next →</button>
+        </div>
+      `;
+    }
   } else {
     topicHtml = `<div style="text-align:center; padding:2rem; background:rgba(255,255,255,0.02); border-radius:12px; border:1px dashed var(--border);">
       <div style="font-size:1.1rem; font-weight:700; color:var(--text); margin-bottom:5px;">Study Session</div>
