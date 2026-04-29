@@ -784,15 +784,81 @@ function renderProfileMatchPage(profile) {
   // AI Study Plan (Markdown)
   if (profile.studyPlan) {
     html += '<div style="margin-top:16px;background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.06);border-radius:16px;padding:24px;">';
-    html += '<div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;">' +
+    html += '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">';
+    html += '<div style="display:flex;align-items:center;gap:10px;">' +
       '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:20px;height:20px;color:var(--blue);"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path><rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect></svg>' +
-      '<span style="font-weight:700;font-size:1rem;color:var(--text);">Full AI Study Roadmap</span>';
-    html += '<span style="font-size:0.6rem;padding:3px 8px;background:rgba(139,92,246,0.15);border:1px solid rgba(139,92,246,0.25);border-radius:20px;color:#c4b5fd;margin-left:auto;">AI</span></div>';
-    html += '<div style="font-size:0.82rem;line-height:1.8;color:var(--muted);">' + (window.marked ? marked.parse(profile.studyPlan) : profile.studyPlan) + '</div></div>';
+      '<span style="font-weight:700;font-size:1rem;color:var(--text);">Dynamic AI Study Roadmap</span>' +
+      '<span style="font-size:0.6rem;padding:3px 8px;background:rgba(139,92,246,0.15);border:1px solid rgba(139,92,246,0.25);border-radius:20px;color:#c4b5fd;">AI</span></div>';
+    html += '</div>';
+
+    html += '<div style="font-size:0.82rem;line-height:1.8;color:var(--muted); margin-bottom:20px;">' + (window.marked ? marked.parse(profile.studyPlan) : profile.studyPlan) + '</div>';
+
+    // AI Regeneration Widget
+    html += `<div style="margin-top:20px; padding-top:20px; border-top:1px solid rgba(255,255,255,0.05);">
+      <div style="font-size:0.8rem; font-weight:600; color:var(--text); margin-bottom:10px;">🎯 Refine Your Roadmap</div>
+      <div style="display:flex; gap:10px;">
+        <input type="text" id="aiRoadmapTarget" placeholder="e.g. Senior LWC Developer with Data Cloud" style="flex:1; background:rgba(0,0,0,0.2); border:1px solid rgba(255,255,255,0.1); border-radius:8px; padding:10px; color:white; font-size:0.8rem; outline:none;">
+        <button id="btnRegenerateRoadmap" onclick="regenerateAIStudyPlan()" style="background:var(--blue); color:white; border:none; border-radius:8px; padding:0 20px; font-weight:600; cursor:pointer; font-size:0.8rem; transition:0.2s;">Generate New Plan</button>
+      </div>
+    </div>`;
+    html += '</div>';
   }
 
   html += '</div>'; // close content-card
   contentDiv.innerHTML = html;
+}
+
+// Global function to handle AI Regeneration
+window.regenerateAIStudyPlan = async function() {
+  const btn = document.getElementById('btnRegenerateRoadmap');
+  const input = document.getElementById('aiRoadmapTarget');
+  const targetRole = input ? input.value : '';
+  
+  if (btn) {
+    btn.innerHTML = '<span style="animation:spin 1s linear infinite;display:inline-block;">...</span> Thinking...';
+    btn.disabled = true;
+    btn.style.opacity = '0.7';
+  }
+
+  try {
+    // We send a request to /api/ai/skill (which generates a study plan)
+    const promptStr = targetRole 
+      ? `Create a focused 7-day Salesforce study plan specifically for a "${targetRole}" role, based on closing advanced technical gaps.`
+      : `Create a 7-day Salesforce study plan focusing on advanced LWC, Apex, and Integration to close market gaps.`;
+
+    const res = await apiFetch('/api/ai/skill', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ prompt: promptStr, topic: targetRole || 'Salesforce Developer' })
+    });
+
+    if (res.ok) {
+      const data = await res.json();
+      if (data.success && data.response) {
+        // Save back to profile
+        cachedUserProfile.studyPlan = data.response;
+        await apiFetch('/api/profile/save', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(cachedUserProfile)
+        });
+        // Re-render
+        renderProfileMatchPage(cachedUserProfile);
+        showToast('AI Roadmap Regenerated!', 'green');
+        return;
+      }
+    }
+    showToast('Failed to generate AI roadmap. Try again.', 'red');
+  } catch (e) {
+    console.error('Roadmap generation failed', e);
+    showToast('Error generating roadmap.', 'red');
+  } finally {
+    if (btn) {
+      btn.innerHTML = 'Generate New Plan';
+      btn.disabled = false;
+      btn.style.opacity = '1';
+    }
+  }
 }
 
 function updateProfileStrengthMeter(skillCount, gapCount, profile) {
@@ -848,36 +914,40 @@ async function loadJobIntelligence() {
       return;
     }
 
-    let html = '<div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">';
-
-    // Most demanded skills you HAVE
-    html += '<div>';
-    html += '<div style="font-weight:700; font-size:0.82rem; color:#10b981; margin-bottom:10px; display:flex; align-items:center; gap:6px;">' +
-      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:14px;height:14px;"><polyline points="20 6 9 17 4 12"></polyline></svg>' +
-      'Skills You Match (' + matchedSkills.length + ')</div>';
-    html += '<div style="display:flex; flex-wrap:wrap; gap:6px;">';
-    matchedSkills.forEach(function(s) {
+    let html = '<div style="margin-bottom:20px;">';
+    html += '<div style="font-size:0.75rem; color:var(--muted); margin-bottom:12px; text-transform:uppercase; letter-spacing:1px; font-weight:700;">Market Alignment Heatmap</div>';
+    
+    // Combine top 4 matches and top 4 gaps to create the alignment chart
+    const topSkills = [...matchedSkills.slice(0,4).map(s => ({...s, type: 'match'})), ...missingSkills.slice(0,4).map(s => ({...s, type: 'gap'}))]
+      .sort((a, b) => b.count - a.count); // sort by market demand
+      
+    topSkills.forEach(s => {
       const name = s._id || s;
-      const count = s.count || 0;
-      html += '<span style="padding:4px 10px; background:rgba(16,185,129,0.1); border:1px solid rgba(16,185,129,0.2); border-radius:20px; font-size:0.7rem; color:#34d399; display:flex; align-items:center; gap:4px;">' +
-        name + (count > 1 ? ' <span style="opacity:0.6; font-size:0.6rem;">' + count + ' jobs</span>' : '') + '</span>';
-    });
-    html += '</div></div>';
+      const count = s.count || 1;
+      const isMatch = s.type === 'match';
+      // Calculate a pseudo-percentage based on highest count (max 10 for visual scale)
+      const maxCount = topSkills[0]?.count || 10;
+      const widthPercent = Math.max(15, Math.min(100, (count / maxCount) * 100));
+      
+      const barColor = isMatch ? 'linear-gradient(90deg, rgba(16,185,129,0.2), rgba(16,185,129,0.8))' : 'linear-gradient(90deg, rgba(245,158,11,0.2), rgba(245,158,11,0.8))';
+      const textColor = isMatch ? '#34d399' : '#fbbf24';
+      const icon = isMatch 
+        ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:12px;height:12px;"><polyline points="20 6 9 17 4 12"></polyline></svg>'
+        : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:12px;height:12px;"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path></svg>';
 
-    // Skills jobs need that you're MISSING
-    html += '<div>';
-    html += '<div style="font-weight:700; font-size:0.82rem; color:#f59e0b; margin-bottom:10px; display:flex; align-items:center; gap:6px;">' +
-      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:14px;height:14px;"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>' +
-      'Market Gaps (' + missingSkills.length + ')</div>';
-    html += '<div style="display:flex; flex-wrap:wrap; gap:6px;">';
-    missingSkills.forEach(function(s) {
-      const name = s._id || s;
-      const count = s.count || 0;
-      html += '<span style="padding:4px 10px; background:rgba(245,158,11,0.1); border:1px solid rgba(245,158,11,0.2); border-radius:20px; font-size:0.7rem; color:#fbbf24; display:flex; align-items:center; gap:4px;">' +
-        name + (count > 1 ? ' <span style="opacity:0.6; font-size:0.6rem;">' + count + ' jobs</span>' : '') + '</span>';
+      html += `
+        <div style="margin-bottom:12px;">
+          <div style="display:flex; justify-content:space-between; font-size:0.75rem; margin-bottom:4px; font-weight:600;">
+            <span style="color:${textColor}; display:flex; align-items:center; gap:6px;">${icon} ${name}</span>
+            <span style="color:var(--muted); font-family:'IBM Plex Mono'; font-size:0.7rem;">${count} Jobs</span>
+          </div>
+          <div style="height:6px; background:rgba(255,255,255,0.05); border-radius:10px; overflow:hidden;">
+            <div style="height:100%; width:${widthPercent}%; background:${barColor}; border-radius:10px; transition:width 1s ease-in-out;"></div>
+          </div>
+        </div>
+      `;
     });
-    html += '</div></div>';
-
+    
     html += '</div>';
 
     // Summary insight
