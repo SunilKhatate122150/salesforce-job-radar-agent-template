@@ -1,0 +1,228 @@
+{
+  "version": "2026.05-code-practice-v1",
+  "challenges": [
+    {
+      "id": "web-dom-profile-card",
+      "title": "Build a Salesforce Profile Card",
+      "track": "web",
+      "difficulty": "Foundation",
+      "experienceLevels": [1, 2],
+      "designations": ["Salesforce Developer", "Admin + Developer"],
+      "summary": "Practice HTML and JavaScript by rendering a small Salesforce candidate profile card.",
+      "instructions": "Create a profile card with a heading, a skills list, and a button that updates the status text when clicked.",
+      "expectedBehavior": "The preview should show Salesforce Developer content and clicking the button should set the status text to Ready for interview.",
+      "files": [
+        {
+          "name": "index.html",
+          "language": "html",
+          "content": "<section class=\"profile-card\">\n  <h1 id=\"roleTitle\">Salesforce Developer</h1>\n  <ul id=\"skillList\">\n    <li>Apex</li>\n    <li>LWC</li>\n  </ul>\n  <p id=\"statusText\">Preparing...</p>\n  <button id=\"readyBtn\">Mark Ready</button>\n</section>"
+        },
+        {
+          "name": "style.css",
+          "language": "css",
+          "content": ".profile-card {\n  font-family: system-ui, sans-serif;\n  border: 1px solid #d8dde6;\n  border-radius: 8px;\n  padding: 16px;\n  max-width: 360px;\n}\nbutton {\n  background: #0176d3;\n  color: white;\n  border: 0;\n  border-radius: 6px;\n  padding: 8px 12px;\n}"
+        },
+        {
+          "name": "script.js",
+          "language": "javascript",
+          "content": "const readyBtn = document.getElementById('readyBtn');\nconst statusText = document.getElementById('statusText');\n\nreadyBtn.addEventListener('click', () => {\n  statusText.textContent = 'Ready for interview';\n});"
+        }
+      ],
+      "staticChecks": [
+        { "id": "heading", "label": "Uses a Salesforce Developer heading", "file": "index.html", "regex": "Salesforce\\s+Developer", "weight": 10 },
+        { "id": "button", "label": "Has an action button", "file": "index.html", "regex": "<button[^>]*id=[\"']readyBtn[\"']", "weight": 10 },
+        { "id": "listener", "label": "Adds a click event listener", "file": "script.js", "regex": "addEventListener\\s*\\(\\s*['\"]click", "weight": 20 },
+        { "id": "status", "label": "Updates the status text", "file": "script.js", "regex": "Ready\\s+for\\s+interview", "weight": 20 }
+      ],
+      "tests": [
+        { "id": "status-click", "label": "Button click updates status", "expression": "document.getElementById('readyBtn').click(); document.getElementById('statusText').textContent.includes('Ready for interview')", "weight": 40 }
+      ],
+      "aiRubric": "Reward semantic HTML, simple DOM selection, event handling, and readable names."
+    },
+    {
+      "id": "apex-account-discount-service",
+      "title": "Apex Account Discount Service",
+      "track": "salesforce",
+      "difficulty": "Foundation",
+      "experienceLevels": [1, 2],
+      "designations": ["Salesforce Developer", "Admin + Developer"],
+      "summary": "Write an Apex service method that calculates a discount from annual revenue.",
+      "instructions": "Create an AccountDiscountService class with a static calculateDiscount(Account acct) method. Return 20 for revenue above 1,000,000, 10 above 250,000, otherwise 0. Handle nulls safely.",
+      "expectedBehavior": "Method is static, checks null Account or AnnualRevenue, and returns numeric discount values.",
+      "files": [
+        {
+          "name": "AccountDiscountService.cls",
+          "language": "apex",
+          "content": "public with sharing class AccountDiscountService {\n  public static Integer calculateDiscount(Account acct) {\n    if (acct == null || acct.AnnualRevenue == null) {\n      return 0;\n    }\n    if (acct.AnnualRevenue > 1000000) {\n      return 20;\n    }\n    if (acct.AnnualRevenue > 250000) {\n      return 10;\n    }\n    return 0;\n  }\n}"
+        },
+        {
+          "name": "AccountDiscountServiceTest.cls",
+          "language": "apex",
+          "content": "@IsTest\nprivate class AccountDiscountServiceTest {\n  @IsTest\n  static void calculatesDiscounts() {\n    Account enterpriseAcct = new Account(Name = 'Enterprise', AnnualRevenue = 1500000);\n    System.assertEquals(20, AccountDiscountService.calculateDiscount(enterpriseAcct));\n  }\n}"
+        }
+      ],
+      "staticChecks": [
+        { "id": "class", "label": "Defines AccountDiscountService", "file": "AccountDiscountService.cls", "regex": "class\\s+AccountDiscountService", "weight": 15 },
+        { "id": "static-method", "label": "Uses a static calculateDiscount method", "file": "AccountDiscountService.cls", "regex": "static\\s+\\w+\\s+calculateDiscount\\s*\\(", "weight": 20 },
+        { "id": "null-safe", "label": "Handles null Account or AnnualRevenue", "file": "AccountDiscountService.cls", "regex": "acct\\s*==\\s*null|AnnualRevenue\\s*==\\s*null", "weight": 20 },
+        { "id": "asserts", "label": "Includes test assertions", "file": "AccountDiscountServiceTest.cls", "regex": "System\\.assert", "weight": 20 },
+        { "id": "test-annotation", "label": "Includes @IsTest coverage", "file": "AccountDiscountServiceTest.cls", "regex": "@IsTest", "weight": 15 }
+      ],
+      "aiRubric": "Reward null safety, clean branching, test coverage, with sharing, and interview explanation quality."
+    },
+    {
+      "id": "trigger-contact-count",
+      "title": "Bulk-Safe Contact Count Trigger",
+      "track": "salesforce",
+      "difficulty": "Junior Builder",
+      "experienceLevels": [2, 3, 4],
+      "designations": ["Salesforce Developer", "Senior Salesforce Developer"],
+      "summary": "Practice a common trigger scenario: maintain Contact count on Account.",
+      "instructions": "Write a Contact trigger and handler that collects AccountIds, uses one aggregate query, and updates Accounts outside loops.",
+      "expectedBehavior": "Trigger delegates to a handler, handles insert/update/delete/undelete, avoids SOQL/DML inside loops, and has a test class.",
+      "files": [
+        {
+          "name": "ContactTrigger.trigger",
+          "language": "apex",
+          "content": "trigger ContactTrigger on Contact (after insert, after update, after delete, after undelete) {\n  ContactTriggerHandler.updateAccountCounts(Trigger.new, Trigger.oldMap);\n}"
+        },
+        {
+          "name": "ContactTriggerHandler.cls",
+          "language": "apex",
+          "content": "public with sharing class ContactTriggerHandler {\n  public static void updateAccountCounts(List<Contact> newList, Map<Id, Contact> oldMap) {\n    Set<Id> accountIds = new Set<Id>();\n    for (Contact c : newList == null ? new List<Contact>() : newList) {\n      if (c.AccountId != null) accountIds.add(c.AccountId);\n    }\n    for (Contact c : oldMap == null ? new List<Contact>() : oldMap.values()) {\n      if (c.AccountId != null) accountIds.add(c.AccountId);\n    }\n    if (accountIds.isEmpty()) return;\n    Map<Id, Integer> counts = new Map<Id, Integer>();\n    for (AggregateResult ar : [SELECT AccountId accountId, COUNT(Id) total FROM Contact WHERE AccountId IN :accountIds GROUP BY AccountId]) {\n      counts.put((Id) ar.get('accountId'), (Integer) ar.get('total'));\n    }\n    List<Account> updates = new List<Account>();\n    for (Id accountId : accountIds) {\n      updates.add(new Account(Id = accountId, Number_of_Contacts__c = counts.get(accountId) == null ? 0 : counts.get(accountId)));\n    }\n    update updates;\n  }\n}"
+        },
+        {
+          "name": "ContactTriggerHandlerTest.cls",
+          "language": "apex",
+          "content": "@IsTest\nprivate class ContactTriggerHandlerTest {\n  @IsTest\n  static void updatesCount() {\n    Account acct = new Account(Name = 'Acme');\n    insert acct;\n    insert new Contact(LastName = 'One', AccountId = acct.Id);\n    Account refreshed = [SELECT Number_of_Contacts__c FROM Account WHERE Id = :acct.Id];\n    System.assertEquals(1, refreshed.Number_of_Contacts__c);\n  }\n}"
+        }
+      ],
+      "staticChecks": [
+        { "id": "trigger-events", "label": "Covers key after trigger events", "file": "ContactTrigger.trigger", "regex": "after\\s+insert[\\s\\S]*after\\s+update[\\s\\S]*after\\s+delete", "weight": 15 },
+        { "id": "handler", "label": "Delegates logic to a handler", "file": "ContactTrigger.trigger", "regex": "Handler\\.", "weight": 15 },
+        { "id": "set-ids", "label": "Collects AccountIds in a Set", "file": "ContactTriggerHandler.cls", "regex": "Set\\s*<\\s*Id\\s*>", "weight": 15 },
+        { "id": "aggregate", "label": "Uses aggregate query", "file": "ContactTriggerHandler.cls", "regex": "AggregateResult|COUNT\\s*\\(", "weight": 20 },
+        { "id": "no-soql-loop", "label": "Avoids SOQL inside loops", "file": "ContactTriggerHandler.cls", "negativeRegex": "for\\s*\\([^)]*\\)\\s*\\{[^}]*\\[[^\\]]*SELECT", "weight": 15 },
+        { "id": "test", "label": "Includes trigger test", "file": "ContactTriggerHandlerTest.cls", "regex": "@IsTest[\\s\\S]*System\\.assert", "weight": 20 }
+      ],
+      "aiRubric": "Reward bulkification, handler separation, delete/undelete coverage, aggregate query usage, and test depth."
+    },
+    {
+      "id": "lwc-filter-records-js",
+      "title": "LWC-Style JavaScript Filter",
+      "track": "web",
+      "difficulty": "Core Developer",
+      "experienceLevels": [3, 4],
+      "designations": ["Salesforce Developer", "Senior Salesforce Developer"],
+      "summary": "Practice JavaScript logic similar to LWC list filtering.",
+      "instructions": "Implement filterAccounts(accounts, searchTerm) so it returns accounts whose Name includes the search term case-insensitively.",
+      "expectedBehavior": "Function is pure, handles blank search, and does not mutate the original array.",
+      "files": [
+        {
+          "name": "index.html",
+          "language": "html",
+          "content": "<main>\n  <h1>Account Filter</h1>\n  <p>Run tests to validate the JavaScript function.</p>\n</main>"
+        },
+        {
+          "name": "script.js",
+          "language": "javascript",
+          "content": "function filterAccounts(accounts, searchTerm) {\n  const term = String(searchTerm || '').toLowerCase();\n  if (!term) return [...accounts];\n  return accounts.filter(account => String(account.Name || '').toLowerCase().includes(term));\n}\nwindow.filterAccounts = filterAccounts;"
+        }
+      ],
+      "staticChecks": [
+        { "id": "function", "label": "Defines filterAccounts", "file": "script.js", "regex": "function\\s+filterAccounts|const\\s+filterAccounts", "weight": 15 },
+        { "id": "case", "label": "Handles case-insensitive search", "file": "script.js", "regex": "toLowerCase\\s*\\(", "weight": 20 },
+        { "id": "filter", "label": "Uses filter or equivalent array processing", "file": "script.js", "regex": "\\.filter\\s*\\(", "weight": 20 }
+      ],
+      "tests": [
+        { "id": "blank", "label": "Blank term returns all accounts", "expression": "window.filterAccounts([{Name:'Acme'},{Name:'Global Media'}], '').length === 2", "weight": 20 },
+        { "id": "case", "label": "Case-insensitive match works", "expression": "window.filterAccounts([{Name:'Acme'},{Name:'Global Media'}], 'media')[0].Name === 'Global Media'", "weight": 25 }
+      ],
+      "aiRubric": "Reward pure function style, null handling, LWC-ready readability, and testability."
+    },
+    {
+      "id": "apex-integration-client",
+      "title": "Named Credential Integration Client",
+      "track": "salesforce",
+      "difficulty": "Senior Developer",
+      "experienceLevels": [5, 6, 7],
+      "designations": ["Senior Salesforce Developer", "Technical Lead", "Architect"],
+      "summary": "Design an Apex callout client using Named Credentials and test mock coverage.",
+      "instructions": "Create a service that calls a Named Credential endpoint, handles non-200 responses, and includes HttpCalloutMock-based tests.",
+      "expectedBehavior": "Uses callout: named credential syntax, checks status code, deserializes JSON, and has mock tests.",
+      "files": [
+        {
+          "name": "AccountEnrichmentClient.cls",
+          "language": "apex",
+          "content": "public with sharing class AccountEnrichmentClient {\n  public static Map<String, Object> fetchDetails(String externalId) {\n    HttpRequest req = new HttpRequest();\n    req.setEndpoint('callout:Account_Service/accounts/' + EncodingUtil.urlEncode(externalId, 'UTF-8'));\n    req.setMethod('GET');\n    HttpResponse res = new Http().send(req);\n    if (res.getStatusCode() < 200 || res.getStatusCode() >= 300) {\n      throw new CalloutException('Account service failed: ' + res.getStatus());\n    }\n    return (Map<String, Object>) JSON.deserializeUntyped(res.getBody());\n  }\n}"
+        },
+        {
+          "name": "AccountEnrichmentClientTest.cls",
+          "language": "apex",
+          "content": "@IsTest\nprivate class AccountEnrichmentClientTest {\n  private class SuccessMock implements HttpCalloutMock {\n    public HTTPResponse respond(HTTPRequest req) {\n      HttpResponse res = new HttpResponse();\n      res.setStatusCode(200);\n      res.setBody('{\"tier\":\"Gold\"}');\n      return res;\n    }\n  }\n  @IsTest static void parsesResponse() {\n    Test.setMock(HttpCalloutMock.class, new SuccessMock());\n    System.assertEquals('Gold', AccountEnrichmentClient.fetchDetails('A-1').get('tier'));\n  }\n}"
+        }
+      ],
+      "staticChecks": [
+        { "id": "named-credential", "label": "Uses Named Credential callout endpoint", "file": "AccountEnrichmentClient.cls", "regex": "callout:", "weight": 20 },
+        { "id": "status", "label": "Checks HTTP status code", "file": "AccountEnrichmentClient.cls", "regex": "getStatusCode\\s*\\(", "weight": 20 },
+        { "id": "json", "label": "Deserializes JSON safely", "file": "AccountEnrichmentClient.cls", "regex": "JSON\\.deserialize", "weight": 15 },
+        { "id": "mock", "label": "Uses HttpCalloutMock", "file": "AccountEnrichmentClientTest.cls", "regex": "HttpCalloutMock", "weight": 25 },
+        { "id": "set-mock", "label": "Registers test mock", "file": "AccountEnrichmentClientTest.cls", "regex": "Test\\.setMock", "weight": 20 }
+      ],
+      "aiRubric": "Reward Named Credential usage, response handling, test mock coverage, and integration failure discussion."
+    },
+    {
+      "id": "apex-async-batch-governance",
+      "title": "Async Apex Batch Governance",
+      "track": "salesforce",
+      "difficulty": "Lead Developer",
+      "experienceLevels": [6, 7, 8],
+      "designations": ["Technical Lead", "Architect"],
+      "summary": "Practice Batch Apex design for large data updates.",
+      "instructions": "Create a Database.Batchable class that scopes Accounts, updates a field in execute, and explains batch size/governance in comments.",
+      "expectedBehavior": "Implements Database.Batchable, uses QueryLocator, updates records in execute, and avoids callouts unless explicitly declared.",
+      "files": [
+        {
+          "name": "AccountHealthBatch.cls",
+          "language": "apex",
+          "content": "public with sharing class AccountHealthBatch implements Database.Batchable<SObject> {\n  public Database.QueryLocator start(Database.BatchableContext bc) {\n    return Database.getQueryLocator([SELECT Id, Health_Status__c FROM Account WHERE IsDeleted = false]);\n  }\n  public void execute(Database.BatchableContext bc, List<Account> scope) {\n    for (Account acct : scope) {\n      acct.Health_Status__c = 'Review';\n    }\n    update scope;\n  }\n  public void finish(Database.BatchableContext bc) {\n    // Send monitoring event or summary email if required.\n  }\n}"
+        }
+      ],
+      "staticChecks": [
+        { "id": "batchable", "label": "Implements Database.Batchable", "file": "AccountHealthBatch.cls", "regex": "implements\\s+Database\\.Batchable", "weight": 25 },
+        { "id": "querylocator", "label": "Uses Database.getQueryLocator", "file": "AccountHealthBatch.cls", "regex": "Database\\.getQueryLocator", "weight": 20 },
+        { "id": "execute", "label": "Defines execute method", "file": "AccountHealthBatch.cls", "regex": "void\\s+execute\\s*\\(", "weight": 20 },
+        { "id": "finish", "label": "Defines finish method", "file": "AccountHealthBatch.cls", "regex": "void\\s+finish\\s*\\(", "weight": 15 },
+        { "id": "no-query-loop", "label": "Avoids SOQL inside execute loops", "file": "AccountHealthBatch.cls", "negativeRegex": "for\\s*\\([^)]*\\)\\s*\\{[^}]*\\[[^\\]]*SELECT", "weight": 20 }
+      ],
+      "aiRubric": "Reward batchable shape, scope safety, operational monitoring, restartability, and LDV awareness."
+    },
+    {
+      "id": "architect-agentforce-guardrails",
+      "title": "Agentforce Architecture Guardrails",
+      "track": "salesforce",
+      "difficulty": "Architect",
+      "experienceLevels": [8, 9, 10],
+      "designations": ["Architect", "FDE/Agentforce Specialist"],
+      "summary": "Draft architecture-oriented pseudocode and guardrails for an Agentforce action.",
+      "instructions": "Write Apex-like pseudocode for an Agent action that validates user access, grounds data, logs decisions, and escalates unsafe requests.",
+      "expectedBehavior": "Mentions CRUD/FLS, sharing, grounding, audit logging, fallback/escalation, and test strategy.",
+      "files": [
+        {
+          "name": "AgentActionGuardrails.cls",
+          "language": "apex",
+          "content": "public with sharing class AgentActionGuardrails {\n  public static AgentDecision evaluate(AgentRequest request) {\n    // Validate object access and field permissions before grounding data.\n    // Query only records the running user can access.\n    // Log decision metadata without storing sensitive prompt data.\n    // Escalate to a human queue when confidence is low or policy is unclear.\n    return new AgentDecision('Escalate');\n  }\n}"
+        }
+      ],
+      "staticChecks": [
+        { "id": "sharing", "label": "Uses sharing-aware class posture", "file": "AgentActionGuardrails.cls", "regex": "with\\s+sharing|inherited\\s+sharing", "weight": 15 },
+        { "id": "crud-fls", "label": "Mentions CRUD/FLS or field permissions", "file": "AgentActionGuardrails.cls", "regex": "CRUD|FLS|field\\s+permissions|object\\s+access", "weight": 20 },
+        { "id": "grounding", "label": "Mentions grounding or trusted data retrieval", "file": "AgentActionGuardrails.cls", "regex": "ground", "weight": 15 },
+        { "id": "audit", "label": "Includes audit/logging thinking", "file": "AgentActionGuardrails.cls", "regex": "audit|log", "weight": 20 },
+        { "id": "escalation", "label": "Includes escalation/fallback path", "file": "AgentActionGuardrails.cls", "regex": "escalat|fallback|human", "weight": 20 },
+        { "id": "test", "label": "Mentions test strategy", "file": "AgentActionGuardrails.cls", "regex": "test", "weight": 10 }
+      ],
+      "aiRubric": "Reward governance clarity, Trust Layer awareness, auditability, access control, and production readiness."
+    }
+  ]
+}

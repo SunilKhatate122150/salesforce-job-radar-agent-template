@@ -18,6 +18,7 @@
   <link rel="stylesheet" href="styles.v1412.css">
   <link rel="stylesheet" href="job-radar.fix.css?v=20260426">
   <link rel="stylesheet" href="ui-shell.fix.css?v=20260501-login-mode">
+  <link rel="stylesheet" href="code-practice.css?v=20260501">
   <script src="https://accounts.google.com/gsi/client" async defer></script>
   <script>
     window.handleCredentialResponse = function(response) {
@@ -153,6 +154,7 @@
 
   <div class="nav-parent-section">
     <div class="nav-parent-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:14px;height:14px;vertical-align:middle;margin-right:6px;"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg> CORE DEVELOPMENT Q&A</div>
+    <div class="nav-item" onclick="showPage('code_practice')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline><line x1="14" y1="4" x2="10" y2="20"></line></svg> Code Practice <span class="count">Beta</span></div>
     <div class="nav-item" onclick="showPage('apex')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg> Apex Core <span class="count">22 Q</span></div>
     <div class="nav-item" onclick="showPage('soql')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg> SOQL Deep Dive <span class="count">14 Q</span></div>
     <div class="nav-item" onclick="showPage('async')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg> Async Apex <span class="count">16 Q</span></div>
@@ -549,6 +551,16 @@
   </div>
   <div id="releaseCenterContent">
     <div class="content-card">Loading Salesforce release intelligence...</div>
+  </div>
+</div>
+
+<div id="code_practice" class="page">
+  <div class="page-header">
+    <div class="page-title">Code Practice</div>
+    <div class="page-sub">Guided Salesforce coding drills with browser preview, Apex static checks, AI review, and Google-synced attempts.</div>
+  </div>
+  <div id="codePracticeApp" class="code-practice-shell">
+    <div class="cp-loading">Loading Code Practice workspace...</div>
   </div>
 </div>
 
@@ -1131,6 +1143,7 @@
 
 
 <script src="app.v1412.js"></script>
+<script src="code-practice.js?v=20260501"></script>
 <script src="ui-shell.fix.js?v=20260426"></script>
 </body>
 </html>

@@ -103,6 +103,12 @@ const userProfileSchema = new mongoose.Schema({
   }],
   roadmapSnapshot: mongoose.Schema.Types.Mixed,  // Deterministic roadmap used for the current profile
   releaseFocus: mongoose.Schema.Types.Mixed,     // Release items filtered for current years/designation
+  codingPractice: {
+    attempts: [mongoose.Schema.Types.Mixed],
+    bestScores: mongoose.Schema.Types.Mixed,
+    lastWorkspace: mongoose.Schema.Types.Mixed,
+    completedChallengeIds: [String]
+  },
   // AI-identified gaps
   missingSkills: [String],                       // Skills the AI found missing
   // Study plan

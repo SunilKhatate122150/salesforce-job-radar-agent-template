@@ -1748,6 +1748,7 @@ var topicConfig = {
   'study_history': { name: 'Study History', recommended: 0, group: 'General', noTimer: true },
   'profile_match': { name: 'Profile Matching', recommended: 10, group: 'General', noTimer: true },
   'salesforce_releases': { name: 'Salesforce Releases', recommended: 0, group: 'General', noTimer: true },
+  'code_practice': { name: 'Code Practice', recommended: 45, group: 'Technical', noTimer: true },
   // Technical Interview Q&A
   'apex': { name: 'Apex Core', recommended: 120, group: 'Technical' },
   'soql': { name: 'SOQL Deep Dive', recommended: 90, group: 'Technical' },
@@ -3668,6 +3669,12 @@ async function showPage(id) {
 	          const container = document.getElementById('releaseCenterContent');
 	          if (container) container.innerHTML = '<div class="content-card">Release data is unavailable right now. The curated data files could not be loaded.</div>';
 	        });
+	    }
+	    if (id === 'code_practice') {
+	        console.log('[NAV] Loading Code Practice workspace...');
+	        if (window.CodePractice && typeof window.CodePractice.mount === 'function') {
+	          window.CodePractice.mount();
+	        }
 	    }
     if (id === 'bookmarks_page') {
         console.log('⭐ [NAV] Activating Bookmarks View...');
