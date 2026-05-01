@@ -1027,7 +1027,7 @@ async function loadUserProfile() {
     // CACHE-BUST: Ensure we get fresh synced flags from the cloud
     const res = await apiFetch('/api/profile/data?cb=' + Date.now());
     if (!res.ok) {
-      console.log('â Œ [Profile] Cloud fetch failed (Status: ' + res.status + '). User might be logged out.');
+      console.log('❌ [Profile] Cloud fetch failed (Status: ' + res.status + '). User might be logged out.');
       return;
     }
     const data = await res.json();
@@ -2311,7 +2311,7 @@ function switchHistoryTab(mode) {
 
 async function syncDashboard() {
   try {
-    console.log('ðŸ”„ Initiating resilient dashboard sync...');
+    console.log('🔍„ Initiating resilient dashboard sync...');
     // Execute individually so one crash doesn't block others
     await updateTrackerUI().catch(e => console.error('UI Tracker fail', e));
     await renderTimetable().catch(e => console.error('Timetable fail', e)); // FIXED: Added to sync
@@ -2529,7 +2529,7 @@ function renderTimelineView(container, dates, histories, todayStr, yestStr) {
             <div style="font-size:0.75rem; color:var(--muted); text-transform:uppercase; letter-spacing:1px; margin-bottom:4px;">${isToday ? 'Today' : (isYesterday ? 'Yesterday' : date)}</div>
             <div style="font-size:1.3rem; font-weight:700; color:var(--text); font-family:'IBM Plex Mono';">${formatTime((h.study && h.study.totalSeconds) ? h.study.totalSeconds : 0)}</div>
           </div>
-          <button onclick="showHistoryModal('${date}')" style="background:${accent}22; color:${accent}; border:1px solid ${accent}44; padding:8px 15px; border-radius:8px; font-size:0.75rem; font-weight:700; cursor:pointer; transition:0.2s;">ðŸ”  View Deep Info</button>
+          <button onclick="showHistoryModal('${date}')" style="background:${accent}22; color:${accent}; border:1px solid ${accent}44; padding:8px 15px; border-radius:8px; font-size:0.75rem; font-weight:700; cursor:pointer; transition:0.2s;">🔍  View Deep Info</button>
         </div>
 
         <div style="display:flex; flex-wrap:wrap; gap:8px; margin-bottom:12px;">
@@ -2943,7 +2943,7 @@ async function fetchJobsList() {
     const data = await response.json();
     console.log('ðŸ“¦ [RADAR] Raw Server Response:', data);
     window.allJobRecords = data.records || [];
-    console.log(`âœ… [RADAR] Received ${window.allJobRecords.length} jobs. DB Status: ${data.dbStatus}`);
+    console.log(`✅ [RADAR] Received ${window.allJobRecords.length} jobs. DB Status: ${data.dbStatus}`);
 
     let addedCount = 0;
     let updatedCount = 0;
@@ -3017,7 +3017,7 @@ async function fetchJobsList() {
 }
 
 function clearAndSyncJobs() {
-    console.log('ðŸ§¹ Resetting Job Radar cache only...');
+    console.log('🧹 Resetting Job Radar cache only...');
     removeScopedStorage('pipelineJobs', 'sfpipe2026v3');
     removeScopedStorage('activityLog', 'sfActivityLog');
     pipelineJobs = [];
@@ -3417,7 +3417,7 @@ async function renderTimetable() {
       </div>
     `;
     container.innerHTML = html;
-    console.log(`âœ… [SCHEDULE] Population COMPLETE. HTML Length: ${html.length}`);
+    console.log(`✅ [SCHEDULE] Population COMPLETE. HTML Length: ${html.length}`);
   } catch (e) {
     console.error('âŒ [SCHEDULE] Failed to render:', e);
     container.innerHTML = '<div style="padding:2rem; text-align:center; color:var(--red);">Failed to load schedule. Ensure the agent server is running.</div>';
@@ -3511,7 +3511,7 @@ async function ensurePageLoaded(pageId) {
         return true;
     }
 
-    console.log(`%c ðŸ” [LOADER] Checking if modular page is loaded: ${pageId}`, 'color: #a855f7; font-weight: bold;');
+    console.log(`%c 🔍 [LOADER] Checking if modular page is loaded: ${pageId}`, 'color: #a855f7; font-weight: bold;');
     const pageEl = document.getElementById(pageId);
     if (!pageEl) {
         console.error(`%c âŒ [LOADER] CRITICAL: Element not found in DOM for modular page: #${pageId}`, 'color: #ef4444; font-weight: bold;');
@@ -3522,10 +3522,10 @@ async function ensurePageLoaded(pageId) {
     const display = getComputedStyle(pageEl).display;
     const contentLen = pageEl.innerHTML.trim().length;
     
-    console.log(`%c ðŸ“Š [LOADER] Page ${pageId} Status -> Display: ${display}, ContentLen: ${contentLen}`, 'color: #6366f1;');
+    console.log(`%c 📊 [LOADER] Page ${pageId} Status -> Display: ${display}, ContentLen: ${contentLen}`, 'color: #6366f1;');
     
     if (contentLen > 100) {
-        console.log(`%c âœ… [LOADER] Page ${pageId} already has content. Skipping fetch.`, 'color: #10b981;');
+        console.log(`%c ✅ [LOADER] Page ${pageId} already has content. Skipping fetch.`, 'color: #10b981;');
         return true;
     }
 
@@ -3535,14 +3535,15 @@ async function ensurePageLoaded(pageId) {
         if (!response.ok) throw new Error(`HTTP Error: ${response.status}`);
         const html = await response.text();
         pageEl.innerHTML = html;
-        console.log(`%c âœ… [LOADER] Page ${pageId} injected successfully.`, 'color: #10b981; font-weight: bold;');
+        console.log(`%c ✅ [LOADER] Page ${pageId} injected successfully.`, 'color: #10b981; font-weight: bold;');
+        if (typeof refreshSearchIndex === 'function') refreshSearchIndex();
         
         // Refresh specific UI components if needed
         if (pageId === 'job_radar') fetchJobsList();
         
         return true;
     } catch (err) {
-        console.error(`%c âŒ [LOADER] Failed to load page ${pageId}: ${err.message}`, 'color: #ef4444; font-weight: bold;');
+        console.error(`%c ❌ [LOADER] Failed to load page ${pageId}: ${err.message}`, 'color: #ef4444; font-weight: bold;');
         pageEl.innerHTML = `<div style="padding:2rem; color:var(--red); text-align:center;">
           <h3>Modular Load Failed</h3>
           <p>The page "${pageId}" could not be retrieved from the server. [Error: ${err.message}]</p>
@@ -3567,7 +3568,7 @@ async function showPage(id) {
   setScopedItem('last_active_tab', id);
   await stopTracking();
   
-  console.log(`ðŸ§¹ [NAV] Hiding all .page elements...`);
+  console.log(`🧹 [NAV] Hiding all .page elements...`);
   document.querySelectorAll('.page').forEach(function(p) { 
     p.classList.remove('active'); 
     p.style.setProperty('display', 'none', 'important'); 
@@ -3578,13 +3579,13 @@ async function showPage(id) {
   let page = document.getElementById(id);
   
   if (!page && !topicConfig[id]) {
-    console.error(`âŒ [NAV] FATAL: Target element #${id} not found.`);
+    console.error(`❌ [NAV] FATAL: Target element #${id} not found.`);
     return;
   }
 
   const isIndustrial = renderTopicContent(id);
   if (isIndustrial) {
-      console.log(`ðŸ­ [NAV] Detected Industrial Content for: ${id}`);
+      console.log(`ðŸ ­ [NAV] Detected Industrial Content for: ${id}`);
       page = document.getElementById('topic_viewer');
   } else if (!page && topicConfig[id]) {
       console.log(`ðŸ“š [NAV] Routing to topic_viewer for: ${id}`);
@@ -3602,7 +3603,7 @@ async function showPage(id) {
     }
     
     const finalStyle = getComputedStyle(page);
-    console.log(`ðŸ“Š [NAV] #${page.id} COMPUTED STATE:
+    console.log(`📊 [NAV] #${page.id} COMPUTED STATE:
     - Display: ${finalStyle.display}
     - Visibility: ${finalStyle.visibility}
     - Height: ${finalStyle.height}
@@ -3614,11 +3615,11 @@ async function showPage(id) {
         await renderTimetable(); 
     }
     if (id === 'study_history') {
-        console.log('ðŸ“œ [NAV] Rendering History...');
+        console.log('📜 [NAV] Rendering History...');
         await renderHistory();
     }
     if (id === 'study_tracker') {
-        console.log('ðŸ“ˆ [NAV] Initiating Study Tracker...');
+        console.log('📈 [NAV] Initiating Study Tracker...');
         const lastTab = getScopedItem('last_tracker_tab', 'tab_suggestions', 'last_tracker_tab');
         switchTrackerTab(lastTab);
         await updateTrackerUI(); 
@@ -3719,19 +3720,32 @@ function toggleQA(el) {
 }
 function toggleStar(el) { el.parentElement.classList.toggle('open'); }
 
+function refreshSearchIndex() {
+  searchData = [];
+  document.querySelectorAll('.page').forEach(function(page) {
+    page.querySelectorAll('.qa-block').forEach(function(block) {
+       var q = block.querySelector('.qa-q-text');
+       if (q && q.textContent.trim()) {
+          searchData.push({ 
+            question: q.textContent.trim(), 
+            answerEl: block, 
+            pageId: page.id, 
+            pageName: page.querySelector('.page-title') ? page.querySelector('.page-title').textContent : 'Topic' 
+          });
+       }
+    });
+  });
+  console.log('🔍 [SEARCH] Index refreshed. Total items:', searchData.length);
+}
+
+// Initial index build
+refreshSearchIndex();
+
 // Init
 document.querySelectorAll('.page').forEach(function(p) {
   if (!p.classList.contains('active')) p.style.display = 'none';
 });
 document.getElementById('searchPage').style.display = 'none';
-
-// Search index
-var searchData = [];
-document.querySelectorAll('.qa-block').forEach(function(block) {
-  var q = block.querySelector('.qa-q-text');
-  var page = block.closest('.page');
-  if (q && page) searchData.push({ question: q.textContent.trim(), answerEl: block, pageId: page.id, pageName: page.querySelector('.page-title') ? page.querySelector('.page-title').textContent : '' });
-});
 
 function filterSidebar(val) {
   const query = val.toLowerCase().trim();
@@ -3779,12 +3793,17 @@ function filterSidebar(val) {
     else revAlerts.style.display = 'block';
   }
 
-  // Also filter standalone titles if any (like "100 Scenario Mix")
-  sectionTitles.forEach(title => {
-    if (title.textContent.toLowerCase().includes(query)) {
-      title.style.display = 'block';
+  // Trigger Global Content Search if query > 2 chars
+  if (query.length > 2) {
+    searchContent(val);
+  } else {
+    const sp = document.getElementById('searchPage');
+    if (sp && sp.classList.contains('active')) {
+       // If we were in search results but cleared it, go back to last active tab
+       const lastTab = getScopedItem('last_active_tab', 'schedule');
+       showPage(lastTab);
     }
-  });
+  }
 }
 
 function searchContent(val) {
@@ -4358,12 +4377,12 @@ function renderBookmarkButtons() {
 }
 
 function showBookmarks() {
-  console.log('ðŸ“– [UI] Rendering Bookmarks Page. Current Count:', userBookmarks.length);
+  console.log('📖 [UI] Rendering Bookmarks Page. Current Count:', userBookmarks.length);
   const page = document.getElementById('bookmarks_page');
   if (!page || !page.classList.contains('active')) showPage('bookmarks_page');
   const container = document.getElementById('bookmarksContent');
   if (!container) {
-    console.error('â Œ [UI] #bookmarksContent element missing!');
+    console.error('❌ [UI] #bookmarksContent element missing!');
     return;
   }
 
@@ -4492,7 +4511,7 @@ async function saveRetention(q) {
     }).catch(e => console.error('Retention cloud sync failed', e));
   }
   
-  console.log(`ðŸ§  Spaced Repetition: Topic [${topicId}] scheduled for ${stats.interval} days.`);
+  console.log(`👤 Spaced Repetition: Topic [${topicId}] scheduled for ${stats.interval} days.`);
   renderRevisionAlerts();
 }
 
@@ -5428,3 +5447,276 @@ window.runAgentforceSimulation = async function() {
     outText.innerHTML = '<span style="color:var(--red);">Error: AI simulation is unavailable right now. Please try again shortly.</span>';
   }
 };
+/* Shared UI hardening for the legacy dashboard shell.
+   This keeps navigation, dynamic content, and imported legacy text stable while
+   the older app files remain large and mixed with historical markup. */
+(function () {
+  'use strict';
+
+  const OPEN_KEY = 'sf_prep_sidebar_open_sections_v1';
+  let repairing = false;
+  let sidebarReady = false;
+
+  const textReplacements = [
+    [/â€”|â€“|â|â/g, ' - '],
+    [/â†’|â/g, '->'],
+    [/â€¢/g, '-'],
+    [/â€¦/g, '...'],
+    [/â€œ|â€/g, '"'],
+    [/â€˜|â€™/g, "'"],
+    [/â„¹ï¸|â¹ï¸/g, 'Info'],
+    [/âœ…|â/g, 'OK'],
+    [/âŒ|â/g, 'Error'],
+    [/âš¡|â¡/g, ''],
+    [/â±ï¸|â±/g, ''],
+    [/â–¼/g, 'v'],
+    [/Â/g, ''],
+    [/ï¿½/g, ''],
+    [/ð\S*/g, ''],
+    [/≡\S*/g, ''],
+    [/ƒ\S*/g, '']
+  ];
+
+  function cleanText(value) {
+    let output = String(value || '');
+    textReplacements.forEach(([pattern, replacement]) => {
+      output = output.replace(pattern, replacement);
+    });
+    output = output
+      .replace(/\s+([,.;:!?])/g, '$1')
+      .replace(/[ \t]{2,}/g, ' ')
+      .replace(/\s+-\s+-\s+/g, ' - ')
+      .trim();
+
+    if (/^[=G\-_\s]*$/.test(output)) return '';
+    return output;
+  }
+
+  function cleanDataObject(target, seen) {
+    if (!target || typeof target !== 'object') return;
+    if (seen.has(target)) return;
+    seen.add(target);
+
+    Object.keys(target).forEach(key => {
+      const value = target[key];
+      if (typeof value === 'string') {
+        target[key] = cleanText(value);
+      } else if (Array.isArray(value)) {
+        value.forEach(item => cleanDataObject(item, seen));
+      } else if (value && typeof value === 'object') {
+        cleanDataObject(value, seen);
+      }
+    });
+  }
+
+  function cleanDomText(root) {
+    if (!root || repairing) return;
+    repairing = true;
+    try {
+      const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
+        acceptNode(node) {
+          const parent = node.parentElement;
+          if (!parent) return NodeFilter.FILTER_REJECT;
+          if (/^(SCRIPT|STYLE|TEXTAREA|INPUT|CODE|PRE)$/i.test(parent.tagName)) {
+            return NodeFilter.FILTER_REJECT;
+          }
+          return /[âïðÂ�≡ƒ]/.test(node.nodeValue || '')
+            ? NodeFilter.FILTER_ACCEPT
+            : NodeFilter.FILTER_SKIP;
+        }
+      });
+
+      const nodes = [];
+      while (walker.nextNode()) nodes.push(walker.currentNode);
+      nodes.forEach(node => {
+        const cleaned = cleanText(node.nodeValue);
+        if (cleaned !== node.nodeValue.trim()) {
+          node.nodeValue = node.nodeValue.replace(node.nodeValue.trim(), cleaned);
+        }
+      });
+    } finally {
+      repairing = false;
+    }
+  }
+
+  function getSectionId(section, index) {
+    const title = section.querySelector(':scope > .nav-parent-title');
+    const clone = title ? title.cloneNode(true) : null;
+    if (clone) clone.querySelectorAll('.nav-section-chevron').forEach(node => node.remove());
+    return (clone ? clone.textContent : 'section-' + index)
+      .replace(/\s+/g, ' ')
+      .trim()
+      .toLowerCase();
+  }
+
+  function readOpenSections() {
+    try {
+      return JSON.parse(localStorage.getItem(OPEN_KEY) || 'null') || null;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  function writeOpenSections(sections) {
+    try {
+      localStorage.setItem(OPEN_KEY, JSON.stringify(sections));
+    } catch (_) {
+      // Local storage can be unavailable in strict privacy modes.
+    }
+  }
+
+  function wrapNavLabels() {
+    document.querySelectorAll('#sidebar .nav-item').forEach(item => {
+      if (item.querySelector(':scope > .nav-label')) return;
+      const textNodes = Array.from(item.childNodes).filter(node =>
+        node.nodeType === Node.TEXT_NODE && node.nodeValue.trim()
+      );
+      if (!textNodes.length) return;
+
+      const label = document.createElement('span');
+      label.className = 'nav-label';
+      label.textContent = textNodes.map(node => cleanText(node.nodeValue)).join(' ').trim();
+      item.insertBefore(label, item.querySelector('.count') || null);
+      textNodes.forEach(node => node.remove());
+    });
+  }
+
+  function enhanceSidebar() {
+    const sidebar = document.getElementById('sidebar');
+    if (!sidebar) return;
+
+    wrapNavLabels();
+
+    const sections = Array.from(sidebar.querySelectorAll(':scope > .nav-parent-section'));
+    const stored = readOpenSections();
+    const openMap = stored || {};
+
+    sections.forEach((section, index) => {
+      const title = section.querySelector(':scope > .nav-parent-title');
+      if (!title) return;
+
+      const id = section.dataset.sectionId || getSectionId(section, index);
+      const hasActive = Boolean(section.querySelector('.nav-item.active'));
+      const shouldDefaultOpen = index === 0 || hasActive;
+
+      if (!section.dataset.uiReady) {
+        section.dataset.uiReady = 'true';
+        section.dataset.sectionId = id;
+        section.classList.add('nav-section-enhanced');
+        title.setAttribute('role', 'button');
+        title.setAttribute('tabindex', '0');
+        title.setAttribute('aria-expanded', 'true');
+
+        const chevron = document.createElement('span');
+        chevron.className = 'nav-section-chevron';
+        title.appendChild(chevron);
+
+        const toggle = () => {
+          const collapsed = !section.classList.contains('collapsed');
+          section.classList.toggle('collapsed', collapsed);
+          title.setAttribute('aria-expanded', String(!collapsed));
+          openMap[id] = !collapsed;
+          writeOpenSections(openMap);
+        };
+
+        title.addEventListener('click', toggle);
+        title.addEventListener('keydown', event => {
+          if (event.key === 'Enter' || event.key === ' ') {
+            event.preventDefault();
+            toggle();
+          }
+        });
+      }
+
+      const isOpen = hasActive || (stored ? openMap[id] !== false : shouldDefaultOpen);
+      section.classList.toggle('collapsed', !isOpen);
+      title.setAttribute('aria-expanded', String(isOpen));
+    });
+
+    sidebarReady = true;
+  }
+
+  function repairConfidenceModal() {
+    const modal = document.getElementById('confidenceModal');
+    if (!modal) return;
+
+    const firstGlyph = modal.querySelector('div[style*="font-size:3rem"]');
+    if (firstGlyph) {
+      firstGlyph.className = 'confidence-modal-icon';
+      firstGlyph.removeAttribute('style');
+      firstGlyph.textContent = 'REVIEW';
+    }
+
+    modal.querySelectorAll('button').forEach(button => {
+      const label = button.querySelector('div:last-child');
+      const glyph = button.querySelector('div:first-child');
+      if (!label || !glyph) return;
+      glyph.className = 'confidence-choice-label';
+      glyph.textContent = cleanText(label.textContent);
+    });
+  }
+
+  function repairRuntimeData() {
+    cleanDataObject(window.TOPIC_DATA, new WeakSet());
+    cleanDataObject(window.topicConfig, new WeakSet());
+    cleanDataObject(window.PREP_REGISTRY, new WeakSet());
+  }
+
+  function runRepairs() {
+    repairRuntimeData();
+    enhanceSidebar();
+    repairConfidenceModal();
+    cleanDomText(document.body);
+  }
+
+  function patchGlobalFunctions() {
+    if (typeof window.showPage === 'function' && !window.showPage.__uiShellPatched) {
+      const originalShowPage = window.showPage;
+      window.showPage = async function patchedShowPage() {
+        const result = await originalShowPage.apply(this, arguments);
+        runRepairs();
+        const sidebar = document.getElementById('sidebar');
+        if (sidebar && sidebarReady) enhanceSidebar();
+        return result;
+      };
+      window.showPage.__uiShellPatched = true;
+    }
+
+    if (typeof window.showToast === 'function' && !window.showToast.__uiShellPatched) {
+      const originalShowToast = window.showToast;
+      window.showToast = function patchedShowToast(message) {
+        return originalShowToast.call(this, cleanText(message));
+      };
+      window.showToast.__uiShellPatched = true;
+    }
+  }
+
+  function observeDynamicContent() {
+    if (!document.body || window.__uiShellObserver) return;
+    let pending = false;
+    const observer = new MutationObserver(() => {
+      if (repairing || pending) return;
+      pending = true;
+      requestAnimationFrame(() => {
+        pending = false;
+        runRepairs();
+      });
+    });
+    observer.observe(document.body, { childList: true, subtree: true });
+    window.__uiShellObserver = observer;
+  }
+
+  function init() {
+    patchGlobalFunctions();
+    runRepairs();
+    observeDynamicContent();
+    setTimeout(runRepairs, 250);
+    setTimeout(runRepairs, 1000);
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init, { once: true });
+  } else {
+    init();
+  }
+})();

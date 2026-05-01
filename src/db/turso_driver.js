@@ -118,13 +118,29 @@ export const TursoDB = {
     const sql = `
       INSERT OR REPLACE INTO job_records (
         job_hash, userId, title, company, location, salary, company_type, 
-        experience, probability, why_apply, match_score, status, url, date_added
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        experience, probability, why_apply, match_score, status, url, 
+        matched_skills, missing_skills, resume_actions, match_level, date_added
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `;
     await this.execute(sql, [
-      job.job_hash, userId, job.title, job.company, job.location, job.salary,
-      job.company_type, job.experience, job.probability, job.why_apply,
-      job.match_score, job.status, job.url, job.date_added || new Date().toISOString()
+      job.job_hash, 
+      userId, 
+      job.title, 
+      job.company, 
+      job.location, 
+      job.salary,
+      job.company_type, 
+      job.experience, 
+      job.probability, 
+      job.why_apply,
+      job.match_score, 
+      job.status, 
+      job.url,
+      JSON.stringify(job.matched_skills || []),
+      JSON.stringify(job.missing_skills || []),
+      JSON.stringify(job.resume_actions || []),
+      job.match_level || 'medium',
+      job.date_added || new Date().toISOString()
     ]);
   },
 
