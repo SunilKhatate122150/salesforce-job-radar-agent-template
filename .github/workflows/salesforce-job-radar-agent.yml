@@ -50,32 +50,39 @@ jobs:
 
       - name: Load environment variables
         run: |
+          function set_env() {
+            echo "$1<<EOF" >> $GITHUB_ENV
+            echo "$2" >> $GITHUB_ENV
+            echo "EOF" >> $GITHUB_ENV
+          }
+
           EMAIL_TO_VALUE="${{ secrets.EMAIL_TO }}"
           RESEND_TO_VALUE="${{ secrets.RESEND_TO }}"
           if [ -z "$RESEND_TO_VALUE" ]; then
             RESEND_TO_VALUE="$EMAIL_TO_VALUE"
           fi
 
-          echo "APIFY_TOKEN=${{ secrets.APIFY_TOKEN }}" >> $GITHUB_ENV
-          echo "TELEGRAM_BOT_TOKEN=${{ secrets.TELEGRAM_BOT_TOKEN }}" >> $GITHUB_ENV
-          echo "TELEGRAM_CHAT_ID=${{ secrets.TELEGRAM_CHAT_ID }}" >> $GITHUB_ENV
-          echo "SUPABASE_URL=${{ secrets.SUPABASE_URL }}" >> $GITHUB_ENV
-          echo "SUPABASE_SERVICE_KEY=${{ secrets.SUPABASE_SERVICE_KEY }}" >> $GITHUB_ENV
-          echo "SMTP_USER=${{ secrets.SMTP_USER }}" >> $GITHUB_ENV
-          echo "SMTP_PASS=${{ secrets.SMTP_PASS }}" >> $GITHUB_ENV
-          echo "EMAIL_FROM=${{ secrets.EMAIL_FROM }}" >> $GITHUB_ENV
-          echo "EMAIL_TO=$EMAIL_TO_VALUE" >> $GITHUB_ENV
-          echo "RESEND_API_KEY=${{ secrets.RESEND_API_KEY }}" >> $GITHUB_ENV
-          echo "RESEND_FROM=${{ secrets.RESEND_FROM }}" >> $GITHUB_ENV
-          echo "RESEND_TO=$RESEND_TO_VALUE" >> $GITHUB_ENV
-          echo "RESEND_REPLY_TO=${{ secrets.RESEND_REPLY_TO }}" >> $GITHUB_ENV
-          echo "ADZUNA_APP_ID=${{ secrets.ADZUNA_APP_ID }}" >> $GITHUB_ENV
-          echo "ADZUNA_APP_KEY=${{ secrets.ADZUNA_APP_KEY }}" >> $GITHUB_ENV
-          echo "RESUME_SKILLS=${{ secrets.RESUME_SKILLS }}" >> $GITHUB_ENV
-          echo "RESUME_EXPERIENCE_YEARS=${{ secrets.RESUME_EXPERIENCE_YEARS }}" >> $GITHUB_ENV
-          echo "RESUME_TARGET_ROLE=${{ secrets.RESUME_TARGET_ROLE }}" >> $GITHUB_ENV
-          echo "RESUME_TEXT=${{ secrets.RESUME_TEXT }}" >> $GITHUB_ENV
-          echo "OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}" >> $GITHUB_ENV
+          set_env "APIFY_TOKEN" "${{ secrets.APIFY_TOKEN }}"
+          set_env "TELEGRAM_BOT_TOKEN" "${{ secrets.TELEGRAM_BOT_TOKEN }}"
+          set_env "TELEGRAM_CHAT_ID" "${{ secrets.TELEGRAM_CHAT_ID }}"
+          set_env "SUPABASE_URL" "${{ secrets.SUPABASE_URL }}"
+          set_env "SUPABASE_SERVICE_KEY" "${{ secrets.SUPABASE_SERVICE_KEY }}"
+          set_env "SMTP_USER" "${{ secrets.SMTP_USER }}"
+          set_env "SMTP_PASS" "${{ secrets.SMTP_PASS }}"
+          set_env "EMAIL_FROM" "${{ secrets.EMAIL_FROM }}"
+          set_env "EMAIL_TO" "$EMAIL_TO_VALUE"
+          set_env "RESEND_API_KEY" "${{ secrets.RESEND_API_KEY }}"
+          set_env "RESEND_FROM" "${{ secrets.RESEND_FROM }}"
+          set_env "RESEND_TO" "$RESEND_TO_VALUE"
+          set_env "RESEND_REPLY_TO" "${{ secrets.RESEND_REPLY_TO }}"
+          set_env "ADZUNA_APP_ID" "${{ secrets.ADZUNA_APP_ID }}"
+          set_env "ADZUNA_APP_KEY" "${{ secrets.ADZUNA_APP_KEY }}"
+          set_env "RESUME_SKILLS" "${{ secrets.RESUME_SKILLS }}"
+          set_env "RESUME_EXPERIENCE_YEARS" "${{ secrets.RESUME_EXPERIENCE_YEARS }}"
+          set_env "RESUME_TARGET_ROLE" "${{ secrets.RESUME_TARGET_ROLE }}"
+          set_env "RESUME_TEXT" "${{ secrets.RESUME_TEXT }}"
+          set_env "OPENAI_API_KEY" "${{ secrets.OPENAI_API_KEY }}"
+
 
       - name: Validate email provider configuration
         run: |

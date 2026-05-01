@@ -5,24 +5,31 @@ import path from 'path';
 export async function attemptAutoApply(job) {
   console.log(`\n🚀 [AUTO-APPLY] High match score detected (${job.match_score}%). Launching Auto-Apply Bot for: ${job.title} at ${job.company}`);
   
-  // Attempt to use the user's actual Chrome profile to bypass login screens
-  const homeDir = os.homedir();
-  let chromePath = 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe';
-  let userDataDir = path.join(homeDir, 'AppData', 'Local', 'Google', 'Chrome', 'User Data');
-  
+  const isCI = !!process.env.GITHUB_ACTIONS || !!process.env.CI;
+  const launchOptions = {
+    headless: isCI ? true : false,
+    defaultViewport: null,
+    args: isCI ? ['--no-sandbox', '--disable-setuid-sandbox'] : ['--start-maximized']
+  };
+
   let browser;
   try {
-    browser = await puppeteer.launch({
-      headless: false, // Must be visible so the user can intervene if a captcha appears
-      executablePath: chromePath,
-      userDataDir: userDataDir,
-      defaultViewport: null,
-      args: ['--start-maximized']
-    });
+    // Attempt to use the user's actual Chrome profile if on Windows (local dev)
+    if (os.platform() === 'win32' && !isCI) {
+      const homeDir = os.homedir();
+      launchOptions.executablePath = 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe';
+      launchOptions.userDataDir = path.join(homeDir, 'AppData', 'Local', 'Google', 'Chrome', 'User Data');
+    }
+    
+    browser = await puppeteer.launch(launchOptions);
   } catch (e) {
-    console.log('⚠️ [AUTO-APPLY] Could not attach to your primary Chrome Profile (it might be currently open). Falling back to standard invisible browser.');
-    browser = await puppeteer.launch({ headless: false, defaultViewport: null });
+    console.log(`⚠️ [AUTO-APPLY] Could not launch with primary options: ${e.message}. Falling back to basic launch.`);
+    browser = await puppeteer.launch({ 
+      headless: true, 
+      args: ['--no-sandbox', '--disable-setuid-sandbox'] 
+    });
   }
+
 
   const page = await browser.newPage();
   
