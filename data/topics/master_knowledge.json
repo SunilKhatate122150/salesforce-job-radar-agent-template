@@ -1,62 +1,80 @@
-﻿{
-    "accenture":  {
-                      "blocks":  [
-                                     {
-                                         "type":  "section",
-                                         "title":  "Scalable Development"
-                                     },
-                                     {
-                                         "question":  "Why is a Trigger Framework mandatory in Accenture projects?",
-                                         "type":  "qa",
-                                         "answer":  "\u003cp class=\u0027ans-p\u0027\u003eAccenture utilizes frameworks like fflib or custom Trigger Handlers to ensure separation of concerns and one trigger per object.\u003c/p\u003e"
-                                     }
-                                 ],
-                      "title":  "Accenture Salesforce Prep",
-                      "subtitle":  "Focus on Global Delivery Model and Scalable Frameworks."
-                  },
-    "deloitte":  {
-                     "blocks":  [
-                                    {
-                                        "type":  "section",
-                                        "title":  "Enterprise Architecture"
-                                    },
-                                    {
-                                        "question":  "How do you handle Large Data Volumes (LDV) in a Deloitte global org?",
-                                        "type":  "qa",
-                                        "answer":  "\u003cp class=\u0027ans-p\u0027\u003eHandling LDV requires a multi-layered approach to prevent locking and governor limit exhaustion: Skinny Tables, Custom Indexes, etc.\u003c/p\u003e"
-                                    }
-                                ],
-                     "title":  "Deloitte Salesforce Interview (2026)",
-                     "subtitle":  "Advanced architectural screening and scenario drills for Senior Roles."
-                 },
-    "security_5_layers":  {
-                              "blocks":  [
-                                             {
-                                                 "type":  "section",
-                                                 "title":  "The Security Gates"
-                                             },
-                                             {
-                                                 "question":  "Layer 1: Organization Level Security?",
-                                                 "type":  "qa",
-                                                 "answer":  "\u003cp class=\u0027ans-p\u0027\u003eLogin IP Ranges, Login Hours, Password Policies.\u003c/p\u003e"
-                                             }
-                                         ],
-                              "title":  "Salesforce 5 Layers of Security",
-                              "subtitle":  "Complete breakdown of the Salesforce Security Model."
-                          },
-    "fde_ag_concept":  {
-                           "blocks":  [
-                                          {
-                                              "type":  "section",
-                                              "title":  "Agentforce Architecture"
-                                          },
-                                          {
-                                              "question":  "What are the 5 core components of Agentforce?",
-                                              "type":  "qa",
-                                              "answer":  "\u003cp class=\u0027ans-p\u0027\u003e1. Agent, 2. Topics, 3. Actions, 4. Atlas, 5. Trust Layer.\u003c/p\u003e"
-                                          }
-                                      ],
-                           "title":  "FDE Prep - Agentforce Core",
-                           "subtitle":  "Architectural concepts for AI Specialists."
-                       }
+{
+    "accenture": {
+        "blocks": [
+            { "type": "section", "title": "Scalable Development" },
+            { "question": "Why is a Trigger Framework mandatory in Accenture projects?", "type": "qa", "answer": "<p class='ans-p'>Accenture utilizes frameworks like fflib or custom Trigger Handlers to ensure separation of concerns and one trigger per object.</p>" }
+        ],
+        "title": "Accenture Salesforce Prep",
+        "subtitle": "Focus on Global Delivery Model and Scalable Frameworks."
+    },
+    "deloitte": {
+        "blocks": [
+            { "type": "section", "title": "Enterprise Architecture" },
+            { "question": "How do you handle Large Data Volumes (LDV) in a Deloitte global org?", "type": "qa", "answer": "<p class='ans-p'>Handling LDV requires a multi-layered approach: Skinny Tables, Custom Indexes, and Divisons.</p>" }
+        ],
+        "title": "Deloitte Salesforce Interview (2026)",
+        "subtitle": "Advanced architectural screening and scenario drills for Senior Roles."
+    },
+    "security_5_layers": {
+        "blocks": [
+            { "type": "section", "title": "The Security Gates" },
+            { "question": "Layer 1: Organization Level Security?", "type": "qa", "answer": "<p class='ans-p'>Login IP Ranges, Login Hours, Password Policies, and Multi-Factor Authentication (MFA).</p>" },
+            { "question": "Layer 2: Object Level Security?", "type": "qa", "answer": "<p class='ans-p'>Profiles and Permission Sets control CRED (Create, Read, Edit, Delete) permissions.</p>" },
+            { "question": "Layer 3: Field Level Security?", "type": "qa", "answer": "<p class='ans-p'>Profiles and Permission Sets control visibility and editability of specific fields.</p>" },
+            { "question": "Layer 4: Record Level Security?", "type": "qa", "answer": "<p class='ans-p'>OWD (Organization Wide Defaults), Role Hierarchy, Sharing Rules, and Manual Sharing.</p>" },
+            { "question": "Layer 5: Folder Level Security?", "type": "qa", "answer": "<p class='ans-p'>Visibility of Reports, Dashboards, and Email Templates.</p>" }
+        ],
+        "title": "Salesforce 5 Layers of Security",
+        "subtitle": "Complete breakdown of the Salesforce Security Model."
+    },
+    "order_of_execution": {
+        "blocks": [
+            { "type": "section", "title": "The Critical Sequence" },
+            { "question": "What happens before triggers run?", "type": "qa", "answer": "<p class='ans-p'>Salesforce loads the original record and performs initial system validation (field formats, length).</p>" },
+            { "question": "Explain the 20-step execution order.", "type": "qa", "answer": "<p class='ans-p'>1. System Validation, 2. Before Triggers, 3. Custom Validation, 4. Duplicate Rules, 5. Save (no commit), 6. After Triggers, 7. Assignment Rules, 8. Auto-response, 9. Workflow Rules, 10. Process Builder/Flows, 11. Escalation Rules, 12. Roll-up Summaries, 13. Re-save (if needed).</p>" }
+        ],
+        "title": "Order of Execution",
+        "subtitle": "Master the 20+ steps of the Salesforce Save Cycle."
+    },
+    "service_cloud": {
+        "blocks": [
+            { "type": "section", "title": "Service Intelligence" },
+            { "question": "What is the difference between Entitlements and Service Contracts?", "type": "qa", "answer": "<p class='ans-p'>Entitlements are the support terms (e.g. 24/7 phone support), while Service Contracts represent the commercial agreement.</p>" },
+            { "question": "How does Omni-Channel routing work?", "type": "qa", "answer": "<p class='ans-p'>Omni-Channel uses Service Channels and Routing Configurations to push work items to agents based on capacity and skill.</p>" }
+        ],
+        "title": "Service Cloud Architecture",
+        "subtitle": "Advanced Service Console and Case Management strategies."
+    },
+    "experience_cloud": {
+        "blocks": [
+            { "type": "section", "title": "Portal & Site Architecture" },
+            { "question": "Explain Guest User Security in Experience Cloud.", "type": "qa", "answer": "<p class='ans-p'>Guest users cannot own records and must have 'Secure guest user record access' enabled, using Sharing Sets/Criteria for visibility.</p>" }
+        ],
+        "title": "Experience Cloud (Communities)",
+        "subtitle": "Building secure, high-performance customer portals."
+    },
+    "sales_cloud": {
+        "blocks": [
+            { "type": "section", "title": "Revenue Operations" },
+            { "question": "What are Opportunity Splits?", "type": "qa", "answer": "<p class='ans-p'>Splits allow multiple team members to share credit for an opportunity based on their contribution (Revenue vs Overlay).</p>" }
+        ],
+        "title": "Sales Cloud Architecture",
+        "subtitle": "Lead-to-Cash and Pipeline Management deep dive."
+    },
+    "flow_master": {
+        "blocks": [
+            { "type": "section", "title": "Logic & Automation" },
+            { "question": "When should you use a Screen Flow vs a Record-Triggered Flow?", "type": "qa", "answer": "<p class='ans-p'>Screen Flows are for guided user interactions; Record-Triggered Flows are for background updates on DML events.</p>" }
+        ],
+        "title": "Flow Master Class",
+        "subtitle": "Industrial automation patterns and fault handling."
+    },
+    "fde_ag_concept": {
+        "blocks": [
+            { "type": "section", "title": "Agentforce Architecture" },
+            { "question": "What are the 5 core components of Agentforce?", "type": "qa", "answer": "<p class='ans-p'>1. Agent, 2. Topics, 3. Actions, 4. Atlas, 5. Trust Layer.</p>" }
+        ],
+        "title": "FDE Prep - Agentforce Core",
+        "subtitle": "Architectural concepts for AI Specialists."
+    }
 }

@@ -3556,6 +3556,43 @@ document.addEventListener('visibilitychange', function() {
     ]);
   } catch(e) { console.warn('Background preload partially failed', e); }
 })();
+
+/**
+ * 🛰️ INTERACTION HANDLERS (v1412)
+ * ------------------------------
+ * These functions bridge the UI with the modular page logic.
+ */
+
+window.scrollToCol = function(colId) {
+  console.log(`[NAV] Scrolling to column: ${colId}`);
+  const list = document.getElementById(`list-${colId}`);
+  if (!list) return;
+  
+  const column = list.closest('.kanban-col-v3') || list.parentElement;
+  if (column) {
+    column.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+    
+    // Industrial Highlight Effect
+    column.classList.add('column-focus-pulse');
+    setTimeout(() => column.classList.remove('column-focus-pulse'), 1500);
+  }
+};
+
+window.switchRadarSubTab = function(tabId) {
+  console.log(`[TAB] Radar Sub-Tab -> ${tabId}`);
+  document.querySelectorAll('.radar-sub-tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.radar-sub-page').forEach(p => p.classList.remove('active'));
+  
+  const btn = document.querySelector(`[onclick="switchRadarSubTab('${tabId}')"]`);
+  const page = document.getElementById(tabId);
+  
+  if (btn) btn.classList.add('active');
+  if (page) page.classList.add('active');
+  
+  if (tabId === 'tab-board') renderBoard();
+  if (tabId === 'tab-insights') renderInsights();
+  if (tabId === 'tab-dev') renderDevelopment();
+};
 // AI INTERVIEW SYSTEM
 let interviewMessages = [];
 
