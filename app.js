@@ -3145,13 +3145,17 @@ function refreshSearchIndex() {
 }
 
 // Initial index build
-refreshSearchIndex();
-
-// Init
-document.querySelectorAll('.page').forEach(function(p) {
-  if (!p.classList.contains('active')) p.style.display = 'none';
+window.addEventListener('DOMContentLoaded', () => {
+  refreshSearchIndex();
+  
+  // Initialize Page Visibility
+  document.querySelectorAll('.page').forEach(function(p) {
+    if (!p.classList.contains('active')) p.style.display = 'none';
+  });
+  
+  const searchPage = document.getElementById('searchPage');
+  if (searchPage) searchPage.style.display = 'none';
 });
-document.getElementById('searchPage').style.display = 'none';
 
 function filterSidebar(val) {
   const query = val.toLowerCase().trim();
