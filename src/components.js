@@ -177,11 +177,71 @@ function renderProfileMatchPage(profile) {
   
   loadPremiumRoadmap(true).then(data => {
     const mount = document.getElementById('premiumRoadmapMount');
-    if (mount) mount.innerHTML = renderPremiumRoadmapSection(data) + renderPremiumReleaseFocusSection(data);
-  }).catch(() => {
+    if (mount && data) {
+        mount.innerHTML = renderPremiumRoadmapSection(data) + renderPremiumReleaseFocusSection(data);
+    }
+  }).catch(err => {
+    console.error('[ROADMAP] Mount failure:', err);
     const mount = document.getElementById('premiumRoadmapMount');
     if (mount) mount.innerHTML = '<div class="premium-empty">Roadmap preview is unavailable right now.</div>';
   });
+}
+
+function renderPremiumRoadmapSection(data) {
+  const roadmap = data.roadmap || {};
+  const topics = roadmap.topics || [];
+  const designation = data.designation?.label || 'Salesforce Developer';
+  const exp = data.experienceYears || 1;
+
+  return `
+    <div class="premium-roadmap-shell">
+      <div class="premium-roadmap-hero">
+        <div>
+          <div class="premium-eyebrow">Curated Career Roadmap</div>
+          <h3>${roadmap.roadmapName || 'Industry Standard'}</h3>
+          <p>Optimized for ${exp} year experience in ${designation}.</p>
+        </div>
+        ${data.previewMode ? '<span class="premium-badge">Curated Preview</span>' : ''}
+      </div>
+      <div class="premium-roadmap-grid">
+        ${topics.map((t, idx) => `
+          <div class="premium-roadmap-node ${t.status || 'upcoming'}">
+            <div class="node-index">${idx + 1}</div>
+            <div class="node-content">
+              <h4>${t.name}</h4>
+              <p>${t.desc}</p>
+            </div>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+  `;
+}
+
+function renderPremiumReleaseFocusSection(data) {
+  const focus = data.releaseFocus || {};
+  const items = focus.items || [];
+  
+  if (items.length === 0) return '';
+
+  return `
+    <div class="premium-release-focus">
+      <div class="premium-eyebrow">Strategic Release Focus</div>
+      <h3>${focus.focusTitle || 'Current Market Impact'}</h3>
+      <div class="premium-release-grid">
+        ${items.map(item => `
+          <article class="premium-release-card personalized">
+            <span class="premium-release-cat">${item.category}</span>
+            <h4>${item.title}</h4>
+            <p>${item.whyMatters}</p>
+            <div class="premium-release-meta">
+              <button onclick="showPage('${item.topicId || 'salesforce_releases'}')" class="btn-ghost-xs">Study Details</button>
+            </div>
+          </article>
+        `).join('')}
+      </div>
+    </div>
+  `;
 }
 
 function renderReleaseCenterPage(data) {
@@ -304,34 +364,39 @@ function renderJobIntelligence(data) {
 }
 
 function renderBoard() {
-  const container = document.getElementById('pipeline-board');
-  if (!container) return;
+  const cols = ['todo', 'applied', 'interview', 'offer', 'rejected'];
+  const searchTerm = (document.getElementById("boardSearch")?.value || '').toLowerCase();
+  const filter = window.currentBoardFilter || 'all';
+  const pageSize = window.JOB_BOARD_PAGE_SIZE || 10;
 
-  const columns = [
-    { id: 'todo', name: 'To Apply', color: 'var(--blue)' },
-    { id: 'applied', name: 'Applied', color: 'var(--green)' },
-    { id: 'interview', name: 'Interviewing', color: 'var(--amber)' },
-    { id: 'offer', name: 'Offers', color: 'var(--pink)' }
-  ];
+  cols.forEach(col => {
+    const list = document.getElementById(`list-${col}`);
+    const count = document.getElementById(`count-${col}`);
+    if (!list) return;
 
-  container.innerHTML = columns.map(col => {
-    const jobs = pipelineJobs.filter(j => j.status === col.id);
-    return `
-      <div class="pipeline-column" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event, '${col.id}')">
-        <div class="column-header">
-          <div class="column-title">
-            <span class="column-dot" style="background:${col.color}"></span>
-            ${col.name}
-          </div>
-          <div class="column-count">${jobs.length}</div>
-        </div>
-        <div class="column-cards">
-          ${jobs.map(job => renderJobCard(job)).join('')}
-          ${jobs.length === 0 ? '<div class="column-empty">Drag cards here</div>' : ''}
-        </div>
-      </div>
-    `;
-  }).join('');
+    const filtered = (window.pipelineJobs || [])
+      .filter(j => j.status === col)
+      .filter(j => filter === 'all' || j.prob === filter)
+      .filter(j => !searchTerm || j.company.toLowerCase().includes(searchTerm) || j.role.toLowerCase().includes(searchTerm))
+      .sort((a, b) => new Date(b.dateAdded || b.createdAt) - new Date(a.dateAdded || a.createdAt));
+
+    if (count) count.textContent = filtered.length;
+
+    const pages = window.radarBoardPages || { todo: 0, applied: 0, interview: 0, offer: 0, rejected: 0 };
+    const page = pages[col] || 0;
+    const maxPage = Math.max(0, Math.ceil(filtered.length / pageSize) - 1);
+    const start = Math.min(page, maxPage) * pageSize;
+    const displayJobs = filtered.slice(start, start + pageSize);
+
+    list.innerHTML = displayJobs.length === 0 ? 
+      `<div class="radar-empty-state">No matching roles in this stage.</div>` :
+      displayJobs.map(job => renderJobCard(job)).join('');
+      
+    const pager = document.getElementById(`pager-${col}`);
+    if (pager) {
+      pager.innerHTML = renderPager(filtered.length, page, pageSize, `setBoardPage('${col}', -1)`, `setBoardPage('${col}', 1)`, true);
+    }
+  });
 }
 
 function renderJobCard(job) {
@@ -398,107 +463,10 @@ function renderInsights() {
   `).join('');
 }
 
-function getFollowUpStatus(job) {
-  if (job.status !== 'applied' || !job.dateApplied) return null;
-  const days = Math.floor((new Date() - new Date(job.dateApplied)) / (1000 * 60 * 60 * 24));
-  if (days >= 21) return { label: 'GHOSTED?', class: 'ghost' };
-  if (days >= 14) return { label: 'URGENT', class: 'urgent' };
-  if (days >= 7) return { label: 'FOLLOW-UP', class: 'warn' };
-  return null;
-}
-
-window.handleDragStart = function(e, jobId) {
-  e.dataTransfer.setData('text/plain', jobId);
-  e.dataTransfer.effectAllowed = 'move';
-  setTimeout(() => e.target.classList.add('dragging'), 0);
-}
-
-window.handleDragOver = function(e) {
-  e.preventDefault();
-  e.dataTransfer.dropEffect = 'move';
-  if (!e.currentTarget.classList.contains('drag-over')) {
-    e.currentTarget.classList.add('drag-over');
-  }
-}
-
-window.handleDragLeave = function(e) {
-  e.currentTarget.classList.remove('drag-over');
-}
-
-window.handleDrop = async function(e, status) {
-  e.preventDefault();
-  e.currentTarget.classList.remove('drag-over');
-  const jobId = e.dataTransfer.getData('text/plain');
-  if (!jobId) return;
+function renderDevelopment() {
+  const container = document.getElementById('radar-development-view');
+  if (!container) return;
   
-  const job = pipelineJobs.find(j => j.id === jobId);
-  if (!job || job.status === status) return;
-  
-  const oldStatus = job.status;
-  job.status = status;
-  if (status === 'applied') job.dateApplied = new Date().toISOString();
-  
-  renderBoard(); 
-  
-  const card = document.getElementById('card-' + jobId);
-  if (card) {
-    card.style.opacity = '0.5';
-    card.style.transform = 'scale(0.98)';
-  }
-  
-  try {
-    showToast(`Moved ${job.company} to ${status.toUpperCase()}`);
-    logActivity(`Moved <strong>${job.company}</strong> from ${oldStatus.toUpperCase()} to ${status.toUpperCase()}`, 'success');
-    await savePipeline();
-    if (card) {
-      card.style.opacity = '1';
-      card.style.transform = 'scale(1)';
-    }
-  } catch (err) {
-    console.error('Drag drop sync failed', err);
-    showToast('Failed to save changes. Check connection.', true);
-  }
-}
-
-window.moveTo = function(id, newStatus) {
-  const job = pipelineJobs.find(j => j.id === id);
-  if (!job) return;
-  const oldStatus = job.status;
-  job.status = newStatus;
-  if (newStatus === 'applied') job.dateApplied = new Date().toISOString();
-  savePipeline();
-  renderBoard();
-  logActivity(`Moved <strong>${job.company}</strong> from ${oldStatus.toUpperCase()} to ${newStatus.toUpperCase()}`, 'success');
-  if (newStatus === 'applied') showToast('Application recorded.');
-}
-
-window.switchRadarSubTab = function(tab) {
-  window.currentRadarSubTab = tab;
-  document.querySelectorAll('.radar-tab-btn').forEach(b => {
-    b.classList.remove('active');
-    b.style.color = 'var(--muted)';
-    b.style.borderBottomColor = 'transparent';
-  });
-  const btn = document.getElementById('tab-' + tab);
-  if (btn) {
-    btn.classList.add('active');
-    btn.style.color = 'var(--text)';
-    btn.style.borderBottomColor = 'var(--blue)';
-  }
-
-  const pipelineView = document.getElementById('radar-pipeline-view');
-  const insightsView = document.getElementById('radar-insights-view');
-  const developmentView = document.getElementById('radar-development-view');
-  
-  if (pipelineView) pipelineView.style.display = tab === 'pipeline' ? 'block' : 'none';
-  if (insightsView) insightsView.style.display = tab === 'insights' ? 'block' : 'none';
-  if (developmentView) developmentView.style.display = tab === 'development' ? 'block' : 'none';
-  
-  if (tab === 'insights') renderInsights(pipelineJobs);
-  if (tab === 'development') renderDevelopment();
-}
-
-function renderDevelopmentUI() {
   const phases = [
     { name: 'Phase 1: Foundation', status: 'completed', desc: 'Core agent logic and environment setup.' },
     { name: 'Phase 2: Job Fetching', status: 'completed', desc: 'LinkedIn & Naukri integration with deduplication.' },
@@ -515,7 +483,7 @@ function renderDevelopmentUI() {
     { skill: 'Agentforce', value: 58 }
   ];
 
-  return `
+  container.innerHTML = `
     <div class="development-view">
       <div class="dev-header">
         <div class="dev-eyebrow">Project Evolution</div>
@@ -588,7 +556,6 @@ function renderLog() {
   const log = window.activityLog || [];
   const pageSize = window.LOG_PAGE_SIZE || 10;
   const page = window.activityLogPage || 0;
-  const maxPage = Math.max(0, Math.ceil(log.length / pageSize) - 1);
   const start = page * pageSize;
   const pageItems = log.slice(start, start + pageSize);
 
@@ -608,40 +575,18 @@ function renderLog() {
   `).join('') + renderPager(log.length, page, pageSize, 'setLogPage(-1)', 'setLogPage(1)');
 }
 
-function renderBoard() {
-  const cols = ['todo', 'applied', 'interview', 'offer', 'rejected'];
-  const searchTerm = (document.getElementById("boardSearch")?.value || '').toLowerCase();
-  const filter = window.currentBoardFilter || 'all';
-  const pageSize = window.JOB_BOARD_PAGE_SIZE || 10;
-
-  cols.forEach(col => {
-    const list = document.getElementById(`list-${col}`);
-    const count = document.getElementById(`count-${col}`);
-    if (!list) return;
-
-    const filtered = (window.pipelineJobs || [])
-      .filter(j => j.status === col)
-      .filter(j => filter === 'all' || j.prob === filter)
-      .filter(j => !searchTerm || j.company.toLowerCase().includes(searchTerm) || j.role.toLowerCase().includes(searchTerm))
-      .sort((a, b) => new Date(b.dateAdded || b.createdAt) - new Date(a.dateAdded || a.createdAt));
-
-    if (count) count.textContent = filtered.length;
-
-    const pages = window.radarBoardPages || { todo: 0, applied: 0, interview: 0, offer: 0, rejected: 0 };
-    const page = pages[col] || 0;
-    const maxPage = Math.max(0, Math.ceil(filtered.length / pageSize) - 1);
-    const start = Math.min(page, maxPage) * pageSize;
-    const displayJobs = filtered.slice(start, start + pageSize);
-
-    list.innerHTML = displayJobs.length === 0 ? 
-      `<div class="radar-empty-state">No matching roles in this stage.</div>` :
-      displayJobs.map(job => renderJobCard(job)).join('');
-      
-    const pager = document.getElementById(`pager-${col}`);
-    if (pager) {
-      pager.innerHTML = renderPager(filtered.length, page, pageSize, `setBoardPage('${col}', -1)`, `setBoardPage('${col}', 1)`, true);
-    }
-  });
+function renderPager(total, current, size, prevCmd, nextCmd, isMini = false) {
+  const max = Math.max(0, Math.ceil(total / size) - 1);
+  if (max <= 0) return '';
+  return `
+    <div class="industrial-pager ${isMini ? 'mini' : ''}">
+      <button onclick="${prevCmd}" ${current === 0 ? 'disabled' : ''} class="pager-btn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"></polyline></svg>
+      </button>
+      <span class="pager-info">${current + 1} / ${max + 1}</span>
+      <button onclick="${nextCmd}" ${current >= max ? 'disabled' : ''} class="pager-btn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"></polyline></svg>
+      </button>
+    </div>
+  `;
 }
-
-
