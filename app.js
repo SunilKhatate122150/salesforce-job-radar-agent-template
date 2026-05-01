@@ -3571,7 +3571,6 @@ async function showPage(id) {
   console.log(`🧹 [NAV] Hiding all .page elements...`);
   document.querySelectorAll('.page').forEach(function(p) { 
     p.classList.remove('active'); 
-    p.style.setProperty('display', 'none', 'important'); 
   });
   
   document.querySelectorAll('.nav-item').forEach(function(n) { n.classList.remove('active'); });
@@ -3595,12 +3594,7 @@ async function showPage(id) {
   if (page) { 
     console.log(`âœ¨ [NAV] ENABLING PAGE: #${page.id}`);
     page.classList.add('active');
-    // Use flex for job_radar (it's a flex container), block for everything else
-    if (id === 'job_radar') {
-      page.style.setProperty('display', 'flex', 'important');
-    } else {
-      page.style.setProperty('display', 'block', 'important');
-    }
+
     
     const finalStyle = getComputedStyle(page);
     console.log(`📊 [NAV] #${page.id} COMPUTED STATE:
@@ -5321,8 +5315,8 @@ function showToast(msg) {
   const t = document.getElementById('toast');
   if (!t) return;
   t.textContent = String(msg || '');
-  t.style.transform = 'translateX(-50%) translateY(0)';
-  setTimeout(() => t.style.transform = 'translateX(-50%) translateY(100px)', 3000);
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3500);
 }
 
 function closeModal(id) {
