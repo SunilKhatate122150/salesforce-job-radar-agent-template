@@ -14,6 +14,12 @@ let lastFetchTime = 0;
 const MIN_FETCH_INTERVAL = 60000;
 let currentUser = null;
 let GSI_TOKEN = localStorage.getItem('google_auth_token') || null;
+let premiumRoadmapCache = null;
+let premiumReleaseCache = null;
+let premiumStaticDataCache = null;
+let premiumPreviewBound = false;
+let premiumPreviewTimer = null;
+let currentUiMode = localStorage.getItem('sf_premium_ui_mode') || 'modern';
 // --- CLOUD-NATIVE STATE (v1356) ---
 let userBookmarks = []; 
 let studyStreak = { current: 0, best: 0, lastDate: "" };
@@ -217,6 +223,9 @@ var TOPIC_DATA = {
 // =============================================
 window.processGAuth = async function(response) {
   const token = response.credential;
+  const loginMode = getLoginUiModeIntent() || currentUiMode || 'modern';
+  sessionStorage.setItem('sf_login_ui_mode_intent', loginMode);
+  applyUiMode(loginMode);
   localStorage.setItem('google_auth_token', token);
   GSI_TOKEN = token;
   
@@ -237,6 +246,7 @@ window.processGAuth = async function(response) {
       // Load data in background
       renderUserProfile(currentUser);
       syncDashboard();
+      showPage(loginMode === 'classic' ? 'schedule' : 'profile_match');
     } else {
       alert('Login failed: ' + data.error);
     }
@@ -351,6 +361,410 @@ async function apiFetch(url, options = {}) {
   return fetch(url, { ...options, headers });
 }
 
+function normalizeCsvInput(value) {
+  return String(value || '')
+    .split(/[,;\n]/)
+    .map(item => item.trim())
+    .filter(Boolean);
+}
+
+function topicConfigName(topicId) {
+  const cfg = typeof topicConfig !== 'undefined' ? topicConfig[topicId] : null;
+  if (cfg?.name) return cfg.name;
+  return String(topicId || 'Study Topic')
+    .replace(/[_-]+/g, ' ')
+    .replace(/\b\w/g, char => char.toUpperCase());
+}
+
+function clampPremiumExperience(value) {
+  const num = Number(value);
+  if (!Number.isFinite(num)) return 1;
+  return Math.max(1, Math.min(10, Math.round(num)));
+}
+
+function normalizeUiMode(mode) {
+  return mode === 'classic' ? 'classic' : 'modern';
+}
+
+function getLoginUiModeIntent() {
+  const mode = sessionStorage.getItem('sf_login_ui_mode_intent');
+  return mode === 'classic' || mode === 'modern' ? mode : null;
+}
+
+function syncLoginUiModeControls(mode = currentUiMode) {
+  const normalized = normalizeUiMode(mode);
+  const checkbox = document.getElementById('loginPremiumMode');
+  const title = document.getElementById('loginModeTitle');
+  const desc = document.getElementById('loginModeDescription');
+  const panel = document.querySelector('.login-mode-panel');
+  if (checkbox) checkbox.checked = normalized !== 'classic';
+  if (title) title.textContent = normalized === 'classic' ? 'Legacy / Classic UI' : 'New Premium UI';
+  if (desc) {
+    desc.textContent = normalized === 'classic'
+      ? 'Use the released dashboard feel with familiar study sections and old navigation rhythm.'
+      : 'Career roadmap, release center, profile intelligence, and modern cards.';
+  }
+  if (panel) panel.dataset.mode = normalized;
+}
+
+function applyUiMode(mode) {
+  currentUiMode = normalizeUiMode(mode);
+  if (document.body) {
+    document.body.classList.toggle('ui-classic', currentUiMode === 'classic');
+    document.body.classList.toggle('ui-modern', currentUiMode !== 'classic');
+  }
+  localStorage.setItem('sf_premium_ui_mode', currentUiMode);
+  const label = document.getElementById('uiModeToggleLabel');
+  const btn = document.getElementById('uiModeToggle');
+  if (label) label.textContent = currentUiMode === 'classic' ? 'Classic' : 'Modern';
+  if (btn) btn.setAttribute('aria-pressed', currentUiMode === 'classic' ? 'true' : 'false');
+  syncLoginUiModeControls(currentUiMode);
+}
+
+window.setLoginUiMode = function(mode) {
+  const normalized = normalizeUiMode(mode);
+  sessionStorage.setItem('sf_login_ui_mode_intent', normalized);
+  applyUiMode(normalized);
+};
+
+window.setLoginUiModeFromCheckbox = function(input) {
+  window.setLoginUiMode(input?.checked ? 'modern' : 'classic');
+};
+
+async function persistUiMode(mode) {
+  applyUiMode(mode);
+  if (!cachedUserProfile) return;
+  cachedUserProfile.uiMode = currentUiMode;
+  try {
+    await apiFetch('/api/profile/save', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(cachedUserProfile)
+    });
+  } catch (e) {
+    console.warn('[UI MODE] Could not persist preference yet:', e.message);
+  }
+}
+
+window.toggleUiMode = function() {
+  persistUiMode(currentUiMode === 'classic' ? 'modern' : 'classic');
+};
+
+function hydratePremiumSetupForm(profile = {}) {
+  const expEl = document.getElementById('premiumExperienceYears');
+  const targetEl = document.getElementById('premiumTargetDesignation');
+  const currentEl = document.getElementById('premiumCurrentDesignation');
+  const skillsEl = document.getElementById('premiumSkills');
+  if (expEl) expEl.value = String(clampPremiumExperience(profile.experienceYears || 1));
+  if (targetEl && (profile.targetDesignation || profile.targetRole)) targetEl.value = profile.targetDesignation || profile.targetRole;
+  if (currentEl) currentEl.value = profile.currentDesignation || profile.currentRole || '';
+  if (skillsEl) skillsEl.value = Array.isArray(profile.skills) ? profile.skills.join(', ') : '';
+}
+
+function readPremiumFormProfile(base = {}) {
+  const expEl = document.getElementById('premiumExperienceYears');
+  const targetEl = document.getElementById('premiumTargetDesignation');
+  const currentEl = document.getElementById('premiumCurrentDesignation');
+  const skillsEl = document.getElementById('premiumSkills');
+  const targetDesignation = targetEl?.value || base.targetDesignation || base.targetRole || 'Salesforce Developer';
+  const currentDesignation = currentEl?.value?.trim() || base.currentDesignation || base.currentRole || '';
+  return {
+    ...(base || {}),
+    experienceYears: clampPremiumExperience(expEl?.value || base.experienceYears || base.yearsOfExperience || 1),
+    targetDesignation,
+    targetRole: targetDesignation,
+    currentDesignation,
+    currentRole: currentDesignation,
+    skills: skillsEl ? normalizeCsvInput(skillsEl.value) : normalizeCsvInput(Array.isArray(base.skills) ? base.skills.join(', ') : ''),
+    uiMode: currentUiMode
+  };
+}
+
+function inferStaticDesignation(rawDesignation, designationsData = {}) {
+  const value = String(rawDesignation || '').trim();
+  const designations = designationsData.designations || [];
+  if (!value) return designations[0] || null;
+  const normalized = value.toLowerCase();
+  return designations.find(item => {
+    const labels = [item.label, ...(item.aliases || [])].map(label => String(label || '').toLowerCase());
+    return labels.some(label => normalized.includes(label) || label.includes(normalized));
+  }) || {
+    id: normalized.replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '') || 'custom_designation',
+    label: value,
+    track: 'Custom',
+    primaryTopicIds: []
+  };
+}
+
+async function loadStaticPremiumData() {
+  if (premiumStaticDataCache) return premiumStaticDataCache;
+  const [roadmaps, designations, releases, trailhead] = await Promise.all([
+    fetch('/data/career-roadmaps.json').then(res => {
+      if (!res.ok) throw new Error('career roadmaps unavailable');
+      return res.json();
+    }),
+    fetch('/data/designation-map.json').then(res => {
+      if (!res.ok) throw new Error('designation map unavailable');
+      return res.json();
+    }),
+    fetch('/data/salesforce-releases.json').then(res => {
+      if (!res.ok) throw new Error('release data unavailable');
+      return res.json();
+    }),
+    fetch('/data/trailhead-resources.json').then(res => {
+      if (!res.ok) throw new Error('Trailhead resources unavailable');
+      return res.json();
+    })
+  ]);
+  premiumStaticDataCache = { roadmaps, designations, releases, trailhead };
+  return premiumStaticDataCache;
+}
+
+async function buildStaticPremiumRoadmap(profile = {}) {
+  const { roadmaps, designations, releases, trailhead } = await loadStaticPremiumData();
+  const experienceYears = clampPremiumExperience(profile.experienceYears || profile.yearsOfExperience || 1);
+  const designation = inferStaticDesignation(
+    profile.targetDesignation || profile.targetRole || profile.currentDesignation || profile.currentRole,
+    designations
+  );
+  const baseRoadmap = roadmaps.years?.[String(experienceYears)] || roadmaps.years?.['1'] || {};
+  const roadmapTopicIds = new Set(baseRoadmap.topicIds || []);
+  const mergedTopics = [...(baseRoadmap.topics || [])];
+
+  for (const topicId of designation?.primaryTopicIds || []) {
+    if (!roadmapTopicIds.has(topicId)) {
+      mergedTopics.push({
+        topicId,
+        topic: topicConfigName(topicId),
+        category: designation?.track || 'Designation',
+        priority: 'medium',
+        estimatedHours: 6,
+        reason: `Added because it is important for ${designation?.label || 'the selected designation'}.`
+      });
+      roadmapTopicIds.add(topicId);
+    }
+  }
+
+  const releaseCategories = new Set(baseRoadmap.releaseFocus || []);
+  const releaseItems = (releases.items || []).filter(item => {
+    const levelMatch = (item.experienceLevels || []).includes(experienceYears);
+    const categoryMatch = releaseCategories.has(item.category);
+    const designationMatch = (item.designations || []).some(d =>
+      String(d).toLowerCase() === String(designation?.label || '').toLowerCase()
+    );
+    return levelMatch && (categoryMatch || designationMatch);
+  });
+  const topicSet = new Set(mergedTopics.map(topic => topic.topicId));
+  const resources = (trailhead.resources || []).filter(resource => {
+    const yearMatch = (resource.recommendedYears || []).includes(experienceYears);
+    const topicMatch = (resource.topicIds || []).some(topicId => topicSet.has(topicId));
+    return yearMatch && topicMatch;
+  });
+
+  return {
+    success: true,
+    previewMode: true,
+    experienceYears,
+    designation,
+    roadmap: {
+      ...baseRoadmap,
+      topics: mergedTopics,
+      topicIds: Array.from(roadmapTopicIds)
+    },
+    releaseFocus: {
+      activeRelease: releases.activeRelease || {},
+      items: releaseItems.length ? releaseItems : (releases.items || []).filter(item =>
+        (item.experienceLevels || []).includes(experienceYears)
+      ).slice(0, 6)
+    },
+    trailheadResources: resources.slice(0, 8),
+    generatedAt: new Date().toISOString()
+  };
+}
+
+async function refreshPremiumRoadmapMount() {
+  const mount = document.getElementById('premiumRoadmapMount');
+  if (mount) mount.innerHTML = '<div class="premium-loading">Refreshing roadmap preview...</div>';
+  premiumRoadmapCache = null;
+  premiumReleaseCache = null;
+  try {
+    const data = await loadPremiumRoadmap(true);
+    if (mount) mount.innerHTML = renderPremiumRoadmapSection(data) + renderPremiumReleaseFocusSection(data);
+    const releasesPage = document.getElementById('salesforce_releases');
+    if (releasesPage?.classList.contains('active')) await loadReleaseCenter(true);
+  } catch (err) {
+    console.warn('[PREMIUM] Preview refresh failed:', err.message);
+    if (mount) mount.innerHTML = '<div class="premium-empty">Roadmap preview is unavailable right now.</div>';
+  }
+}
+
+function bindPremiumPreviewControls() {
+  if (premiumPreviewBound) return;
+  premiumPreviewBound = true;
+  ['premiumExperienceYears', 'premiumTargetDesignation', 'premiumCurrentDesignation', 'premiumSkills'].forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    const eventName = el.tagName === 'INPUT' ? 'input' : 'change';
+    el.addEventListener(eventName, () => {
+      clearTimeout(premiumPreviewTimer);
+      premiumPreviewTimer = setTimeout(refreshPremiumRoadmapMount, 180);
+    });
+  });
+}
+
+window.savePremiumProfileSetup = async function() {
+  const expEl = document.getElementById('premiumExperienceYears');
+  const targetEl = document.getElementById('premiumTargetDesignation');
+  const currentEl = document.getElementById('premiumCurrentDesignation');
+  const skillsEl = document.getElementById('premiumSkills');
+  const payload = {
+    ...(cachedUserProfile || {}),
+    experienceYears: clampPremiumExperience(expEl ? expEl.value : 1),
+    targetDesignation: targetEl ? targetEl.value : 'Salesforce Developer',
+    targetRole: targetEl ? targetEl.value : 'Salesforce Developer',
+    currentDesignation: currentEl ? currentEl.value.trim() : '',
+    currentRole: currentEl ? currentEl.value.trim() : '',
+    skills: normalizeCsvInput(skillsEl ? skillsEl.value : ''),
+    uiMode: currentUiMode
+  };
+
+  try {
+    const res = await apiFetch('/api/profile/save', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    if (!res.ok) throw new Error('Profile save failed');
+    cachedUserProfile = payload;
+    premiumRoadmapCache = null;
+    premiumReleaseCache = null;
+    showToast('Premium roadmap generated for your experience level.', 'green');
+    await loadUserProfile();
+    await loadPremiumRoadmap(true);
+    await loadReleaseCenter(true);
+    showPage('profile_match');
+  } catch (e) {
+    console.error('[PREMIUM] Setup save failed:', e);
+    cachedUserProfile = { ...payload, isPreviewProfile: true };
+    premiumRoadmapCache = null;
+    premiumReleaseCache = null;
+    renderProfileMatchPage(cachedUserProfile);
+    await loadReleaseCenter(true).catch(() => {});
+    showToast('Roadmap preview generated. Sign in with Google to save it.', 'green');
+  }
+};
+
+function ensureProfileImportModal() {
+  if (document.getElementById('profileImportModal')) return;
+  document.body.insertAdjacentHTML('beforeend', `
+    <div id="profileImportModal" class="premium-modal" style="display:none;">
+      <div class="premium-modal-box">
+        <button class="premium-modal-close" onclick="closeProfileImport()" aria-label="Close">&times;</button>
+        <div class="premium-eyebrow">Safe Profile Import</div>
+        <h2 id="profileImportTitle">Import Profile Text</h2>
+        <p class="premium-note">Paste resume, LinkedIn profile text, or Naukri profile text. Do not paste passwords, OTPs, or private account secrets.</p>
+        <textarea id="profileImportText" rows="10" placeholder="Paste profile or resume text here..."></textarea>
+        <input type="hidden" id="profileImportSource" value="manual">
+        <div class="premium-modal-actions">
+          <button class="premium-primary-btn" onclick="submitProfileImport()">Analyze & Save</button>
+          <button class="premium-secondary-btn" onclick="closeProfileImport()">Cancel</button>
+        </div>
+      </div>
+    </div>
+  `);
+}
+
+window.openProfileImport = function(source = 'manual') {
+  ensureProfileImportModal();
+  const modal = document.getElementById('profileImportModal');
+  const title = document.getElementById('profileImportTitle');
+  const sourceEl = document.getElementById('profileImportSource');
+  const textEl = document.getElementById('profileImportText');
+  const label = source === 'linkedin' ? 'LinkedIn Profile Import' : source === 'naukri' ? 'Naukri Profile Import' : 'Manual Profile Import';
+  if (title) title.textContent = label;
+  if (sourceEl) sourceEl.value = source;
+  if (textEl) textEl.value = '';
+  if (modal) modal.style.display = 'flex';
+};
+
+window.closeProfileImport = function() {
+  const modal = document.getElementById('profileImportModal');
+  if (modal) modal.style.display = 'none';
+};
+
+window.submitProfileImport = async function() {
+  const textEl = document.getElementById('profileImportText');
+  const sourceEl = document.getElementById('profileImportSource');
+  const profileText = textEl ? textEl.value.trim() : '';
+  if (!profileText) {
+    showToast('Paste profile or resume text first.', 'red');
+    return;
+  }
+  try {
+    const res = await apiFetch('/api/profile/import', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        source: sourceEl ? sourceEl.value : 'manual',
+        text: profileText,
+        targetDesignation: document.getElementById('premiumTargetDesignation')?.value || cachedUserProfile?.targetDesignation
+      })
+    });
+    const data = await res.json();
+    if (!res.ok || data.success === false) throw new Error(data.error || 'Import failed');
+    closeProfileImport();
+    premiumRoadmapCache = null;
+    premiumReleaseCache = null;
+    showToast('Profile import analyzed safely.', 'green');
+    await loadUserProfile();
+    await loadPremiumRoadmap(true);
+    await loadReleaseCenter(true);
+  } catch (e) {
+    console.error('[PREMIUM] Import failed:', e);
+    showToast('Profile import failed. Try a smaller text sample.', 'red');
+  }
+};
+
+async function loadPremiumRoadmap(force = false) {
+  if (premiumRoadmapCache && !force) return premiumRoadmapCache;
+  const profileForPreview = readPremiumFormProfile(cachedUserProfile || {});
+  try {
+    const res = await apiFetch('/api/roadmap?cb=' + Date.now());
+    if (!res.ok) throw new Error('Roadmap API unavailable');
+    premiumRoadmapCache = await res.json();
+  } catch (err) {
+    console.warn('[PREMIUM] Using local curated roadmap preview:', err.message);
+    premiumRoadmapCache = await buildStaticPremiumRoadmap(profileForPreview);
+  }
+  return premiumRoadmapCache;
+}
+
+async function loadReleaseCenter(force = false) {
+  if (premiumReleaseCache && !force) return premiumReleaseCache;
+  try {
+    const res = await apiFetch('/api/releases/current?cb=' + Date.now());
+    if (!res.ok) throw new Error('Release API unavailable');
+    premiumReleaseCache = await res.json();
+  } catch (err) {
+    console.warn('[RELEASES] Using local curated release preview:', err.message);
+    const [{ releases }, intelligence] = await Promise.all([
+      loadStaticPremiumData(),
+      buildStaticPremiumRoadmap(readPremiumFormProfile(cachedUserProfile || {}))
+    ]);
+    premiumReleaseCache = {
+      success: true,
+      previewMode: true,
+      activeRelease: releases.activeRelease || {},
+      items: releases.items || [],
+      personalizedItems: intelligence.releaseFocus?.items || [],
+      experienceYears: intelligence.experienceYears,
+      designation: intelligence.designation
+    };
+  }
+  renderReleaseCenterPage(premiumReleaseCache);
+  return premiumReleaseCache;
+}
+
 function getCurrentUserId() {
   const raw = currentUser?.id || currentUser?.googleId || currentUser?.email || 'guest';
   return String(raw).toLowerCase().replace(/[^a-z0-9._-]+/g, '_');
@@ -457,30 +871,8 @@ window.syncProfile = async function(platform) {
   const isCloud = window.location.hostname !== 'localhost';
   
   if (isCloud) {
-    // OPEN IN NEW TAB with Secure Token Handshake
-    const url = platform === 'LinkedIn' 
-      ? `/linkedin-login.html?token=${GSI_TOKEN}` 
-      : `/naukri-login.html?token=${GSI_TOKEN}`;
-    window.open(url, '_blank');
-    
-    // SHOW SYNC FEEDBACK (v1412 fix: no longer fire-and-forget)
-    showToast(`${platform} sync opened in a new tab. Data will refresh when you return.`, 'blue');
-    
-    // Auto-refresh profile when user returns to this tab
-    const refreshHandler = async function() {
-      window.removeEventListener('focus', refreshHandler);
-      console.log(`[SYNC] User returned from ${platform} sync tab. Refreshing profile...`);
-      showToast(`Refreshing ${platform} profile data...`, 'blue');
-      cachedUserProfile = null; // Force fresh fetch
-      await loadUserProfile();
-      await loadJobIntelligence();
-      const profilePage = document.getElementById('profile_match');
-      if (profilePage && profilePage.classList.contains('active')) {
-        if (cachedUserProfile) renderProfileMatchPage(cachedUserProfile);
-      }
-    };
-    // Delay adding the listener so it doesn't fire immediately
-    setTimeout(() => window.addEventListener('focus', refreshHandler), 2000);
+    openProfileImport(String(platform).toLowerCase().includes('naukri') ? 'naukri' : 'linkedin');
+    showToast(`${platform} uses safe official/import flow. No platform password is collected.`, 'blue');
     return;
   }
 
@@ -625,18 +1017,29 @@ async function loadUserProfile() {
       return;
     }
     const data = await res.json();
-    console.log('ðŸ“¦ [Profile] Cloud Data Received:', data);
-    
-    if (data.exists && data.profile) {
-      cachedUserProfile = data.profile;
-      
-      // Update All UI Components
-      const matchBtn = document.getElementById('btnViewProfileMatch');
-      if (matchBtn) matchBtn.style.display = 'block';
-      
-      renderProfileMatchPage(data.profile);
-      updateSidebarProfileStatus(data.profile);
-      updateSyncModalUI(data.profile);
+	    console.log('ðŸ“¦ [Profile] Cloud Data Received:', data);
+	    
+	    if (data.exists && data.profile) {
+	      const loginModeIntent = getLoginUiModeIntent();
+	      const resolvedUiMode = loginModeIntent || data.profile.uiMode || currentUiMode || 'modern';
+	      cachedUserProfile = { ...data.profile, uiMode: resolvedUiMode };
+	      applyUiMode(resolvedUiMode);
+	      hydratePremiumSetupForm(cachedUserProfile);
+	      if (loginModeIntent && data.profile.uiMode !== resolvedUiMode) {
+	        apiFetch('/api/profile/save', {
+	          method: 'POST',
+	          headers: { 'Content-Type': 'application/json' },
+	          body: JSON.stringify(cachedUserProfile)
+	        }).catch(err => console.warn('[UI MODE] Could not save login UI choice:', err.message));
+	      }
+	      
+	      // Update All UI Components
+	      const matchBtn = document.getElementById('btnViewProfileMatch');
+	      if (matchBtn) matchBtn.style.display = 'block';
+	      
+	      renderProfileMatchPage(cachedUserProfile);
+	      updateSidebarProfileStatus(cachedUserProfile);
+	      updateSyncModalUI(cachedUserProfile);
 
       // Cloud Sync Streaks & Bookmarks (v1356 - Master MongoDB)
       if (data.profile.studyStreak) {
@@ -682,6 +1085,7 @@ async function loadUserProfile() {
 function renderProfileMatchPage(profile) {
   const contentDiv = document.getElementById('profileMatchContent');
   const syncCta = document.getElementById('syncCtaCards');
+  const sourceHeading = document.getElementById('profileSourceHeading');
   const loadingEl = document.getElementById('profileMatchLoading');
   if (!contentDiv) return;
 
@@ -694,8 +1098,10 @@ function renderProfileMatchPage(profile) {
   // REAL-TIME: Update Sync Modal if it's open
   updateSyncModalUI(profile);
 
-  // Hide large sync cards if profile exists but show "Update Profile" button
-  if (syncCta && profile.skills && profile.skills.length > 0) syncCta.style.display = 'none';
+  // Hide large sync cards after the user imports/saves skills, but keep them visible for new users.
+  const showProfileSources = !(profile.skills && profile.skills.length > 0);
+  if (syncCta) syncCta.style.display = showProfileSources ? 'grid' : 'none';
+  if (sourceHeading) sourceHeading.style.display = showProfileSources ? 'flex' : 'none';
 
   const skills = profile.skills || [];
   const certs = profile.certifications || [];
@@ -712,20 +1118,20 @@ function renderProfileMatchPage(profile) {
     syncBadges += '<span style="display:inline-flex;align-items:center;gap:4px;padding:4px 10px;background:rgba(255,117,85,0.12);border:1px solid rgba(255,117,85,0.25);border-radius:20px;font-size:0.68rem;color:#fb923c;">Naukri Synced</span>';
   }
 
-  var html = '<div class="content-card">';
+  var html = '<div class="content-card unified-career-intelligence">';
 
   // NEW: Premium AI Career Insight Card
   html += `
-    <div class="content-card" style="background:linear-gradient(135deg,rgba(59,130,246,0.1),rgba(139,92,246,0.1)); border:1px solid rgba(59,130,246,0.2); border-radius:16px; padding:20px; margin-bottom:24px; position:relative; overflow:hidden;">
+    <div class="career-summary-card" style="background:linear-gradient(135deg,rgba(59,130,246,0.1),rgba(16,185,129,0.06)); border:1px solid rgba(59,130,246,0.2); border-radius:14px; padding:20px; margin-bottom:24px; position:relative; overflow:hidden;">
       <div style="position:absolute; right:-10px; top:-10px; opacity:0.1; transform:rotate(15deg); color:var(--blue);">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:80px;height:80px;"><path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"></path><path d="m12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z"></path><path d="M9 12H4s.55-3.03 2-5c1.62-2.2 5-3 5-3"></path><path d="M12 15v5s3.03-.55 5-2c2.2-1.62 3-5 3-5"></path></svg>
       </div>
       <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:12px;">
         <div>
-          <div style="font-size:0.65rem; color:var(--blue); font-weight:700; letter-spacing:1px; text-transform:uppercase; margin-bottom:4px;">INDUSTRIAL PROFILE SUMMARY</div>
+          <div style="font-size:0.65rem; color:var(--blue); font-weight:700; letter-spacing:1px; text-transform:uppercase; margin-bottom:4px;">CAREER PROFILE SUMMARY</div>
           <div style="font-size:1.4rem; font-weight:800; color:var(--text);">Career Readiness: ${strength > 80 ? 'Exceptional' : strength > 50 ? 'Strong' : 'Developing'}</div>
         </div>
-        <button onclick="document.getElementById('syncCtaCards').style.display='grid'" style="background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); border-radius:8px; padding:6px 12px; color:var(--muted); font-size:0.65rem; font-weight:600; cursor:pointer;">Update Profile</button>
+        <button onclick="document.getElementById('syncCtaCards').style.display='grid';document.getElementById('profileSourceHeading').style.display='flex'" style="background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); border-radius:8px; padding:6px 12px; color:var(--muted); font-size:0.65rem; font-weight:600; cursor:pointer;">Update Profile</button>
       </div>
       <p style="font-size:0.85rem; color:rgba(255,255,255,0.8); line-height:1.6; margin:0;">
         Your profile successfully aggregates data from <b>${Object.values(platforms || {}).filter(p => p.synced).length}</b> platforms. 
@@ -737,7 +1143,7 @@ function renderProfileMatchPage(profile) {
 
   // Strength Meter & Profile Summary
   html += `
-    <div class="profile-grid content-card">
+    <div class="profile-grid profile-metrics-grid">
       <div style="display:flex; align-items:center; gap:15px; background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.08); border-radius:16px; padding:20px; min-width:0; overflow:hidden;">
         <div style="position:relative; width:64px; height:64px; flex-shrink:0;">
           <svg viewBox="0 0 36 36" style="width:100%; height:100%; transform: rotate(-90deg);">
@@ -861,8 +1267,21 @@ function renderProfileMatchPage(profile) {
     html += '</div>';
   }
 
+  html += '<div id="premiumRoadmapMount" class="premium-roadmap-mount"><div class="premium-loading">Loading premium roadmap and release focus...</div></div>';
+
   html += '</div>'; // close content-card
   contentDiv.innerHTML = html;
+  hydratePremiumSetupForm(profile);
+  bindPremiumPreviewControls();
+  applyUiMode(profile.uiMode || currentUiMode || 'modern');
+  loadPremiumRoadmap(true).then(data => {
+    const mount = document.getElementById('premiumRoadmapMount');
+    if (mount) mount.innerHTML = renderPremiumRoadmapSection(data) + renderPremiumReleaseFocusSection(data);
+  }).catch(err => {
+    console.warn('[PREMIUM] Roadmap render failed:', err.message);
+    const mount = document.getElementById('premiumRoadmapMount');
+    if (mount) mount.innerHTML = '<div class="premium-empty">Roadmap preview is unavailable right now.</div>';
+  });
 }
 
 // Global function to handle AI Regeneration
@@ -935,6 +1354,149 @@ function updateProfileStrengthMeter(skillCount, gapCount, profile) {
   // Skills coverage: 35%, Certifications: 25%, Experience: 25%, Platform sync: 15%
   const weighted = (skillCoverage * 0.35) + (certScore * 0.25) + (expScore * 0.25) + (platformScore * 0.15);
   return Math.round(weighted * 100);
+}
+
+function priorityClass(priority) {
+  const value = String(priority || 'medium').toLowerCase();
+  if (value === 'critical') return 'critical';
+  if (value === 'high') return 'high';
+  return 'medium';
+}
+
+function renderPremiumRoadmapSection(data) {
+  const roadmap = data?.roadmap || {};
+  const designation = data?.designation || {};
+  const topics = roadmap.topics || [];
+  const resources = data?.trailheadResources || [];
+  const exp = data?.experienceYears || 1;
+  return `
+    <div class="premium-roadmap-shell">
+      <div class="premium-roadmap-hero">
+        <div>
+          <div class="premium-eyebrow">Experience Roadmap</div>
+          <h2>${escapeHtml(exp)} Year ${escapeHtml(designation.label || 'Salesforce Developer')} Plan</h2>
+          <p>${escapeHtml(roadmap.summary || 'Select your experience and designation to generate a premium roadmap.')}</p>
+        </div>
+        <div class="premium-band-card">
+          <span>${escapeHtml(roadmap.band || 'Foundation')}</span>
+          <strong>${escapeHtml(roadmap.headline || 'Career roadmap')}</strong>
+        </div>
+      </div>
+      <div class="premium-roadmap-grid">
+        ${topics.map(topic => `
+          <button class="premium-topic-card ${priorityClass(topic.priority)}" onclick="showPage('${escapeHtml(topic.topicId)}')">
+            <span class="premium-topic-meta">${escapeHtml(topic.category || 'Study')} · ${escapeHtml(topic.priority || 'medium')}</span>
+            <strong>${escapeHtml(topic.topic || topicConfigName(topic.topicId))}</strong>
+            <p>${escapeHtml(topic.reason || '')}</p>
+            <span class="premium-topic-footer">${escapeHtml(topic.estimatedHours || 0)}h estimated · Start topic</span>
+          </button>
+        `).join('')}
+      </div>
+      <div class="premium-two-col">
+        <div class="premium-mini-panel">
+          <div class="premium-eyebrow">Interview Focus</div>
+          <div class="premium-chip-row">
+            ${(roadmap.interviewFocus || []).map(item => `<span>${escapeHtml(item)}</span>`).join('')}
+          </div>
+        </div>
+        <div class="premium-mini-panel">
+          <div class="premium-eyebrow">Official Resources</div>
+          ${resources.length ? resources.map(resource => `
+            <a class="premium-resource-link" href="${safeUrl(resource.url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(resource.title)}</a>
+          `).join('') : '<p class="premium-empty">Resources appear after roadmap selection.</p>'}
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function renderPremiumReleaseFocusSection(data) {
+  const releaseFocus = data?.releaseFocus || {};
+  const active = releaseFocus.activeRelease || {};
+  const items = releaseFocus.items || [];
+  return `
+    <div class="premium-release-focus">
+      <div class="premium-panel-head">
+        <div>
+          <div class="premium-eyebrow">Release Focus</div>
+          <h3>${escapeHtml(active.releaseName || 'Current Salesforce Release')}</h3>
+        </div>
+        <button class="premium-secondary-btn" onclick="showPage('salesforce_releases')">Open Release Center</button>
+      </div>
+      <div class="premium-release-grid">
+        ${items.slice(0, 4).map(item => `
+          <article class="premium-release-card">
+            <span class="premium-release-cat">${escapeHtml(item.category)} · ${escapeHtml(item.releaseName)}</span>
+            <h4>${escapeHtml(item.title)}</h4>
+            <p>${escapeHtml(item.interviewAngle || item.whyMatters || '')}</p>
+            <div class="premium-release-detail"><strong>Relevance:</strong> High for this roadmap</div>
+            <div class="premium-release-meta"><span>Last checked: ${escapeHtml(item.lastChecked || 'Not available')}</span><a href="${safeUrl(item.source)}" target="_blank" rel="noopener noreferrer">Source</a></div>
+            <button onclick="showPage('${escapeHtml(item.topicId || 'salesforce_releases')}')">Study linked topic</button>
+          </article>
+        `).join('') || '<div class="premium-empty">No release focus found for this profile yet.</div>'}
+      </div>
+    </div>
+  `;
+}
+
+function renderReleaseCenterPage(data) {
+  const container = document.getElementById('releaseCenterContent');
+  if (!container) return;
+  const active = data?.activeRelease || {};
+  const personalized = data?.personalizedItems || [];
+  const allItems = data?.items || [];
+  const exp = data?.experienceYears || 1;
+  const designation = data?.designation?.label || 'Salesforce Developer';
+  const categories = Array.from(new Set(allItems.map(item => item.category))).filter(Boolean);
+  container.innerHTML = `
+    <div class="premium-release-hero">
+      <div>
+        <div class="premium-eyebrow">Always-On Release Intelligence</div>
+        <h2>${escapeHtml(active.releaseName || 'Current Release')}</h2>
+        <p>Personalized for ${escapeHtml(exp)} year experience and ${escapeHtml(designation)}. Last checked: ${escapeHtml(active.lastChecked || 'Not available')}.</p>
+      </div>
+      <div class="premium-release-source-list">
+        ${data?.previewMode ? '<span class="premium-badge">Curated Preview</span>' : ''}
+        ${(active.sources || []).map(url => `<a href="${safeUrl(url)}" target="_blank" rel="noopener noreferrer">Official source</a>`).join('')}
+      </div>
+    </div>
+    <div class="premium-mini-panel" style="margin-bottom:16px;">
+      <div class="premium-eyebrow">Your Priority Updates</div>
+      <div class="premium-release-grid">
+        ${personalized.map(item => renderReleaseCard(item, true)).join('') || '<p class="premium-empty">Complete profile setup to personalize release focus.</p>'}
+      </div>
+    </div>
+    ${categories.map(category => `
+      <section class="premium-release-category">
+        <h3>${escapeHtml(category)}</h3>
+        <div class="premium-release-grid">
+          ${allItems.filter(item => item.category === category).map(item => renderReleaseCard(item, false)).join('')}
+        </div>
+      </section>
+    `).join('')}
+  `;
+}
+
+function renderReleaseCard(item, personalized) {
+  const levels = (item.experienceLevels || []).join(', ') || 'all';
+  const relevance = personalized
+    ? 'High for your selected experience/designation'
+    : `Relevant for ${levels} year profiles`;
+  return `
+    <article class="premium-release-card ${personalized ? 'personalized' : ''}">
+      <span class="premium-release-cat">${escapeHtml(item.category)} · ${escapeHtml(item.releaseName)}</span>
+      <h4>${escapeHtml(item.title)}</h4>
+      <p>${escapeHtml(item.whatChanged)}</p>
+      <div class="premium-release-detail"><strong>Why it matters:</strong> ${escapeHtml(item.whyMatters)}</div>
+      <div class="premium-release-detail"><strong>Interview angle:</strong> ${escapeHtml(item.interviewAngle)}</div>
+      <div class="premium-release-detail"><strong>Relevance:</strong> ${escapeHtml(relevance)}</div>
+      <div class="premium-release-meta">
+        <span>Last checked: ${escapeHtml(item.lastChecked || 'Not available')}</span>
+        <a href="${safeUrl(item.source)}" target="_blank" rel="noopener noreferrer">Source</a>
+      </div>
+      <button onclick="showPage('${escapeHtml(item.topicId || 'salesforce_releases')}')">Study topic</button>
+    </article>
+  `;
 }
 
 // =============================================
@@ -1116,6 +1678,7 @@ function renderTopicContent(topicId) {
 async function checkAuth() {
   const token = localStorage.getItem('google_auth_token');
   if (!token) {
+    syncLoginUiModeControls(currentUiMode);
     document.getElementById('loginOverlay').style.display = 'flex';
     return false;
   }
@@ -1128,6 +1691,7 @@ async function checkAuth() {
     });
     
     if (res.status === 401) {
+      syncLoginUiModeControls(currentUiMode);
       document.getElementById('loginOverlay').style.display = 'flex';
       return false;
     }
@@ -1160,6 +1724,7 @@ var topicConfig = {
   'study_tracker': { name: 'Progress Tracker', recommended: 30, group: 'General', noTimer: true },
   'study_history': { name: 'Study History', recommended: 0, group: 'General', noTimer: true },
   'profile_match': { name: 'Profile Matching', recommended: 10, group: 'General', noTimer: true },
+  'salesforce_releases': { name: 'Salesforce Releases', recommended: 0, group: 'General', noTimer: true },
   // Technical Interview Q&A
   'apex': { name: 'Apex Core', recommended: 120, group: 'Technical' },
   'soql': { name: 'SOQL Deep Dive', recommended: 90, group: 'Technical' },
@@ -3050,20 +3615,37 @@ async function showPage(id) {
           }
         }, 5 * 60 * 1000);
     }
-    if (id === 'profile_match') { 
-        console.log('👤 [NAV] Analyzing Profile Match...');
-        const loadingEl = document.getElementById('profileMatchLoading');
-        if (cachedUserProfile) {
-          renderProfileMatchPage(cachedUserProfile);
-          loadJobIntelligence();
-        } else {
-          // Show loading skeleton while fetching profile data
-          if (loadingEl) loadingEl.style.display = 'block';
-          loadUserProfile().then(() => {
-            loadJobIntelligence();
-          });
-        }
-    }
+	    if (id === 'profile_match') { 
+	        console.log('👤 [NAV] Analyzing Profile Match...');
+	        const loadingEl = document.getElementById('profileMatchLoading');
+	        if (cachedUserProfile) {
+	          renderProfileMatchPage(cachedUserProfile);
+	          loadJobIntelligence();
+	        } else {
+	          // Show loading skeleton while fetching profile data
+	          if (loadingEl) loadingEl.style.display = 'block';
+	          loadUserProfile().then(() => {
+	            if (cachedUserProfile) {
+	              loadJobIntelligence();
+	              return;
+	            }
+	            renderProfileMatchPage(readPremiumFormProfile());
+	          }).catch(err => {
+	            console.warn('[PROFILE] Rendering local profile preview:', err.message);
+	            renderProfileMatchPage(readPremiumFormProfile());
+	          }).finally(() => {
+	            if (loadingEl) loadingEl.style.display = 'none';
+	          });
+	        }
+	    }
+	    if (id === 'salesforce_releases') {
+	        console.log('[NAV] Loading Salesforce release intelligence...');
+	        loadReleaseCenter(true).catch(e => {
+	          console.warn('[RELEASES] Failed to load release center:', e.message);
+	          const container = document.getElementById('releaseCenterContent');
+	          if (container) container.innerHTML = '<div class="content-card">Release data is unavailable right now. The curated data files could not be loaded.</div>';
+	        });
+	    }
     if (id === 'bookmarks_page') {
         console.log('⭐ [NAV] Activating Bookmarks View...');
         if (typeof showBookmarks === 'function') showBookmarks();
@@ -3412,6 +3994,7 @@ document.addEventListener('visibilitychange', function() {
 
 // Boot
 (async () => {
+  applyUiMode(currentUiMode);
   const isAuthed = await checkAuth();
   if (!isAuthed) return;
 

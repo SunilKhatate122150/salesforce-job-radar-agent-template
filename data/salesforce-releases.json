@@ -1,0 +1,128 @@
+{
+  "version": "2026.05-premium-v1",
+  "activeRelease": {
+    "releaseName": "Spring '26",
+    "season": "Spring",
+    "year": 2026,
+    "lastChecked": "2026-05-01",
+    "sources": [
+      "https://www.salesforce.com/releases/",
+      "https://help.salesforce.com/s/articleView?id=release-notes.salesforce_release_notes.htm&language=en_US",
+      "https://developer.salesforce.com/blogs/2026/01/developers-guide-to-the-spring-26-release"
+    ]
+  },
+  "items": [
+    {
+      "id": "spring26-apex-platform",
+      "category": "Apex",
+      "releaseName": "Spring '26",
+      "title": "Review Apex, platform API, and developer tooling changes",
+      "whatChanged": "Use the Spring '26 developer guide and release notes to identify new Apex/API behavior, deprecated items, and developer tooling changes before interviews or production rollout.",
+      "whyMatters": "Developers are expected to explain how release notes affect test classes, integrations, deployment pipelines, and platform limits.",
+      "interviewAngle": "Describe your seasonal release review process: read notes, test in sandbox, update automation/code, then document impact.",
+      "topicId": "adv_apex",
+      "experienceLevels": [3, 4, 5, 6, 7, 8, 9, 10],
+      "designations": ["Salesforce Developer", "Senior Salesforce Developer", "Technical Lead", "Architect"],
+      "source": "https://developer.salesforce.com/blogs/2026/01/developers-guide-to-the-spring-26-release",
+      "lastChecked": "2026-05-01"
+    },
+    {
+      "id": "spring26-lwc",
+      "category": "LWC",
+      "releaseName": "Spring '26",
+      "title": "Refresh LWC capabilities and UI development guidance",
+      "whatChanged": "Track Lightning Web Components updates, UI API behavior, component platform changes, and developer productivity notes from Spring '26.",
+      "whyMatters": "Frontend Salesforce roles increasingly expect accessible, performant, data-aware LWC implementations.",
+      "interviewAngle": "Explain how you validate LWC changes after seasonal releases using sandbox testing, Jest, regression checks, and UI smoke tests.",
+      "topicId": "lwc",
+      "experienceLevels": [1, 2, 3, 4, 5, 6, 7],
+      "designations": ["Salesforce Developer", "Senior Salesforce Developer", "Technical Lead"],
+      "source": "https://help.salesforce.com/s/articleView?id=release-notes.salesforce_release_notes.htm&language=en_US",
+      "lastChecked": "2026-05-01"
+    },
+    {
+      "id": "spring26-flow",
+      "category": "Flow",
+      "releaseName": "Spring '26",
+      "title": "Study Flow Builder and automation release changes",
+      "whatChanged": "Review Flow, automation, and admin-facing Spring '26 updates that affect record-triggered flows, migration decisions, and low-code delivery.",
+      "whyMatters": "Even Salesforce Developers must know when Flow is preferred over Apex and how releases affect automation behavior.",
+      "interviewAngle": "Use a Flow vs Apex answer that includes limits, maintainability, testing, exception handling, and release impact.",
+      "topicId": "flows_guide",
+      "experienceLevels": [1, 2, 3, 4, 5, 6],
+      "designations": ["Admin + Developer", "Salesforce Developer", "Technical Lead"],
+      "source": "https://www.salesforce.com/releases/",
+      "lastChecked": "2026-05-01"
+    },
+    {
+      "id": "spring26-security",
+      "category": "Security",
+      "releaseName": "Spring '26",
+      "title": "Track security, sharing, and trust-impacting release updates",
+      "whatChanged": "Review Spring '26 changes related to permissions, sharing, user access, identity, session controls, and trusted data handling.",
+      "whyMatters": "Security mistakes are production incidents; premium candidates must connect release notes to secure coding and admin governance.",
+      "interviewAngle": "Explain how you check CRUD/FLS, sharing, user mode, profiles/permission sets, and sandbox regression during release readiness.",
+      "topicId": "security_full",
+      "experienceLevels": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+      "designations": ["Admin + Developer", "Salesforce Developer", "Senior Salesforce Developer", "Technical Lead", "Architect"],
+      "source": "https://help.salesforce.com/s/articleView?id=release-notes.salesforce_release_notes.htm&language=en_US",
+      "lastChecked": "2026-05-01"
+    },
+    {
+      "id": "spring26-integration",
+      "category": "Integration",
+      "releaseName": "Spring '26",
+      "title": "Review API, integration, and event-driven architecture updates",
+      "whatChanged": "Use Spring '26 release sources to check API version changes, integration behavior, eventing updates, and connected app/security implications.",
+      "whyMatters": "Mid-to-senior roles expect integration answers that include auth, retries, versioning, monitoring, and backwards compatibility.",
+      "interviewAngle": "Describe an integration release-readiness checklist: API versions, named credentials, contracts, retries, test data, and monitoring.",
+      "topicId": "integration",
+      "experienceLevels": [3, 4, 5, 6, 7, 8, 9, 10],
+      "designations": ["Salesforce Developer", "Senior Salesforce Developer", "Technical Lead", "Architect"],
+      "source": "https://developer.salesforce.com/blogs/2026/01/developers-guide-to-the-spring-26-release",
+      "lastChecked": "2026-05-01"
+    },
+    {
+      "id": "spring26-agentforce",
+      "category": "Agentforce",
+      "releaseName": "Spring '26",
+      "title": "Study Agentforce updates, topics, actions, and grounding patterns",
+      "whatChanged": "Track Agentforce release updates for agent configuration, topics, actions, grounding, testing, monitoring, and safe automation.",
+      "whyMatters": "Agentforce is becoming a major differentiator for senior Salesforce candidates and FDE/AI specialist roles.",
+      "interviewAngle": "Explain how an agent chooses an action, how grounding reduces hallucination, and how you protect data with trust controls.",
+      "topicId": "fde_ag_concept",
+      "experienceLevels": [4, 5, 6, 7, 8, 9, 10],
+      "designations": ["FDE/Agentforce Specialist", "Senior Salesforce Developer", "Technical Lead", "Architect"],
+      "source": "https://www.salesforce.com/releases/",
+      "lastChecked": "2026-05-01"
+    },
+    {
+      "id": "spring26-data-cloud",
+      "category": "Data Cloud/Data 360",
+      "releaseName": "Spring '26",
+      "title": "Review Data Cloud and Data 360 identity, segmentation, and activation changes",
+      "whatChanged": "Use current Salesforce release sources to track Data Cloud/Data 360 updates around ingestion, data modeling, identity resolution, insights, and activation.",
+      "whyMatters": "Data Cloud is central to AI, personalization, Agentforce grounding, and senior architecture interviews.",
+      "interviewAngle": "Explain DLO, DMO, Unified Individual, identity resolution, activation, and how Data Cloud supports grounded AI.",
+      "topicId": "fde_dc_concept",
+      "experienceLevels": [5, 6, 7, 8, 9, 10],
+      "designations": ["FDE/Agentforce Specialist", "Technical Lead", "Architect"],
+      "source": "https://www.salesforce.com/releases/",
+      "lastChecked": "2026-05-01"
+    },
+    {
+      "id": "spring26-admin-sales-service",
+      "category": "Admin",
+      "releaseName": "Spring '26",
+      "title": "Review Admin, Sales Cloud, and Service Cloud usability updates",
+      "whatChanged": "Track setup, UI, automation, reporting, Sales Cloud, and Service Cloud changes that affect daily admin/developer delivery.",
+      "whyMatters": "Junior and hybrid candidates should show that they understand platform configuration, not only code.",
+      "interviewAngle": "Describe how you review admin release notes and decide what to enable, test, document, or postpone.",
+      "topicId": "admin",
+      "experienceLevels": [1, 2, 3, 4, 5],
+      "designations": ["Admin + Developer", "Salesforce Developer"],
+      "source": "https://www.salesforce.com/releases/",
+      "lastChecked": "2026-05-01"
+    }
+  ]
+}

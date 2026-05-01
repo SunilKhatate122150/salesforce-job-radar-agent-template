@@ -1,0 +1,75 @@
+{
+  "version": "2026.05-premium-v1",
+  "resources": [
+    {
+      "key": "career_paths",
+      "title": "Trailhead Career Paths",
+      "url": "https://trailhead.salesforce.com/en/career-path",
+      "topicIds": ["admin", "apex", "lwc", "integration", "sc_arch"],
+      "recommendedYears": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+    },
+    {
+      "key": "admin_credential",
+      "title": "Prepare for Your Salesforce Administrator Credential",
+      "url": "https://trailhead.salesforce.com/content/learn/trails/administrator-certification-prep",
+      "topicIds": ["admin", "security", "flows_guide", "reports_guide"],
+      "recommendedYears": [1, 2, 3]
+    },
+    {
+      "key": "pd1_credential",
+      "title": "Prepare for Your Salesforce Platform Developer I Credential",
+      "url": "https://trailhead.salesforce.com/content/learn/trails/prepare-for-your-salesforce-platform-developer-i-credential",
+      "topicIds": ["apex", "soql", "triggers", "lwc"],
+      "recommendedYears": [1, 2, 3, 4]
+    },
+    {
+      "key": "apex_basics",
+      "title": "Apex Basics and Database",
+      "url": "https://trailhead.salesforce.com/content/learn/modules/apex_database",
+      "topicIds": ["apex", "soql"],
+      "recommendedYears": [1, 2, 3]
+    },
+    {
+      "key": "apex_triggers",
+      "title": "Apex Triggers",
+      "url": "https://trailhead.salesforce.com/content/learn/modules/apex_triggers",
+      "topicIds": ["triggers", "apex"],
+      "recommendedYears": [1, 2, 3, 4]
+    },
+    {
+      "key": "lwc_basics",
+      "title": "Lightning Web Components Basics",
+      "url": "https://trailhead.salesforce.com/content/learn/modules/lightning-web-components-basics",
+      "topicIds": ["lwc"],
+      "recommendedYears": [1, 2, 3]
+    },
+    {
+      "key": "async_apex",
+      "title": "Asynchronous Apex",
+      "url": "https://trailhead.salesforce.com/content/learn/modules/asynchronous_apex",
+      "topicIds": ["async", "adv_apex"],
+      "recommendedYears": [2, 3, 4, 5, 6]
+    },
+    {
+      "key": "flow_builder",
+      "title": "Flow Builder",
+      "url": "https://trailhead.salesforce.com/content/learn/modules/flow-builder",
+      "topicIds": ["flows_guide", "admin"],
+      "recommendedYears": [1, 2, 3, 4, 5]
+    },
+    {
+      "key": "data_cloud",
+      "title": "Data Cloud Learning",
+      "url": "https://trailhead.salesforce.com/content/learn/trails/get-started-with-data-cloud",
+      "topicIds": ["fde_dc_concept", "fde_dc_adv"],
+      "recommendedYears": [5, 6, 7, 8, 9, 10]
+    },
+    {
+      "key": "agentblazer",
+      "title": "Agentblazer Learning",
+      "url": "https://trailhead.salesforce.com/content/learn/trails/build-your-agentblazer-skills",
+      "topicIds": ["fde_ag_concept", "fde_ag_scenario", "fde_atlas", "fde_trust"],
+      "recommendedYears": [4, 5, 6, 7, 8, 9, 10]
+    }
+  ]
+}

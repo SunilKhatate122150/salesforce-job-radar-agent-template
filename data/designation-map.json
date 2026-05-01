@@ -1,0 +1,59 @@
+{
+  "version": "2026.05-premium-v1",
+  "designations": [
+    {
+      "id": "salesforce_developer",
+      "label": "Salesforce Developer",
+      "track": "Developer",
+      "minYears": 1,
+      "maxYears": 5,
+      "aliases": ["SFDC Developer", "Platform Developer", "Salesforce Engineer", "Salesforce Consultant Developer"],
+      "primaryTopicIds": ["apex", "soql", "triggers", "lwc", "integration", "security"]
+    },
+    {
+      "id": "admin_developer",
+      "label": "Admin + Developer",
+      "track": "Hybrid",
+      "minYears": 1,
+      "maxYears": 4,
+      "aliases": ["Salesforce Admin Developer", "Salesforce Config Developer", "Salesforce Administrator Developer"],
+      "primaryTopicIds": ["admin", "flows_guide", "security", "reports_guide", "apex", "lwc"]
+    },
+    {
+      "id": "senior_developer",
+      "label": "Senior Salesforce Developer",
+      "track": "Developer",
+      "minYears": 5,
+      "maxYears": 7,
+      "aliases": ["Senior SFDC Developer", "Senior Platform Developer", "Lead Salesforce Developer"],
+      "primaryTopicIds": ["adv_apex", "design", "integration", "async", "security_full", "sc_arch"]
+    },
+    {
+      "id": "technical_lead",
+      "label": "Technical Lead",
+      "track": "Leadership",
+      "minYears": 6,
+      "maxYears": 8,
+      "aliases": ["Salesforce Technical Lead", "Platform Technical Lead", "Salesforce Lead Engineer"],
+      "primaryTopicIds": ["design", "sc_arch", "integration", "security_full", "behavioral", "company_iq"]
+    },
+    {
+      "id": "architect",
+      "label": "Architect",
+      "track": "Architecture",
+      "minYears": 8,
+      "maxYears": 10,
+      "aliases": ["Salesforce Architect", "Solution Architect", "Technical Architect", "Platform Architect"],
+      "primaryTopicIds": ["sc_arch", "sf_onsite", "fde_dc_adv", "fde_integration", "security_full", "design"]
+    },
+    {
+      "id": "fde_agentforce_specialist",
+      "label": "FDE/Agentforce Specialist",
+      "track": "AI + Data",
+      "minYears": 4,
+      "maxYears": 10,
+      "aliases": ["Agentforce Specialist", "Data Cloud Consultant", "FDE Specialist", "Salesforce AI Specialist"],
+      "primaryTopicIds": ["fde_ag_concept", "fde_ag_scenario", "fde_atlas", "fde_trust", "fde_dc_concept", "fde_dc_adv"]
+    }
+  ]
+}

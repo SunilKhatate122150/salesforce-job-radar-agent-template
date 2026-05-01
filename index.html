@@ -17,7 +17,7 @@
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=Plus+Jakarta+Sans:wght@400;600;700&family=Syne:wght@400;600;700;800&family=JetBrains+Mono:wght@400;500&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.v1412.css">
   <link rel="stylesheet" href="job-radar.fix.css?v=20260426">
-  <link rel="stylesheet" href="ui-shell.fix.css?v=20260426">
+  <link rel="stylesheet" href="ui-shell.fix.css?v=20260501-login-mode">
   <script src="https://accounts.google.com/gsi/client" async defer></script>
   <script>
     window.handleCredentialResponse = function(response) {
@@ -39,8 +39,23 @@
       <svg viewBox="0 0 24 24" fill="white" style="width:36px; height:36px;"><path d="M13 10V3L4 14H11V21L20 10H13Z"/></svg>
     </div>
     <h1 style="font-size:2rem; font-weight:800; margin-bottom:0.75rem; font-family:'Plus Jakarta Sans',sans-serif; letter-spacing:0;">SF Prep Guide</h1>
-    <p style="margin-bottom:2.5rem; color:rgba(255,255,255,0.5); font-size:0.95rem; line-height:1.6;">Industrial Study & Job Tracking System.<br>Sign in to sync your progress.</p>
-    
+    <p style="margin-bottom:1.5rem; color:rgba(255,255,255,0.5); font-size:0.95rem; line-height:1.6;">Industrial Study & Job Tracking System.<br>Sign in to sync your progress.</p>
+
+    <div class="login-mode-panel" role="group" aria-labelledby="loginModeHeading">
+      <div id="loginModeHeading" class="login-mode-heading">Choose Login Experience</div>
+      <label class="login-mode-toggle" for="loginPremiumMode">
+        <input id="loginPremiumMode" type="checkbox" checked onchange="setLoginUiModeFromCheckbox(this)">
+        <span class="login-mode-switch" aria-hidden="true"></span>
+        <span class="login-mode-copy">
+          <strong id="loginModeTitle">New Premium UI</strong>
+          <small id="loginModeDescription">Career roadmap, release center, profile intelligence, and modern cards.</small>
+        </span>
+      </label>
+      <div class="login-mode-footnote">
+        Checked = New Premium UI. Unchecked = Legacy / Classic dashboard.
+      </div>
+    </div>
+	    
     <div id="g_id_onload"
          data-client_id="991931034479-q2jgdjf3r2fo8j95mnacmgp19t2mnrge.apps.googleusercontent.com"
          data-context="signin"
@@ -130,6 +145,7 @@
     <div class="nav-item active" onclick="showPage('schedule')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg> Daily Schedule <span class="count">Live</span></div>
     <div class="nav-item" onclick="showPage('study_tracker')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;"><path d="M12 20V10"></path><path d="M18 20V4"></path><path d="M6 20v-4"></path></svg> Progress Tracker <span class="count">Data</span></div>
     <div class="nav-item" onclick="showPage('profile_match')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="8.5" cy="7" r="4"></circle><polyline points="17 11 19 13 23 9"></polyline></svg> Profile Matching <span class="count">AI</span></div>
+    <div class="nav-item" onclick="showPage('salesforce_releases')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;"><path d="M4 4h16v16H4z"></path><path d="M8 8h8M8 12h8M8 16h5"></path></svg> Salesforce Releases <span class="count">Spring '26</span></div>
     <div class="nav-item" onclick="showPage('study_history')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg> Study History <span class="count">Archive</span></div>
     <div class="nav-item" onclick="showPage('job_radar')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;"><circle cx="12" cy="12" r="10"></circle><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg> Job Radar Dashboard <span class="count">Radar</span></div>
     <div class="nav-item" onclick="showBookmarks()" style="border-left-color:var(--amber); color:var(--text);"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path></svg> Bookmarked Q&A <span class="count" id="bookmarkCount" style="background:rgba(244,197,66,0.2); color:var(--amber);">0</span></div>
@@ -258,7 +274,7 @@
 
         <div style="display:flex; flex-direction:column; gap:15px;">
             <!-- LinkedIn -->
-            <div id="modalSyncLinkedIn" onclick="syncProfile('LinkedIn')" style="background:rgba(0,119,181,0.05); border:1px solid rgba(0,119,181,0.2); border-radius:16px; padding:1rem; cursor:pointer; transition:all 0.2s;" onmouseenter="this.style.background='rgba(0,119,181,0.1)'" onmouseleave="this.style.background='rgba(0,119,181,0.05)'">
+            <div id="modalSyncLinkedIn" onclick="openProfileImport('linkedin')" style="background:rgba(0,119,181,0.05); border:1px solid rgba(0,119,181,0.2); border-radius:16px; padding:1rem; cursor:pointer; transition:all 0.2s;" onmouseenter="this.style.background='rgba(0,119,181,0.1)'" onmouseleave="this.style.background='rgba(0,119,181,0.05)'">
                 <div style="display:flex; align-items:center; justify-content:space-between; gap:12px;">
                     <div style="display:flex; align-items:center; gap:12px; min-width:0;">
                         <div style="width:36px; height:36px; background:var(--ln-blue); border-radius:10px; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
@@ -276,7 +292,7 @@
             </div>
 
             <!-- Naukri -->
-            <div id="modalSyncNaukri" onclick="syncProfile('Naukri')" style="background:rgba(255,117,85,0.05); border:1px solid rgba(255,117,85,0.2); border-radius:16px; padding:1rem; cursor:pointer; transition:all 0.2s;" onmouseenter="this.style.background='rgba(255,117,85,0.1)'" onmouseleave="this.style.background='rgba(255,117,85,0.05)'">
+            <div id="modalSyncNaukri" onclick="openProfileImport('naukri')" style="background:rgba(255,117,85,0.05); border:1px solid rgba(255,117,85,0.2); border-radius:16px; padding:1rem; cursor:pointer; transition:all 0.2s;" onmouseenter="this.style.background='rgba(255,117,85,0.1)'" onmouseleave="this.style.background='rgba(255,117,85,0.05)'">
                 <div style="display:flex; align-items:center; justify-content:space-between; gap:12px;">
                     <div style="display:flex; align-items:center; gap:12px; min-width:0;">
                         <div style="width:36px; height:36px; background:#ff7555; border-radius:10px; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
@@ -336,6 +352,9 @@
     </div>
 
     <div class="header-zone-right">
+      <button id="uiModeToggle" class="ui-mode-toggle" onclick="toggleUiMode()" aria-label="Toggle classic or modern UI" title="Classic / Modern UI">
+        <span id="uiModeToggleLabel">Modern</span>
+      </button>
       <div class="floating-profile" onclick="toggleFloatingDropdown(event)">
         <div id="floatingProfileContainer" style="display:none;">
           <div class="profile-pill">
@@ -382,21 +401,78 @@
       </span>
       AI Profile Matching & Study Plan
     </div>
-    <div class="page-sub">Powered by the cloud AI engine - sync your LinkedIn or Naukri profile to generate a personalized study roadmap.</div>
+	  <div class="page-sub">One career intelligence view for experience roadmap, safe profile import, releases, and job-gap study planning.</div>
+  </div>
+
+  <div id="premiumOnboardingPanel" class="premium-onboarding-panel">
+    <div class="premium-panel-head">
+      <div>
+        <div class="premium-eyebrow">Career Intelligence Setup</div>
+        <h3>Start with experience, then target post</h3>
+      </div>
+      <span class="premium-badge">Premium</span>
+    </div>
+    <div class="premium-onboarding-grid">
+      <label>
+        <span>Years of Experience</span>
+        <select id="premiumExperienceYears">
+          <option value="1">1 year - Foundation</option>
+          <option value="2">2 years - Junior Builder</option>
+          <option value="3">3 years - Core Developer</option>
+          <option value="4">4 years - Mid-Level Developer</option>
+          <option value="5">5 years - Senior Developer</option>
+          <option value="6">6 years - Lead Developer</option>
+          <option value="7">7 years - Technical Lead</option>
+          <option value="8">8 years - Architect-Ready</option>
+          <option value="9">9 years - Principal Engineer</option>
+          <option value="10">10 years - Architect / Engineering Lead</option>
+        </select>
+      </label>
+      <label>
+        <span>Target Post / Designation</span>
+        <select id="premiumTargetDesignation">
+          <option>Salesforce Developer</option>
+          <option>Admin + Developer</option>
+          <option>Senior Salesforce Developer</option>
+          <option>Technical Lead</option>
+          <option>Architect</option>
+          <option>FDE/Agentforce Specialist</option>
+        </select>
+      </label>
+      <label>
+        <span>Current Designation</span>
+        <input id="premiumCurrentDesignation" type="text" placeholder="e.g. Junior Salesforce Developer">
+      </label>
+      <label>
+        <span>Known Skills</span>
+        <input id="premiumSkills" type="text" placeholder="Apex, LWC, Flow, SOQL">
+      </label>
+    </div>
+    <div class="premium-onboarding-actions">
+      <button onclick="savePremiumProfileSetup()" class="premium-primary-btn">Generate My Roadmap</button>
+      <button onclick="openProfileImport('manual')" class="premium-secondary-btn">Import Profile Text</button>
+    </div>
+    <p class="premium-note">Safe sync policy: Google account only. LinkedIn uses official access where available; Naukri and full profile data use resume/profile import fallback.</p>
   </div>
   
   <!-- PREMIUM SYNC ARCHITECTURE (v1373) -->
-  <div id="syncCtaCards" class="sync-cta-grid">
+  <div id="profileSourceHeading" class="profile-source-heading">
+    <div>
+      <span class="premium-eyebrow">Profile Sources</span>
+      <strong>Import safely, then keep the same dashboard experience</strong>
+    </div>
+  </div>
+  <div id="syncCtaCards" class="sync-cta-grid premium-source-grid">
     <!-- LinkedIn Card -->
     <div class="sync-card-premium linkedin">
       <div class="sync-icon-box">
         <svg width="32" height="32" viewBox="0 0 24 24" fill="white"><path d="M19 3a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14m-.5 15.5v-5.3a3.26 3.26 0 0 0-3.26-3.26c-.85 0-1.84.52-2.32 1.3v-1.11h-2.79v8.37h2.79v-4.93c0-.77.62-1.4 1.39-1.4a1.4 1.4 0 0 1 1.4 1.4v4.93h2.79M6.88 8.56a1.68 1.68 0 0 0 1.68-1.68c0-.93-.75-1.69-1.68-1.69a1.69 1.69 0 0 0-1.69 1.69c0 .93.76 1.68 1.69 1.68m1.39 9.94v-8.37H5.5v8.37h2.77z"/></svg>
       </div>
       <div class="sync-title">LinkedIn Profile</div>
-      <div class="sync-desc">Deep-extract skills, certifications, and career history from your LinkedIn profile.</div>
-      <button id="btnSyncLinkedIn" onclick="syncProfile('LinkedIn')" class="sync-btn-premium">
+      <div class="sync-desc">Use official LinkedIn access when configured, or paste exported profile text for safe analysis.</div>
+      <button id="btnSyncLinkedIn" onclick="openProfileImport('linkedin')" class="sync-btn-premium">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:16px;height:16px;"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"></path></svg>
-        Sync & Analyze
+        Official / Import
       </button>
     </div>
 
@@ -406,10 +482,10 @@
         <svg width="32" height="32" viewBox="0 0 24 24" fill="white"><path d="M20 6H4c-1.1 0-2 .9-2 2v8c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm-8 9H8v-1h4v1zm6-3H8v-1h10v1zm0-3H8V8h10v1z"/></svg>
       </div>
       <div class="sync-title">Naukri Resume</div>
-      <div class="sync-desc">Analyze your latest Naukri profile and resume data for industrial gap assessment.</div>
-      <button id="btnSyncNaukri" onclick="syncProfile('Naukri')" class="sync-btn-premium">
+      <div class="sync-desc">Paste Naukri profile/resume text or upload resume. No Naukri password is collected.</div>
+      <button id="btnSyncNaukri" onclick="openProfileImport('naukri')" class="sync-btn-premium">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:16px;height:16px;"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"></path></svg>
-        Sync & Analyze
+        Import Safely
       </button>
     </div>
 
@@ -465,6 +541,16 @@
   </div>
 
 </div> <!-- end profile_match page -->
+
+<div id="salesforce_releases" class="page">
+  <div class="page-header">
+    <div class="page-title">Salesforce Releases</div>
+    <div class="page-sub">Current release intelligence mapped to your Salesforce experience level and target designation.</div>
+  </div>
+  <div id="releaseCenterContent">
+    <div class="content-card">Loading Salesforce release intelligence...</div>
+  </div>
+</div>
 
 <div id="schedule" class="page active">
   <div class="page-header">

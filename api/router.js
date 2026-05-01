@@ -1,6 +1,8 @@
 import { OAuth2Client } from 'google-auth-library';
 import fetch from 'node-fetch';
 import mongoose from 'mongoose';
+import fs from 'fs';
+import path from 'path';
 import { User, UserProfile, JobRecord, StudySession, TaskStatus } from '../src/models/models.js';
 import { TursoDB } from '../src/db/turso_driver.js';
 
@@ -16,6 +18,8 @@ import { TursoDB } from '../src/db/turso_driver.js';
  */
 
 const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+const DATA_DIR = path.join(process.cwd(), 'data');
+const dataCache = new Map();
 
 let cachedDb = null;
 async function connectDB() {
@@ -80,6 +84,145 @@ function readBody(req) {
     try { return JSON.parse(req.body.toString('utf8')); } catch (e) { return {}; }
   }
   return typeof req.body === 'object' ? req.body : {};
+}
+
+function readDataJson(fileName, fallback = {}) {
+  if (dataCache.has(fileName)) return dataCache.get(fileName);
+  try {
+    const fullPath = path.join(DATA_DIR, fileName);
+    const parsed = JSON.parse(fs.readFileSync(fullPath, 'utf8'));
+    dataCache.set(fileName, parsed);
+    return parsed;
+  } catch (err) {
+    console.warn(`[DATA] Failed to read ${fileName}:`, err.message);
+    return fallback;
+  }
+}
+
+function clampExperienceYears(value) {
+  const n = Number(value);
+  if (!Number.isFinite(n)) return 1;
+  return Math.max(1, Math.min(10, Math.round(n)));
+}
+
+function normalizeList(value) {
+  if (Array.isArray(value)) return value.map(v => String(v || '').trim()).filter(Boolean);
+  if (typeof value === 'string') {
+    return value.split(/[,;\n]/).map(v => v.trim()).filter(Boolean);
+  }
+  return [];
+}
+
+function sanitizeImportText(value) {
+  return String(value || '')
+    .replace(/<[^>]*>/g, ' ')
+    .replace(/\b(password|passwd|pwd|otp|one[-\s]?time password)\b\s*[:=]\s*\S+/gi, '$1: [removed]')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .slice(0, 12000);
+}
+
+function inferDesignation(rawDesignation, designationsData) {
+  const value = String(rawDesignation || '').trim();
+  if (!value) return designationsData.designations?.[0] || null;
+  const normalized = value.toLowerCase();
+  return (designationsData.designations || []).find(item => {
+    const labels = [item.label, ...(item.aliases || [])].map(v => String(v || '').toLowerCase());
+    return labels.some(label => normalized.includes(label) || label.includes(normalized));
+  }) || {
+    id: normalized.replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '') || 'custom_designation',
+    label: value,
+    track: 'Custom',
+    primaryTopicIds: []
+  };
+}
+
+function buildPremiumRoadmap(profile = {}) {
+  const roadmaps = readDataJson('career-roadmaps.json', { years: {} });
+  const designations = readDataJson('designation-map.json', { designations: [] });
+  const releases = readDataJson('salesforce-releases.json', { activeRelease: {}, items: [] });
+  const trailhead = readDataJson('trailhead-resources.json', { resources: [] });
+
+  const experienceYears = clampExperienceYears(profile.experienceYears || profile.yearsOfExperience || 1);
+  const designation = inferDesignation(
+    profile.targetDesignation || profile.targetRole || profile.currentDesignation || profile.currentRole,
+    designations
+  );
+  const baseRoadmap = roadmaps.years?.[String(experienceYears)] || roadmaps.years?.['1'] || {};
+  const designationTopicIds = new Set(designation?.primaryTopicIds || []);
+  const roadmapTopicIds = new Set(baseRoadmap.topicIds || []);
+  const mergedTopics = [...(baseRoadmap.topics || [])];
+
+  for (const topicId of designationTopicIds) {
+    if (!roadmapTopicIds.has(topicId)) {
+      mergedTopics.push({
+        topicId,
+        topic: topicConfigName(topicId),
+        category: designation?.track || 'Designation',
+        priority: 'medium',
+        estimatedHours: 6,
+        reason: `Added because it is important for ${designation?.label || 'the selected designation'}.`
+      });
+      roadmapTopicIds.add(topicId);
+    }
+  }
+
+  const releaseCategories = new Set(baseRoadmap.releaseFocus || []);
+  const releaseItems = (releases.items || []).filter(item => {
+    const levelMatch = (item.experienceLevels || []).includes(experienceYears);
+    const categoryMatch = releaseCategories.has(item.category);
+    const designationMatch = (item.designations || []).some(d =>
+      String(d).toLowerCase() === String(designation?.label || '').toLowerCase()
+    );
+    return levelMatch && (categoryMatch || designationMatch);
+  });
+
+  const topicSet = new Set(mergedTopics.map(t => t.topicId));
+  const resources = (trailhead.resources || []).filter(resource => {
+    const yearMatch = (resource.recommendedYears || []).includes(experienceYears);
+    const topicMatch = (resource.topicIds || []).some(topicId => topicSet.has(topicId));
+    return yearMatch && topicMatch;
+  });
+
+  return {
+    experienceYears,
+    designation,
+    roadmap: {
+      ...baseRoadmap,
+      topics: mergedTopics,
+      topicIds: Array.from(roadmapTopicIds)
+    },
+    releaseFocus: {
+      activeRelease: releases.activeRelease || {},
+      items: releaseItems.length ? releaseItems : (releases.items || []).filter(item =>
+        (item.experienceLevels || []).includes(experienceYears)
+      ).slice(0, 6)
+    },
+    trailheadResources: resources.slice(0, 8),
+    generatedAt: new Date().toISOString()
+  };
+}
+
+function extractProfileImportFields(text) {
+  const cleanText = sanitizeImportText(text);
+  const skillBank = [
+    'Salesforce', 'Apex', 'SOQL', 'SOSL', 'LWC', 'Aura', 'Flow', 'REST API',
+    'SOAP API', 'Integration', 'Batch Apex', 'Queueable Apex', 'Platform Events',
+    'Change Data Capture', 'Sales Cloud', 'Service Cloud', 'Experience Cloud',
+    'Data Cloud', 'Agentforce', 'CPQ', 'Git', 'Copado', 'DevOps', 'Reports',
+    'Dashboards', 'Security', 'Sharing Rules'
+  ];
+  const skills = skillBank.filter(skill => new RegExp(`\\b${skill.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'i').test(cleanText));
+  const yearsMatch = cleanText.match(/(\d+(?:\.\d+)?)\s*\+?\s*(?:years?|yrs?)\b/i);
+  const certMatches = cleanText.match(/Salesforce Certified [A-Za-z0-9 &-]+/gi) || [];
+  const roleMatch = cleanText.match(/\b(?:Senior |Lead |Junior |Associate )?Salesforce [A-Za-z ]{3,40}\b/i);
+  return {
+    rawText: cleanText,
+    skills,
+    experienceYears: yearsMatch ? clampExperienceYears(yearsMatch[1]) : undefined,
+    currentDesignation: roleMatch ? roleMatch[0].trim() : undefined,
+    certifications: Array.from(new Set(certMatches.map(v => v.trim())))
+  };
 }
 
 function normalizeJobForPrompt(job = {}) {
@@ -360,12 +503,85 @@ export default async function(req, res) {
 
     if (path === 'profile/save' && req.method === 'POST') {
       console.log(`[PROFILE] Saving data to Primary Mongo for ${userId}`);
+      const { _id, __v, createdAt, ...body } = readBody(req);
+      const normalizedProfile = {
+        ...body,
+        userId,
+        experienceYears: body.experienceYears ? clampExperienceYears(body.experienceYears) : body.experienceYears,
+        skills: normalizeList(body.skills),
+        certifications: normalizeList(body.certifications),
+        clouds: normalizeList(body.clouds),
+        tools: normalizeList(body.tools),
+        domains: normalizeList(body.domains),
+        uiMode: body.uiMode === 'classic' ? 'classic' : 'modern',
+        updatedAt: new Date()
+      };
+      const intelligence = buildPremiumRoadmap(normalizedProfile);
+      normalizedProfile.roadmapSnapshot = intelligence.roadmap;
+      normalizedProfile.releaseFocus = intelligence.releaseFocus;
+      if (!normalizedProfile.targetRole && normalizedProfile.targetDesignation) normalizedProfile.targetRole = normalizedProfile.targetDesignation;
+      if (!normalizedProfile.currentRole && normalizedProfile.currentDesignation) normalizedProfile.currentRole = normalizedProfile.currentDesignation;
       await UserProfile.findOneAndUpdate(
         { userId },
-        { ...req.body, userId, updatedAt: new Date() },
+        normalizedProfile,
         { upsert: true, new: true }
       );
       return res.status(200).json({ success: true });
+    }
+
+    if (path === 'profile/import' && req.method === 'POST') {
+      const body = readBody(req);
+      const source = String(body.source || 'manual').toLowerCase().slice(0, 40);
+      const extracted = extractProfileImportFields(body.text || body.profileText || '');
+      if (!extracted.rawText) {
+        return res.status(400).json({ success: false, error: 'Profile text is required' });
+      }
+
+      const profile = await UserProfile.findOne({ userId }).lean() || {};
+      const { _id, __v, createdAt, ...profileBase } = profile;
+      const nextProfile = {
+        ...profileBase,
+        userId,
+        skills: mergeUnique(extracted.skills, profile.skills),
+        certifications: mergeUnique(extracted.certifications, profile.certifications),
+        experienceYears: extracted.experienceYears || profile.experienceYears || clampExperienceYears(body.experienceYears || 1),
+        currentDesignation: extracted.currentDesignation || profile.currentDesignation || profile.currentRole,
+        targetDesignation: body.targetDesignation || profile.targetDesignation || profile.targetRole || extracted.currentDesignation,
+        currentRole: extracted.currentDesignation || profile.currentRole || profile.currentDesignation,
+        targetRole: body.targetDesignation || profile.targetRole || profile.targetDesignation || extracted.currentDesignation,
+        uiMode: profile.uiMode || 'modern',
+        profileImports: [
+          ...(profile.profileImports || []).slice(-4),
+          { source, text: extracted.rawText, importedAt: new Date() }
+        ],
+        updatedAt: new Date()
+      };
+      const intelligence = buildPremiumRoadmap(nextProfile);
+      nextProfile.roadmapSnapshot = intelligence.roadmap;
+      nextProfile.releaseFocus = intelligence.releaseFocus;
+
+      await UserProfile.findOneAndUpdate({ userId }, nextProfile, { upsert: true, new: true });
+      return res.status(200).json({ success: true, extractedData: extracted, intelligence });
+    }
+
+    if (path === 'roadmap') {
+      const profile = await UserProfile.findOne({ userId }).lean() || {};
+      const intelligence = buildPremiumRoadmap(profile);
+      return res.status(200).json({ success: true, ...intelligence });
+    }
+
+    if (path === 'releases/current') {
+      const profile = await UserProfile.findOne({ userId }).lean() || {};
+      const intelligence = buildPremiumRoadmap(profile);
+      const allReleases = readDataJson('salesforce-releases.json', { activeRelease: {}, items: [] });
+      return res.status(200).json({
+        success: true,
+        activeRelease: allReleases.activeRelease || {},
+        items: allReleases.items || [],
+        personalizedItems: intelligence.releaseFocus?.items || [],
+        experienceYears: intelligence.experienceYears,
+        designation: intelligence.designation
+      });
     }
 
     if (path === 'profile/sync-cloud' && req.method === 'POST') {

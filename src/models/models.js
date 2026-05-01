@@ -86,9 +86,23 @@ const userProfileSchema = new mongoose.Schema({
   // Core extracted data
   skills: [String],                              // ["Salesforce", "Apex", "LWC", ...]
   experienceYears: Number,                       // 4
+  currentDesignation: String,                    // "Salesforce Developer"
+  targetDesignation: String,                     // "Senior Salesforce Developer"
   currentRole: String,                           // "Salesforce Developer"
   targetRole: String,                            // "Senior Salesforce Developer"
+  uiMode: { type: String, enum: ['classic', 'modern'], default: 'modern' },
   certifications: [String],                      // ["PD1", "Admin", "Data Cloud"]
+  clouds: [String],                              // ["Sales Cloud", "Service Cloud"]
+  tools: [String],                               // ["VS Code", "GitHub Actions", "Copado"]
+  domains: [String],                             // ["Mortgage", "BFSI"]
+  jobPreferences: mongoose.Schema.Types.Mixed,   // location, role type, salary, notice period
+  profileImports: [{
+    source: String,                              // "resume", "linkedin", "naukri", "manual"
+    text: String,
+    importedAt: { type: Date, default: Date.now }
+  }],
+  roadmapSnapshot: mongoose.Schema.Types.Mixed,  // Deterministic roadmap used for the current profile
+  releaseFocus: mongoose.Schema.Types.Mixed,     // Release items filtered for current years/designation
   // AI-identified gaps
   missingSkills: [String],                       // Skills the AI found missing
   // Study plan

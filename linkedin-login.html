@@ -1,126 +1,44 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LinkedIn Industrial Login | Salesforce Job Radar</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <style>
-        :root {
-            --bg: #0e1117;
-            --ln-blue: #0077b5;
-            --text: #ffffff;
-            --muted: #8b949e;
-            --border: #30363d;
-            --card-bg: #161b22;
-        }
-        body { background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; }
-        .auth-card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px; padding: 2.5rem; width: 100%; max-width: 400px; box-shadow: 0 10px 30px rgba(0,0,0,0.4); }
-        .logo { font-size: 1.8rem; font-weight: 700; color: var(--ln-blue); margin-bottom: 0.5rem; text-align: center; }
-        .title { font-size: 1.2rem; font-weight: 600; margin-bottom: 2rem; text-align: center; }
-        .social-btn { display: flex; align-items: center; justify-content: center; gap: 10px; width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 8px; background: transparent; color: white; cursor: pointer; margin-bottom: 12px; font-weight: 500; transition: 0.2s; }
-        .social-btn:hover { background: rgba(255,255,255,0.05); }
-        .divider { display: flex; align-items: center; gap: 10px; color: var(--muted); font-size: 0.75rem; margin: 1.5rem 0; }
-        .divider::before, .divider::after { content: ""; flex: 1; height: 1px; background: var(--border); }
-        .input-group { margin-bottom: 1rem; text-align: left; }
-        label { display: block; font-size: 0.8rem; margin-bottom: 6px; color: var(--muted); }
-        input { width: 100%; background: #0d1117; border: 1px solid var(--border); border-radius: 6px; padding: 10px 12px; color: white; box-sizing: border-box; }
-        input:focus { outline: none; border-color: var(--ln-blue); }
-        .btn-submit { width: 100%; background: var(--ln-blue); color: white; border: none; border-radius: 8px; padding: 12px; font-weight: 700; cursor: pointer; margin-top: 1rem; }
-        .footer { margin-top: 2rem; text-align: center; font-size: 0.8rem; color: var(--muted); }
-        .footer a { color: var(--ln-blue); text-decoration: none; }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LinkedIn Safe Import | Salesforce Career Radar</title>
+  <style>
+    body{margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;background:#0e1117;color:#fff;font-family:Inter,Arial,sans-serif;padding:20px}
+    .card{width:min(560px,100%);background:#161b22;border:1px solid #30363d;border-radius:16px;padding:28px;box-shadow:0 20px 60px rgba(0,0,0,.35)}
+    h1{margin:0 0 8px;font-size:1.4rem;color:#60a5fa}
+    p{color:#9ca3af;line-height:1.6}
+    .safe{border:1px solid rgba(16,185,129,.25);background:rgba(16,185,129,.08);color:#86efac;border-radius:12px;padding:12px;margin:18px 0;font-size:.9rem}
+    textarea{width:100%;min-height:180px;background:#0d1117;border:1px solid #30363d;border-radius:12px;color:white;padding:12px;box-sizing:border-box}
+    button{margin-top:14px;width:100%;border:0;border-radius:12px;background:#0077b5;color:white;padding:12px;font-weight:800;cursor:pointer}
+    a{color:#60a5fa}
+  </style>
 </head>
 <body>
-    <div class="auth-card">
-        <div class="logo">LinkedIn</div>
-        <div class="title">Sign in to Cloud Sync</div>
-        
-        <button class="social-btn" onclick="socialLogin('Google')">
-            <img src="https://www.google.com/favicon.ico" width="18"> Continue with Google
-        </button>
-        <button class="social-btn" onclick="socialLogin('Apple')">
-            <img src="https://www.apple.com/favicon.ico" width="18"> Continue with Apple
-        </button>
-
-        <div class="divider">or</div>
-
-        <form id="authForm">
-            <div class="input-group">
-                <label>Email or Phone</label>
-                <input type="text" id="user" required>
-            </div>
-            <div class="input-group">
-                <label>Password</label>
-                <input type="password" id="pass" required>
-            </div>
-            <button type="submit" class="btn-submit" id="btnSync">Sign In</button>
-        </form>
-
-        <div id="statusMessage" style="text-align:center; margin-top:15px; font-size:0.85rem;"></div>
-
-        <div class="footer">
-            <a href="https://www.linkedin.com/checkpoint/rp/request-password-reset">Forgot password?</a><br><br>
-            <a href="javascript:window.close()">← Close and Return</a>
-        </div>
-    </div>
-    <script>
-        async function socialLogin(platform) {
-            const btn = event.currentTarget;
-            const originalText = btn.innerHTML;
-            btn.innerHTML = `🔄 Syncing ${platform}...`;
-            btn.disabled = true;
-
-            const urlParams = new URLSearchParams(window.location.search);
-            const token = urlParams.get('token') || localStorage.getItem('google_auth_token');
-
-            try {
-                const res = await fetch('/api/profile/sync-cloud', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
-                    body: JSON.stringify({ platform: 'LinkedIn (' + platform + ')', user: 'Social User' })
-                });
-                if (res.ok) {
-                    btn.innerHTML = `✅ ${platform} Linked!`;
-                    btn.style.background = '#10b981';
-                    localStorage.setItem('profile_sync_success', Date.now());
-                    setTimeout(() => { window.close(); }, 2000);
-                }
-            } catch (e) {
-                btn.innerHTML = originalText;
-                btn.disabled = false;
-                alert('Social sync failed.');
-            }
-        }
-
-        document.getElementById('authForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const btn = document.getElementById('btnSync');
-            const originalText = btn.textContent;
-            btn.textContent = '🔄 Syncing...';
-            btn.disabled = true;
-            
-            const urlParams = new URLSearchParams(window.location.search);
-            const token = urlParams.get('token') || localStorage.getItem('google_auth_token');
-
-            try {
-                const res = await fetch('/api/profile/sync-cloud', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
-                    body: JSON.stringify({ platform: 'LinkedIn', user: document.getElementById('user').value })
-                });
-                if (res.ok) {
-                    btn.textContent = '✅ Success!';
-                    btn.style.background = '#10b981';
-                    localStorage.setItem('profile_sync_success', Date.now());
-                    setTimeout(() => { window.close(); }, 2000);
-                }
-            } catch (e) {
-                btn.textContent = originalText;
-                btn.disabled = false;
-                alert('Sync failed.');
-            }
-        });
-    </script>
+  <main class="card">
+    <h1>LinkedIn Safe Import</h1>
+    <p>This app uses Google as your account identity. For LinkedIn, use official access where configured or paste profile text here. Do not enter your LinkedIn password.</p>
+    <div class="safe">Password collection is disabled by design. Paste only public/profile text you want analyzed.</div>
+    <textarea id="profileText" placeholder="Paste LinkedIn profile text, skills, certifications, or experience summary..."></textarea>
+    <button onclick="sendImport()">Analyze LinkedIn Text</button>
+    <p><a href="javascript:window.close()">Close and return</a></p>
+  </main>
+  <script>
+    async function sendImport() {
+      const token = new URLSearchParams(location.search).get('token') || localStorage.getItem('google_auth_token');
+      const text = document.getElementById('profileText').value.trim();
+      if (!text) return alert('Paste profile text first.');
+      const res = await fetch('/api/profile/import', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+        body: JSON.stringify({ source: 'linkedin', text })
+      });
+      if (!res.ok) return alert('Import failed.');
+      localStorage.setItem('profile_sync_success', Date.now());
+      alert('LinkedIn profile text imported safely.');
+      window.close();
+    }
+  </script>
 </body>
 </html>

@@ -1,0 +1,161 @@
+{
+  "version": "2026.05-premium-v1",
+  "defaultTrack": "Salesforce Developer",
+  "years": {
+    "1": {
+      "band": "Foundation",
+      "recommendedDesignations": ["Associate Salesforce Developer", "Junior Salesforce Developer", "Salesforce Trainee"],
+      "headline": "Build reliable junior Salesforce fundamentals.",
+      "summary": "Focus on CRM fundamentals, Admin configuration, Flow, Apex basics, SOQL, LWC basics, security basics, and PD1 foundation.",
+      "topicIds": ["admin", "security", "flows_guide", "apex", "soql", "triggers", "lwc", "intro", "behavioral"],
+      "topics": [
+        { "topicId": "admin", "topic": "CRM, Objects, Fields, and Record Pages", "category": "Admin", "priority": "critical", "estimatedHours": 10, "reason": "Junior developers must understand platform configuration before writing code." },
+        { "topicId": "security", "topic": "Object, Field, and Record Security Basics", "category": "Security", "priority": "critical", "estimatedHours": 8, "reason": "Interviewers expect CRUD, FLS, OWD, roles, profiles, and permission sets." },
+        { "topicId": "flows_guide", "topic": "Flow Builder Fundamentals", "category": "Automation", "priority": "high", "estimatedHours": 8, "reason": "Modern Salesforce teams expect developers to know when Flow is better than Apex." },
+        { "topicId": "apex", "topic": "Apex Syntax, Collections, and Governor Limits", "category": "Development", "priority": "critical", "estimatedHours": 14, "reason": "Core junior developer screening usually starts with limits, lists, sets, maps, and basic classes." },
+        { "topicId": "soql", "topic": "SOQL Basics and Relationship Queries", "category": "Development", "priority": "high", "estimatedHours": 8, "reason": "SOQL is required for almost every Apex and debugging task." },
+        { "topicId": "triggers", "topic": "Trigger Basics and Bulkification", "category": "Development", "priority": "critical", "estimatedHours": 10, "reason": "Bulk-safe trigger patterns separate production-ready juniors from memorized answers." },
+        { "topicId": "lwc", "topic": "LWC Basics, Events, and Wire Service", "category": "Frontend", "priority": "high", "estimatedHours": 12, "reason": "Most developer roles ask at least basic LWC component questions." }
+      ],
+      "interviewFocus": ["Governor limits by number", "List vs Set vs Map", "Before vs after triggers", "Flow vs Apex", "SOQL relationship queries", "CRUD/FLS basics"],
+      "releaseFocus": ["Admin", "Flow", "Apex", "LWC"]
+    },
+    "2": {
+      "band": "Junior Builder",
+      "recommendedDesignations": ["Junior Salesforce Developer", "Associate Salesforce Engineer", "Salesforce Developer I"],
+      "headline": "Move from fundamentals to production-ready delivery.",
+      "summary": "Strengthen trigger frameworks, Flow handoff decisions, LWC data access, testing, deployment basics, and PD1 certification readiness.",
+      "topicIds": ["apex", "triggers", "soql", "lwc", "flows_guide", "security", "scenario", "mock"],
+      "topics": [
+        { "topicId": "triggers", "topic": "One-Trigger Pattern and Handler Classes", "category": "Development", "priority": "critical", "estimatedHours": 12, "reason": "A 2-year developer should discuss maintainable trigger structure, not only syntax." },
+        { "topicId": "apex", "topic": "Apex Testing and Test Data Strategy", "category": "Development", "priority": "critical", "estimatedHours": 10, "reason": "Testing depth is a common separator for real project experience." },
+        { "topicId": "lwc", "topic": "LWC with Apex, LDS, and Parent-Child Events", "category": "Frontend", "priority": "high", "estimatedHours": 12, "reason": "Most junior-to-mid roles expect practical LWC communication patterns." },
+        { "topicId": "flows_guide", "topic": "Record-Triggered Flow and Apex Boundaries", "category": "Automation", "priority": "high", "estimatedHours": 8, "reason": "Interviewers want to know when you avoid code." },
+        { "topicId": "scenario", "topic": "Beginner-to-Mid Scenario Practice", "category": "Interview", "priority": "high", "estimatedHours": 8, "reason": "Scenario answers prove you can apply concepts beyond definitions." }
+      ],
+      "interviewFocus": ["Trigger framework", "Test.startTest and stopTest", "LWC custom events", "Wire vs imperative Apex", "Flow transaction behavior"],
+      "releaseFocus": ["Flow", "LWC", "Apex", "Security"]
+    },
+    "3": {
+      "band": "Core Developer",
+      "recommendedDesignations": ["Salesforce Developer", "Salesforce Platform Developer", "SFDC Developer"],
+      "headline": "Become a confident independent Salesforce Developer.",
+      "summary": "Own Apex, LWC, SOQL, integrations, async processing, deployment, and real debugging stories.",
+      "topicIds": ["apex", "adv_apex", "lwc", "integration", "async", "security", "platform", "scenario"],
+      "topics": [
+        { "topicId": "adv_apex", "topic": "Advanced Apex Patterns", "category": "Development", "priority": "critical", "estimatedHours": 14, "reason": "Three-year roles expect reusable services, selectors, and safer limit handling." },
+        { "topicId": "integration", "topic": "REST/SOAP API and Named Credentials", "category": "Integration", "priority": "critical", "estimatedHours": 12, "reason": "Integration basics are common for mid-level Salesforce interviews." },
+        { "topicId": "async", "topic": "Future, Queueable, Batch, and Scheduled Apex", "category": "Async", "priority": "critical", "estimatedHours": 10, "reason": "Async choice and limits are repeated interview themes." },
+        { "topicId": "lwc", "topic": "Production LWC Data Patterns", "category": "Frontend", "priority": "high", "estimatedHours": 12, "reason": "Mid-level roles expect data refresh, error handling, and performance awareness." },
+        { "topicId": "security", "topic": "Security in Apex and LWC", "category": "Security", "priority": "high", "estimatedHours": 8, "reason": "Security review mindset matters for production code." }
+      ],
+      "interviewFocus": ["Queueable vs Batch", "Named Credentials", "Apex service layer", "LWC error handling", "Sharing and user mode"],
+      "releaseFocus": ["Apex", "LWC", "Integration", "Security"]
+    },
+    "4": {
+      "band": "Mid-Level Developer",
+      "recommendedDesignations": ["Salesforce Developer", "Mid Salesforce Developer", "Salesforce Consultant Developer"],
+      "headline": "Deepen delivery ownership and cross-cloud thinking.",
+      "summary": "Strengthen integration patterns, Platform Events, advanced Flow, sharing, deployment discipline, and production support stories.",
+      "topicIds": ["integration", "platform", "async", "adv_apex", "security_full", "design", "sc_arch", "company_interviews"],
+      "topics": [
+        { "topicId": "integration", "topic": "Integration Patterns and Failure Handling", "category": "Integration", "priority": "critical", "estimatedHours": 14, "reason": "Four-year candidates must explain retries, idempotency, auth, and observability." },
+        { "topicId": "platform", "topic": "Platform Events and Change Data Capture", "category": "Integration", "priority": "high", "estimatedHours": 10, "reason": "Event-driven answers show modern architecture awareness." },
+        { "topicId": "security_full", "topic": "Advanced Sharing and User-Mode Data Access", "category": "Security", "priority": "critical", "estimatedHours": 10, "reason": "Mid-level developers must protect data across Apex, SOQL, and UI." },
+        { "topicId": "design", "topic": "Design Patterns for Salesforce", "category": "Architecture", "priority": "high", "estimatedHours": 10, "reason": "Reusable, testable code becomes expected at this level." }
+      ],
+      "interviewFocus": ["Retry strategy", "Platform Events vs Batch", "with sharing vs inherited sharing", "User mode operations", "Deployment rollback"],
+      "releaseFocus": ["Integration", "Security", "Apex", "Flow"]
+    },
+    "5": {
+      "band": "Senior Developer",
+      "recommendedDesignations": ["Senior Salesforce Developer", "Lead Salesforce Developer", "Senior SFDC Developer"],
+      "headline": "Operate like a senior engineer with architecture judgment.",
+      "summary": "Prioritize scalable Apex, LWC performance, integration architecture, CI/CD, production debugging, code review, and release impact analysis.",
+      "topicIds": ["adv_apex", "design", "integration", "async", "lwc", "security_full", "sc_arch", "sf_official"],
+      "topics": [
+        { "topicId": "adv_apex", "topic": "Scalable Apex and Limit Architecture", "category": "Development", "priority": "critical", "estimatedHours": 14, "reason": "Senior roles require explaining CPU, heap, query selectivity, and bulk patterns under load." },
+        { "topicId": "lwc", "topic": "LWC Performance and Composition", "category": "Frontend", "priority": "high", "estimatedHours": 10, "reason": "Senior frontend answers include state, cache, refresh, accessibility, and component boundaries." },
+        { "topicId": "integration", "topic": "Enterprise Integration and Observability", "category": "Integration", "priority": "critical", "estimatedHours": 14, "reason": "Senior developers should design auth, retries, dead-letter handling, and monitoring." },
+        { "topicId": "sc_arch", "topic": "Architecture Scenario Mix", "category": "Architecture", "priority": "critical", "estimatedHours": 12, "reason": "Architecture scenario answers prove readiness for senior interviews." }
+      ],
+      "interviewFocus": ["LDV", "CPU and heap debugging", "Code review standards", "CI/CD strategy", "Integration resilience", "Release impact"],
+      "releaseFocus": ["Apex", "LWC", "Integration", "Agentforce", "Data Cloud"]
+    },
+    "6": {
+      "band": "Lead Developer",
+      "recommendedDesignations": ["Lead Salesforce Developer", "Technical Lead", "Salesforce Engineering Lead"],
+      "headline": "Lead delivery, design decisions, and team quality.",
+      "summary": "Blend architecture, mentoring, CI/CD, code governance, integration ownership, technical debt control, and stakeholder communication.",
+      "topicIds": ["design", "sc_arch", "integration", "security_full", "fde_apex", "agentforce_guide", "company_iq", "behavioral"],
+      "topics": [
+        { "topicId": "design", "topic": "Domain, Service, and Selector Design", "category": "Architecture", "priority": "critical", "estimatedHours": 12, "reason": "Lead developers must define patterns other developers can follow." },
+        { "topicId": "sc_arch", "topic": "Architecture Guardrails and Release Strategy", "category": "Architecture", "priority": "critical", "estimatedHours": 14, "reason": "Technical leads own design tradeoffs and release safety." },
+        { "topicId": "security_full", "topic": "Enterprise Security Review Mindset", "category": "Security", "priority": "high", "estimatedHours": 10, "reason": "Lead roles require proactively preventing data and compliance risk." },
+        { "topicId": "behavioral", "topic": "Lead-Level STAR Stories", "category": "Career", "priority": "high", "estimatedHours": 8, "reason": "Leadership interviews test conflict, mentoring, ownership, and risk communication." }
+      ],
+      "interviewFocus": ["Design review", "Mentoring", "Technical debt", "Release governance", "Incident handling", "Stakeholder communication"],
+      "releaseFocus": ["Security", "Integration", "Agentforce", "Data Cloud", "Flow"]
+    },
+    "7": {
+      "band": "Technical Lead",
+      "recommendedDesignations": ["Salesforce Technical Lead", "Senior Technical Consultant", "Platform Technical Lead"],
+      "headline": "Lead platform architecture and enterprise integrations.",
+      "summary": "Focus on integration architecture, data model governance, LDV, event-driven design, AI readiness, release readiness, and cross-team decisions.",
+      "topicIds": ["sc_arch", "integration", "platform", "security_full", "fde_dc_concept", "fde_ag_concept", "sf_onsite", "mock"],
+      "topics": [
+        { "topicId": "integration", "topic": "Enterprise Integration Architecture", "category": "Integration", "priority": "critical", "estimatedHours": 14, "reason": "Technical leads must select patterns across APIs, middleware, events, and batch loads." },
+        { "topicId": "platform", "topic": "Event-Driven Salesforce Architecture", "category": "Architecture", "priority": "high", "estimatedHours": 12, "reason": "Modern Salesforce orgs use events for decoupling and scale." },
+        { "topicId": "fde_dc_concept", "topic": "Data Cloud Fundamentals for Architects", "category": "Data", "priority": "high", "estimatedHours": 12, "reason": "AI and personalization strategies increasingly depend on Data Cloud." },
+        { "topicId": "fde_ag_concept", "topic": "Agentforce Architecture Basics", "category": "AI", "priority": "high", "estimatedHours": 10, "reason": "Leads must understand agent topics, actions, grounding, and trust boundaries." }
+      ],
+      "interviewFocus": ["Integration tradeoffs", "LDV strategy", "Event-driven design", "AI readiness", "Data model governance"],
+      "releaseFocus": ["Integration", "Data Cloud", "Agentforce", "Security"]
+    },
+    "8": {
+      "band": "Architect-Ready",
+      "recommendedDesignations": ["Salesforce Solution Architect", "Technical Architect Track", "FDE/Agentforce Specialist"],
+      "headline": "Prepare for architect-level Salesforce and AI/Data Cloud discussions.",
+      "summary": "Prioritize cross-cloud architecture, Data Cloud, Agentforce, Trust Layer, identity, integration strategy, governance, and executive-level tradeoffs.",
+      "topicIds": ["sc_arch", "fde_dc_concept", "fde_dc_adv", "fde_ag_concept", "fde_atlas", "fde_trust", "fde_integration", "sf_onsite"],
+      "topics": [
+        { "topicId": "fde_dc_concept", "topic": "Data Cloud Identity and Segmentation", "category": "Data", "priority": "critical", "estimatedHours": 14, "reason": "Architect-ready candidates must explain DLO, DMO, identity resolution, and activation." },
+        { "topicId": "fde_ag_concept", "topic": "Agentforce Topics, Actions, and Grounding", "category": "AI", "priority": "critical", "estimatedHours": 12, "reason": "Agent architecture is now a senior/architect differentiator." },
+        { "topicId": "fde_trust", "topic": "Trust Layer, PII, and Compliance", "category": "Security", "priority": "critical", "estimatedHours": 10, "reason": "AI answers must include security, auditability, and data minimization." },
+        { "topicId": "sc_arch", "topic": "Cross-Cloud Architecture Scenarios", "category": "Architecture", "priority": "critical", "estimatedHours": 14, "reason": "Architecture interviews test end-to-end tradeoffs, not isolated facts." }
+      ],
+      "interviewFocus": ["Identity resolution", "Agent grounding", "Trust Layer", "Cross-cloud integration", "Governance model"],
+      "releaseFocus": ["Agentforce", "Data Cloud", "Security", "Integration"]
+    },
+    "9": {
+      "band": "Principal Engineer",
+      "recommendedDesignations": ["Principal Salesforce Developer", "Salesforce Architect", "Platform Engineering Lead"],
+      "headline": "Own platform strategy, governance, and high-impact architecture.",
+      "summary": "Focus on platform governance, scale, release adoption, AI/data strategy, org consolidation, integration portfolios, and measurable business outcomes.",
+      "topicIds": ["sc_arch", "design", "security_full", "fde_dc_adv", "fde_atlas", "fde_trust", "sf_official", "company_iq"],
+      "topics": [
+        { "topicId": "sc_arch", "topic": "Platform Governance and Architecture Review", "category": "Architecture", "priority": "critical", "estimatedHours": 14, "reason": "Principal candidates must set guardrails across teams and releases." },
+        { "topicId": "fde_dc_adv", "topic": "Advanced Data Cloud Architecture", "category": "Data", "priority": "critical", "estimatedHours": 12, "reason": "Data strategy is central to AI and customer 360 programs." },
+        { "topicId": "fde_atlas", "topic": "Agentforce Reasoning and Action Design", "category": "AI", "priority": "high", "estimatedHours": 10, "reason": "Principal roles require safe automation strategy, not simple feature usage." },
+        { "topicId": "security_full", "topic": "Enterprise Security and Compliance Patterns", "category": "Security", "priority": "critical", "estimatedHours": 12, "reason": "Governance without security depth is not credible at principal level." }
+      ],
+      "interviewFocus": ["Governance", "Executive tradeoffs", "Org strategy", "AI/data roadmap", "Architecture review boards"],
+      "releaseFocus": ["Agentforce", "Data Cloud", "Security", "Admin", "Integration"]
+    },
+    "10": {
+      "band": "Architect / Engineering Lead",
+      "recommendedDesignations": ["Salesforce Architect", "Technical Architect", "Salesforce Engineering Director"],
+      "headline": "Lead enterprise transformation with Salesforce, data, and AI.",
+      "summary": "Prioritize business-aligned architecture, enterprise migration strategy, AI governance, Data Cloud, integration portfolios, platform operating model, and release strategy.",
+      "topicIds": ["sf_onsite", "sc_arch", "fde_dc_adv", "fde_ag_scenario", "fde_integration", "fde_trust", "security_full", "behavioral"],
+      "topics": [
+        { "topicId": "sf_onsite", "topic": "Architect-Level Salesforce Onsite Readiness", "category": "Architecture", "priority": "critical", "estimatedHours": 14, "reason": "Ten-year candidates need structured architecture narratives and executive clarity." },
+        { "topicId": "fde_integration", "topic": "AI/Data/CRM Integration Strategy", "category": "Integration", "priority": "critical", "estimatedHours": 12, "reason": "Enterprise AI must connect safely to source systems and business processes." },
+        { "topicId": "fde_trust", "topic": "AI Governance, Trust, and Risk", "category": "AI", "priority": "critical", "estimatedHours": 12, "reason": "Architects must define control models, not only implementation details." },
+        { "topicId": "behavioral", "topic": "Executive Communication and Leadership Stories", "category": "Career", "priority": "high", "estimatedHours": 8, "reason": "Architecture interviews heavily test influence and decision framing." }
+      ],
+      "interviewFocus": ["Enterprise roadmap", "Migration strategy", "AI governance", "Operating model", "Executive communication"],
+      "releaseFocus": ["Agentforce", "Data Cloud", "Security", "Integration", "Admin"]
+    }
+  }
+}
