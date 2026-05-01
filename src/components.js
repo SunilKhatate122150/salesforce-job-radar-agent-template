@@ -187,6 +187,15 @@ function renderProfileMatchPage(profile) {
   });
 }
 
+function extractIndustrialTopicName(topic) {
+  if (typeof topic === 'string') return topic;
+  if (topic.name) return topic.name;
+  if (topic.topicId) {
+     return topic.topicId.replace(/[_-]/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+  }
+  return 'Study Topic';
+}
+
 function renderPremiumRoadmapSection(data) {
   const roadmap = data.roadmap || {};
   const topics = roadmap.topics || [];
@@ -399,6 +408,16 @@ function renderBoard() {
   });
 }
 
+function getFollowUpStatus(job) {
+  if (job.status !== 'applied') return null;
+  const lastContact = job.lastContact ? new Date(job.lastContact) : new Date(job.dateAdded);
+  const diffDays = Math.floor((new Date() - lastContact) / (1000 * 60 * 60 * 24));
+  
+  if (diffDays >= 7) return { label: '7d+ No Response', class: 'critical' };
+  if (diffDays >= 3) return { label: '3d+ Since Contact', class: 'warning' };
+  return null;
+}
+
 function renderJobCard(job) {
   const followUp = getFollowUpStatus(job);
   const matchedSkills = job.matched_skills || [];
@@ -446,10 +465,10 @@ function renderInsights() {
   const funnel = document.getElementById('funnel-container');
   if (!funnel) return;
   const stages = [
-    { label: 'TO APPLY', count: pipelineJobs.filter(j => j.status === 'todo').length, color: 'var(--blue)' },
-    { label: 'APPLIED', count: pipelineJobs.filter(j => j.status === 'applied').length, color: 'var(--green)' },
-    { label: 'INTERVIEW', count: pipelineJobs.filter(j => j.status === 'interview').length, color: 'var(--amber)' },
-    { label: 'OFFER', count: pipelineJobs.filter(j => j.status === 'offer').length, color: 'var(--pink)' }
+    { label: 'TO APPLY', count: window.pipelineJobs.filter(j => j.status === 'todo').length, color: 'var(--blue)' },
+    { label: 'APPLIED', count: window.pipelineJobs.filter(j => j.status === 'applied').length, color: 'var(--green)' },
+    { label: 'INTERVIEW', count: window.pipelineJobs.filter(j => j.status === 'interview').length, color: 'var(--amber)' },
+    { label: 'OFFER', count: window.pipelineJobs.filter(j => j.status === 'offer').length, color: 'var(--pink)' }
   ];
   const max = Math.max(...stages.map(s => s.count), 1);
   funnel.innerHTML = stages.map(s => `

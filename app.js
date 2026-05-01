@@ -28,19 +28,19 @@ let currentRetentionTopicId = null;
 let sessionFeedbackProvided = new Set(); 
 
 // --- JOB RADAR PIPELINE STATE (v1399) ---
-let pipelineJobs = [];
-let activityLog = [];
-let currentBoardFilter = 'all';
-let currentBoardSearch = '';
-let currentRadarSubTab = 'pipeline';
+window.pipelineJobs = [];
+window.activityLog = [];
+window.currentBoardFilter = 'all';
+window.currentBoardSearch = '';
+window.currentRadarSubTab = 'pipeline';
 let currentPrepCompany = 'Cognizant';
 let cachedHistories = {};
 let clientStateLoadedFor = null;
-const JOB_BOARD_PAGE_SIZE = 6;
-const BOOKMARK_PAGE_SIZE = 8;
-const LOG_PAGE_SIZE = 12;
-const HISTORY_PAGE_SIZE = 8;
-const HISTORY_ANALYTICS_PAGE_SIZE = 6;
+window.JOB_BOARD_PAGE_SIZE = 6;
+window.BOOKMARK_PAGE_SIZE = 8;
+window.LOG_PAGE_SIZE = 12;
+window.HISTORY_PAGE_SIZE = 8;
+window.HISTORY_ANALYTICS_PAGE_SIZE = 6;
 window.radarBoardPages = { todo: 0, applied: 0, interview: 0, offer: 0, rejected: 0 };
 window.bookmarksPage = 0;
 window.activityLogPage = 0;
@@ -2418,7 +2418,7 @@ async function fetchJobsList() {
       logActivity(`Synced ${addedCount} new jobs into the board and refreshed ${updatedCount} existing cards.`, 'success');
     }
   } catch (e) {
-    console.error('âŒ [RADAR] Error fetching jobs:', e);
+    console.error('❌ [RADAR] Error fetching jobs:', e);
     const dbBadge = document.getElementById('dbStatusBadge');
     if (dbBadge) {
       dbBadge.textContent = 'Sync Failed';
@@ -2428,6 +2428,88 @@ async function fetchJobsList() {
     showToast('Failed to load jobs from the database.');
   }
 }
+
+// --- BOARD INTERACTION HANDLERS (Restored v1412) ---
+window.moveTo = async function(id, status) {
+  console.log(`🚚 [RADAR] Moving job ${id} to ${status}`);
+  const job = window.pipelineJobs.find(j => j.id === id);
+  if (!job) return;
+  
+  job.status = status;
+  job.updatedAt = new Date().toISOString();
+  if (status === 'applied' && !job.appliedAt) job.appliedAt = new Date().toISOString();
+  
+  savePipeline();
+  renderBoard();
+  updateJobRadarSummary();
+  
+  try {
+    await apiFetch(`/api/jobs/${id}/status`, {
+      method: 'PATCH',
+      body: JSON.stringify({ status })
+    });
+    logActivity(`Moved ${job.company} to ${status.toUpperCase()}`, 'success');
+  } catch (e) {
+    console.error('❌ [RADAR] Server sync failed:', e);
+  }
+};
+
+window.setBoardPage = function(col, dir) {
+  const filtered = (window.pipelineJobs || []).filter(j => j.status === col);
+  const max = Math.max(0, Math.ceil(filtered.length / window.JOB_BOARD_PAGE_SIZE) - 1);
+  window.radarBoardPages[col] = Math.max(0, Math.min(max, (window.radarBoardPages[col] || 0) + dir));
+  renderBoard();
+};
+
+window.setBoardFilter = function(filter, btn) {
+  window.currentBoardFilter = filter;
+  document.querySelectorAll('.fb').forEach(b => b.classList.remove('on'));
+  if (btn) btn.classList.add('on');
+  renderBoard();
+};
+
+window.doBoardSearch = function() {
+  renderBoard();
+};
+
+window.switchRadarSubTab = function(tabId) {
+  window.currentRadarSubTab = tabId;
+  document.querySelectorAll('.radar-tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById(`tab-${tabId}`)?.classList.add('active');
+  
+  document.querySelectorAll('.radar-view').forEach(v => v.style.display = 'none');
+  document.getElementById(`radar-${tabId}-view`).style.display = 'block';
+  
+  if (tabId === 'pipeline') renderBoard();
+  if (tabId === 'insights') {
+    renderInsights();
+    renderLog();
+  }
+  if (tabId === 'development') renderDevelopment();
+};
+
+window.handleDragStart = function(e, id) {
+  e.dataTransfer.setData('text/plain', id);
+  e.currentTarget.style.opacity = '0.4';
+};
+
+window.handleDragOver = function(e) {
+  e.preventDefault();
+  e.currentTarget.classList.add('drag-over');
+};
+
+window.handleDragLeave = function(e) {
+  e.currentTarget.classList.remove('drag-over');
+};
+
+window.handleDrop = function(e, status) {
+  e.preventDefault();
+  e.currentTarget.classList.remove('drag-over');
+  const id = e.dataTransfer.getData('text/plain');
+  const card = document.getElementById(`card-${id}`);
+  if (card) card.style.opacity = '1';
+  window.moveTo(id, status);
+};
 
 function clearAndSyncJobs() {
     console.log('🧹 Resetting Job Radar cache only...');
