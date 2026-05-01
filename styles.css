@@ -4903,23 +4903,27 @@ pre.code .num {
   display: flex;
   min-width: 0;
   flex-direction: column;
-  gap: 3px;
+  gap: 4px;
+  text-align: left;
 }
 
 .login-mode-copy strong {
   color: white;
-  font-size: 0.9rem;
-  line-height: 1.25;
+  font-size: 0.95rem;
+  line-height: 1.2;
 }
 
-.login-mode-copy small,
+.login-mode-copy small {
+  color: rgba(255,255,255,0.48);
+  font-size: 0.72rem;
+  line-height: 1.4;
+  display: block;
+}
+
 .login-mode-footnote {
   color: rgba(255,255,255,0.48);
   font-size: 0.72rem;
   line-height: 1.45;
-}
-
-.login-mode-footnote {
   margin-top: 10px;
 }
 
@@ -4928,7 +4932,23 @@ pre.code .num {
   background: rgba(255,255,255,0.045);
 }
 
-/* SIDEBAR OVERLAY â€” mobile dim background when menu is open */
+@media (max-width: 400px) {
+  #loginOverlay > div {
+    padding: 2.5rem 1.5rem !important;
+    border-radius: 30px !important;
+  }
+  #loginOverlay h1 {
+    font-size: 1.85rem !important;
+  }
+  .login-mode-copy strong {
+    font-size: 0.85rem !important;
+  }
+  .login-mode-copy small {
+    font-size: 0.65rem !important;
+  }
+}
+
+/* SIDEBAR OVERLAY */
 #sidebarOverlay {
   position: fixed !important;
   top: 0 !important;
@@ -5631,16 +5651,32 @@ body:not(:has(#job_radar.active)) .fab-add {
 
 /* ===== PREMIUM CAREER INTELLIGENCE LAYER ===== */
 .ui-mode-toggle {
-  min-width: 74px;
+  min-width: 82px;
   height: 32px;
-  border: 1px solid rgba(255,255,255,0.12);
-  background: rgba(255,255,255,0.04);
-  color: var(--text);
+  border: 1px solid rgba(255,255,255,0.15);
+  background: rgba(255,255,255,0.06);
+  color: white;
   border-radius: 999px;
-  font-size: 0.68rem;
-  font-weight: 800;
+  font-size: 0.72rem;
+  font-weight: 700;
   cursor: pointer;
-  margin-right: 10px;
+  margin-right: 12px;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.ui-mode-toggle:hover {
+  background: rgba(255,255,255,0.12);
+  border-color: var(--blue);
+  box-shadow: 0 0 15px rgba(59, 130, 246, 0.25);
+  transform: translateY(-1px);
+}
+
+.ui-mode-toggle:active {
+  transform: scale(0.96);
 }
 
 body.ui-classic {

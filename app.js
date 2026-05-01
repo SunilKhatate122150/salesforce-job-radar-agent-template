@@ -68,9 +68,10 @@ async function loadKnowledgeData(topicId) {
 
 
 
-// =============================================
-// AUTHENTICATION (Google OAuth2)
-// =============================================
+window.handleCredentialResponse = function(response) {
+  processGAuth(response);
+};
+
 window.processGAuth = async function(response) {
   const token = response.credential;
   const loginMode = getLoginUiModeIntent() || currentUiMode || 'modern';
@@ -89,21 +90,19 @@ window.processGAuth = async function(response) {
     if (data.success) {
       currentUser = data.user;
       loadUserScopedClientState();
-      // Force hide the overlay immediately
-      document.getElementById('loginOverlay').style.display = 'none';
-      console.log('Login Success! Showing Dashboard for:', currentUser.name);
+      const overlay = document.getElementById('loginOverlay');
+      if (overlay) overlay.style.display = 'none';
       
-      // Load data in background
       renderUserProfile(currentUser);
       syncDashboard();
       showPage(loginMode === 'classic' ? 'schedule' : 'profile_match');
     } else {
-      alert('Login failed: ' + data.error);
+      showToast('Authentication failed: ' + (data.error || 'Check Google Client ID'), true);
     }
   } catch (e) {
-    // Only log real errors, ignore browser blocks (ad-blockers)
     if (e.message && e.message.includes('BLOCKED_BY_CLIENT')) return;
     console.error('Auth Error:', e);
+    showToast('Login Service Unavailable', true);
   }
 };
 
@@ -206,15 +205,13 @@ function syncLoginUiModeControls(mode = currentUiMode) {
   const checkbox = document.getElementById('loginPremiumMode');
   const title = document.getElementById('loginModeTitle');
   const desc = document.getElementById('loginModeDescription');
-  const panel = document.querySelector('.login-mode-panel');
   if (checkbox) checkbox.checked = normalized !== 'classic';
-  if (title) title.textContent = normalized === 'classic' ? 'Legacy / Classic UI' : 'New Premium UI';
+  if (title) title.textContent = normalized === 'classic' ? 'Legacy / Classic UI' : '✅ New Premium UI';
   if (desc) {
     desc.textContent = normalized === 'classic'
-      ? 'Use the released dashboard feel with familiar study sections and old navigation rhythm.'
-      : 'Career roadmap, release center, profile intelligence, and modern cards.';
+      ? 'Use the familiar study sections and old navigation rhythm.'
+      : 'Personalized roadmap & market intelligence.';
   }
-  if (panel) panel.dataset.mode = normalized;
 }
 
 function applyUiMode(mode) {

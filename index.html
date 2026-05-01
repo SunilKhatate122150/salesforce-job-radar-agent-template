@@ -33,26 +33,26 @@
 
 <!-- LOGIN OVERLAY -->
 <div id="loginOverlay" style="position:fixed; top:0; left:0; width:100%; height:100%; background: radial-gradient(circle at 0% 0%, hsla(222, 100%, 15%, 1) 0%, hsla(222, 55%, 6%, 1) 50%, hsla(280, 100%, 10%, 1) 100%); z-index: 99999; display: flex; flex-direction: column; align-items: center; justify-content: center; color: white; backdrop-filter: blur(20px);">
-  <div style="background: hsla(222, 47%, 12%, 0.6); backdrop-filter: blur(30px); padding: 4rem 2.5rem; border-radius: 40px; border: 1px solid hsla(222, 100%, 50%, 0.15); text-align: center; max-width: 460px; width: 92%; box-shadow: 0 40px 100px -20px rgba(0,0,0,0.8), 0 0 40px rgba(59, 130, 246, 0.1); position: relative; overflow: hidden;">
+  <div style="background: hsla(222, 47%, 12%, 0.6); backdrop-filter: blur(30px); padding: 3rem 2rem; border-radius: 40px; border: 1px solid hsla(222, 100%, 50%, 0.15); text-align: center; max-width: 440px; width: 92%; box-shadow: 0 40px 100px -20px rgba(0,0,0,0.8), 0 0 40px rgba(59, 130, 246, 0.1); position: relative; overflow: hidden;">
     <div style="position: absolute; top: -50px; right: -50px; width: 150px; height: 150px; background: radial-gradient(circle, hsla(222, 100%, 50%, 0.1), transparent 70%); filter: blur(20px);"></div>
-    <div style="width: 80px; height: 80px; background: linear-gradient(135deg, #3b82f6, #8b5cf6); border-radius: 24px; margin: 0 auto 2rem; display: flex; align-items: center; justify-content: center; box-shadow: 0 15px 30px rgba(59, 130, 246, 0.4); animation: float 6s ease-in-out infinite;">
-      <svg viewBox="0 0 24 24" fill="white" style="width: 40px; height: 40px;"><path d="M13 10V3L4 14H11V21L20 10H13Z"/></svg>
+    <div style="width: 72px; height: 72px; background: linear-gradient(135deg, #3b82f6, #8b5cf6); border-radius: 20px; margin: 0 auto 1.5rem; display: flex; align-items: center; justify-content: center; box-shadow: 0 15px 30px rgba(59, 130, 246, 0.4); animation: float 6s ease-in-out infinite;">
+      <svg viewBox="0 0 24 24" fill="white" style="width: 36px; height: 36px;"><path d="M13 10V3L4 14H11V21L20 10H13Z"/></svg>
     </div>
-    <h1 style="font-size: 2.5rem; font-weight: 800; margin-bottom: 1rem; font-family: 'Syne', sans-serif; letter-spacing: -1px; background: linear-gradient(135deg, #fff 0%, #94a3b8 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Job Radar AI</h1>
-    <p style="margin-bottom: 2rem; color: var(--text-soft); font-size: 1rem; line-height: 1.6; font-family: 'Outfit', sans-serif;">Industrial Salesforce Career Hub.<br>High-fidelity tracking & intelligence.</p>
+    <h1 style="font-size: 2.25rem; font-weight: 800; margin-bottom: 0.75rem; font-family: 'Syne', sans-serif; letter-spacing: -1px; background: linear-gradient(135deg, #fff 0%, #94a3b8 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Job Radar AI</h1>
+    <p style="margin-bottom: 2rem; color: rgba(255,255,255,0.6); font-size: 0.95rem; line-height: 1.5; font-family: 'Outfit', sans-serif;">Industrial Salesforce Career Hub.<br>High-fidelity tracking & intelligence.</p>
 
-    <div class="login-mode-panel" role="group" aria-labelledby="loginModeHeading">
-      <div id="loginModeHeading" class="login-mode-heading">Choose Login Experience</div>
+    <div class="login-mode-panel">
+      <div class="login-mode-heading">Choose Login Experience</div>
       <label class="login-mode-toggle" for="loginPremiumMode">
         <input id="loginPremiumMode" type="checkbox" checked onchange="setLoginUiModeFromCheckbox(this)">
-        <span class="login-mode-switch" aria-hidden="true"></span>
+        <span class="login-mode-switch"></span>
         <span class="login-mode-copy">
           <strong id="loginModeTitle">New Premium UI</strong>
-          <small id="loginModeDescription">Career roadmap, release center, profile intelligence, and modern cards.</small>
+          <small id="loginModeDescription">Personalized roadmap & market intelligence.</small>
         </span>
       </label>
       <div class="login-mode-footnote">
-        Checked = New Premium UI. Unchecked = Legacy / Classic dashboard.
+        Toggle to switch between Premium and Legacy views.
       </div>
     </div>
 	    
@@ -65,19 +65,20 @@
          data-itp_support="true"
          data-use_fedcm_for_prompt="true">
     </div>
-    <div class="g_id_signin"
-         data-type="standard"
-         data-shape="pill"
-         data-theme="filled_blue"
-         data-text="signin_with"
-         data-size="large"
-         data-logo_alignment="left"
-         style="display:inline-block; transform:scale(1.1);">
+    <div style="display:flex; justify-content:center; margin: 1.5rem 0;">
+      <div class="g_id_signin"
+           data-type="standard"
+           data-shape="pill"
+           data-theme="filled_blue"
+           data-text="signin_with"
+           data-size="large"
+           data-logo_alignment="left">
+      </div>
     </div>
     
-    <div style="margin-top:3rem; padding-top:1.5rem; border-top:1px solid rgba(255,255,255,0.05); display:flex; align-items:center; justify-content:center; gap:8px;">
+    <div style="margin-top:2.5rem; padding-top:1.25rem; border-top:1px solid rgba(255,255,255,0.06); display:flex; align-items:center; justify-content:center; gap:8px;">
         <svg viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.2)" stroke-width="2" style="width:14px;"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-        <span style="font-size:0.65rem; color:rgba(255,255,255,0.2); font-weight:600; letter-spacing:1px; text-transform:uppercase;">Secure Cloud Sync Active</span>
+        <span style="font-size:0.6rem; color:rgba(255,255,255,0.2); font-weight:700; letter-spacing:1.5px; text-transform:uppercase;">Secure Cloud Sync Active</span>
     </div>
   </div>
 </div>
