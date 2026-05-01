@@ -93,6 +93,13 @@
         render();
       }
 
+      if (action === 'experience') {
+        syncEditorToState();
+        state.experienceFilter = actionEl.getAttribute('data-year') || 'all';
+        ensureVisibleSelection();
+        render();
+      }
+
       if (action === 'reset') {
         selectChallenge(state.selectedId);
         saveLocalWorkspace();
@@ -555,10 +562,7 @@
           <div class="cp-subtle">${escapeHtml(renderProfileHint())}</div>
         </div>
         <div class="cp-toolbar" aria-label="Code practice filters">
-          <select id="cpExperienceFilter" class="cp-select" aria-label="Experience level">
-            <option value="all"${state.experienceFilter === 'all' ? ' selected' : ''}>All years</option>
-            ${Array.from({ length: 10 }, (_, i) => i + 1).map(year => `<option value="${year}"${state.experienceFilter === String(year) ? ' selected' : ''}>${year} year${year > 1 ? 's' : ''}</option>`).join('')}
-          </select>
+          ${renderExperienceMenu()}
           <div class="cp-segments" aria-label="Language track">
             ${renderTrackButton('all', 'All')}
             ${renderTrackButton('web', 'Web')}
@@ -566,6 +570,27 @@
           </div>
         </div>
       </div>
+    `;
+  }
+
+  function renderExperienceMenu() {
+    const current = state.experienceFilter === 'all'
+      ? 'All years'
+      : `${state.experienceFilter} year${state.experienceFilter === '1' ? '' : 's'}`;
+    const options = ['all', ...Array.from({ length: 10 }, (_, i) => String(i + 1))];
+    return `
+      <details class="cp-year-menu">
+        <summary aria-label="Experience level filter">
+          <span>${escapeHtml(current)}</span>
+          <span aria-hidden="true">⌄</span>
+        </summary>
+        <div class="cp-year-options" role="listbox" aria-label="Experience level options">
+          ${options.map(value => {
+            const label = value === 'all' ? 'All years' : `${value} year${value === '1' ? '' : 's'}`;
+            return `<button type="button" role="option" aria-selected="${state.experienceFilter === value}" class="${state.experienceFilter === value ? 'is-active' : ''}" data-cp-action="experience" data-year="${value}">${escapeHtml(label)}</button>`;
+          }).join('')}
+        </div>
+      </details>
     `;
   }
 
