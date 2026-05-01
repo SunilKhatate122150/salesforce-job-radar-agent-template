@@ -2355,8 +2355,14 @@ async function fetchJobsList() {
     if (!response.ok) throw new Error('Unauthorized or Server Down');
     const data = await response.json();
     console.log('ðŸ“¦ [RADAR] Raw Server Response:', data);
-    window.allJobRecords = data.records || [];
-    console.log(`✅ [RADAR] Received ${window.allJobRecords.length} jobs. DB Status: ${data.dbStatus}`);
+    const rawRecords = data.records || [];
+    window.allJobRecords = rawRecords.filter(rec => {
+      // Defensive filter: Exclude metadata/system records that might leak into the jobs array
+      const title = (rec.role || rec.title || '').toLowerCase();
+      if (title.includes('storage') || title.includes('capacity') || title.includes('unified')) return false;
+      return true;
+    });
+    console.log(`✅ [RADAR] Received ${window.allJobRecords.length} professional jobs. DB Status: ${data.dbStatus}`);
 
     let addedCount = 0;
     let updatedCount = 0;

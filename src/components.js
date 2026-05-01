@@ -6,6 +6,45 @@
  * and a modular "Generic Solution" architecture.
  */
 
+// --- PRESENTATION HELPERS ---
+function timeAgo(date) {
+  if (!date) return 'Just now';
+  const seconds = Math.floor((new Date() - new Date(date)) / 1000);
+  let interval = seconds / 31536000;
+  if (interval > 1) return Math.floor(interval) + "y ago";
+  interval = seconds / 2592000;
+  if (interval > 1) return Math.floor(interval) + "mo ago";
+  interval = seconds / 86400;
+  if (interval > 1) return Math.floor(interval) + "d ago";
+  interval = seconds / 3600;
+  if (interval > 1) return Math.floor(interval) + "h ago";
+  interval = seconds / 60;
+  if (interval > 1) return Math.floor(interval) + "m ago";
+  return "Just now";
+}
+
+function stringToColor(str) {
+  let hash = 0;
+  const s = String(str || 'User');
+  for (let i = 0; i < s.length; i++) {
+    hash = s.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  let color = '#';
+  for (let i = 0; i < 3; i++) {
+    let value = (hash >> (i * 8)) & 0xFF;
+    color += ('00' + value.toString(16)).substr(-2);
+  }
+  return color + '44'; // Add transparency
+}
+
+function generateInitialsAvatar(name) {
+  const parts = (name || 'User').split(' ');
+  const initials = parts.length > 1 
+    ? (parts[0][0] + parts[parts.length-1][0]).toUpperCase()
+    : parts[0].substring(0, 2).toUpperCase();
+  return `data:image/svg+xml;base64,${btoa(`<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"><rect width="100" height="100" fill="rgba(59,130,246,0.1)"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" font-family="sans-serif" font-size="40" font-weight="700" fill="#3b82f6">${initials}</text></svg>`)}`;
+}
+
 function renderUserProfile(user) {
   if (!user) return;
   const container = document.getElementById('floatingProfileContainer');
@@ -138,7 +177,7 @@ function renderProfileMatchPage(profile) {
           <span class="topic-name">${topicName}</span>
           <span class="priority-badge">${rawPriority}</span>
         </div>
-        <div class="topic-reason">${t.reason || ''}</div>
+        <div class="topic-reason">${t.reason || t.desc || ''}</div>
         <div class="topic-meta">
           <span class="est-time"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg> ${t.estimatedHours || 0}h est</span>
           <span class="start-prep">Start Prep <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg></span>
@@ -190,6 +229,7 @@ function renderProfileMatchPage(profile) {
 function extractIndustrialTopicName(topic) {
   if (typeof topic === 'string') return topic;
   if (topic.name) return topic.name;
+  if (topic.topic) return topic.topic;
   if (topic.topicId) {
      return topic.topicId.replace(/[_-]/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
   }
@@ -214,11 +254,15 @@ function renderPremiumRoadmapSection(data) {
       </div>
       <div class="premium-roadmap-grid">
         ${topics.map((t, idx) => `
-          <div class="premium-roadmap-node ${t.status || 'upcoming'}">
-            <div class="node-index">${idx + 1}</div>
-            <div class="node-content">
-              <h4>${t.name}</h4>
-              <p>${t.desc}</p>
+          <div onclick="showPage('${t.topicId || 'admin'}')" class="roadmap-topic-card" data-priority="${t.priority || 'medium'}">
+            <div class="topic-card-head">
+              <span class="topic-name">${t.topic || t.name || 'Core Concept'}</span>
+              <span class="priority-badge">${t.priority || 'medium'}</span>
+            </div>
+            <div class="topic-reason">${t.reason || t.desc || 'Essential knowledge for your career path.'}</div>
+            <div class="topic-meta">
+              <span class="est-time"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg> ${t.estimatedHours || 6}h est</span>
+              <span class="start-prep">Start Prep <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg></span>
             </div>
           </div>
         `).join('')}
@@ -387,7 +431,7 @@ function renderBoard() {
       .filter(j => j.status === col)
       .filter(j => filter === 'all' || j.prob === filter)
       .filter(j => !searchTerm || j.company.toLowerCase().includes(searchTerm) || j.role.toLowerCase().includes(searchTerm))
-      .sort((a, b) => new Date(b.dateAdded || b.createdAt) - new Date(a.dateAdded || a.createdAt));
+      .sort((a, b) => new Date(b.dateAdded || b.created_at) - new Date(a.dateAdded || a.created_at));
 
     if (count) count.textContent = filtered.length;
 
@@ -410,7 +454,7 @@ function renderBoard() {
 
 function getFollowUpStatus(job) {
   if (job.status !== 'applied') return null;
-  const lastContact = job.lastContact ? new Date(job.lastContact) : new Date(job.dateAdded);
+  const lastContact = job.lastContact ? new Date(job.lastContact) : new Date(job.created_at || job.dateAdded);
   const diffDays = Math.floor((new Date() - lastContact) / (1000 * 60 * 60 * 24));
   
   if (diffDays >= 7) return { label: '7d+ No Response', class: 'critical' };
@@ -422,35 +466,54 @@ function renderJobCard(job) {
   const followUp = getFollowUpStatus(job);
   const matchedSkills = job.matched_skills || [];
   const gapSkills = job.missing_skills || [];
+  const prob = job.prob || 'medium';
   
   const actions = [];
   if (job.status === 'todo') {
     actions.push({ label: 'Apply Now', href: job.url, cls: 'primary' });
-    actions.push({ label: 'Mark Applied', onClick: `moveTo('${job.id}', 'applied')`, cls: 'secondary' });
+    actions.push({ label: 'Mark Applied', onClick: `moveTo('${job.id}', 'applied')`, cls: 'success' });
   } else if (job.status === 'applied') {
     actions.push({ label: 'Schedule Interview', onClick: `moveTo('${job.id}', 'interview')`, cls: 'primary' });
     actions.push({ label: 'No Response', onClick: `moveTo('${job.id}', 'todo')`, cls: 'secondary' });
   } else if (job.status === 'interview') {
-    actions.push({ label: 'Offer Received', onClick: `moveTo('${job.id}', 'offer')`, cls: 'primary' });
+    actions.push({ label: 'Offer Received', onClick: `moveTo('${job.id}', 'offer')`, cls: 'success' });
     actions.push({ label: 'Back to Pipeline', onClick: `moveTo('${job.id}', 'applied')`, cls: 'secondary' });
+  } else {
+    actions.push({ label: 'Reopen', onClick: `moveTo('${job.id}', 'todo')`, cls: 'secondary' });
   }
 
   return `
-    <div class="job-card" draggable="true" ondragstart="handleDragStart(event, '${job.id}')" id="card-${job.id}">
-      <div class="jcard-head">
-        <div class="jcard-company">${job.company}</div>
-        <div class="jcard-date">${new Date(job.dateAdded || Date.now()).toLocaleDateString()}</div>
+    <div class="jcard-v3" data-prob="${prob}" id="card-${job.id}" draggable="true" ondragstart="handleDragStart(event, '${job.id}')">
+      <div class="jcard-top">
+        <div class="jcard-company-block">
+          <div class="jcard-icon" style="background:${stringToColor(job.company)}">${job.company.substring(0,2).toUpperCase()}</div>
+          <div class="jcard-company-copy">
+             <div class="jcard-company">${job.company}</div>
+             <div class="jcard-company-type">${job.company_type || 'MNC'}</div>
+          </div>
+        </div>
+        <div class="jcard-age">${timeAgo(job.created_at)}</div>
       </div>
+      
       <div class="jcard-role">${job.role}</div>
-      ${followUp && job.status === 'applied' ? `<div class="followup-inline ${followUp.class}">${followUp.label}</div>` : ''}
+      
       <div class="jcard-meta-grid">
-        <span class="meta-pill">Location: <b>${job.loc || 'India'}</b></span>
-        <span class="meta-pill">Exp: <b>${job.experience || '3-5 Yrs'}</b></span>
+         <div class="meta-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:12px;height:12px;"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg> ${job.loc || 'India'}</div>
+         <div class="meta-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:12px;height:12px;"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path></svg> ${job.experience || '3-5 Yrs'}</div>
       </div>
+
+      ${followUp && job.status === 'applied' ? `<div class="followup-badge ${followUp.class}">${followUp.label}</div>` : ''}
+
       <div class="jcard-skill-row">
-        ${matchedSkills.map(s => `<span class="skill-tag">${s}</span>`).join('')}
-        ${gapSkills.map(s => `<span class="skill-gap-tag" onclick="showPage('profile_match')">${s}</span>`).join('')}
+        ${matchedSkills.slice(0,3).map(s => `<span class="tag-match">${s}</span>`).join('')}
+        ${gapSkills.slice(0,2).map(s => `<span class="tag-gap">${s}</span>`).join('')}
       </div>
+
+      ${job.why_apply ? `
+      <div class="jcard-why">
+        <strong>AI Fit:</strong> ${job.why_apply}
+      </div>` : ''}
+
       <div class="jcard-actions">
         ${actions.map(a => a.href 
           ? `<a href="${a.href}" target="_blank" class="jcard-btn ${a.cls}">${a.label}</a>`
