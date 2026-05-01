@@ -432,7 +432,9 @@ window.setLoginUiModeFromCheckbox = function(input) {
 };
 
 async function persistUiMode(mode) {
-  applyUiMode(mode);
+  const normalized = normalizeUiMode(mode);
+  sessionStorage.setItem('sf_login_ui_mode_intent', normalized);
+  applyUiMode(normalized);
   if (!cachedUserProfile) return;
   cachedUserProfile.uiMode = currentUiMode;
   try {
@@ -441,6 +443,9 @@ async function persistUiMode(mode) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(cachedUserProfile)
     });
+    if (getLoginUiModeIntent() === normalized) {
+      sessionStorage.removeItem('sf_login_ui_mode_intent');
+    }
   } catch (e) {
     console.warn('[UI MODE] Could not persist preference yet:', e.message);
   }
@@ -480,15 +485,25 @@ function readPremiumFormProfile(base = {}) {
   };
 }
 
+function scoreDesignationLabel(normalized, label) {
+  const normalizedLabel = String(label || '').toLowerCase().trim();
+  if (!normalizedLabel) return 0;
+  if (normalized === normalizedLabel) return 10000 + normalizedLabel.length;
+  if (normalized.includes(normalizedLabel)) return 1000 + normalizedLabel.length;
+  if (normalizedLabel.includes(normalized)) return 500 + normalized.length;
+  return 0;
+}
+
 function inferStaticDesignation(rawDesignation, designationsData = {}) {
   const value = String(rawDesignation || '').trim();
   const designations = designationsData.designations || [];
   if (!value) return designations[0] || null;
   const normalized = value.toLowerCase();
-  return designations.find(item => {
+  const ranked = designations.map(item => {
     const labels = [item.label, ...(item.aliases || [])].map(label => String(label || '').toLowerCase());
-    return labels.some(label => normalized.includes(label) || label.includes(normalized));
-  }) || {
+    return { item, score: Math.max(...labels.map(label => scoreDesignationLabel(normalized, label))) };
+  }).filter(match => match.score > 0).sort((a, b) => b.score - a.score);
+  return ranked[0]?.item || {
     id: normalized.replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '') || 'custom_designation',
     label: value,
     track: 'Custom',
@@ -588,10 +603,9 @@ async function refreshPremiumRoadmapMount() {
   premiumRoadmapCache = null;
   premiumReleaseCache = null;
   try {
-    const data = await loadPremiumRoadmap(true);
+    const data = await buildStaticPremiumRoadmap(readPremiumFormProfile(cachedUserProfile || {}));
+    premiumRoadmapCache = data;
     if (mount) mount.innerHTML = renderPremiumRoadmapSection(data) + renderPremiumReleaseFocusSection(data);
-    const releasesPage = document.getElementById('salesforce_releases');
-    if (releasesPage?.classList.contains('active')) await loadReleaseCenter(true);
   } catch (err) {
     console.warn('[PREMIUM] Preview refresh failed:', err.message);
     if (mount) mount.innerHTML = '<div class="premium-empty">Roadmap preview is unavailable right now.</div>';
@@ -1025,12 +1039,21 @@ async function loadUserProfile() {
 	      cachedUserProfile = { ...data.profile, uiMode: resolvedUiMode };
 	      applyUiMode(resolvedUiMode);
 	      hydratePremiumSetupForm(cachedUserProfile);
-	      if (loginModeIntent && data.profile.uiMode !== resolvedUiMode) {
-	        apiFetch('/api/profile/save', {
+	      if (loginModeIntent) {
+	        const saveLoginModeChoice = data.profile.uiMode !== resolvedUiMode
+	          ? apiFetch('/api/profile/save', {
 	          method: 'POST',
 	          headers: { 'Content-Type': 'application/json' },
 	          body: JSON.stringify(cachedUserProfile)
-	        }).catch(err => console.warn('[UI MODE] Could not save login UI choice:', err.message));
+	            })
+	          : Promise.resolve();
+	        saveLoginModeChoice
+	          .catch(err => console.warn('[UI MODE] Could not save login UI choice:', err.message))
+	          .finally(() => {
+	            if (getLoginUiModeIntent() === resolvedUiMode) {
+	              sessionStorage.removeItem('sf_login_ui_mode_intent');
+	            }
+	          });
 	      }
 	      
 	      // Update All UI Components

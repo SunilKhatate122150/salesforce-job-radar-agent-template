@@ -122,14 +122,24 @@ function sanitizeImportText(value) {
     .slice(0, 12000);
 }
 
+function scoreDesignationLabel(normalized, label) {
+  const normalizedLabel = String(label || '').toLowerCase().trim();
+  if (!normalizedLabel) return 0;
+  if (normalized === normalizedLabel) return 10000 + normalizedLabel.length;
+  if (normalized.includes(normalizedLabel)) return 1000 + normalizedLabel.length;
+  if (normalizedLabel.includes(normalized)) return 500 + normalized.length;
+  return 0;
+}
+
 function inferDesignation(rawDesignation, designationsData) {
   const value = String(rawDesignation || '').trim();
   if (!value) return designationsData.designations?.[0] || null;
   const normalized = value.toLowerCase();
-  return (designationsData.designations || []).find(item => {
+  const ranked = (designationsData.designations || []).map(item => {
     const labels = [item.label, ...(item.aliases || [])].map(v => String(v || '').toLowerCase());
-    return labels.some(label => normalized.includes(label) || label.includes(normalized));
-  }) || {
+    return { item, score: Math.max(...labels.map(label => scoreDesignationLabel(normalized, label))) };
+  }).filter(match => match.score > 0).sort((a, b) => b.score - a.score);
+  return ranked[0]?.item || {
     id: normalized.replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '') || 'custom_designation',
     label: value,
     track: 'Custom',
