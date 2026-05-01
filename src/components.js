@@ -627,7 +627,8 @@ function renderBoard() {
 
     if (count) count.textContent = filtered.length;
 
-    const page = window.radarBoardPages[col] || 0;
+    const pages = window.radarBoardPages || { todo: 0, applied: 0, interview: 0, offer: 0, rejected: 0 };
+    const page = pages[col] || 0;
     const maxPage = Math.max(0, Math.ceil(filtered.length / pageSize) - 1);
     const start = Math.min(page, maxPage) * pageSize;
     const displayJobs = filtered.slice(start, start + pageSize);

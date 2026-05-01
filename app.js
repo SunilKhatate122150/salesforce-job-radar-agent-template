@@ -41,11 +41,11 @@ const BOOKMARK_PAGE_SIZE = 8;
 const LOG_PAGE_SIZE = 12;
 const HISTORY_PAGE_SIZE = 8;
 const HISTORY_ANALYTICS_PAGE_SIZE = 6;
-let radarBoardPages = { todo: 0, applied: 0, interview: 0, offer: 0, rejected: 0 };
-let bookmarksPage = 0;
-let activityLogPage = 0;
-let historyPage = 0;
-let modalTopicPage = 0;
+window.radarBoardPages = { todo: 0, applied: 0, interview: 0, offer: 0, rejected: 0 };
+window.bookmarksPage = 0;
+window.activityLogPage = 0;
+window.historyPage = 0;
+window.modalTopicPage = 0;
 
 // --- DYNAMIC DATA REGISTRY (MODULAR v1412) ---
 let TOPIC_DATA = {};
@@ -54,7 +54,7 @@ let PREP_REGISTRY = {};
 async function loadKnowledgeData(topicId) {
   if (TOPIC_DATA[topicId]) return TOPIC_DATA[topicId];
   try {
-    const res = await fetch(`/api/knowledge/${topicId}`);
+    const res = await apiFetch(`/api/knowledge/${topicId}`);
     if (res.ok) {
       const data = await res.json();
       TOPIC_DATA[topicId] = data;
@@ -2989,18 +2989,17 @@ async function showPage(id) {
   document.querySelectorAll('.nav-item').forEach(function(n) { n.classList.remove('active'); });
   
   let page = document.getElementById(id);
-  
-  if (!page && !topicConfig[id]) {
-    console.error(`❌ [NAV] FATAL: Target element #${id} not found.`);
-    return;
+  let isIndustrial = false;
+  if (!page || id === 'topic_viewer') {
+    isIndustrial = await renderTopicContent(id);
+    if (isIndustrial) {
+        console.log(`🏰 [NAV] Detected Industrial Content for: ${id}`);
+        page = document.getElementById('topic_viewer');
+    }
   }
 
-  const isIndustrial = renderTopicContent(id);
-  if (isIndustrial) {
-      console.log(`ðŸ ­ [NAV] Detected Industrial Content for: ${id}`);
-      page = document.getElementById('topic_viewer');
-  } else if (!page && topicConfig[id]) {
-      console.log(`ðŸ“š [NAV] Routing to topic_viewer for: ${id}`);
+  if (!page && topicConfig[id]) {
+      console.log(`📚 [NAV] Routing to topic_viewer for: ${id}`);
       page = document.getElementById('topic_viewer');
   }
 
