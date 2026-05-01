@@ -471,6 +471,8 @@ body {
   opacity: 0.6;
   text-transform: uppercase;
   margin-left: 1px;
+}
+
 .page {
   display: none;
   padding: var(--fluid-pad);
