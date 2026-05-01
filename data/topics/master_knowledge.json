@@ -1,0 +1,62 @@
+﻿{
+    "accenture":  {
+                      "blocks":  [
+                                     {
+                                         "type":  "section",
+                                         "title":  "Scalable Development"
+                                     },
+                                     {
+                                         "question":  "Why is a Trigger Framework mandatory in Accenture projects?",
+                                         "type":  "qa",
+                                         "answer":  "\u003cp class=\u0027ans-p\u0027\u003eAccenture utilizes frameworks like fflib or custom Trigger Handlers to ensure separation of concerns and one trigger per object.\u003c/p\u003e"
+                                     }
+                                 ],
+                      "title":  "Accenture Salesforce Prep",
+                      "subtitle":  "Focus on Global Delivery Model and Scalable Frameworks."
+                  },
+    "deloitte":  {
+                     "blocks":  [
+                                    {
+                                        "type":  "section",
+                                        "title":  "Enterprise Architecture"
+                                    },
+                                    {
+                                        "question":  "How do you handle Large Data Volumes (LDV) in a Deloitte global org?",
+                                        "type":  "qa",
+                                        "answer":  "\u003cp class=\u0027ans-p\u0027\u003eHandling LDV requires a multi-layered approach to prevent locking and governor limit exhaustion: Skinny Tables, Custom Indexes, etc.\u003c/p\u003e"
+                                    }
+                                ],
+                     "title":  "Deloitte Salesforce Interview (2026)",
+                     "subtitle":  "Advanced architectural screening and scenario drills for Senior Roles."
+                 },
+    "security_5_layers":  {
+                              "blocks":  [
+                                             {
+                                                 "type":  "section",
+                                                 "title":  "The Security Gates"
+                                             },
+                                             {
+                                                 "question":  "Layer 1: Organization Level Security?",
+                                                 "type":  "qa",
+                                                 "answer":  "\u003cp class=\u0027ans-p\u0027\u003eLogin IP Ranges, Login Hours, Password Policies.\u003c/p\u003e"
+                                             }
+                                         ],
+                              "title":  "Salesforce 5 Layers of Security",
+                              "subtitle":  "Complete breakdown of the Salesforce Security Model."
+                          },
+    "fde_ag_concept":  {
+                           "blocks":  [
+                                          {
+                                              "type":  "section",
+                                              "title":  "Agentforce Architecture"
+                                          },
+                                          {
+                                              "question":  "What are the 5 core components of Agentforce?",
+                                              "type":  "qa",
+                                              "answer":  "\u003cp class=\u0027ans-p\u0027\u003e1. Agent, 2. Topics, 3. Actions, 4. Atlas, 5. Trust Layer.\u003c/p\u003e"
+                                          }
+                                      ],
+                           "title":  "FDE Prep - Agentforce Core",
+                           "subtitle":  "Architectural concepts for AI Specialists."
+                       }
+}

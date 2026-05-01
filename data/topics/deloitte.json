@@ -1,0 +1,15 @@
+﻿{
+    "blocks":  [
+                   {
+                       "type":  "section",
+                       "title":  "Enterprise Architecture"
+                   },
+                   {
+                       "question":  "How do you handle Large Data Volumes (LDV) in a Deloitte global org?",
+                       "type":  "qa",
+                       "answer":  "\u003cp class=\u0027ans-p\u0027\u003eHandling LDV requires a multi-layered approach to prevent locking and governor limit exhaustion:\u003c/p\u003e\u003cul class=\u0027ans-list\u0027\u003e\u003cli\u003e\u003cb\u003eSkinny Tables:\u003c/b\u003e Request Salesforce Support to enable skinny tables...\u003c/li\u003e\u003c/ul\u003e"
+                   }
+               ],
+    "title":  "Deloitte Salesforce Interview (2026)",
+    "subtitle":  "Advanced architectural screening and scenario drills for Senior Roles."
+}

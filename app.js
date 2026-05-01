@@ -47,174 +47,24 @@ let activityLogPage = 0;
 let historyPage = 0;
 let modalTopicPage = 0;
 
-const PREP_REGISTRY = {
-  "Cognizant": {
-    focus: "Apex best practices, LWC event system, Governor Limits, DevOps",
-    questions: ["Explain your trigger handler pattern and why you chose it", "How do you handle bulk operations in Apex?", "Difference between before vs after triggers - when to use each?", "How does LWC parent-child communication work (events vs LMS)?", "What Governor Limits do you hit most and how do you avoid them?"],
-    tips: ["Emphasize PD1+PD2 certs upfront", "Talk about code review experience", "Mention your Bitbucket/CI-CD pipeline work"]
-  },
-  "Deloitte India": {
-    focus: "BFSI domain, FSC objects, data governance, integration patterns",
-    questions: ["Describe your financial services Salesforce implementations", "How did you handle FCRA/HMDA compliance in Salesforce?", "Explain Platform Events vs Triggers - when to pick each?"],
-    tips: ["Lead with your mortgage domain expertise", "Prepare a 5-min story of your Experian credit bureau integration"]
-  },
-  "Salesforce Inc.": {
-    focus: "Product engineering, scale, Agentforce, Data Cloud, Core internals",
-    questions: ["How do you design for multi-tenancy?", "Explain the Atlas reasoning engine in Agentforce", "Difference between DLO and DMO in Data Cloud"],
-    tips: ["Emphasize innovation and 'Customer Success' focus", "Talk about your Agentforce Specialist certification"]
-  }
-};
+// --- DYNAMIC DATA REGISTRY (MODULAR v1412) ---
+let TOPIC_DATA = {};
+let PREP_REGISTRY = {};
 
-// =============================================
-// DYNAMIC CONTENT DATA (MASTER REGISTRY v1399)
-// =============================================
-// NOTE: Core topics (Apex, LWC, etc.) are hardcoded in index.html for maximum depth.
-var TOPIC_DATA = {
-  // --- COMPANY SPECIFIC PREP ---
-  'deloitte': {
-    title: 'Deloitte Salesforce Interview (2026)',
-    subtitle: 'Advanced architectural screening and scenario drills for Senior Roles.',
-    blocks: [
-      { type: 'section', title: 'Enterprise Architecture' },
-      { type: 'qa', question: 'How do you handle Large Data Volumes (LDV) in a Deloitte global org?', answer: '<p class="ans-p">Handling LDV requires a multi-layered approach to prevent locking and governor limit exhaustion:</p><ul class="ans-list"><li><b>Skinny Tables:</b> Request Salesforce Support to enable skinny tables to include frequently used fields and avoid joins.</li><li><b>Custom Indexes:</b> Use the Index checkbox on custom fields to optimize SOQL WHERE clauses.</li><li><b>Division:</b> Use divisions to segment data and improve performance in massive orgs.</li><li><b>Async Processing:</b> Use <code>Queueable</code> with <code>Database.AllowsCallouts</code> to offload processing and maintain UI responsiveness.</li></ul>' },
-      { type: 'qa', question: 'Explain the importance of "Quality Engineering" at Deloitte.', answer: '<p class="ans-p">Quality Engineering (QE) is the evolution of QA, embedding testing into the entire lifecycle:</p><ul class="ans-list"><li><b>Shift Left:</b> Unit testing (Apex & Jest) is performed immediately during development.</li><li><b>Static Analysis:</b> Continuous use of PMD, Checkmarx, and Salesforce Code Analyzer (SFCA).</li><li><b>Automated Regression:</b> Using Copado or Jenkins pipelines to run all tests before merging into the Integration branch.</li></ul>' },
-      { type: 'qa', question: 'Scenario: How to handle 100k+ record updates daily without hitting limits?', answer: '<p class="ans-p">Use <b>Batch Apex</b> with a targeted scope size (typically 200). If the logic is relatively simple, <b>Platform Events</b> can be used to decouple the update from the source transaction, allowing for much higher throughput and parallel processing.</p>' },
-      { type: 'section', title: 'April 2026 Interview Updates' },
-      { type: 'qa', question: 'Scenario: Write a trigger to store Contact count on Account without using Roll-up Summary.', answer: '<p class="ans-p">Since Account and Contact are standard objects in a lookup relationship (not Master-Detail), we must use Apex:</p><ol class="ans-list"><li><b>Collect Account IDs:</b> In <code>after insert</code>, <code>after update</code>, and <code>after delete</code>, collect all <code>AccountId</code> values into a <code>Set&lt;Id&gt;</code>.</li><li><b>Aggregate Query:</b> Run an <code>AggregateResult</code> query: <code>[SELECT AccountId, COUNT(Id) cnt FROM Contact WHERE AccountId IN :accIds GROUP BY AccountId]</code>.</li><li><b>Update Accounts:</b> Loop through the results, create new Account instances with the count, and perform a single <code>update</code> DML on the list.</li><li><b>Recursion:</b> Ensure you use a static boolean flag to prevent the update from re-triggering logic if other triggers exist.</li></ol>' },
-      { type: 'qa', question: 'Compare Custom Settings vs. Custom Metadata for Deloitte projects.', answer: '<p class="ans-p"><b>Custom Metadata (Preferred):</b> Deployable via change sets/packages, queryable without DML limits, supports relationship fields, and perfect for app configurations/mappings. <b>Custom Settings:</b> Better for "Hierarchy" settings (user-specific values) or frequently updated "List" settings if the volume is low, but metadata is the modern standard for enterprise config.</p>' },
-      { type: 'qa', question: 'Explain the 3 Layers of the Salesforce Security Model.', answer: '<p class="ans-p">Deloitte interviewers look for this hierarchy:</p><ol class="ans-list"><li><b>Object Level (CRUD):</b> Profiles and Permission Sets control what objects a user can see/edit.</li><li><b>Field Level (FLS):</b> Controls visibility/editability of specific fields within those objects.</li><li><b>Record Level (Sharing):</b> Controlled by OWD (baseline), Role Hierarchy (vertical), Sharing Rules (horizontal), and Apex Sharing (complex).</li></ol>' },
-      { type: 'qa', question: 'Batch Apex: How many classes can be chained and what is Database.Stateful?', answer: '<p class="ans-p">You can chain <b>one</b> batch job from the <code>finish()</code> method. <b>Database.Stateful</b> is used to maintain state (instance variables) across different batches. By default, each batch execution is stateless; implementing this interface allows you to track counters or lists across the entire job.</p>' },
-      { type: 'qa', question: 'How can you write a test class for an Integration Apex class?', answer: '<p class="ans-p">Since Salesforce prevents actual HTTP callouts during tests, you must use <b>HttpCalloutMock</b>:</p><ol class="ans-list"><li>Create a class that implements <code>HttpCalloutMock</code>.</li><li>Implement the <code>respond()</code> method to return a dummy <code>HttpResponse</code>.</li><li>In your test method, use <code>Test.setMock(HttpCalloutMock.class, new YourMockClass())</code> before calling the integration code.</li><li>Assert that the fields on the record were updated correctly based on your dummy response.</li></ol>' },
-      { type: 'qa', question: 'Explain CPQ basics and its importance in Deloitte projects.', answer: '<p class="ans-p"><b>CPQ (Configure, Price, Quote)</b> is used for complex product configurations and pricing rules that standard Opportunity/Product objects cannot handle. Key features include: <b>Product Bundles</b> (nesting products), <b>Product Rules</b> (validation/selection), <b>Price Rules</b> (dynamic pricing), and <b>Quote Templates</b> (professional PDF generation). It ensures sales reps generate accurate, pre-approved quotes every time.</p>' }
-
-    ]
-  },
-  'accenture': {
-    title: 'Accenture Salesforce Prep',
-    subtitle: 'Focus on Global Delivery Model and Scalable Frameworks.',
-    blocks: [
-      { type: 'section', title: 'Scalable Development' },
-      { type: 'qa', question: 'Why is a Trigger Framework mandatory in Accenture projects?', answer: '<p class="ans-p">Accenture utilizes frameworks like <b>fflib</b> or custom <b>Trigger Handlers</b> to ensure:</p><ul class="ans-list"><li><b>One Trigger Per Object:</b> Prevents unpredictable order of execution issues.</li><li><b>Recursion Control:</b> Uses static sets or boolean flags to prevent infinite loops.</li><li><b>Separation of Concerns:</b> Trigger only handles routing; business logic lives in Service or Domain classes.</li></ul>' },
-      { type: 'qa', question: 'How to manage multi-org deployments using Unlocked Packages?', answer: '<p class="ans-p">Unlocked packages allow for modular development. We define dependencies in <code>sfdx-project.json</code> and use the <code>sf package version create</code> command. This ensures that changes in "Core Security" don\'t break "Regional Sales" modules unless explicitly updated.</p>' },
-      { type: 'section', title: 'April 2026 Interview Updates' },
-      { type: 'qa', question: 'LWC Lifecycle: How to capture child component data in the parent?', answer: '<p class="ans-p">Use <b>Custom Events</b>. The child dispatches an event using <code>this.dispatchEvent(new CustomEvent(\'myevent\', { detail: data }))</code>. The parent listens for it in the HTML using <code>onmyevent={handleEvent}</code>. For deep nesting, use <code>bubbles: true</code> and <code>composed: true</code>.</p>' },
-      { type: 'qa', question: 'Scenario: Implement a progress bar for a 5-minute external API call.', answer: '<p class="ans-p">Since an HTTP callout cannot stay open for 5 minutes (timeout is 120s), we use a <b>Polling or Callback pattern</b>:</p><ol class="ans-list"><li><b>Initiate:</b> Apex calls the API, gets a "Job ID", and returns it to LWC.</li><li><b>Poll:</b> LWC uses <code>setInterval</code> to call another Apex method every 5-10 seconds to check the status of that Job ID.</li><li><b>Progress:</b> As the status updates (e.g., 20%, 50%), the LWC updates a <code>lightning-progress-bar</code>.</li><li><b>Complete:</b> Once status is "Success", clear the interval and show a toast message.</li></ol>' }
-    ]
-  },
-  'fde_ag_concept': {
-    title: 'FDE Prep - Agentforce Core',
-    subtitle: 'Architectural concepts for AI Specialists.',
-    blocks: [
-      { type: 'section', title: 'Agentforce Architecture' },
-      { type: 'qa', question: 'What are the 5 core components of Agentforce?', answer: '<p class="ans-p"><b>1. Agent:</b> The AI persona/role. <b>2. Topics:</b> Task categories. <b>3. Actions:</b> Executable logic (Flow, Apex, etc.). <b>4. Atlas:</b> The reasoning engine. <b>5. Trust Layer:</b> Security and PII masking.</p>' },
-      { type: 'qa', question: 'What is the ReAct pattern in Atlas?', answer: '<p class="ans-p"><b>Reason + Act.</b> The engine reasons about the user intent, decides on an action, executes it, observes the result, and loops until the final response is generated.</p>' },
-      { type: 'qa', question: 'Dynamic Grounding vs. Hallucination.', answer: '<p class="ans-p">Grounding is the process of injecting real Salesforce record data into the prompt at runtime (RAG). This ensures the LLM answers based on facts, preventing it from making up information (hallucination).</p>' }
-    ]
-  },
-  'fde_ag_scenario': {
-    title: 'FDE Prep - Agentforce Scenarios',
-    subtitle: 'Practical design and debugging challenges.',
-    blocks: [
-      { type: 'section', title: 'Design & Debugging' },
-      { type: 'qa', question: 'Scenario: Agent gives wrong product eligibility answers. Debug steps?', answer: '<p class="ans-p">1. Check <b>Conversation Simulator</b> logs. 2. Verify <b>Grounding Data</b> was correctly retrieved. 3. Review <b>Prompt Template</b> instructions for ambiguity. 4. Add <b>negative instructions</b> to the topic guardrails.</p>' },
-      { type: 'qa', question: 'How to make Agentforce compliant in Mortgage?', answer: '<p class="ans-p">Enable <b>PII Masking</b> in the Trust Layer. Add <b>hard escalation rules</b> for TRID-sensitive keywords (e.g., "rate quote"). Use <b>System Prompts</b> to forbid legal advice.</p>' }
-    ]
-  },
-  'fde_dc_concept': {
-    title: 'FDE Prep - Data Cloud Core',
-    subtitle: 'Unified profile and data orchestration.',
-    blocks: [
-      { type: 'section', title: 'Data Cloud Lifecycle' },
-      { type: 'qa', question: 'Explain the Data Cloud lifecycle.', answer: '<p class="ans-p"><b>Ingest</b> (DLO) -> <b>Map</b> (DMO) -> <b>Resolve</b> (Unified Individual) -> <b>Insights</b> (Metrics) -> <b>Segment</b> (Audience) -> <b>Activate</b> (Destination).</p>' },
-      { type: 'qa', question: 'What is a Unified Individual?', answer: '<p class="ans-p">A master 360-degree profile created by <b>Identity Resolution</b> match rules. It links records from multiple systems (CRM, Web, Legacy) without destroying source data.</p>' }
-    ]
-  },
-  'fde_dc_adv': {
-    title: 'FDE Prep - Data Cloud Advanced',
-    subtitle: 'Large scale orchestration and AI grounding.',
-    blocks: [
-      { type: 'section', title: 'Performance & AI' },
-      { type: 'qa', question: 'What are Data Graphs and why use them for Agentforce?', answer: '<p class="ans-p">Data Graphs are <b>pre-joined, materialized views</b> of related records. They provide sub-second data retrieval for agent grounding, ensuring the AI has the full context without multiple slow SOQL queries.</p>' },
-      { type: 'qa', question: 'Explain Zero Copy Partner Network.', answer: '<p class="ans-p">Allows Data Cloud to query data in-place from external warehouses like <b>Snowflake</b> or <b>BigQuery</b> without physically copying the data, reducing cost and latency.</p>' }
-    ]
-  },
-  'fde_cheat': {
-    title: 'FDE Cheat Sheet',
-    subtitle: 'Rapid-fire definitions and power phrases.',
-    blocks: [
-      { type: 'section', title: 'Rapid-Fire Definitions' },
-      { type: 'qa', question: 'Atlas vs. Trust Layer', answer: '<p class="ans-p"><b>Atlas:</b> The brain (thinking/planning). <b>Trust Layer:</b> The shield (PII masking/security).</p>' },
-      { type: 'qa', question: 'DLO vs. DMO', answer: '<p class="ans-p"><b>DLO (Data Lake Object):</b> Raw incoming data. <b>DMO (Data Model Object):</b> Clean, mapped data in the standard model.</p>' },
-      { type: 'section', title: 'Power Phrases' },
-      { type: 'qa', question: 'How to sound like a Senior FDE?', answer: '<p class="ans-p">"Grounding is the foundation of accuracy; without it, you just have a generic chatbot."<br>"I separate read-only topics from write topics to manage risk profiles."<br>"Topic descriptions matter more than prompt engineering because Atlas routes before the LLM fires."</p>' }
-    ]
-  },
-  // --- MASTER TECHNICAL MODULES ---
-  'security_5_layers': {
-    title: 'Salesforce 5 Layers of Security',
-    subtitle: 'Complete breakdown of the Salesforce Security Model.',
-    blocks: [
-      { type: 'section', title: 'The Security Gates' },
-      { type: 'qa', question: 'Layer 1: Organization Level Security?', answer: '<p class="ans-p">The first line of defense. Controls WHO can login and WHEN:</p><ul class="ans-list"><li><b>Login IP Ranges:</b> Restricts access to specific network addresses (Trusted IPs).</li><li><b>Login Hours:</b> Restricts access based on time of day (e.g., 9-5 only).</li><li><b>Password Policies:</b> Complexity, history, and lockout periods.</li></ul>' },
-      { type: 'qa', question: 'Layer 2: Object Level Security (CRUD)?', answer: '<p class="ans-p">Controls WHAT objects a user can see and modify. Managed via <b>Profiles</b> (baseline) and <b>Permission Sets</b> (additive). Permissions include Create, Read, Edit, Delete, View All, and Modify All.</p>' },
-      { type: 'qa', question: 'Layer 3: Field Level Security (FLS)?', answer: '<p class="ans-p">Controls which fields are visible/editable even if the user has object access. This is the <b>strongest</b> way to protect PII data. If a field is hidden via FLS, it cannot be seen in reports, search, or via API.</p>' },
-      { type: 'qa', question: 'Layer 4: Record Level (OWD)?', answer: '<p class="ans-p">Organization-Wide Defaults set the <b>base level</b> of access for records a user does NOT own. Options: Private, Public Read Only, Public Read/Write. You should always start with <b>Private</b> and open access up.</p>' },
-      { type: 'qa', question: 'Layer 5: Record Level (Sharing)?', answer: '<p class="ans-p">Opening up access beyond OWD. Methods include:</p><ul class="ans-list"><li><b>Role Hierarchy:</b> Managers see what their subordinates see.</li><li><b>Sharing Rules:</b> Criteria-based or Owner-based sharing.</li><li><b>Manual Sharing:</b> One-off sharing by record owners.</li><li><b>Apex Sharing:</b> Programmatic sharing for complex logic.</li></ul>' }
-    ]
-  },
-  'order_of_execution': {
-    title: 'Order of Execution (Master Class)',
-    subtitle: 'The sub-second sequence of events when saving a record.',
-    blocks: [
-      { type: 'section', title: 'The 20-Step Sequence' },
-      { type: 'qa', question: 'Explain the 20 steps of Salesforce Order of Execution in order.', answer: '<p class="ans-p">When a record is saved, Salesforce follows this strict sequence:</p><ol class="ans-list"><li><b>Initialize:</b> Loads original record from DB (if update).</li><li><b>Overwrite:</b> Overwrites old values with new values from request.</li><li><b>System Validation:</b> Checks required fields, data types, and field lengths.</li><li><b>Before-Save Flow:</b> Executes Record-Triggered Flows configured to run "Before the record is saved".</li><li><b>Before Triggers:</b> Executes all <code>before insert</code> or <code>before update</code> triggers.</li><li><b>Custom Validation:</b> Executes custom Validation Rules.</li><li><b>Duplicate Rules:</b> Checks for duplicate records.</li><li><b>Save:</b> Saves the record to the database (but does not commit).</li><li><b>After Triggers:</b> Executes all <code>after insert</code> or <code>after update</code> triggers.</li><li><b>Assignment Rules:</b> Executes Case or Lead assignment rules.</li><li><b>Auto-Response:</b> Executes auto-response rules.</li><li><b>Workflow:</b> Executes Workflow rules (Field updates, Tasks, Emails).</li><li><b>Workflow Re-execution:</b> If workflow updated a field, Before/After triggers fire ONE MORE TIME (but only once).</li><li><b>Escalation Rules:</b> Executes Case escalation rules.</li><li><b>After-Save Flow:</b> Executes Record-Triggered Flows (After-Save) and Process Builders.</li><li><b>Entitlements:</b> Executes entitlement processes.</li><li><b>Roll-up Summary:</b> Calculates roll-up summary fields and updates parent records.</li><li><b>Sharing:</b> Evaluates Criteria-Based Sharing.</li><li><b>Commit:</b> Commits all DML operations to the database.</li><li><b>Post-Commit:</b> Executes logic after commit (Email Alerts, Outbound Messages).</li></ol>' },
-      { type: 'qa', question: 'What is the "Recursive Trigger" trap in the Order of Execution?', answer: '<p class="ans-p">If a workflow rule (Step 12) performs a field update, it causes the <b>Before and After triggers</b> to fire again. If your trigger logic performs another update without a static boolean flag to check "isExecuting", you can enter an infinite loop, eventually hitting the limit of 16 recursions or governor limits.</p>' },
-      { type: 'qa', question: 'Why use Before-Save Flow (Step 4) instead of Before Trigger (Step 5)?', answer: '<p class="ans-p">Before-Save Flows are up to <b>10x faster</b> than Process Builder or Workflow and don\'t require extra DML. They should be used for simple same-record field updates. Before Triggers should be reserved for complex logic that requires Apex (e.g., calling a Service class or complex collections logic).</p>' }
-    ]
-  },
-  'flow_master': {
-    title: 'Salesforce Flow Master Class',
-    subtitle: 'Advanced design patterns and error handling.',
-    blocks: [
-      { type: 'section', title: 'Automation Strategy' },
-      { type: 'qa', question: 'How to handle "Mixed DML" errors in Flow?', answer: '<p class="ans-p">Mixed DML occurs when updating Setup (User) and Non-Setup (Account) objects in one transaction. Fix: Use an <b>Action element</b> with "Pause" or call an <b>Async Apex</b> action to separate the transactions.</p>' },
-      { type: 'qa', question: 'What is a "Fault Path" and why use it?', answer: '<p class="ans-p">A Fault Path allows you to handle unexpected errors gracefully. Instead of the user seeing "An unhandled fault has occurred", you can log the error to a custom object, send a Slack alert, or show a friendly screen message.</p>' }
-    ]
-  },
-  'sales_cloud': {
-    title: 'Sales Cloud Architecture',
-    subtitle: 'Mastering the Lead-to-Cash lifecycle and Sales productivity.',
-    blocks: [
-      { type: 'section', title: 'Sales Pipeline & Productivity' },
-      { type: 'qa', question: 'How do you handle Multi-Currency and Advanced Currency Management (ACM)?', answer: '<p class="ans-p">Enable Multi-Currency in Company Information. <b>ACM</b> allows you to manage dated exchange rates within Opportunities. Note: ACM does NOT apply to custom objects or roll-up summaries; for those, you need custom Apex logic or third-party tools.</p>' },
-      { type: 'qa', question: 'Explain the Opportunity Split feature.', answer: '<p class="ans-p">Opportunity Splits allow multiple team members to share credit for an Opportunity. <b>Revenue Splits</b> must total 100%, while <b>Overlay Splits</b> can total any percentage. Both rely on Opportunity Teams being enabled.</p>' },
-      { type: 'qa', question: 'What is Collaborative Forecasting?', answer: '<p class="ans-p">A tool to predict sales based on the Opportunity pipeline. It supports various forecast types (Revenue, Quantity, Product Families) and allows for adjustments by managers to provide a "best-case" estimate.</p>' },
-      { type: 'qa', question: 'Scenario: How to automate Sales Territory assignment?', answer: '<p class="ans-p">Use <b>Enterprise Territory Management (ETM)</b>. You define Territory Types, Models, and Assignment Rules based on Account fields (e.g., Billing State, Industry). Accounts are assigned to territories, and Opportunities inherit the territory from the Account.</p>' }
-    ]
-  },
-  'service_cloud': {
-    title: 'Service Cloud Architecture',
-    subtitle: 'High-performance support, Omni-channel, and KCS.',
-    blocks: [
-      { type: 'section', title: 'Service Excellence & Knowledge' },
-      { type: 'qa', question: 'What is Knowledge Centered Service (KCS) in Salesforce?', answer: '<p class="ans-p">KCS involves capturing knowledge during the support process. Agents can search the <b>Knowledge Base</b>, attach articles to cases, and "Promote to Article" from a Case comment. This requires <b>Knowledge User</b> licenses and Article Type configurations.</p>' },
-      { type: 'qa', question: 'Omni-Channel: Capacity vs. Weight?', answer: '<p class="ans-p"><b>Capacity:</b> The total work an agent can handle (e.g., 100 units). <b>Weight:</b> The "cost" of a specific work item (e.g., a Chat = 20 units, a Case = 50 units). Omni-Channel routes work until the agent\'s total weight reaches their capacity.</p>' },
-      { type: 'qa', question: 'How to implement "Follow-the-Sun" support?', answer: '<p class="ans-p">Use <b>Business Hours</b> and <b>Holiday</b> settings combined with <b>Case Assignment Rules</b> or Omni-Channel. Rules check the current time and route the case to the queue active in that specific time zone (e.g., APAC, EMEA, US).</p>' },
-      { type: 'qa', question: 'What is the Service Console and why use it?', answer: '<p class="ans-p">A workspace designed for high-volume agents. Features include <b>Workspace Tabs</b> (sub-tabs for related records), <b>Softphone integration</b>, <b>Macros</b> for repetitive tasks, and the <b>Utility Bar</b> for quick access to tools like History or Notes.</p>' }
-    ]
-  },
-  'experience_cloud': {
-    title: 'Experience Cloud (Communities)',
-    subtitle: 'Building secure and performant portals for Partners & Customers.',
-    blocks: [
-      { type: 'section', title: 'Portal Architecture & Security' },
-      { type: 'qa', question: 'Difference between Customer Community vs. Partner Community licenses?', answer: '<p class="ans-p"><b>Customer Community:</b> High volume, limited access (no Leads, Opportunities, or Campaigns). <b>Partner Community:</b> Full access to Sales objects (Leads, Deals, MDF) and supports <b>Advanced Sharing</b> (Share Groups/Apex Sharing).</p>' },
-      { type: 'qa', question: 'How to manage Brand Consistency across multiple Communities?', answer: '<p class="ans-p">Use the <b>Experience Builder Theme</b>. Define global colors, fonts, and CSS. For cross-community reuse, package your brand as a <b>Lightning Bolt Template</b> or use a shared <b>LWC Design System</b>.</p>' },
-      { type: 'qa', question: 'What is a "Share Group" in Experience Cloud?', answer: '<p class="ans-p">Share Groups are used with <b>Customer Community Plus</b> or <b>Partner</b> licenses to share records owned by community users with internal users. Since community users don\'t exist in the standard Role Hierarchy, Share Groups bridge that gap.</p>' },
-      { type: 'qa', question: 'How to optimize Community performance?', answer: '<p class="ans-p">Use the <b>Salesforce CDN</b> (Content Delivery Network), minimize the use of heavy images, leverage <b>LWC</b> instead of Aura, and ensure SOQL queries used in community components are highly optimized with indexes.</p>' }
-    ]
+async function loadKnowledgeData(topicId) {
+  if (TOPIC_DATA[topicId]) return TOPIC_DATA[topicId];
+  try {
+    const res = await fetch(`/api/knowledge/${topicId}`);
+    if (res.ok) {
+      const data = await res.json();
+      TOPIC_DATA[topicId] = data;
+      return data;
+    }
+  } catch (err) {
+    console.error(`[KNOWLEDGE] Failed to load ${topicId}:`, err);
   }
-};
+  return null;
+}
 
 
 
@@ -291,47 +141,7 @@ function generateInitialsAvatar(name) {
   return canvas.toDataURL('image/png');
 }
 
-function renderUserProfile(user) {
-  if (!user) return;
-  
-  // Neural-Sync Header Profile (v1348)
-  const container = document.getElementById('floatingProfileContainer');
-  const avatarImg = document.getElementById('floatAvatarImg');
-  const dropName = document.getElementById('floatFullTitle');
-  const dropEmail = document.getElementById('floatEmailTitle');
-  
-  // Sidebar elements (for backwards compatibility)
-  const sidebarPic = document.getElementById('userPicture');
-  const sidebarName = document.getElementById('userName');
-  const sidebarEmail = document.getElementById('userEmail');
-  const sidebarWrap = document.getElementById('userProfile');
-
-  // High-Res Image Logic
-  let profilePic = user.picture;
-  if (profilePic && profilePic.includes('googleusercontent.com')) {
-    profilePic = profilePic.replace(/=s\d+-c/, '=s120-c');
-  }
-
-  // Update Header Pill
-  if (container) container.style.display = 'block';
-  if (avatarImg) {
-    avatarImg.src = profilePic || generateInitialsAvatar(user.name);
-    avatarImg.onerror = function() { this.src = generateInitialsAvatar(user.name); };
-  }
-  
-  // Update Dropdown
-  if (dropName) dropName.textContent = user.name;
-  if (dropEmail) dropEmail.textContent = user.email;
-
-  // Update Sidebar
-  if (sidebarWrap) sidebarWrap.style.display = 'flex';
-  if (sidebarPic) sidebarPic.src = profilePic || generateInitialsAvatar(user.name);
-  if (sidebarName) sidebarName.textContent = user.name;
-  if (sidebarEmail) sidebarEmail.textContent = user.email;
-
-  // Global Refresh for Streaks
-  renderStreakBadge();
-}
+/* UI templates moved to components.js */
 
 function toggleFloatingDropdown(event) {
   if (event) event.stopPropagation();
@@ -1105,207 +915,7 @@ async function loadUserProfile() {
   } catch (e) { console.log('[Profile] Cloud profile fetch failed or unavailable.'); }
 }
 
-function renderProfileMatchPage(profile) {
-  const contentDiv = document.getElementById('profileMatchContent');
-  const syncCta = document.getElementById('syncCtaCards');
-  const sourceHeading = document.getElementById('profileSourceHeading');
-  const loadingEl = document.getElementById('profileMatchLoading');
-  if (!contentDiv) return;
-
-  // Hide loading skeleton
-  if (loadingEl) loadingEl.style.display = 'none';
-
-  // Sync Sidebar Status
-  updateSidebarProfileStatus(profile);
-  
-  // REAL-TIME: Update Sync Modal if it's open
-  updateSyncModalUI(profile);
-
-  // Hide large sync cards after the user imports/saves skills, but keep them visible for new users.
-  const showProfileSources = !(profile.skills && profile.skills.length > 0);
-  if (syncCta) syncCta.style.display = showProfileSources ? 'grid' : 'none';
-  if (sourceHeading) sourceHeading.style.display = showProfileSources ? 'flex' : 'none';
-
-  const skills = profile.skills || [];
-  const certs = profile.certifications || [];
-  const missing = profile.missingSkills || [];
-  const topics = profile.studyPlanTopics || [];
-  const platforms = profile.platforms || {};
-  const strength = updateProfileStrengthMeter(skills.length, missing.length, profile);
-
-  var syncBadges = '';
-  if (platforms.linkedin && platforms.linkedin.synced) {
-    syncBadges += '<span style="display:inline-flex;align-items:center;gap:4px;padding:4px 10px;background:rgba(0,119,181,0.12);border:1px solid rgba(0,119,181,0.25);border-radius:20px;font-size:0.68rem;color:#60a5fa;">LinkedIn Synced</span> ';
-  }
-  if (platforms.naukri && platforms.naukri.synced) {
-    syncBadges += '<span style="display:inline-flex;align-items:center;gap:4px;padding:4px 10px;background:rgba(255,117,85,0.12);border:1px solid rgba(255,117,85,0.25);border-radius:20px;font-size:0.68rem;color:#fb923c;">Naukri Synced</span>';
-  }
-
-  var html = '<div class="content-card unified-career-intelligence">';
-
-  // NEW: Premium AI Career Insight Card
-  html += `
-    <div class="career-summary-card" style="background:linear-gradient(135deg,rgba(59,130,246,0.1),rgba(16,185,129,0.06)); border:1px solid rgba(59,130,246,0.2); border-radius:14px; padding:20px; margin-bottom:24px; position:relative; overflow:hidden;">
-      <div style="position:absolute; right:-10px; top:-10px; opacity:0.1; transform:rotate(15deg); color:var(--blue);">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:80px;height:80px;"><path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"></path><path d="m12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z"></path><path d="M9 12H4s.55-3.03 2-5c1.62-2.2 5-3 5-3"></path><path d="M12 15v5s3.03-.55 5-2c2.2-1.62 3-5 3-5"></path></svg>
-      </div>
-      <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:12px;">
-        <div>
-          <div style="font-size:0.65rem; color:var(--blue); font-weight:700; letter-spacing:1px; text-transform:uppercase; margin-bottom:4px;">CAREER PROFILE SUMMARY</div>
-          <div style="font-size:1.4rem; font-weight:800; color:var(--text);">Career Readiness: ${strength > 80 ? 'Exceptional' : strength > 50 ? 'Strong' : 'Developing'}</div>
-        </div>
-        <button onclick="document.getElementById('syncCtaCards').style.display='grid';document.getElementById('profileSourceHeading').style.display='flex'" style="background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); border-radius:8px; padding:6px 12px; color:var(--muted); font-size:0.65rem; font-weight:600; cursor:pointer;">Update Profile</button>
-      </div>
-      <p style="font-size:0.85rem; color:rgba(255,255,255,0.8); line-height:1.6; margin:0;">
-        Your profile successfully aggregates data from <b>${Object.values(platforms || {}).filter(p => p.synced).length}</b> platforms. 
-        We have identified <b>${skills.length} core competencies</b> and <b>${missing.length} strategic gaps</b>. 
-        Our AI suggests focusing on ${missing.slice(0,2).join(' and ') || 'specialized certifications'} to reach 100% readiness.
-      </p>
-    </div>
-  `;
-
-  // Strength Meter & Profile Summary
-  html += `
-    <div class="profile-grid profile-metrics-grid">
-      <div style="display:flex; align-items:center; gap:15px; background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.08); border-radius:16px; padding:20px; min-width:0; overflow:hidden;">
-        <div style="position:relative; width:64px; height:64px; flex-shrink:0;">
-          <svg viewBox="0 0 36 36" style="width:100%; height:100%; transform: rotate(-90deg);">
-            <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="rgba(255,255,255,0.05)" stroke-width="3" />
-            <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="var(--blue)" stroke-width="3" stroke-dasharray="${strength}, 100" />
-          </svg>
-          <div style="position:absolute; top:50%; left:50%; transform:translate(-50%, -50%); font-weight:800; font-size:0.9rem; color:var(--text);">${strength}%</div>
-        </div>
-        <div>
-          <div style="font-weight:700; color:var(--text); font-size:0.85rem;">Ready for ${profile.targetRole || 'Salesforce Developer'}</div>
-          <div style="font-size:0.65rem; color:var(--muted); margin-top:2px;">Target Achievement</div>
-        </div>
-      </div>
-      
-      <div style="background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.08); border-radius:16px; padding:20px; display:flex; align-items:center; justify-content:space-between; min-width:0; overflow:hidden;">
-        <div style="min-width:0;">
-          <div style="font-weight:700; font-size:1.1rem; color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${profile.currentRole || 'Salesforce Professional'}</div>
-          <div style="font-size:0.75rem; color:var(--muted); margin-top:4px;">${profile.experienceYears || 0} Years Exp &bull; ${certs.length} Certs</div>
-        </div>
-        <div style="display:flex; flex-direction:column; align-items:flex-end; gap:8px; flex-shrink:0;">
-          ${syncBadges}
-        </div>
-      </div>
-    </div>
-  `;
-
-  // Achievements & Certifications Section
-  if (certs && certs.length > 0) {
-    html += '<div style="margin-bottom:20px;"><div style="font-weight:700;font-size:0.9rem;color:var(--text);margin-bottom:10px; display:flex; align-items:center; gap:8px;">' +
-      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:18px;height:18px;color:#facc15;"><circle cx="12" cy="8" r="7"></circle><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"></polyline></svg>' +
-      'Achievements & Certifications</div><div style="display:flex;flex-wrap:wrap;gap:8px;">';
-    certs.forEach(function(c) {
-      html += '<span style="padding:6px 14px;background:rgba(250,204,21,0.1);border:1px solid rgba(250,204,21,0.25);border-radius:8px;font-size:0.75rem;color:#fde047;font-weight:600;display:flex;align-items:center;gap:6px;box-shadow:0 2px 8px rgba(0,0,0,0.2);">' + 
-              '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:12px;height:12px;"><polyline points="20 6 9 17 4 12"></polyline></svg>' + c + '</span>';
-    });
-    html += '</div></div>';
-  }
-
-  // Skills Grid
-  html += '<div style="margin-bottom:20px;"><div style="font-weight:700;font-size:0.9rem;color:var(--text);margin-bottom:10px; display:flex; align-items:center; gap:8px;">' +
-    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:18px;height:18px;color:var(--pink);"><path d="M9.5 2A2.5 2.5 0 0 1 12 4.5v15a2.5 2.5 0 0 1-4.96.44 2.5 2.5 0 0 1-2.04-2.44V7.5A2.5 2.5 0 0 1 7.5 5h2z"></path><path d="M14.5 2A2.5 2.5 0 0 0 12 4.5v15a2.5 2.5 0 0 0 4.96.44 2.5 2.5 0 0 0 2.04-2.44V7.5A2.5 2.5 0 0 0 16.5 5h-2z"></path></svg>' +
-    'Your Skills (' + skills.length + ')</div><div style="display:flex;flex-wrap:wrap;gap:6px;">';
-  skills.forEach(function(s) {
-    html += '<span style="padding:5px 12px;background:rgba(59,130,246,0.1);border:1px solid rgba(59,130,246,0.2);border-radius:20px;font-size:0.72rem;color:#60a5fa;font-weight:500;">' + s + '</span>';
-  });
-  html += '</div></div>';
-
-  // Skill Gaps
-  if (missing.length > 0) {
-    html += '<div style="margin-bottom:20px;"><div style="font-weight:700;font-size:0.9rem;color:var(--text);margin-bottom:10px; display:flex; align-items:center; gap:8px;">' +
-      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:18px;height:18px;color:var(--amber);"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"></path></svg>' +
-      'Identified Skill Gaps (' + missing.length + ')</div><div style="display:flex;flex-wrap:wrap;gap:6px;">';
-    missing.forEach(function(s) {
-      html += '<span style="padding:5px 12px;background:rgba(251,146,60,0.1);border:1px solid rgba(251,146,60,0.2);border-radius:20px;font-size:0.72rem;color:#fb923c;font-weight:500; display:flex; align-items:center; gap:6px;">' +
-        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="18 15 12 9 6 15"></polyline></svg>' + s + '</span>';
-    });
-    html += '</div></div>';
-  }
-
-  // Study Topics
-  if (topics.length > 0) {
-    html += '<div style="margin-bottom:20px;"><div style="font-weight:700;font-size:0.9rem;color:var(--text);margin-bottom:10px; display:flex; align-items:center; gap:8px;">' +
-      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:18px;height:18px;color:var(--blue);"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 20H20v2H6.5A2.5 2.5 0 0 1 4 17.5v-15A2.5 2.5 0 0 1 6.5 0z"></path></svg>' +
-      'AI Recommended Study Topics</div>';
-    html += '<div class="universal-grid">';
-    console.log('[AI Debug] Study Roadmap Topics:', topics);
-    topics.forEach(function(t) {
-      // HEURISTIC EXTRACTOR (v1372)
-      function extractIndustrialTopicName(obj) {
-        if (typeof obj === 'string') return obj;
-        const keys = ['topic', 'name', 'title', 'id', 'label', 'subject', 'topicName', 'key', 'header', 'content', 'concept', 'skill', 'roadmap_item', 'suggestion', 'area', 'focus'];
-        for (let k of keys) { if (obj[k] && typeof obj[k] === 'string' && obj[k].trim()) return obj[k].trim(); }
-        // Heuristic: Take first string property between 3 and 50 chars
-        for (let k in obj) { if (typeof obj[k] === 'string' && obj[k].trim().length >= 3 && obj[k].trim().length <= 60) return obj[k].trim(); }
-        return null;
-      }
-
-      var topicName = extractIndustrialTopicName(t) || 'Career Specialization';
-      var priorityColors = { critical: { bg: 'rgba(239,68,68,0.1)', border: 'rgba(239,68,68,0.2)', text: '#ef4444' }, high: { bg: 'rgba(251,146,60,0.1)', border: 'rgba(251,146,60,0.2)', text: '#fb923c' }, medium: { bg: 'rgba(59,130,246,0.1)', border: 'rgba(59,130,246,0.2)', text: '#60a5fa' } };
-      
-      // Robust priority mapping
-      var rawPriority = (t.priority || t.level || t.importance || t.priority_level || 'medium').toLowerCase();
-      var pc = priorityColors[rawPriority] || priorityColors.medium;
-      
-      var topicId = t.topicId || (typeof topicName === 'string' ? topicName.toLowerCase().replace(/\s+/g, '_') : 'unknown_topic');
-      var hasTimerPage = !!document.getElementById(topicId) || !!topicConfig[topicId];
-      var estHours = t.estimatedHours || t.hours || t.est || t.time || 0;
-      html += '<div onclick="showPage(\'' + topicId + '\')" style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px;cursor:pointer;transition:all 0.2s;position:relative;overflow:hidden;" onmouseenter="this.style.borderColor=\'var(--blue)\'" onmouseleave="this.style.borderColor=\'var(--border)\'">';
-      html += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;"><span style="font-weight:600;font-size:0.85rem;color:var(--text);">' + topicName + '</span>';
-      html += '<span style="font-size:0.6rem;padding:2px 8px;background:' + pc.bg + ';border:1px solid ' + pc.border + ';border-radius:12px;color:' + pc.text + ';font-weight:700;text-transform:uppercase;">' + (t.priority || rawPriority) + '</span></div>';
-      html += '<div style="font-size:0.72rem;color:var(--muted);line-height:1.5;margin-bottom:8px;">' + (t.reason || t.desc || t.description || t.why || '') + '</div>';
-      html += '<div style="font-size:0.68rem;color:var(--dim);display:flex;justify-content:space-between; align-items:center;">' +
-        '<span style="display:flex; align-items:center; gap:4px;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:12px;height:12px;"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg> ' + estHours + 'h estimated</span>' +
-        '<span style="color:var(--blue); display:flex; align-items:center; gap:4px;">' +
-        '<svg viewBox="0 0 24 24" fill="currentColor" style="width:10px;height:10px;"><path d="M5 3l14 9-14 9V3z"></path></svg> Start Prep ' +
-        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:10px;height:10px;"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg></span></div></div>';
-    });
-    html += '</div></div>';
-  }
-
-  // AI Study Plan (Markdown)
-  if (profile.studyPlan) {
-    html += '<div style="margin-top:16px;background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.06);border-radius:16px;padding:24px;">';
-    html += '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">';
-    html += '<div style="display:flex;align-items:center;gap:10px;">' +
-      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:20px;height:20px;color:var(--blue);"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path><rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect></svg>' +
-      '<span style="font-weight:700;font-size:1rem;color:var(--text);">Dynamic AI Study Roadmap</span>' +
-      '<span style="font-size:0.6rem;padding:3px 8px;background:rgba(139,92,246,0.15);border:1px solid rgba(139,92,246,0.25);border-radius:20px;color:#c4b5fd;">AI</span></div>';
-    html += '</div>';
-
-    html += '<div style="font-size:0.82rem;line-height:1.8;color:var(--muted); margin-bottom:20px;">' + (window.marked ? marked.parse(profile.studyPlan) : profile.studyPlan) + '</div>';
-
-    // AI Regeneration Widget
-    html += `<div style="margin-top:20px; padding-top:20px; border-top:1px solid rgba(255,255,255,0.05);">
-      <div style="font-size:0.8rem; font-weight:600; color:var(--text); margin-bottom:10px;">🎯 Refine Your Roadmap</div>
-      <div style="display:flex; gap:10px;">
-        <input type="text" id="aiRoadmapTarget" placeholder="e.g. Senior LWC Developer with Data Cloud" style="flex:1; background:rgba(0,0,0,0.2); border:1px solid rgba(255,255,255,0.1); border-radius:8px; padding:10px; color:white; font-size:0.8rem; outline:none;">
-        <button id="btnRegenerateRoadmap" onclick="regenerateAIStudyPlan()" style="background:var(--blue); color:white; border:none; border-radius:8px; padding:0 20px; font-weight:600; cursor:pointer; font-size:0.8rem; transition:0.2s;">Generate New Plan</button>
-      </div>
-    </div>`;
-    html += '</div>';
-  }
-
-  html += '<div id="premiumRoadmapMount" class="premium-roadmap-mount"><div class="premium-loading">Loading premium roadmap and release focus...</div></div>';
-
-  html += '</div>'; // close content-card
-  contentDiv.innerHTML = html;
-  hydratePremiumSetupForm(profile);
-  bindPremiumPreviewControls();
-  applyUiMode(profile.uiMode || currentUiMode || 'modern');
-  loadPremiumRoadmap(true).then(data => {
-    const mount = document.getElementById('premiumRoadmapMount');
-    if (mount) mount.innerHTML = renderPremiumRoadmapSection(data) + renderPremiumReleaseFocusSection(data);
-  }).catch(err => {
-    console.warn('[PREMIUM] Roadmap render failed:', err.message);
-    const mount = document.getElementById('premiumRoadmapMount');
-    if (mount) mount.innerHTML = '<div class="premium-empty">Roadmap preview is unavailable right now.</div>';
-  });
-}
+/* UI templates moved to components.js */
 
 // Global function to handle AI Regeneration
 window.regenerateAIStudyPlan = async function() {
@@ -1386,141 +996,9 @@ function priorityClass(priority) {
   return 'medium';
 }
 
-function renderPremiumRoadmapSection(data) {
-  const roadmap = data?.roadmap || {};
-  const designation = data?.designation || {};
-  const topics = roadmap.topics || [];
-  const resources = data?.trailheadResources || [];
-  const exp = data?.experienceYears || 1;
-  return `
-    <div class="premium-roadmap-shell">
-      <div class="premium-roadmap-hero">
-        <div>
-          <div class="premium-eyebrow">Experience Roadmap</div>
-          <h2>${escapeHtml(exp)} Year ${escapeHtml(designation.label || 'Salesforce Developer')} Plan</h2>
-          <p>${escapeHtml(roadmap.summary || 'Select your experience and designation to generate a premium roadmap.')}</p>
-        </div>
-        <div class="premium-band-card">
-          <span>${escapeHtml(roadmap.band || 'Foundation')}</span>
-          <strong>${escapeHtml(roadmap.headline || 'Career roadmap')}</strong>
-        </div>
-      </div>
-      <div class="premium-roadmap-grid">
-        ${topics.map(topic => `
-          <button class="premium-topic-card ${priorityClass(topic.priority)}" onclick="showPage('${escapeHtml(topic.topicId)}')">
-            <span class="premium-topic-meta">${escapeHtml(topic.category || 'Study')} · ${escapeHtml(topic.priority || 'medium')}</span>
-            <strong>${escapeHtml(topic.topic || topicConfigName(topic.topicId))}</strong>
-            <p>${escapeHtml(topic.reason || '')}</p>
-            <span class="premium-topic-footer">${escapeHtml(topic.estimatedHours || 0)}h estimated · Start topic</span>
-          </button>
-        `).join('')}
-      </div>
-      <div class="premium-two-col">
-        <div class="premium-mini-panel">
-          <div class="premium-eyebrow">Interview Focus</div>
-          <div class="premium-chip-row">
-            ${(roadmap.interviewFocus || []).map(item => `<span>${escapeHtml(item)}</span>`).join('')}
-          </div>
-        </div>
-        <div class="premium-mini-panel">
-          <div class="premium-eyebrow">Official Resources</div>
-          ${resources.length ? resources.map(resource => `
-            <a class="premium-resource-link" href="${safeUrl(resource.url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(resource.title)}</a>
-          `).join('') : '<p class="premium-empty">Resources appear after roadmap selection.</p>'}
-        </div>
-      </div>
-    </div>
-  `;
-}
+/* UI templates moved to components.js */
 
-function renderPremiumReleaseFocusSection(data) {
-  const releaseFocus = data?.releaseFocus || {};
-  const active = releaseFocus.activeRelease || {};
-  const items = releaseFocus.items || [];
-  return `
-    <div class="premium-release-focus">
-      <div class="premium-panel-head">
-        <div>
-          <div class="premium-eyebrow">Release Focus</div>
-          <h3>${escapeHtml(active.releaseName || 'Current Salesforce Release')}</h3>
-        </div>
-        <button class="premium-secondary-btn" onclick="showPage('salesforce_releases')">Open Release Center</button>
-      </div>
-      <div class="premium-release-grid">
-        ${items.slice(0, 4).map(item => `
-          <article class="premium-release-card">
-            <span class="premium-release-cat">${escapeHtml(item.category)} · ${escapeHtml(item.releaseName)}</span>
-            <h4>${escapeHtml(item.title)}</h4>
-            <p>${escapeHtml(item.interviewAngle || item.whyMatters || '')}</p>
-            <div class="premium-release-detail"><strong>Relevance:</strong> High for this roadmap</div>
-            <div class="premium-release-meta"><span>Last checked: ${escapeHtml(item.lastChecked || 'Not available')}</span><a href="${safeUrl(item.source)}" target="_blank" rel="noopener noreferrer">Source</a></div>
-            <button onclick="showPage('${escapeHtml(item.topicId || 'salesforce_releases')}')">Study linked topic</button>
-          </article>
-        `).join('') || '<div class="premium-empty">No release focus found for this profile yet.</div>'}
-      </div>
-    </div>
-  `;
-}
-
-function renderReleaseCenterPage(data) {
-  const container = document.getElementById('releaseCenterContent');
-  if (!container) return;
-  const active = data?.activeRelease || {};
-  const personalized = data?.personalizedItems || [];
-  const allItems = data?.items || [];
-  const exp = data?.experienceYears || 1;
-  const designation = data?.designation?.label || 'Salesforce Developer';
-  const categories = Array.from(new Set(allItems.map(item => item.category))).filter(Boolean);
-  container.innerHTML = `
-    <div class="premium-release-hero">
-      <div>
-        <div class="premium-eyebrow">Always-On Release Intelligence</div>
-        <h2>${escapeHtml(active.releaseName || 'Current Release')}</h2>
-        <p>Personalized for ${escapeHtml(exp)} year experience and ${escapeHtml(designation)}. Last checked: ${escapeHtml(active.lastChecked || 'Not available')}.</p>
-      </div>
-      <div class="premium-release-source-list">
-        ${data?.previewMode ? '<span class="premium-badge">Curated Preview</span>' : ''}
-        ${(active.sources || []).map(url => `<a href="${safeUrl(url)}" target="_blank" rel="noopener noreferrer">Official source</a>`).join('')}
-      </div>
-    </div>
-    <div class="premium-mini-panel" style="margin-bottom:16px;">
-      <div class="premium-eyebrow">Your Priority Updates</div>
-      <div class="premium-release-grid">
-        ${personalized.map(item => renderReleaseCard(item, true)).join('') || '<p class="premium-empty">Complete profile setup to personalize release focus.</p>'}
-      </div>
-    </div>
-    ${categories.map(category => `
-      <section class="premium-release-category">
-        <h3>${escapeHtml(category)}</h3>
-        <div class="premium-release-grid">
-          ${allItems.filter(item => item.category === category).map(item => renderReleaseCard(item, false)).join('')}
-        </div>
-      </section>
-    `).join('')}
-  `;
-}
-
-function renderReleaseCard(item, personalized) {
-  const levels = (item.experienceLevels || []).join(', ') || 'all';
-  const relevance = personalized
-    ? 'High for your selected experience/designation'
-    : `Relevant for ${levels} year profiles`;
-  return `
-    <article class="premium-release-card ${personalized ? 'personalized' : ''}">
-      <span class="premium-release-cat">${escapeHtml(item.category)} · ${escapeHtml(item.releaseName)}</span>
-      <h4>${escapeHtml(item.title)}</h4>
-      <p>${escapeHtml(item.whatChanged)}</p>
-      <div class="premium-release-detail"><strong>Why it matters:</strong> ${escapeHtml(item.whyMatters)}</div>
-      <div class="premium-release-detail"><strong>Interview angle:</strong> ${escapeHtml(item.interviewAngle)}</div>
-      <div class="premium-release-detail"><strong>Relevance:</strong> ${escapeHtml(relevance)}</div>
-      <div class="premium-release-meta">
-        <span>Last checked: ${escapeHtml(item.lastChecked || 'Not available')}</span>
-        <a href="${safeUrl(item.source)}" target="_blank" rel="noopener noreferrer">Source</a>
-      </div>
-      <button onclick="showPage('${escapeHtml(item.topicId || 'salesforce_releases')}')">Study topic</button>
-    </article>
-  `;
-}
+/* UI templates moved to components.js */
 
 // =============================================
 // JOB INTELLIGENCE (v1412 - Profile Match Integration)
@@ -1545,62 +1023,7 @@ async function loadJobIntelligence() {
 
     if (matchedSkills.length === 0 && missingSkills.length === 0) {
       // No job data available yet
-      content.innerHTML = `
-        <div style="text-align:center; padding:20px; color:var(--muted); font-size:0.82rem;">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:32px;height:32px;margin-bottom:10px;opacity:0.4;">
-            <circle cx="12" cy="12" r="10"></circle><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
-          </svg>
-          <div>No job scan data available yet. Run a Global Job Scan to see market intelligence.</div>
-        </div>`;
-      section.style.display = 'block';
-      return;
-    }
-
-    let html = '<div style="margin-bottom:20px;">';
-    html += '<div style="font-size:0.75rem; color:var(--muted); margin-bottom:12px; text-transform:uppercase; letter-spacing:1px; font-weight:700;">Market Alignment Heatmap</div>';
-    
-    // Combine top 4 matches and top 4 gaps to create the alignment chart
-    const topSkills = [...matchedSkills.slice(0,4).map(s => ({...s, type: 'match'})), ...missingSkills.slice(0,4).map(s => ({...s, type: 'gap'}))]
-      .sort((a, b) => b.count - a.count); // sort by market demand
-      
-    topSkills.forEach(s => {
-      const name = s._id || s;
-      const count = s.count || 1;
-      const isMatch = s.type === 'match';
-      // Calculate a pseudo-percentage based on highest count (max 10 for visual scale)
-      const maxCount = topSkills[0]?.count || 10;
-      const widthPercent = Math.max(15, Math.min(100, (count / maxCount) * 100));
-      
-      const barColor = isMatch ? 'linear-gradient(90deg, rgba(16,185,129,0.2), rgba(16,185,129,0.8))' : 'linear-gradient(90deg, rgba(245,158,11,0.2), rgba(245,158,11,0.8))';
-      const textColor = isMatch ? '#34d399' : '#fbbf24';
-      const icon = isMatch 
-        ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:12px;height:12px;"><polyline points="20 6 9 17 4 12"></polyline></svg>'
-        : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:12px;height:12px;"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path></svg>';
-
-      html += `
-        <div style="margin-bottom:12px;">
-          <div style="display:flex; justify-content:space-between; font-size:0.75rem; margin-bottom:4px; font-weight:600;">
-            <span style="color:${textColor}; display:flex; align-items:center; gap:6px;">${icon} ${name}</span>
-            <span style="color:var(--muted); font-family:'IBM Plex Mono'; font-size:0.7rem;">${count} Jobs</span>
-          </div>
-          <div style="height:6px; background:rgba(255,255,255,0.05); border-radius:10px; overflow:hidden;">
-            <div style="height:100%; width:${widthPercent}%; background:${barColor}; border-radius:10px; transition:width 1s ease-in-out;"></div>
-          </div>
-        </div>
-      `;
-    });
-    
-    html += '</div>';
-
-    // Summary insight
-    const topGap = missingSkills[0]?._id || 'specialized skills';
-    const topMatch = matchedSkills[0]?._id || 'core competencies';
-    html += `<div style="margin-top:16px; padding:12px 16px; background:rgba(59,130,246,0.06); border:1px solid rgba(59,130,246,0.12); border-radius:10px; font-size:0.78rem; color:rgba(255,255,255,0.7); line-height:1.6;">
-      <strong style="color:var(--text);">AI Insight:</strong> Your strongest market match is <strong style="color:#10b981;">${topMatch}</strong>.
-      The highest-impact skill to develop is <strong style="color:#fbbf24;">${topGap}</strong> — it appears in ${missingSkills[0]?.count || 'multiple'} job listings you're being matched against.
-    </div>`;
-
-    content.innerHTML = html;
+    content.innerHTML = renderJobIntelligence(data);
     section.style.display = 'block';
   } catch (e) {
     console.warn('[JOB-INTEL] Failed to load job intelligence:', e.message);
@@ -1656,44 +1079,36 @@ Do not include any conversational text before or after the JSON.`;
   }
 }
 // =============================================
-// DYNAMIC TOPIC RENDERING (v1391+)
+// DYNAMIC TOPIC RENDERING (v1412+)
 // =============================================
-function renderTopicContent(topicId) {
-  const data = TOPIC_DATA[topicId];
+async function renderTopicContent(topicId) {
+  const viewer = document.getElementById('topic_viewer');
+  if (!viewer) return false;
+  
+  const data = await loadKnowledgeData(topicId);
   if (!data) return false;
 
-  const contentEl = document.getElementById('topicViewerContent');
-  const titleEl = document.getElementById('topicViewerTitle');
-  const subEl = document.getElementById('topicViewerSub');
-  const qaContainer = document.getElementById('topicQAContainer');
-  
-  if (!contentEl || !titleEl || !subEl) return false;
-
-  titleEl.textContent = data.title;
-  subEl.textContent = data.subtitle;
-  contentEl.style.display = 'block';
-  if (qaContainer) qaContainer.style.display = 'none';
-
-  let html = '';
-  data.blocks.forEach(block => {
-    if (block.type === 'section') {
-      html += `<div style="font-weight:800; font-size:0.8rem; color:var(--blue); text-transform:uppercase; letter-spacing:1px; margin:32px 0 16px;">${block.title}</div>`;
-    } else if (block.type === 'qa') {
-      html += `
-        <div class="qa-block" style="margin-bottom:12px; background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.05); border-radius:12px; overflow:hidden;">
-          <div class="qa-question" onclick="toggleQA(this)" style="padding:16px; cursor:pointer; display:flex; justify-content:space-between; align-items:center;">
-            <span class="qa-q-text" style="font-weight:700; font-size:0.9rem; color:var(--text);">${block.question}</span>
-            <span class="qa-chevron" style="opacity:0.3; display:flex; align-items:center;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span>
-          </div>
-          <div class="qa-answer" style="padding:0 16px 16px; font-size:0.85rem; color:var(--muted); line-height:1.6;">
-            ${block.answer}
-          </div>
-        </div>
-      `;
-    }
-  });
-
-  contentEl.innerHTML = html;
+  viewer.innerHTML = `
+    <h1 class="page-title">${data.title || topicConfigName(topicId)}</h1>
+    <p class="page-sub">${data.subtitle || 'Technical deep-dive'}</p>
+    <div class="topic-content-body">
+      ${(data.blocks || []).map(block => {
+        if (block.type === 'section') return `<div class="topic-section-divider">${block.title}</div>`;
+        if (block.type === 'qa') {
+          return `
+            <div class="qa-block">
+              <div class="qa-question" onclick="this.parentElement.classList.toggle('open')">
+                <span class="qa-q-text">${block.question}</span>
+                <span class="qa-chevron">▼</span>
+              </div>
+              <div class="qa-answer">${block.answer}</div>
+            </div>
+          `;
+        }
+        return '';
+      }).join('')}
+    </div>
+  `;
   return true;
 }
 
@@ -4509,34 +3924,7 @@ async function saveRetention(q) {
   renderRevisionAlerts();
 }
 
-function renderRevisionAlerts() {
-  const container = document.getElementById('revisionAlerts');
-  if (!container) return;
-  
-  const today = new Date();
-  const due = Object.entries(userRetention).filter(([id, s]) => {
-    return new Date(s.nextReview) <= today;
-  });
-  
-  if (due.length === 0) {
-    container.innerHTML = '';
-    return;
-  }
-  
-  let html = `<div style="font-size:0.7rem; color:var(--purple); font-weight:700; margin-bottom:10px; display:flex; align-items:center; gap:6px;">
-    <span class="active-indicator" style="background:var(--purple);"></span> RECOMMENDED REVISIONS
-  </div>`;
-  
-  due.forEach(([id, s]) => {
-    const name = topicConfig[id] ? topicConfig[id].name : id;
-    html += `
-      <div onclick="showPage('${id}')" style="background:rgba(167,139,250,0.08); border:1px solid rgba(167,139,250,0.2); border-radius:10px; padding:10px 12px; margin-bottom:8px; display:flex; align-items:center; justify-content:space-between; cursor:pointer; transition:all 0.2s;" onmouseenter="this.style.background='rgba(167,139,250,0.15)'" onmouseleave="this.style.background='rgba(167,139,250,0.08)'">
-        <div style="font-size:0.8rem; font-weight:600; color:var(--text);">${name}</div>
-        <div style="font-size:0.65rem; color:var(--purple); font-family:'IBM Plex Mono',monospace;">Due Now</div>
-      </div>`;
-  });
-  container.innerHTML = html;
-}
+/* UI templates moved to components.js */
 
 // =============================================
 // JOB RADAR PHASE 2-5 FUNCTIONS (v1399)
@@ -4561,27 +3949,7 @@ function logActivity(text, type = 'info') {
   renderLog();
 }
 
-function renderLog() {
-  const body = document.getElementById('logBody');
-  if (!body) return;
-  const maxPage = Math.max(0, Math.ceil(activityLog.length / LOG_PAGE_SIZE) - 1);
-  activityLogPage = Math.min(activityLogPage, maxPage);
-  const start = activityLogPage * LOG_PAGE_SIZE;
-  const pageItems = activityLog.slice(start, start + LOG_PAGE_SIZE);
-  if (!pageItems.length) {
-    body.innerHTML = '<div style="color:var(--muted); font-size:0.78rem; padding:10px 0;">No activity yet.</div>';
-    return;
-  }
-  body.innerHTML = pageItems.map(log => `
-    <div class="log-entry">
-      <div class="log-entry-meta">
-        <span>${new Date(log.timestamp).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</span>
-        <span style="color:${log.type==='success'?'var(--green)':log.type==='ai'?'var(--blue)':'var(--muted)'}">${String(log.type || 'info').toUpperCase()}</span>
-      </div>
-      <div class="log-entry-text">${escapeHtml(log.text)}</div>
-    </div>
-  `).join('') + renderPager(activityLog.length, activityLogPage, LOG_PAGE_SIZE, 'setLogPage(-1)', 'setLogPage(1)');
-}
+/* UI templates moved to components.js */
 
 function setLogPage(delta) {
   activityLogPage = Math.max(0, activityLogPage + delta);
@@ -4594,386 +3962,12 @@ function toggleLog() {
   if (panel) panel.classList.toggle('open');
 }
 
-function renderBoard() {
-  const cols = ['todo', 'applied', 'interview', 'offer', 'rejected'];
-  const searchTerm = getBoardSearchTerm();
-
-  cols.forEach(col => {
-    const list = document.getElementById(`list-${col}`);
-    const count = document.getElementById(`count-${col}`);
-    const cntHeader = document.getElementById(`cnt-${col}`);
-    if (!list) return;
-
-    const filtered = pipelineJobs
-      .filter(j => j.status === col)
-      .filter(j => currentBoardFilter === 'all' || j.prob === currentBoardFilter)
-      .filter(j => jobMatchesBoardSearch(j, searchTerm))
-      .sort(sortBoardJobs);
-
-    if (count) count.textContent = filtered.length;
-    if (cntHeader) cntHeader.textContent = filtered.length;
-
-    const maxPage = Math.max(0, Math.ceil(filtered.length / JOB_BOARD_PAGE_SIZE) - 1);
-    radarBoardPages[col] = Math.min(radarBoardPages[col] || 0, maxPage);
-    const start = radarBoardPages[col] * JOB_BOARD_PAGE_SIZE;
-    const displayJobs = filtered.slice(start, start + JOB_BOARD_PAGE_SIZE);
-    
-    list.innerHTML = displayJobs.length === 0 ? 
-      `<div class="radar-empty-state">No matching roles in this stage.</div>` :
-      displayJobs.map(job => renderJobCard(job)).join('');
-      
-    const pager = document.getElementById(`pager-${col}`);
-    if (pager) {
-      pager.innerHTML = renderPager(
-        filtered.length,
-        radarBoardPages[col] || 0,
-        JOB_BOARD_PAGE_SIZE,
-        `setBoardPage('${col}', -1)`,
-        `setBoardPage('${col}', 1)`,
-        true
-      );
-    }
-  });
-  updateAnalytics();
-  checkOfferComparison();
-}
-
-function loadMoreJobs(col) {
-  setBoardPage(col, 1);
-}
-
-function setBoardPage(col, delta) {
-  radarBoardPages[col] = Math.max(0, (radarBoardPages[col] || 0) + delta);
-  renderBoard();
-}
-
-function scrollToCol(id) {
-  const el = document.getElementById("col-" + id);
-  if (el) el.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "start" });
-}
-
-function setBoardFilter(val, btn) {
-  currentBoardFilter = val;
-  radarBoardPages = { todo: 0, applied: 0, interview: 0, offer: 0, rejected: 0 };
-  document.querySelectorAll(".fb").forEach(b => b.classList.remove("on"));
-  if (btn) btn.classList.add("on");
-  renderBoard();
-}
-
-function doBoardSearch() {
-  currentBoardSearch = document.getElementById("boardSearch")?.value || '';
-  radarBoardPages = { todo: 0, applied: 0, interview: 0, offer: 0, rejected: 0 };
-  renderBoard();
-}
-
-function renderJobCard(job) {
-  const followUp = getFollowUpStatus(job);
-  const score = Number(job.score || 75);
-  const scoreColor = score >= 85 ? 'var(--green)' : (score >= 70 ? 'var(--blue)' : 'var(--amber)');
-  const probability = getProbabilityMeta(job.prob || 'medium');
-  const actions = getActionSetForJob(job);
-  const matchedSkills = (job.skills || job.matched_skills || []).slice(0, 4);
-  const gapSkills = (job.missing_skills || []).slice(0, 3);
-  const resumeActions = (job.resume_actions || []).slice(0, 2);
-  const createdAt = (job.createdAt || job.date_added || job.created_at) ? new Date(job.createdAt || job.date_added || job.created_at) : null;
-  const createdLabel = createdAt && !Number.isNaN(createdAt.getTime())
-    ? createdAt.toLocaleDateString([], { month: 'short', day: 'numeric' })
-    : 'Recent';
-
-  return `
-    <div class="jcard-v3" id="card-${job.id}" data-prob="${job.prob || 'medium'}" draggable="true" ondragstart="handleDragStart(event, '${job.id}')">
-      <div class="jcard-top">
-        <div class="jcard-company-block">
-           <div class="jcard-icon">${escapeHtml(job.icon || 'SF')}</div>
-           <div class="jcard-company-copy">
-             <span class="jcard-company">${escapeHtml(job.company)}</span>
-             <span class="jcard-company-type">${escapeHtml(job.company_type || 'MNC')}</span>
-           </div>
-        </div>
-        <div class="goal-ring-v3 score-chip" style="position:relative;">
-           <svg viewBox="0 0 36 36" style="width:100%; height:100%;">
-              <circle class="goal-track" cx="18" cy="18" r="15.9"/>
-              <circle class="goal-arc" cx="18" cy="18" r="15.9" style="stroke-dasharray: ${score} 100; stroke: ${scoreColor};"/>
-           </svg>
-           <div class="score-chip-value">${score}</div>
-        </div>
-      </div>
-
-      <div class="jcard-stage-row">
-        <span class="prob-badge ${probability.cls}">${probability.label}</span>
-        <span class="jcard-age">Added ${escapeHtml(createdLabel)}</span>
-      </div>
-
-      <div class="jcard-role">${escapeHtml(job.role)}</div>
-
-      ${followUp && job.status === 'applied' ? `
-        <div class="followup-inline ${followUp.class}">${escapeHtml(followUp.label)}</div>
-      ` : ''}
-
-      <div class="jcard-meta-grid">
-        <span class="meta-pill">Location: <b>${escapeHtml(job.loc || 'India')}</b></span>
-        <span class="meta-pill">Experience: <b>${escapeHtml(job.experience || '3-5 Yrs')}</b></span>
-        <span class="meta-pill">Comp: <b>${escapeHtml(job.sal || 'Competitive')}</b></span>
-      </div>
-
-      ${matchedSkills.length ? `
-        <div class="jcard-skill-row">
-          ${matchedSkills.map(skill => `<span class="skill-tag">${escapeHtml(skill)}</span>`).join('')}
-        </div>
-      ` : ''}
-
-      ${gapSkills.length ? `
-        <div class="jcard-skill-row gaps">
-          ${gapSkills.map(skill => `<span class="skill-gap-tag" onclick="showPage('profile_match')">${escapeHtml(skill)}</span>`).join('')}
-        </div>
-      ` : ''}
-
-      <div class="jcard-why">
-        <strong>Why this role:</strong> ${escapeHtml(job.why_apply || 'Matches your profile requirements.')}
-      </div>
-
-      ${resumeActions.length ? `
-        <div class="jcard-resume">
-          <div class="jcard-resume-title">AI resume actions</div>
-          <ul class="jcard-resume-list">
-            ${resumeActions.map(action => `<li>${escapeHtml(action)}</li>`).join('')}
-          </ul>
-        </div>
-      ` : ''}
-
-      <div class="jcard-actions">
-        ${actions.map(action => action.href
-          ? `<a href="${action.href}" target="_blank" rel="noopener noreferrer" class="jcard-btn ${action.cls}">${escapeHtml(action.label)}</a>`
-          : `<button class="jcard-btn ${action.cls}" onclick="${action.onClick}">${escapeHtml(action.label)}</button>`
-        ).join('')}
-      </div>
-    </div>
-  `;
-}
-
-function getFollowUpStatus(job) {
-  if (job.status !== 'applied' || !job.dateApplied) return null;
-  const days = Math.floor((new Date() - new Date(job.dateApplied)) / (1000 * 60 * 60 * 24));
-  if (days >= 21) return { label: 'GHOSTED?', class: 'ghost' };
-  if (days >= 14) return { label: 'URGENT', class: 'urgent' };
-  if (days >= 7) return { label: 'FOLLOW-UP', class: 'warn' };
-  return null;
-}
-
-// --- Drag and Drop Handlers ---
-window.handleDragStart = function(e, jobId) {
-  e.dataTransfer.setData('text/plain', jobId);
-  e.dataTransfer.effectAllowed = 'move';
-  setTimeout(() => e.target.classList.add('dragging'), 0);
-}
-
-window.handleDragOver = function(e) {
-  e.preventDefault();
-  e.dataTransfer.dropEffect = 'move';
-  if (!e.currentTarget.classList.contains('drag-over')) {
-    e.currentTarget.classList.add('drag-over');
-  }
-}
-
-window.handleDragLeave = function(e) {
-  e.currentTarget.classList.remove('drag-over');
-}
-
-window.handleDrop = async function(e, status) {
-  e.preventDefault();
-  e.currentTarget.classList.remove('drag-over');
-  const jobId = e.dataTransfer.getData('text/plain');
-  if (!jobId) return;
-  
-  const job = pipelineJobs.find(j => j.id === jobId);
-  if (!job || job.status === status) return;
-  
-  const oldStatus = job.status;
-  job.status = status;
-  if (status === 'applied') job.dateApplied = new Date().toISOString();
-  
-  renderBoard(); // Optimistic UI update
-  
-  // Sync animation
-  const card = document.getElementById('card-' + jobId);
-  if (card) {
-    card.style.opacity = '0.5';
-    card.style.transform = 'scale(0.98)';
-  }
-  
-  try {
-    showToast(`Moved ${job.company} to ${status.toUpperCase()}`);
-    logActivity(`Moved <strong>${job.company}</strong> from ${oldStatus.toUpperCase()} to ${status.toUpperCase()}`, 'success');
-    
-    // Sync with backend
-    await savePipeline();
-    
-    if (card) {
-      card.style.opacity = '1';
-      card.style.transform = 'scale(1)';
-    }
-  } catch (err) {
-    console.error('Drag drop sync failed', err);
-    showToast('Failed to save changes. Check connection.', true);
-  }
-}
-// -----------------------------
-
-function moveTo(id, newStatus) {
-  const job = pipelineJobs.find(j => j.id === id);
-  if (!job) return;
-  const oldStatus = job.status;
-  job.status = newStatus;
-  if (newStatus === 'applied') job.dateApplied = new Date().toISOString();
-  savePipeline();
-  renderBoard();
-  logActivity(`Moved <strong>${job.company}</strong> from ${oldStatus.toUpperCase()} to ${newStatus.toUpperCase()}`, 'success');
-  if (newStatus === 'applied') showToast('Application recorded.');
-}
-
-function switchRadarSubTab(tab) {
-  currentRadarSubTab = tab;
-  document.querySelectorAll('.radar-tab-btn').forEach(b => {
-    b.classList.remove('active');
-    b.style.color = 'var(--muted)';
-    b.style.borderBottomColor = 'transparent';
-  });
-  const btn = document.getElementById('tab-' + tab);
-  if (btn) {
-    btn.classList.add('active');
-    btn.style.color = 'var(--text)';
-    btn.style.borderBottomColor = 'var(--blue)';
-  }
-
-  const pipelineView = document.getElementById('radar-pipeline-view');
-  const insightsView = document.getElementById('radar-insights-view');
-  const developmentView = document.getElementById('radar-development-view');
-  
-  if (pipelineView) pipelineView.style.display = tab === 'pipeline' ? 'block' : 'none';
-  if (insightsView) insightsView.style.display = tab === 'insights' ? 'block' : 'none';
-  if (developmentView) developmentView.style.display = tab === 'development' ? 'block' : 'none';
-  
-  if (tab === 'insights') renderInsights();
-  if (tab === 'development') renderDevelopment();
-}
-
-function renderInsights() {
-  const funnel = document.getElementById('funnel-container');
-  const dist = document.getElementById('dist-container');
-  const velocity = document.getElementById('velocity-container');
-  if (!funnel || !dist || !velocity) return;
-
-  // 1. Funnel (Phase 5A)
-  const stages = [
-    { label: 'TO APPLY', count: pipelineJobs.filter(j => j.status === 'todo').length, color: 'var(--blue)' },
-    { label: 'APPLIED', count: pipelineJobs.filter(j => j.status === 'applied').length, color: 'var(--green)' },
-    { label: 'INTERVIEW', count: pipelineJobs.filter(j => j.status === 'interview').length, color: 'var(--amber)' },
-    { label: 'OFFER', count: pipelineJobs.filter(j => j.status === 'offer').length, color: 'var(--pink)' }
-  ];
-  const max = Math.max(...stages.map(s => s.count), 1);
-  funnel.innerHTML = stages.map(s => `
-    <div style="display:flex; align-items:center; gap:10px;">
-      <div style="width:70px; font-size:0.6rem; color:var(--muted); font-weight:800;">${s.label}</div>
-      <div style="flex:1; background:rgba(255,255,255,0.03); height:12px; border-radius:6px; overflow:hidden;">
-        <div style="background:${s.color}; height:100%; width:${(s.count/max)*100}%; transition:width 1s ease;"></div>
-      </div>
-      <div style="width:20px; font-size:0.75rem; font-weight:800;">${s.count}</div>
-    </div>
-  `).join('');
-
-  // 2. Segment Distribution (Phase 5C)
-  const segments = {
-    'Service-Based': pipelineJobs.filter(j => ['Cognizant', 'TCS', 'Infosys', 'Wipro'].some(c => j.company.includes(c))).length,
-    'Product/SaaS': pipelineJobs.filter(j => ['Salesforce', 'Google', 'Amazon', 'Veeva'].some(c => j.company.includes(c))).length,
-    'FinTech/BFSI': pipelineJobs.filter(j => ['HDFC', 'Barclays', 'HSBC', 'Standard'].some(c => j.company.includes(c))).length,
-    'Consulting': pipelineJobs.filter(j => ['Deloitte', 'Accenture', 'PwC', 'KPMG'].some(c => j.company.includes(c))).length
-  };
-  const segMax = Math.max(...Object.values(segments), 1);
-  dist.innerHTML = Object.entries(segments).map(([k, v]) => `
-    <div style="display:flex; align-items:center; gap:10px;">
-      <div style="width:70px; font-size:0.6rem; color:var(--muted); line-height:1;">${k}</div>
-      <div style="flex:1; background:rgba(255,255,255,0.03); height:6px; border-radius:3px;">
-        <div style="background:var(--blue); height:100%; width:${(v/segMax)*100}%; opacity:0.6;"></div>
-      </div>
-      <div style="font-size:0.7rem; font-weight:700;">${v}</div>
-    </div>
-  `).join('');
-
-  // 3. Weekly Velocity (Real data from pipeline)
-  const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-  const now = new Date();
-  const dayOfWeek = now.getDay(); // 0=Sun, 1=Mon...
-  const weekData = [0, 0, 0, 0, 0, 0, 0];
-  pipelineJobs.forEach(j => {
-    if (j.dateApplied) {
-      const applied = new Date(j.dateApplied);
-      const diffDays = Math.floor((now - applied) / (1000 * 60 * 60 * 24));
-      if (diffDays >= 0 && diffDays < 7) {
-        const appliedDay = applied.getDay();
-        const idx = appliedDay === 0 ? 6 : appliedDay - 1; // Convert to Mon=0..Sun=6
-        weekData[idx]++;
-      }
-    }
-  });
-  const maxVel = Math.max(...weekData, 1);
-  velocity.innerHTML = days.map((d, i) => `
-    <div style="flex:1; display:flex; flex-direction:column; align-items:center; gap:8px;">
-      <div style="font-size:0.65rem; font-weight:700; color:var(--text2);">${weekData[i]}</div>
-      <div style="width:100%; background:linear-gradient(to top, var(--blue), var(--cyan)); height:${Math.max((weekData[i]/maxVel)*120, 4)}px; border-radius:4px 4px 0 0; opacity:${weekData[i] > 0 ? '0.8' : '0.15'}; transition:height 0.6s ease;"></div>
-      <div style="font-size:0.55rem; color:var(--muted);">${d}</div>
-    </div>
-  `).join('');
-}
+/* UI templates moved to components.js */
 
 function renderDevelopment() {
   const container = document.getElementById('radar-development-view');
   if (!container) return;
-  
-  const phases = [
-    { name: 'Phase 1: Foundation', status: 'completed', desc: 'Core agent logic and environment setup.' },
-    { name: 'Phase 2: Job Fetching', status: 'completed', desc: 'LinkedIn & Naukri integration with deduplication.' },
-    { name: 'Phase 3: AI Matching', status: 'in-progress', desc: 'Resume tailoring and skill gap analysis.' },
-    { name: 'Phase 4: Auto-Apply', status: 'pending', desc: 'One-click application and tracking.' },
-    { name: 'Phase 5: Smart Analytics', status: 'pending', desc: 'Market trend reporting and ROI tracking.' }
-  ];
-
-  const skillProficiency = [
-    { skill: 'Apex & SOQL', value: 92 },
-    { skill: 'LWC & Frontend', value: 85 },
-    { skill: 'Integration & APIs', value: 78 },
-    { skill: 'Data Cloud', value: 65 },
-    { skill: 'Agentforce', value: 58 }
-  ];
-
-  const proficiencyEl = document.getElementById('skillProficiencyList');
-  if (proficiencyEl) {
-    proficiencyEl.innerHTML = skillProficiency.map(s => `
-      <div style="margin-bottom:10px;">
-        <div style="display:flex; justify-content:space-between; font-size:0.75rem; margin-bottom:4px;">
-          <span>${s.skill}</span>
-          <span style="color:var(--blue); font-weight:700;">${s.value}%</span>
-        </div>
-        <div style="background:rgba(255,255,255,0.03); height:6px; border-radius:3px; overflow:hidden;">
-          <div style="background:var(--blue); height:100%; width:${s.value}%; transition:width 1s ease;"></div>
-        </div>
-      </div>
-    `).join('');
-  }
-
-  const readinessEl = document.getElementById('readyForDeploymentList');
-  if (readinessEl) {
-    readinessEl.innerHTML = phases.map(p => `
-      <div style="display:flex; align-items:flex-start; gap:12px; margin-bottom:15px;">
-        <div style="width:24px; height:24px; border-radius:50%; background:${p.status==='completed'?'var(--green)':p.status==='in-progress'?'var(--blue)':'rgba(255,255,255,0.05)'}; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
-          ${p.status==='completed'?'OK':p.status==='in-progress'?'GO':'..'}
-        </div>
-        <div>
-          <div style="font-size:0.8rem; font-weight:700; color:${p.status==='pending'?'var(--muted)':'var(--text)'}">${p.name}</div>
-          <div style="font-size:0.65rem; color:var(--muted);">${p.desc}</div>
-        </div>
-      </div>
-    `).join('');
-  }
+  container.innerHTML = renderDevelopmentUI();
 }
 
 // Phase 3D: Interview Coach Logic
@@ -5056,8 +4050,10 @@ async function requestNotifications() {
   }
 }
 
+let reminderInterval = null;
 function scheduleReminders() {
-  setInterval(() => {
+  if (reminderInterval) clearInterval(reminderInterval);
+  reminderInterval = setInterval(() => {
     pipelineJobs.forEach(j => {
       if (j.status === 'applied') {
         const status = getFollowUpStatus(j);
@@ -5069,7 +4065,7 @@ function scheduleReminders() {
         }
       }
     });
-  }, 3600000 * 4);
+  }, 3600000 * 4); // Every 4 hours
 }
 
 // Phase 3 Stubs
