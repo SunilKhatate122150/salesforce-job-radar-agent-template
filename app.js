@@ -1020,6 +1020,7 @@ async function loadJobIntelligence() {
 
     if (matchedSkills.length === 0 && missingSkills.length === 0) {
       // No job data available yet
+    }
     content.innerHTML = renderJobIntelligence(data);
     section.style.display = 'block';
   } catch (e) {
