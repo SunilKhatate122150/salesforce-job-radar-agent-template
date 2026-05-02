@@ -9111,3 +9111,116 @@ table {
     overflow: visible !important;
   }
 }
+
+/* Kanban pagination visibility hardening. The board can run inside short
+   browser viewports, so the pager must live in a fixed footer row. */
+#job_radar {
+  --jr-tabs-h: 40px;
+  --jr-board-safe-gap: 28px;
+}
+
+#job_radar .industrial-pager .pager-btn {
+  width: auto !important;
+  min-width: 58px !important;
+  padding: 0 8px !important;
+  gap: 5px !important;
+}
+
+#job_radar .industrial-pager .pager-btn svg {
+  flex: 0 0 14px;
+}
+
+#job_radar .pager-btn-text {
+  display: inline-block;
+  color: inherit;
+  font-family: var(--app-font-mono, 'IBM Plex Mono', monospace);
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+@media (min-width: 641px) {
+  #job_radar .kanban-board-v3 {
+    align-items: stretch !important;
+    min-height: 320px !important;
+  }
+
+  #job_radar .kanban-col-v3 {
+    display: grid !important;
+    grid-template-rows: auto minmax(0, 1fr) auto !important;
+    overflow: hidden !important;
+  }
+
+  #job_radar .kanban-body {
+    min-height: 0 !important;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+  }
+
+  #job_radar .kanban-pager {
+    min-height: 58px !important;
+    position: relative !important;
+    z-index: 6 !important;
+    flex: 0 0 auto !important;
+    background: rgba(13, 21, 38, 0.94) !important;
+    border-top: 1px solid var(--jr-border, #1e3055) !important;
+  }
+}
+
+@media (min-width: 1101px) {
+  #job_radar .kanban-board-v3 {
+    height: clamp(
+      320px,
+      calc(100dvh - var(--header-h, 60px) - var(--jr-header-h, 72px) - var(--jr-analytics-h, 64px) - var(--jr-filter-h, 48px) - var(--jr-tabs-h, 40px) - var(--jr-board-safe-gap, 28px)),
+      680px
+    ) !important;
+  }
+
+  #job_radar .kanban-col-v3 {
+    height: 100% !important;
+    min-height: 0 !important;
+    max-height: 100% !important;
+  }
+}
+
+@media (min-width: 641px) and (max-width: 1100px) {
+  #job_radar {
+    overflow-y: auto !important;
+  }
+
+  #job_radar .kanban-board-v3 {
+    overflow: visible !important;
+    padding-bottom: 96px !important;
+  }
+
+  #job_radar .kanban-col-v3 {
+    height: clamp(320px, calc(100dvh - 420px), 560px) !important;
+    min-height: 320px !important;
+    max-height: 560px !important;
+  }
+}
+
+@media (max-width: 640px) {
+  #job_radar .kanban-board-v3.mobile-stage-mode .kanban-col-v3.mobile-stage-active {
+    display: grid !important;
+    grid-template-rows: auto minmax(0, 1fr) auto !important;
+  }
+
+  #job_radar .kanban-board-v3.mobile-stage-mode .kanban-body {
+    max-height: min(62dvh, 620px) !important;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+  }
+
+  #job_radar .kanban-pager {
+    min-height: 58px !important;
+    background: rgba(13, 21, 38, 0.94) !important;
+    border-top: 1px solid var(--jr-border, #1e3055) !important;
+  }
+
+  #job_radar .industrial-pager .pager-btn {
+    min-width: 54px !important;
+  }
+}

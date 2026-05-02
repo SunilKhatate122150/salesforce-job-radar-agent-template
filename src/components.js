@@ -829,12 +829,14 @@ function renderPager(total, current, size, prevCmd, nextCmd, forceOrMini = false
     <div class="industrial-pager ${forceOrMini ? 'mini kanban-board-pager' : ''}">
       <button onclick="${prevCmd}" ${safeCurrent === 0 ? 'disabled' : ''} class="pager-btn" aria-label="Previous page">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><polyline points="15 18 9 12 15 6"></polyline></svg>
+        <span class="pager-btn-text">Prev</span>
       </button>
       <span class="pager-info">
         <span class="pager-page">${safeCurrent + 1} / ${totalPages}</span>
         <span class="pager-total">${start}-${end} of ${total}</span>
       </span>
       <button onclick="${nextCmd}" ${safeCurrent >= max ? 'disabled' : ''} class="pager-btn" aria-label="Next page">
+        <span class="pager-btn-text">Next</span>
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><polyline points="9 18 15 12 9 6"></polyline></svg>
       </button>
     </div>
