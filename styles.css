@@ -8394,3 +8394,214 @@ body:has(#job_radar.active) #headerTitle {
 #main > #job_radar.page.active {
   display: flex !important;
 }
+
+/* Job Radar final board stability and pagination */
+.industrial-pager {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+  min-height: 34px;
+}
+
+.industrial-pager .pager-btn {
+  width: 32px;
+  height: 30px;
+  min-width: 32px;
+  border: 1px solid rgba(148, 163, 184, 0.22);
+  border-radius: 8px;
+  background: rgba(30, 41, 59, 0.88);
+  color: var(--text, #dbeafe);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.industrial-pager .pager-btn svg {
+  width: 14px;
+  height: 14px;
+}
+
+.industrial-pager .pager-btn:disabled {
+  opacity: 0.42;
+  cursor: not-allowed;
+  background: rgba(15, 23, 42, 0.55);
+}
+
+.industrial-pager .pager-info {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-width: 82px;
+  line-height: 1.15;
+  text-align: center;
+  font-family: var(--app-font-mono, 'IBM Plex Mono', monospace);
+  letter-spacing: 0;
+}
+
+.industrial-pager .pager-page {
+  color: var(--text, #dbeafe);
+  font-size: 0.68rem;
+  font-weight: 800;
+}
+
+.industrial-pager .pager-total {
+  margin-top: 2px;
+  color: var(--muted, #94a3b8);
+  font-size: 0.56rem;
+}
+
+#job_radar .kanban-board-v3 {
+  gap: 16px !important;
+  align-items: stretch !important;
+  padding-bottom: 14px !important;
+  overscroll-behavior-x: contain;
+}
+
+#job_radar .kanban-col-v3 {
+  width: clamp(318px, 28vw, 360px) !important;
+  min-width: clamp(318px, 28vw, 360px) !important;
+  max-width: 360px !important;
+  flex-basis: clamp(318px, 28vw, 360px) !important;
+}
+
+#job_radar .kanban-body {
+  min-height: 0 !important;
+  gap: 12px !important;
+  scrollbar-gutter: stable;
+}
+
+#job_radar .kanban-body.drag-over {
+  background: rgba(59, 130, 246, 0.08) !important;
+  outline: 1px solid rgba(59, 130, 246, 0.42);
+  outline-offset: -5px;
+}
+
+#job_radar .kanban-pager {
+  display: block !important;
+  min-height: 52px;
+  padding: 9px 12px !important;
+}
+
+#job_radar .kanban-pager .industrial-pager {
+  border: 1px solid rgba(148, 163, 184, 0.1);
+  border-radius: 10px;
+  background: rgba(15, 23, 42, 0.72);
+  padding: 6px;
+}
+
+#job_radar .jcard-v3 {
+  min-height: 232px !important;
+  max-height: none !important;
+  gap: 8px !important;
+}
+
+#job_radar .jcard-company {
+  max-width: 205px !important;
+}
+
+#job_radar .jcard-role,
+#job_radar .jcard-why,
+#job_radar .jcard-resume-list li {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+#job_radar .jcard-role {
+  min-height: 34px;
+  -webkit-line-clamp: 2;
+}
+
+#job_radar .jcard-why {
+  min-height: 50px;
+  max-height: 66px;
+  -webkit-line-clamp: 3;
+}
+
+#job_radar .jcard-skill-row {
+  min-height: 28px;
+  max-height: 32px;
+  overflow: hidden;
+}
+
+#job_radar .jcard-resume {
+  max-height: 62px;
+  overflow: hidden;
+}
+
+#job_radar .jcard-resume-list li {
+  -webkit-line-clamp: 1;
+}
+
+#job_radar .jcard-resume-list li:nth-child(n+2) {
+  display: none;
+}
+
+#job_radar .jcard-actions {
+  width: 100%;
+  gap: 7px !important;
+}
+
+#job_radar .jcard-actions > .jcard-btn {
+  flex: 1 1 calc(50% - 4px) !important;
+  width: auto !important;
+  min-height: 30px !important;
+  padding: 6px 8px !important;
+  white-space: normal !important;
+  text-align: center;
+}
+
+@media (max-width: 900px) {
+  #job_radar .kanban-board-v3 {
+    height: calc(100dvh - var(--header-h, 58px) - 140px) !important;
+    min-height: 520px !important;
+    padding: 12px !important;
+    scroll-snap-type: x proximity;
+  }
+
+  #job_radar .kanban-col-v3 {
+    width: min(88vw, 348px) !important;
+    min-width: min(88vw, 348px) !important;
+    max-width: min(88vw, 348px) !important;
+    flex-basis: min(88vw, 348px) !important;
+    scroll-snap-align: start;
+  }
+
+  #job_radar .filter-search {
+    width: 100% !important;
+    min-width: 0 !important;
+  }
+
+  #job_radar .jcard-company {
+    max-width: 185px !important;
+  }
+}
+
+@media (max-width: 520px) {
+  #job_radar .kanban-board-v3 {
+    height: calc(100dvh - var(--header-h, 56px) - 120px) !important;
+    min-height: 500px !important;
+  }
+
+  #job_radar .kanban-col-v3 {
+    width: 86vw !important;
+    min-width: 86vw !important;
+    max-width: 86vw !important;
+    flex-basis: 86vw !important;
+  }
+
+  #job_radar .jcard-v3 {
+    min-height: 226px !important;
+    padding: 12px !important;
+  }
+
+  #job_radar .jcard-actions > .jcard-btn {
+    font-size: 9.5px !important;
+  }
+}

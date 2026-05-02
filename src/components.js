@@ -493,14 +493,14 @@ function renderBoard() {
   const cols = ['todo', 'applied', 'interview', 'offer', 'rejected'];
   const searchTerm = (document.getElementById("boardSearch")?.value || '').toLowerCase();
   const filter = window.currentBoardFilter || 'all';
-  const pageSize = window.JOB_BOARD_PAGE_SIZE || 10;
+  const pageSize = Math.max(1, Number(window.JOB_BOARD_PAGE_SIZE || 6));
 
   cols.forEach(col => {
     const list = document.getElementById(`list-${col}`);
     const count = document.getElementById(`count-${col}`);
     if (!list) return;
 
-    const filtered = (window.pipelineJobs || [])
+    const filtered = typeof window.getBoardColumnJobs === 'function' ? window.getBoardColumnJobs(col) : (window.pipelineJobs || [])
       .filter(j => componentText(j.status, 'todo') === col)
       .filter(j => filter === 'all' || componentProbability(j.prob || j.probability, j.score) === filter)
       .filter(j => {
@@ -521,9 +521,11 @@ function renderBoard() {
     if (count) count.textContent = filtered.length;
 
     const pages = window.radarBoardPages || { todo: 0, applied: 0, interview: 0, offer: 0, rejected: 0 };
-    const page = pages[col] || 0;
     const maxPage = Math.max(0, Math.ceil(filtered.length / pageSize) - 1);
-    const start = Math.min(page, maxPage) * pageSize;
+    const page = Math.max(0, Math.min(maxPage, pages[col] || 0));
+    window.radarBoardPages = pages;
+    window.radarBoardPages[col] = page;
+    const start = page * pageSize;
     const displayJobs = filtered.slice(start, start + pageSize);
 
     list.innerHTML = displayJobs.length === 0 ? 
@@ -559,9 +561,9 @@ function renderJobCard(job) {
   const status = componentText(job.status, 'todo');
   const score = componentScore(job.score || job.match_score || 75);
   const followUp = getFollowUpStatus(job);
-  const matchedSkills = componentList(job.matched_skills?.length ? job.matched_skills : job.skills).slice(0, 4);
-  const gapSkills = componentList(job.missing_skills).slice(0, 3);
-  const resumeActions = componentList(job.resume_actions).slice(0, 3);
+  const matchedSkills = componentList(job.matched_skills?.length ? job.matched_skills : job.skills).slice(0, 3);
+  const gapSkills = componentList(job.missing_skills).slice(0, 2);
+  const resumeActions = componentList(job.resume_actions).slice(0, 2);
   const prob = componentProbability(job.prob || job.probability, score);
   const applyUrl = componentSafeUrl(job.url || job.apply_link);
   
@@ -580,7 +582,7 @@ function renderJobCard(job) {
   }
 
   return `
-    <div class="jcard-v3" data-prob="${componentEscapeAttr(prob)}" id="card-${idAttr}" draggable="true" ondragstart="handleDragStart(event, '${idJs}')">
+    <div class="jcard-v3" data-prob="${componentEscapeAttr(prob)}" id="card-${idAttr}" draggable="true" ondragstart="handleDragStart(event, '${idJs}')" ondragend="handleDragEnd(event)">
       <div class="jcard-top">
         <div class="jcard-company-block">
           <div class="jcard-icon" style="background:${componentEscapeAttr(stringToColor(company))}">${componentEscapeHtml(componentInitials(company))}</div>
@@ -767,17 +769,25 @@ function renderLog() {
   `).join('') + renderPager(log.length, page, pageSize, 'setLogPage(-1)', 'setLogPage(1)');
 }
 
-function renderPager(total, current, size, prevCmd, nextCmd, isMini = false) {
-  const max = Math.max(0, Math.ceil(total / size) - 1);
-  if (max <= 0) return '';
+function renderPager(total, current, size, prevCmd, nextCmd, forceOrMini = false) {
+  const safeSize = Math.max(1, Number(size || 1));
+  const totalPages = Math.max(1, Math.ceil(Number(total || 0) / safeSize));
+  const max = totalPages - 1;
+  const safeCurrent = Math.max(0, Math.min(max, Number(current || 0)));
+  if (!forceOrMini && max <= 0) return '';
+  const start = total > 0 ? safeCurrent * safeSize + 1 : 0;
+  const end = Math.min(Number(total || 0), (safeCurrent + 1) * safeSize);
   return `
-    <div class="industrial-pager ${isMini ? 'mini' : ''}">
-      <button onclick="${prevCmd}" ${current === 0 ? 'disabled' : ''} class="pager-btn">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"></polyline></svg>
+    <div class="industrial-pager ${forceOrMini ? 'mini kanban-board-pager' : ''}">
+      <button onclick="${prevCmd}" ${safeCurrent === 0 ? 'disabled' : ''} class="pager-btn" aria-label="Previous page">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><polyline points="15 18 9 12 15 6"></polyline></svg>
       </button>
-      <span class="pager-info">${current + 1} / ${max + 1}</span>
-      <button onclick="${nextCmd}" ${current >= max ? 'disabled' : ''} class="pager-btn">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"></polyline></svg>
+      <span class="pager-info">
+        <span class="pager-page">${safeCurrent + 1} / ${totalPages}</span>
+        <span class="pager-total">${start}-${end} of ${total}</span>
+      </span>
+      <button onclick="${nextCmd}" ${safeCurrent >= max ? 'disabled' : ''} class="pager-btn" aria-label="Next page">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><polyline points="9 18 15 12 9 6"></polyline></svg>
       </button>
     </div>
   `;

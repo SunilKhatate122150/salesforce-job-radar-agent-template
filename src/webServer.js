@@ -32,6 +32,60 @@ function readDataJson(fileName, fallback = {}) {
   }
 }
 
+function normalizeBoardStatus(value) {
+  const normalized = String(value || '').trim().toLowerCase();
+  if (normalized === 'new') return 'todo';
+  if (normalized === 'ignored') return 'rejected';
+  if (['todo', 'applied', 'interview', 'offer', 'rejected'].includes(normalized)) return normalized;
+  return 'todo';
+}
+
+function encodeStatusKey(value) {
+  const raw = String(value || '').trim();
+  if (!raw) return '';
+  return Buffer.from(raw, 'utf8')
+    .toString('base64')
+    .replace(/\+/g, '-')
+    .replace(/\//g, '_')
+    .replace(/=+$/g, '');
+}
+
+function jobStatusCandidates(job = {}) {
+  return [job.job_hash, job.jobHash, job.id, job._id]
+    .map(value => value === undefined || value === null ? '' : String(value))
+    .filter(Boolean);
+}
+
+async function getJobStatusOverrides(userId) {
+  if (!userId || mongoose.connection.readyState !== 1) return {};
+  const profile = await UserProfile.findOne({ userId }).select('jobRadarStatuses').lean();
+  return profile?.jobRadarStatuses || {};
+}
+
+function findJobStatusOverride(overrides = {}, job = {}) {
+  for (const candidate of jobStatusCandidates(job)) {
+    const encoded = encodeStatusKey(candidate);
+    if (encoded && overrides[encoded]) return overrides[encoded];
+    if (overrides[candidate]) return overrides[candidate];
+  }
+  return null;
+}
+
+function applyJobStatusOverrides(jobs = [], overrides = {}) {
+  return jobs.map(job => {
+    const override = findJobStatusOverride(overrides, job);
+    if (!override) return job;
+    const status = normalizeBoardStatus(override.status);
+    return {
+      ...job,
+      status,
+      board_status: status,
+      statusUpdatedAt: override.updatedAt || override.statusUpdatedAt || job.statusUpdatedAt,
+      appliedAt: override.appliedAt || job.appliedAt
+    };
+  });
+}
+
 function clampExperienceYears(value) {
   const n = Number(value);
   if (!Number.isFinite(n)) return 1;
@@ -534,9 +588,57 @@ export default async function handler(req, res) {
         res.writeHead(200, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ success: true, completedTasks: [], sessions: [] }));
       }
+      else if (url.match(/^\/api\/jobs\/[^/]+\/status$/) && method === 'PATCH') {
+        if (!isMongoConnected) {
+          res.writeHead(503, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ success: false, error: 'MongoDB is not connected' }));
+          return;
+        }
+
+        let body = '';
+        for await (const chunk of req) body += chunk;
+        let payload = {};
+        try { payload = JSON.parse(body || '{}'); } catch (e) { payload = {}; }
+
+        const routeId = decodeURIComponent(url.split('/')[3] || '');
+        const rawKey = payload.job_hash || payload.jobHash || payload.jobId || routeId;
+        if (!rawKey) {
+          res.writeHead(400, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ success: false, error: 'Missing job identifier' }));
+          return;
+        }
+
+        const status = normalizeBoardStatus(payload.status);
+        const updatedAt = payload.updatedAt || new Date().toISOString();
+        const appliedAt = status === 'applied' ? (payload.appliedAt || updatedAt) : (payload.appliedAt || '');
+        const statusKey = encodeStatusKey(rawKey);
+
+        await UserProfile.findOneAndUpdate(
+          { userId },
+          {
+            $set: {
+              userId,
+              [`jobRadarStatuses.${statusKey}`]: {
+                status,
+                updatedAt,
+                appliedAt,
+                rawKey: String(rawKey),
+                jobId: routeId
+              }
+            }
+          },
+          { upsert: true, new: true }
+        );
+
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: true, status, updatedAt, appliedAt, key: statusKey }));
+      }
       else if (url === '/api/jobs' && method === 'GET') {
         if (isMongoConnected) {
-          const records = await JobRecord.find({}).sort({ createdAt: -1 }).lean();
+          const records = applyJobStatusOverrides(
+            await JobRecord.find({}).sort({ createdAt: -1 }).lean(),
+            await getJobStatusOverrides(userId)
+          );
           console.log(`[DB] Brute Force | Found: ${records.length} jobs | Status: ${isMongoConnected}`);
           res.writeHead(200, { 'Content-Type': 'application/json' });
           res.end(JSON.stringify({
@@ -563,7 +665,10 @@ export default async function handler(req, res) {
         }
         
         // Basic analytics aggregation
-        const records = await JobRecord.find({ userId }).lean();
+        const records = applyJobStatusOverrides(
+          await JobRecord.find({ userId }).lean(),
+          await getJobStatusOverrides(userId)
+        );
         
         // This is a simplified version of analytics. Real implementation would use MongoDB aggregation.
         // But for now, we'll return structured data that the frontend expects.

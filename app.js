@@ -281,6 +281,9 @@ async function apiFetch(url, options = {}) {
     ...options.headers,
     'Authorization': `Bearer ${token}`
   };
+  if (options.body && !(options.body instanceof FormData) && !headers['Content-Type']) {
+    headers['Content-Type'] = 'application/json';
+  }
   return fetch(url, { ...options, headers });
 }
 
@@ -770,17 +773,24 @@ function loadUserScopedClientState() {
 }
 
 function renderPager(total, page, pageSize, prevAction, nextAction, force = false) {
-  const totalPages = Math.max(1, Math.ceil(total / pageSize));
-  if (!force && total <= pageSize) return '';
-  const current = Math.min(page + 1, totalPages);
+  const safeSize = Math.max(1, Number(pageSize || 1));
+  const totalPages = Math.max(1, Math.ceil(Number(total || 0) / safeSize));
+  const safePage = Math.max(0, Math.min(totalPages - 1, Number(page || 0)));
+  if (!force && totalPages <= 1) return '';
+  const start = total > 0 ? safePage * safeSize + 1 : 0;
+  const end = Math.min(Number(total || 0), (safePage + 1) * safeSize);
   return `
-    <div style="display:flex; align-items:center; justify-content:space-between; gap:10px; margin-top:12px; padding-top:10px; border-top:1px solid rgba(255,255,255,0.06);">
-      <button onclick="${prevAction}" ${page <= 0 ? 'disabled' : ''} style="border:1px solid var(--border); background:${page <= 0 ? 'rgba(255,255,255,0.02)' : 'var(--surface2)'}; color:${page <= 0 ? 'var(--muted)' : 'var(--text)'}; font-size:0.68rem; font-weight:700; padding:7px 10px; border-radius:8px; cursor:${page <= 0 ? 'default' : 'pointer'};">Prev</button>
-      <div style="text-align:center;">
-        <div style="font-size:0.68rem; color:var(--muted); font-family:'IBM Plex Mono',monospace;">Page ${current} / ${totalPages}</div>
-        <div style="font-size:0.55rem; color:rgba(255,255,255,0.3); text-transform:uppercase; margin-top:2px;">Total: ${total}</div>
-      </div>
-      <button onclick="${nextAction}" ${current >= totalPages ? 'disabled' : ''} style="border:1px solid var(--border); background:${current >= totalPages ? 'rgba(255,255,255,0.02)' : 'var(--surface2)'}; color:${current >= totalPages ? 'var(--muted)' : 'var(--text)'}; font-size:0.68rem; font-weight:700; padding:7px 10px; border-radius:8px; cursor:${current >= totalPages ? 'default' : 'pointer'};">Next</button>
+    <div class="industrial-pager ${force ? 'kanban-board-pager' : ''}">
+      <button onclick="${prevAction}" ${safePage <= 0 ? 'disabled' : ''} class="pager-btn" aria-label="Previous page">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><polyline points="15 18 9 12 15 6"></polyline></svg>
+      </button>
+      <span class="pager-info">
+        <span class="pager-page">${safePage + 1} / ${totalPages}</span>
+        <span class="pager-total">${start}-${end} of ${total}</span>
+      </span>
+      <button onclick="${nextAction}" ${safePage >= totalPages - 1 ? 'disabled' : ''} class="pager-btn" aria-label="Next page">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><polyline points="9 18 15 12 9 6"></polyline></svg>
+      </button>
     </div>`;
 }
 
@@ -1208,7 +1218,7 @@ async function renderTopicContent(topicId) {
         if (block.type === 'section') return `<div class="topic-section-divider">${block.title}</div>`;
         if (block.type === 'qa') {
           return `
-            <div class="qa-block">
+            <div class="qa-block open">
               <div class="qa-question" onclick="this.parentElement.classList.toggle('open')">
                 <span class="qa-q-text">${block.question}</span>
                 <span class="qa-chevron">▼</span>
@@ -2386,16 +2396,23 @@ function mapRecordStatusToBoardStatus(status) {
 function buildPipelineJobFromRecord(record, existingJob) {
   const existing = existingJob || {};
   const score = Number(record.match_score || existing.score || 75);
-  const mappedStatus = existing.status || mapRecordStatusToBoardStatus(record.status);
   const jobHash = record.job_hash || existing.job_hash || btoa([
     record.company || existing.company || '',
     record.role || record.title || existing.role || '',
     record.location || existing.loc || ''
   ].join('|'));
+  const rawRecordStatus = record.board_status || record.status;
+  const normalizedRawStatus = String(rawRecordStatus || '').toLowerCase();
+  const hasCloudStatusOverride = Boolean(record.board_status || record.statusUpdatedAt || record.status_updated_at);
+  const hasMeaningfulRecordStatus = ['applied', 'ignored', 'rejected', 'interview', 'offer', 'todo'].includes(normalizedRawStatus);
+  const mappedStatus = (hasCloudStatusOverride || hasMeaningfulRecordStatus)
+    ? mapRecordStatusToBoardStatus(rawRecordStatus)
+    : (existing.status || mapRecordStatusToBoardStatus(rawRecordStatus));
+  const statusUpdatedAt = record.statusUpdatedAt || record.status_updated_at || existing.statusUpdatedAt || existing.updatedAt || '';
 
   return {
     ...existing,
-    id: existing.id || record.id || ('job_' + Math.random().toString(36).slice(2, 11)),
+    id: String(existing.id || record.id || record._id || jobHash || ('job_' + Math.random().toString(36).slice(2, 11))),
     job_hash: jobHash,
     company: record.company || existing.company || 'Confidential',
     role: record.role || record.title || existing.role || 'Salesforce Role',
@@ -2413,10 +2430,11 @@ function buildPipelineJobFromRecord(record, existingJob) {
     score,
     prob: normalizeProbability(record.probability, score),
     status: mappedStatus,
+    statusUpdatedAt,
     url: safeUrl(record.apply_link || record.url || existing.url || '#'),
     created_at: record.createdAt || record.date_added || record.created_at || existing.created_at || new Date().toISOString(),
     match_level: record.match_level || existing.match_level || '',
-    dateApplied: existing.dateApplied || (mappedStatus === 'applied' ? new Date().toISOString() : ''),
+    dateApplied: record.appliedAt || existing.dateApplied || (mappedStatus === 'applied' ? new Date().toISOString() : ''),
     outreach: existing.outreach || null,
     icon: existing.icon || record.icon || 'SF'
   };
@@ -2460,6 +2478,32 @@ function sortBoardJobs(a, b) {
   const dateA = new Date(a.updatedAt || a.createdAt || a.date_added || a.created_at || 0);
   const dateB = new Date(b.updatedAt || b.createdAt || b.date_added || b.created_at || 0);
   return dateB - dateA;
+}
+
+function getBoardColumnJobs(col) {
+  const searchTerm = (document.getElementById("boardSearch")?.value || currentBoardSearch || '').trim().toLowerCase();
+  const filter = window.currentBoardFilter || 'all';
+  return (window.pipelineJobs || [])
+    .filter(j => mapRecordStatusToBoardStatus(j.status) === col)
+    .filter(j => filter === 'all' || normalizeProbability(j.prob || j.probability, j.score) === filter)
+    .filter(j => jobMatchesBoardSearch(j, searchTerm))
+    .sort(sortBoardJobs);
+}
+
+window.getBoardColumnJobs = getBoardColumnJobs;
+
+function clampBoardPages() {
+  const cols = ['todo', 'applied', 'interview', 'offer', 'rejected'];
+  const pageSize = Math.max(1, Number(window.JOB_BOARD_PAGE_SIZE || 6));
+  window.radarBoardPages = window.radarBoardPages || { todo: 0, applied: 0, interview: 0, offer: 0, rejected: 0 };
+  cols.forEach(col => {
+    const max = Math.max(0, Math.ceil(getBoardColumnJobs(col).length / pageSize) - 1);
+    window.radarBoardPages[col] = Math.max(0, Math.min(max, window.radarBoardPages[col] || 0));
+  });
+}
+
+function resetBoardPages() {
+  window.radarBoardPages = { todo: 0, applied: 0, interview: 0, offer: 0, rejected: 0 };
 }
 
 async function fetchJobsList() {
@@ -2511,6 +2555,7 @@ async function fetchJobsList() {
       }
     });
 
+    clampBoardPages();
     savePipeline();
     renderBoard();
     updateJobRadarSummary();
@@ -2555,28 +2600,41 @@ window.moveTo = async function(id, status) {
   const job = window.pipelineJobs.find(j => j.id === id);
   if (!job) return;
   
-  job.status = status;
-  job.updatedAt = new Date().toISOString();
-  if (status === 'applied' && !job.appliedAt) job.appliedAt = new Date().toISOString();
+  const normalizedStatus = mapRecordStatusToBoardStatus(status);
+  const updatedAt = new Date().toISOString();
+  job.status = normalizedStatus;
+  job.updatedAt = updatedAt;
+  job.statusUpdatedAt = updatedAt;
+  if (normalizedStatus === 'applied' && !job.appliedAt) job.appliedAt = updatedAt;
   
+  clampBoardPages();
   savePipeline();
   renderBoard();
   updateJobRadarSummary();
   
   try {
-    await apiFetch(`/api/jobs/${id}/status`, {
+    const routeId = encodeURIComponent(job.job_hash || id);
+    await apiFetch(`/api/jobs/${routeId}/status`, {
       method: 'PATCH',
-      body: JSON.stringify({ status })
+      body: JSON.stringify({
+        status: normalizedStatus,
+        job_hash: job.job_hash || '',
+        jobId: id,
+        updatedAt,
+        appliedAt: job.appliedAt || ''
+      })
     });
-    logActivity(`Moved ${job.company} to ${status.toUpperCase()}`, 'success');
+    logActivity(`Moved ${job.company} to ${normalizedStatus.toUpperCase()}`, 'success');
   } catch (e) {
     console.error('❌ [RADAR] Server sync failed:', e);
+    logActivity(`Saved ${job.company} locally. Cloud status sync will retry on next sign-in.`, 'info');
   }
 };
 
 window.setBoardPage = function(col, dir) {
-  const filtered = (window.pipelineJobs || []).filter(j => j.status === col);
-  const max = Math.max(0, Math.ceil(filtered.length / window.JOB_BOARD_PAGE_SIZE) - 1);
+  const filtered = getBoardColumnJobs(col);
+  const pageSize = Math.max(1, Number(window.JOB_BOARD_PAGE_SIZE || 6));
+  const max = Math.max(0, Math.ceil(filtered.length / pageSize) - 1);
   window.radarBoardPages[col] = Math.max(0, Math.min(max, (window.radarBoardPages[col] || 0) + dir));
   renderBoard();
 };
@@ -2585,10 +2643,12 @@ window.setBoardFilter = function(filter, btn) {
   window.currentBoardFilter = filter;
   document.querySelectorAll('.fb').forEach(b => b.classList.remove('on'));
   if (btn) btn.classList.add('on');
+  resetBoardPages();
   renderBoard();
 };
 
 window.doBoardSearch = function() {
+  resetBoardPages();
   renderBoard();
 };
 
@@ -2611,6 +2671,11 @@ window.switchRadarSubTab = function(tabId) {
 window.handleDragStart = function(e, id) {
   e.dataTransfer.setData('text/plain', id);
   e.currentTarget.style.opacity = '0.4';
+};
+
+window.handleDragEnd = function(e) {
+  if (e.currentTarget) e.currentTarget.style.opacity = '1';
+  document.querySelectorAll('#job_radar .kanban-body.drag-over').forEach(el => el.classList.remove('drag-over'));
 };
 
 window.handleDragOver = function(e) {

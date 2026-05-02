@@ -1,80 +1,277 @@
 {
-    "accenture": {
-        "blocks": [
-            { "type": "section", "title": "Scalable Development" },
-            { "question": "Why is a Trigger Framework mandatory in Accenture projects?", "type": "qa", "answer": "<p class='ans-p'>Accenture utilizes frameworks like fflib or custom Trigger Handlers to ensure separation of concerns and one trigger per object.</p>" }
-        ],
-        "title": "Accenture Salesforce Prep",
-        "subtitle": "Focus on Global Delivery Model and Scalable Frameworks."
-    },
-    "deloitte": {
-        "blocks": [
-            { "type": "section", "title": "Enterprise Architecture" },
-            { "question": "How do you handle Large Data Volumes (LDV) in a Deloitte global org?", "type": "qa", "answer": "<p class='ans-p'>Handling LDV requires a multi-layered approach: Skinny Tables, Custom Indexes, and Divisons.</p>" }
-        ],
-        "title": "Deloitte Salesforce Interview (2026)",
-        "subtitle": "Advanced architectural screening and scenario drills for Senior Roles."
-    },
-    "security_5_layers": {
-        "blocks": [
-            { "type": "section", "title": "The Security Gates" },
-            { "question": "Layer 1: Organization Level Security?", "type": "qa", "answer": "<p class='ans-p'>Login IP Ranges, Login Hours, Password Policies, and Multi-Factor Authentication (MFA).</p>" },
-            { "question": "Layer 2: Object Level Security?", "type": "qa", "answer": "<p class='ans-p'>Profiles and Permission Sets control CRED (Create, Read, Edit, Delete) permissions.</p>" },
-            { "question": "Layer 3: Field Level Security?", "type": "qa", "answer": "<p class='ans-p'>Profiles and Permission Sets control visibility and editability of specific fields.</p>" },
-            { "question": "Layer 4: Record Level Security?", "type": "qa", "answer": "<p class='ans-p'>OWD (Organization Wide Defaults), Role Hierarchy, Sharing Rules, and Manual Sharing.</p>" },
-            { "question": "Layer 5: Folder Level Security?", "type": "qa", "answer": "<p class='ans-p'>Visibility of Reports, Dashboards, and Email Templates.</p>" }
-        ],
-        "title": "Salesforce 5 Layers of Security",
-        "subtitle": "Complete breakdown of the Salesforce Security Model."
-    },
-    "order_of_execution": {
-        "blocks": [
-            { "type": "section", "title": "The Critical Sequence" },
-            { "question": "What happens before triggers run?", "type": "qa", "answer": "<p class='ans-p'>Salesforce loads the original record and performs initial system validation (field formats, length).</p>" },
-            { "question": "Explain the 20-step execution order.", "type": "qa", "answer": "<p class='ans-p'>1. System Validation, 2. Before Triggers, 3. Custom Validation, 4. Duplicate Rules, 5. Save (no commit), 6. After Triggers, 7. Assignment Rules, 8. Auto-response, 9. Workflow Rules, 10. Process Builder/Flows, 11. Escalation Rules, 12. Roll-up Summaries, 13. Re-save (if needed).</p>" }
-        ],
-        "title": "Order of Execution",
-        "subtitle": "Master the 20+ steps of the Salesforce Save Cycle."
-    },
-    "service_cloud": {
-        "blocks": [
-            { "type": "section", "title": "Service Intelligence" },
-            { "question": "What is the difference between Entitlements and Service Contracts?", "type": "qa", "answer": "<p class='ans-p'>Entitlements are the support terms (e.g. 24/7 phone support), while Service Contracts represent the commercial agreement.</p>" },
-            { "question": "How does Omni-Channel routing work?", "type": "qa", "answer": "<p class='ans-p'>Omni-Channel uses Service Channels and Routing Configurations to push work items to agents based on capacity and skill.</p>" }
-        ],
-        "title": "Service Cloud Architecture",
-        "subtitle": "Advanced Service Console and Case Management strategies."
-    },
-    "experience_cloud": {
-        "blocks": [
-            { "type": "section", "title": "Portal & Site Architecture" },
-            { "question": "Explain Guest User Security in Experience Cloud.", "type": "qa", "answer": "<p class='ans-p'>Guest users cannot own records and must have 'Secure guest user record access' enabled, using Sharing Sets/Criteria for visibility.</p>" }
-        ],
-        "title": "Experience Cloud (Communities)",
-        "subtitle": "Building secure, high-performance customer portals."
-    },
-    "sales_cloud": {
-        "blocks": [
-            { "type": "section", "title": "Revenue Operations" },
-            { "question": "What are Opportunity Splits?", "type": "qa", "answer": "<p class='ans-p'>Splits allow multiple team members to share credit for an opportunity based on their contribution (Revenue vs Overlay).</p>" }
-        ],
-        "title": "Sales Cloud Architecture",
-        "subtitle": "Lead-to-Cash and Pipeline Management deep dive."
-    },
-    "flow_master": {
-        "blocks": [
-            { "type": "section", "title": "Logic & Automation" },
-            { "question": "When should you use a Screen Flow vs a Record-Triggered Flow?", "type": "qa", "answer": "<p class='ans-p'>Screen Flows are for guided user interactions; Record-Triggered Flows are for background updates on DML events.</p>" }
-        ],
-        "title": "Flow Master Class",
-        "subtitle": "Industrial automation patterns and fault handling."
-    },
-    "fde_ag_concept": {
-        "blocks": [
-            { "type": "section", "title": "Agentforce Architecture" },
-            { "question": "What are the 5 core components of Agentforce?", "type": "qa", "answer": "<p class='ans-p'>1. Agent, 2. Topics, 3. Actions, 4. Atlas, 5. Trust Layer.</p>" }
-        ],
-        "title": "FDE Prep - Agentforce Core",
-        "subtitle": "Architectural concepts for AI Specialists."
-    }
+  "accenture": {
+    "title": "Accenture Salesforce Prep",
+    "subtitle": "Global delivery, scalable frameworks, code quality, and client scenario readiness.",
+    "blocks": [
+      { "type": "section", "title": "Delivery Mindset" },
+      {
+        "question": "Why is a trigger framework mandatory in Accenture-style enterprise projects?",
+        "type": "qa",
+        "answer": "<p class='ans-p'>A trigger framework keeps the org maintainable when multiple teams work on the same object. The expected answer is not just one trigger per object. Explain separation of concerns: trigger only delegates, handler contains orchestration, service class contains business logic, selector/query class owns SOQL, and domain logic remains testable.</p><ul><li>Use before triggers for field mutation and validation.</li><li>Use after triggers for related records, async handoff, and integration events.</li><li>Guard recursion with stateful helpers only when the design requires it, not as a blanket static boolean.</li><li>Keep bulk behavior first: never design for a single record path.</li></ul>"
+      },
+      {
+        "question": "How do you explain bulkification in a client interview?",
+        "type": "qa",
+        "answer": "<p class='ans-p'>Bulkification means the same logic works for 1 record, 200 records, data loader imports, integrations, and batch updates without governor failures. A strong answer includes collecting ids, querying once, using maps for lookup, preparing changed records in lists, and performing DML once outside loops.</p><p class='ans-p'>Interview framing: first identify all objects touched, then define the query shape, then use Map&lt;Id, SObject&gt; or Map&lt;Id, List&lt;SObject&gt;&gt;, then perform one DML operation per object type. Mention CPU and heap too, not only SOQL 101 and DML 150 limits.</p>"
+      },
+      {
+        "question": "What should you say when asked about code quality in a delivery project?",
+        "type": "qa",
+        "answer": "<p class='ans-p'>Code quality is measured by predictable behavior, readable ownership, test coverage that proves scenarios, and safe deployment. Talk about naming, small methods, service layers, guard clauses, meaningful assertions, PMD/Code Analyzer, peer review, and rollback planning.</p><ul><li>Unit tests must assert outcomes, not only execute lines.</li><li>Deployment should include metadata dependencies, permissions, and post-deployment checks.</li><li>Production support requires logs, feature flags where needed, and clear error handling.</li></ul>"
+      },
+      {
+        "question": "How do you answer an Accenture scenario on Agile delivery?",
+        "type": "qa",
+        "answer": "<p class='ans-p'>Use a structured answer: clarify the requirement, split it into user story acceptance criteria, identify impacted metadata, call out dependencies, estimate build and test effort, and define a demo-ready outcome. Accenture interviews often look for collaboration maturity, not only coding.</p><p class='ans-p'>Example: for an Account renewal automation, mention story grooming, sandbox branch, Flow or Apex design decision, test data, UAT checklist, release note, and hypercare monitoring after deployment.</p>"
+      },
+      { "type": "section", "title": "Common Interview Drill" },
+      {
+        "question": "When would you choose Flow over Apex in a client implementation?",
+        "type": "qa",
+        "answer": "<p class='ans-p'>Choose Flow for admin-maintainable automation, simple record updates, guided screens, and declarative approvals. Choose Apex when logic is complex, heavily bulkified, requires advanced error handling, custom transaction control, callout orchestration, or reusable domain services. A premium answer explains mixed architecture: Flow can collect input and call an invocable Apex service for complex work.</p>"
+      }
+    ]
+  },
+  "deloitte": {
+    "title": "Deloitte Salesforce Interview (2026)",
+    "subtitle": "Enterprise architecture, governance, risk, LDV, and senior scenario drills.",
+    "blocks": [
+      { "type": "section", "title": "Enterprise Architecture" },
+      {
+        "question": "How do you handle Large Data Volumes (LDV) in a Deloitte global org?",
+        "type": "qa",
+        "answer": "<p class='ans-p'>Start with data model and access patterns. LDV is solved by selective queries, indexed filters, ownership/sharing design, archiving, skinny tables where Salesforce Support approves them, and avoiding wide reports over unbounded data. Divisions can help separate very large data sets by business area when the org model supports it.</p><ul><li>Keep SOQL selective by filtering indexed fields and avoiding leading wildcard searches.</li><li>Use async processing for heavy updates and integrations.</li><li>Design sharing carefully because sharing recalculation can become the real bottleneck.</li><li>Archive historical records into Big Objects, external storage, or reporting stores when transactional access is no longer required.</li></ul>"
+      },
+      {
+        "question": "How do you answer an architecture governance question?",
+        "type": "qa",
+        "answer": "<p class='ans-p'>Governance means the org can grow without becoming fragile. Explain design review boards, naming standards, integration contracts, release branching, metadata ownership, security review, and technical debt backlog. Deloitte-style answers should include risk language: compliance, auditability, rollback, business continuity, and measurable non-functional requirements.</p>"
+      },
+      {
+        "question": "What is your approach to integration architecture for Salesforce?",
+        "type": "qa",
+        "answer": "<p class='ans-p'>Classify integration by direction, timing, volume, and ownership. For synchronous request-response use REST with clear timeout and retry behavior. For high-volume or decoupled events use Platform Events, Change Data Capture, or middleware queues. For external data lookup without copying everything, consider External Objects or APIs.</p><p class='ans-p'>Mention idempotency, correlation ids, named credentials, OAuth, error queues, monitoring dashboards, and replay/retry strategy. That is the difference between a developer answer and an architect answer.</p>"
+      },
+      {
+        "question": "How do you present a solution tradeoff in a senior interview?",
+        "type": "qa",
+        "answer": "<p class='ans-p'>Use the format: option, benefit, risk, mitigation, recommendation. Example: Flow is faster and admin-friendly but may be harder to version for complex logic; Apex is testable and structured but needs developer maintenance. Recommend based on volume, complexity, ownership, deployment model, and long-term support team skill.</p>"
+      },
+      { "type": "section", "title": "Scenario Drill" },
+      {
+        "question": "A nightly integration updates 500k Accounts and causes locking. What do you do?",
+        "type": "qa",
+        "answer": "<p class='ans-p'>First identify lock hotspots: parent Account, owner changes, roll-up summaries, sharing recalculation, and automation touching the same related records. Then reduce collision by chunking data, ordering consistently by parent id, moving non-critical work async, disabling unnecessary automation through guarded bypass patterns, and coordinating integration windows.</p><p class='ans-p'>For the interview, say you would reproduce in a full sandbox, inspect debug logs and AsyncApexJob failures, review batch scope size, and add retry with backoff for lock exceptions.</p>"
+      }
+    ]
+  },
+  "security_5_layers": {
+    "title": "Salesforce 5 Layers of Security",
+    "subtitle": "Interview-ready security model from login controls to reports and dashboards.",
+    "blocks": [
+      { "type": "section", "title": "The Security Gates" },
+      {
+        "question": "Layer 1: What is organization level security?",
+        "type": "qa",
+        "answer": "<p class='ans-p'>Organization level security controls who can enter the org and from where. Discuss MFA, password policies, login hours, login IP ranges, session settings, trusted IP ranges, connected app policies, and SSO. In interviews, connect this to risk: even perfect object permissions do not matter if account access is weak.</p>"
+      },
+      {
+        "question": "Layer 2: What is object level security?",
+        "type": "qa",
+        "answer": "<p class='ans-p'>Object permissions decide whether a user can create, read, edit, or delete records of an object. Profiles provide baseline access, and permission sets or permission set groups add targeted access. A strong answer says permission sets are preferred for scalable access expansion because profiles should stay minimal.</p>"
+      },
+      {
+        "question": "Layer 3: What is field level security?",
+        "type": "qa",
+        "answer": "<p class='ans-p'>Field level security controls whether a user can see or edit specific fields even if they can access the object. Page layouts are not security. Dynamic Forms and layouts control presentation; FLS controls data access. For Apex and LWC, mention enforcing CRUD/FLS through security checks, user mode operations, or stripInaccessible where appropriate.</p>"
+      },
+      {
+        "question": "Layer 4: What is record level security?",
+        "type": "qa",
+        "answer": "<p class='ans-p'>Record access decides which rows a user can see. Explain OWD as the baseline, then Role Hierarchy, Sharing Rules, Teams, Manual Sharing, Apex Managed Sharing, Territory Management, and restriction/scoping rules where applicable. Interview tip: always start from OWD and then explain how access opens up.</p>"
+      },
+      {
+        "question": "Layer 5: What is folder and analytics security?",
+        "type": "qa",
+        "answer": "<p class='ans-p'>Reports, dashboards, email templates, and folders have their own sharing. A dashboard can expose summarized data depending on running user and dashboard settings, so a secure design reviews folder access and dashboard running user carefully. For senior roles, mention report type visibility and row-level sharing impact.</p>"
+      },
+      {
+        "question": "What is a complete security interview scenario answer?",
+        "type": "qa",
+        "answer": "<p class='ans-p'>If a sales user cannot see an Opportunity, debug in order: user license and profile, object permission, field permission if a field is missing, OWD for Opportunity, owner and role hierarchy, sharing rules, teams, territory, restriction rules, and manual/Apex sharing. Say you use Setup access checks and login-as in lower environments where allowed.</p>"
+      }
+    ]
+  },
+  "order_of_execution": {
+    "title": "Order of Execution",
+    "subtitle": "Save cycle mastery for triggers, flows, validation, duplicate rules, and rollups.",
+    "blocks": [
+      { "type": "section", "title": "The Critical Sequence" },
+      {
+        "question": "What happens before triggers run?",
+        "type": "qa",
+        "answer": "<p class='ans-p'>Salesforce loads the existing record for update operations and applies initial system validation such as required fields, data type, field length, and foreign key checks. For UI saves, layout required fields are checked earlier. Before triggers then run and can modify the same record before it is saved.</p>"
+      },
+      {
+        "question": "Explain the order of execution in interview language.",
+        "type": "qa",
+        "answer": "<p class='ans-p'>A clean answer is: system validation, before-save flows, before triggers, custom validation rules, duplicate rules, save to database without commit, after triggers, assignment rules, auto-response rules, workflow rules, possible field update re-save, processes/flows, escalation rules, roll-up summary recalculation, parent record automation, sharing calculation, commit, then post-commit actions such as emails, async Apex, and platform events.</p><p class='ans-p'>Do not memorize only numbers. Explain why it matters: it decides where to put logic, why validation sees changed values, and why after-trigger DML can cause recursion if not designed carefully.</p>"
+      },
+      {
+        "question": "Before-save Flow vs before trigger: how do you compare?",
+        "type": "qa",
+        "answer": "<p class='ans-p'>Before-save Flow is fast for simple field updates on the same record and is admin-friendly. Before trigger is better when logic requires complex branching, reusable services, advanced querying, frameworks, or source-controlled testing. A senior answer also checks existing automation to avoid duplicate ownership.</p>"
+      },
+      {
+        "question": "Why can workflow field updates cause trigger recursion?",
+        "type": "qa",
+        "answer": "<p class='ans-p'>Workflow field updates can update the record again after after triggers run, which can cause before and after triggers to run one more time. The solution is not blindly using a static boolean. Use idempotent logic, compare old and new values, store processed ids when necessary, and make each automation owner clear.</p>"
+      },
+      {
+        "question": "What is the best debugging method for order-of-execution issues?",
+        "type": "qa",
+        "answer": "<p class='ans-p'>Create a small reproducible test, turn on debug logs, and inspect which automation updated the field. Check Flows, triggers, validation, duplicate rules, assignment rules, and workflow/process legacy automation. In production support, add safe logging and avoid changing multiple automations at once.</p>"
+      }
+    ]
+  },
+  "service_cloud": {
+    "title": "Service Cloud Architecture",
+    "subtitle": "Case management, entitlements, Omni-Channel, console productivity, and SLA design.",
+    "blocks": [
+      { "type": "section", "title": "Service Intelligence" },
+      {
+        "question": "What is the difference between Entitlements, Milestones, and Service Contracts?",
+        "type": "qa",
+        "answer": "<p class='ans-p'>A Service Contract represents the commercial support agreement. An Entitlement defines what level of support a customer receives. Milestones measure time-based commitments such as first response or resolution SLA. In a strong answer, connect them: Account or Asset has an entitlement, Case uses entitlement process, milestones track SLA, and escalation or automation responds when timers are at risk.</p>"
+      },
+      {
+        "question": "How does Omni-Channel routing work?",
+        "type": "qa",
+        "answer": "<p class='ans-p'>Omni-Channel routes work items such as Cases, Chats, Messaging sessions, or custom objects to agents based on service channel, routing configuration, queue, skills, presence status, and capacity. Explain push-based routing, priority, agent capacity, and supervisor visibility. For advanced roles, mention skills-based routing and external routing when needed.</p>"
+      },
+      {
+        "question": "How do you design a Case lifecycle?",
+        "type": "qa",
+        "answer": "<p class='ans-p'>Define intake channels, required classification fields, assignment rules, entitlement lookup, milestone tracking, status transitions, escalation, knowledge suggestions, closure reasons, surveys, and reporting. Interviewers like when you mention data quality: categories, product, severity, root cause, and resolution code should be consistent enough for analytics.</p>"
+      },
+      {
+        "question": "What should be included in a Service Console implementation answer?",
+        "type": "qa",
+        "answer": "<p class='ans-p'>Talk about console navigation, utility bar, macros, quick text, knowledge component, related records, dynamic forms/actions, softphone/CTI, Omni widget, and productivity metrics. The best answer balances user speed with governance: fewer required clicks, clear status model, and reliable SLA tracking.</p>"
+      }
+    ]
+  },
+  "experience_cloud": {
+    "title": "Experience Cloud (Communities)",
+    "subtitle": "Secure portal design, sharing sets, guest user access, branding, and performance.",
+    "blocks": [
+      { "type": "section", "title": "Portal and Site Architecture" },
+      {
+        "question": "Explain Guest User Security in Experience Cloud.",
+        "type": "qa",
+        "answer": "<p class='ans-p'>Guest users are unauthenticated users and should receive the minimum possible access. Secure guest user record access prevents broad ownership-style access. Use guest profile permissions carefully, avoid exposing sensitive objects, and prefer authenticated access for personal data. If guest-created records are needed, assign ownership through automation to an internal owner.</p>"
+      },
+      {
+        "question": "What are Sharing Sets and Sharing Rules in Experience Cloud?",
+        "type": "qa",
+        "answer": "<p class='ans-p'>Sharing Sets grant external users access to records based on their Contact or Account relationship, commonly for Customer Community style access. Sharing Rules can open record access to groups or roles depending on license capabilities. A good answer starts with external sharing model, then explains license type limits, then chooses the simplest maintainable access pattern.</p>"
+      },
+      {
+        "question": "How do you design a secure customer portal?",
+        "type": "qa",
+        "answer": "<p class='ans-p'>Start with personas: guest, registered customer, partner, support agent, and admin. Define what each persona can view, create, edit, and report. Use object permissions, FLS, sharing sets, login/registration controls, MFA or SSO where needed, CSP trusted sites, and careful file visibility. Never rely only on page visibility for security.</p>"
+      },
+      {
+        "question": "What performance issues appear in Experience Cloud?",
+        "type": "qa",
+        "answer": "<p class='ans-p'>Common issues include heavy pages, too many components, unselective Apex queries, large images, client-side calls without caching, and overexposed navigation. Optimize with Lightning page analysis, CDN/static assets, cacheable Apex, pagination, selective SOQL, and simplified page composition.</p>"
+      }
+    ]
+  },
+  "sales_cloud": {
+    "title": "Sales Cloud Architecture",
+    "subtitle": "Lead-to-cash, forecasting, opportunity governance, pipeline quality, and revenue operations.",
+    "blocks": [
+      { "type": "section", "title": "Revenue Operations" },
+      {
+        "question": "Explain Lead conversion in Sales Cloud.",
+        "type": "qa",
+        "answer": "<p class='ans-p'>Lead conversion turns a qualified Lead into Account, Contact, and optionally Opportunity. Explain lead source, duplicate matching, required fields, assignment, campaign influence, and mapping custom fields. A strong answer mentions when not to create an Opportunity during conversion if qualification is incomplete.</p>"
+      },
+      {
+        "question": "What are Opportunity Splits?",
+        "type": "qa",
+        "answer": "<p class='ans-p'>Opportunity Splits let multiple team members receive credit for an opportunity. Revenue splits divide quota credit, while overlay splits recognize supporting roles without reducing primary revenue. In interviews, connect splits to forecasting, compensation, and sales team collaboration.</p>"
+      },
+      {
+        "question": "How do you improve pipeline data quality?",
+        "type": "qa",
+        "answer": "<p class='ans-p'>Use required stage-specific fields, validation rules, path guidance, forecast categories, close date hygiene, duplicate rules, product requirements, and manager dashboards. Avoid making every field required from day one. Instead, require the right data at the right stage.</p>"
+      },
+      {
+        "question": "How do Forecasts, Opportunity Stage, and Forecast Category relate?",
+        "type": "qa",
+        "answer": "<p class='ans-p'>Opportunity Stage represents sales process progress. Forecast Category groups pipeline into forecast views such as Pipeline, Best Case, Commit, or Closed. Stage often defaults forecast category, but sales teams may adjust category based on confidence. Senior answers discuss governance so forecast changes remain auditable.</p>"
+      }
+    ]
+  },
+  "flow_master": {
+    "title": "Flow Master Class",
+    "subtitle": "Industrial automation patterns, transaction design, fault handling, and test strategy.",
+    "blocks": [
+      { "type": "section", "title": "Logic and Automation" },
+      {
+        "question": "When should you use a Screen Flow vs a Record-Triggered Flow?",
+        "type": "qa",
+        "answer": "<p class='ans-p'>Screen Flows are for guided user actions, decision trees, data capture, and assisted operations. Record-Triggered Flows run automatically when records are created, updated, or deleted. A correct answer includes user context: if the user must make choices, use Screen Flow; if the system reacts to data change, use record-triggered automation.</p>"
+      },
+      {
+        "question": "How do you design Flow fault handling?",
+        "type": "qa",
+        "answer": "<p class='ans-p'>Use fault paths on data elements and subflows, write useful error records or platform events, show friendly messages in Screen Flow, and notify support only when action is needed. Do not hide errors silently. For critical automation, capture record id, flow name, operation, error message, and timestamp.</p>"
+      },
+      {
+        "question": "What makes a Flow bulk-safe?",
+        "type": "qa",
+        "answer": "<p class='ans-p'>A bulk-safe Flow avoids unnecessary Get Records inside loops, avoids Update Records inside loops where possible, stores records in collections, and performs collection-level updates. It also minimizes cross-object updates that cause recursion. For interviews, say you test with more than one record, not only a single UI save.</p>"
+      },
+      {
+        "question": "When should Flow call Apex?",
+        "type": "qa",
+        "answer": "<p class='ans-p'>Call invocable Apex when the logic needs reusable services, complex transformations, callouts, advanced validation, transaction control, or behavior that is difficult to maintain declaratively. The best design keeps Flow as orchestration and Apex as a tested service.</p>"
+      },
+      {
+        "question": "How do you migrate legacy Workflow or Process Builder to Flow?",
+        "type": "qa",
+        "answer": "<p class='ans-p'>Inventory existing automation by object and event, identify duplicated field updates, define one owner automation per object/event, build in a sandbox, compare behavior with test records, deactivate legacy automation carefully, and deploy with rollback steps. Mention stakeholder testing because old automations often encode hidden business rules.</p>"
+      }
+    ]
+  },
+  "fde_ag_concept": {
+    "title": "FDE Prep - Agentforce Core",
+    "subtitle": "Agentforce architecture, trust, actions, grounding, and interview-ready AI scenarios.",
+    "blocks": [
+      { "type": "section", "title": "Agentforce Architecture" },
+      {
+        "question": "What are the core components of Agentforce?",
+        "type": "qa",
+        "answer": "<p class='ans-p'>A practical answer includes agent, topics, instructions, actions, data grounding, guardrails, channels, testing, and the Einstein Trust Layer. The interview focus is whether you can design a controlled business agent, not only define AI terms.</p>"
+      },
+      {
+        "question": "How do topics and actions work together?",
+        "type": "qa",
+        "answer": "<p class='ans-p'>Topics define the area of responsibility and guide intent routing. Actions perform approved work such as querying records, creating cases, summarizing data, or calling an Apex/service action. Good design keeps actions narrow, permission-aware, and testable with clear input/output contracts.</p>"
+      },
+      {
+        "question": "What should you say about Trust Layer and data security?",
+        "type": "qa",
+        "answer": "<p class='ans-p'>Explain that AI responses must respect Salesforce security, data access, masking, auditability, and grounding. The agent should not expose data the user cannot access. For sensitive workflows, use approved actions, policy controls, prompt testing, and human handoff paths.</p>"
+      },
+      {
+        "question": "How would you design an Agentforce support assistant?",
+        "type": "qa",
+        "answer": "<p class='ans-p'>Define use cases: answer policy questions, summarize cases, suggest knowledge, create follow-up tasks, and escalate high-risk issues. Ground it in Knowledge, Cases, Entitlements, and product data. Actions should be limited to safe tasks first, with approvals or human review for account-impacting changes.</p>"
+      }
+    ]
+  }
 }

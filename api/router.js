@@ -86,6 +86,60 @@ function readBody(req) {
   return typeof req.body === 'object' ? req.body : {};
 }
 
+function normalizeBoardStatus(value) {
+  const normalized = String(value || '').trim().toLowerCase();
+  if (normalized === 'new') return 'todo';
+  if (normalized === 'ignored') return 'rejected';
+  if (['todo', 'applied', 'interview', 'offer', 'rejected'].includes(normalized)) return normalized;
+  return 'todo';
+}
+
+function encodeStatusKey(value) {
+  const raw = String(value || '').trim();
+  if (!raw) return '';
+  return Buffer.from(raw, 'utf8')
+    .toString('base64')
+    .replace(/\+/g, '-')
+    .replace(/\//g, '_')
+    .replace(/=+$/g, '');
+}
+
+function jobStatusCandidates(job = {}) {
+  return [job.job_hash, job.jobHash, job.id, job._id]
+    .map(value => value === undefined || value === null ? '' : String(value))
+    .filter(Boolean);
+}
+
+async function getJobStatusOverrides(userId) {
+  if (!userId || mongoose.connection.readyState !== 1) return {};
+  const profile = await UserProfile.findOne({ userId }).select('jobRadarStatuses').lean();
+  return profile?.jobRadarStatuses || {};
+}
+
+function findJobStatusOverride(overrides = {}, job = {}) {
+  for (const candidate of jobStatusCandidates(job)) {
+    const encoded = encodeStatusKey(candidate);
+    if (encoded && overrides[encoded]) return overrides[encoded];
+    if (overrides[candidate]) return overrides[candidate];
+  }
+  return null;
+}
+
+function applyJobStatusOverrides(jobs = [], overrides = {}) {
+  return jobs.map(job => {
+    const override = findJobStatusOverride(overrides, job);
+    if (!override) return job;
+    const status = normalizeBoardStatus(override.status);
+    return {
+      ...job,
+      status,
+      board_status: status,
+      statusUpdatedAt: override.updatedAt || override.statusUpdatedAt || job.statusUpdatedAt,
+      appliedAt: override.appliedAt || job.appliedAt
+    };
+  });
+}
+
 function readDataJson(fileName, fallback = {}) {
   if (dataCache.has(fileName)) return dataCache.get(fileName);
   try {
@@ -588,6 +642,40 @@ export default async function(req, res) {
     const userId = await getUserId(req);
     if (!userId) return res.status(401).json({ error: 'Unauthorized' });
 
+    const jobStatusRoute = path.match(/^jobs\/([^/]+)\/status$/);
+    if (jobStatusRoute && req.method === 'PATCH') {
+      const payload = readBody(req);
+      const routeId = decodeURIComponent(jobStatusRoute[1] || '');
+      const rawKey = payload.job_hash || payload.jobHash || payload.jobId || routeId;
+      if (!rawKey) return res.status(400).json({ success: false, error: 'Missing job identifier' });
+
+      const status = normalizeBoardStatus(payload.status);
+      const updatedAt = payload.updatedAt || new Date().toISOString();
+      const appliedAt = status === 'applied'
+        ? (payload.appliedAt || updatedAt)
+        : (payload.appliedAt || '');
+      const statusKey = encodeStatusKey(rawKey);
+
+      await UserProfile.findOneAndUpdate(
+        { userId },
+        {
+          $set: {
+            userId,
+            [`jobRadarStatuses.${statusKey}`]: {
+              status,
+              updatedAt,
+              appliedAt,
+              rawKey: String(rawKey),
+              jobId: routeId
+            }
+          }
+        },
+        { upsert: true, new: true }
+      );
+
+      return res.status(200).json({ success: true, status, updatedAt, appliedAt, key: statusKey });
+    }
+
     // 2. PROFILE ENDPOINTS (Hybrid Search & Smart Merge)
     if (path === 'profile/data') {
       let tursoProfile = await safeTursoRead('profile/data', () => TursoDB.getProfile(userId), null);
@@ -934,7 +1022,11 @@ export default async function(req, res) {
       const unifiedMap = new Map();
       mongoJobs.forEach(j => unifiedMap.set(j.job_hash, { ...j, source: 'Legacy (Mongo)' }));
       tursoJobs.forEach(j => unifiedMap.set(j.job_hash, { ...j, source: 'Primary (Turso)' }));
-      const finalJobs = Array.from(unifiedMap.values()).sort((a,b) => new Date(b.created_at || b.createdAt) - new Date(a.created_at || a.createdAt));
+      const statusOverrides = await getJobStatusOverrides(userId);
+      const finalJobs = applyJobStatusOverrides(
+        Array.from(unifiedMap.values()).sort((a,b) => new Date(b.created_at || b.createdAt) - new Date(a.created_at || a.createdAt)),
+        statusOverrides
+      );
 
       console.log(`[JOBS] Unified Fetch -> Turso: ${tursoJobs.length}, Mongo: ${mongoJobs.length}, Total: ${finalJobs.length}`);
 
@@ -965,7 +1057,7 @@ export default async function(req, res) {
     if (path === 'jobs/analytics') {
       const tursoJobs = await safeTursoRead('jobs/analytics', () => TursoDB.getJobAnalytics(userId), []);
       const mongoJobs = await JobRecord.find({ userId }).lean();
-      const combined = [...tursoJobs, ...mongoJobs];
+      const combined = applyJobStatusOverrides([...tursoJobs, ...mongoJobs], await getJobStatusOverrides(userId));
       console.log(`[ANALYTICS] Hybrid Merging ${combined.length} records for ${userId}`);
 
       // Aggregate matched skills, missing skills, and top companies
@@ -1000,7 +1092,8 @@ export default async function(req, res) {
     if (path === 'jobs/list') {
         const mongoJobs = await JobRecord.find({ userId }).sort({ date_added: -1 }).lean();
         const tursoJobs = await safeTursoRead('jobs/list', () => TursoDB.getJobAnalytics(userId), []);
-        return res.status(200).json({ success: true, jobs: [...mongoJobs, ...tursoJobs] });
+        const jobs = applyJobStatusOverrides([...mongoJobs, ...tursoJobs], await getJobStatusOverrides(userId));
+        return res.status(200).json({ success: true, jobs });
     }
 
     // 4. STUDY ENDPOINTS

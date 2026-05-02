@@ -103,6 +103,7 @@ const userProfileSchema = new mongoose.Schema({
   }],
   roadmapSnapshot: mongoose.Schema.Types.Mixed,  // Deterministic roadmap used for the current profile
   releaseFocus: mongoose.Schema.Types.Mixed,     // Release items filtered for current years/designation
+  jobRadarStatuses: mongoose.Schema.Types.Mixed, // Per-user Kanban status overrides keyed by job hash/id
   codingPractice: {
     attempts: [mongoose.Schema.Types.Mixed],
     bestScores: mongoose.Schema.Types.Mixed,
