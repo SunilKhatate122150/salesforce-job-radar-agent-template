@@ -8754,3 +8754,275 @@ table {
     grid-template-columns: minmax(0, 1fr) !important;
   }
 }
+
+/* Device QA pass: patch remaining tablet/phone pressure points. */
+@media (max-width: 900px) {
+  .current-indicator {
+    left: auto !important;
+    right: 12px !important;
+    top: 12px !important;
+    transform: none !important;
+    max-width: calc(100% - 24px);
+  }
+
+  #job_radar .filter-bar {
+    flex-wrap: wrap !important;
+    overflow: visible !important;
+    gap: 10px !important;
+  }
+
+  #job_radar .filter-controls,
+  #job_radar .filter-actions {
+    width: 100% !important;
+    min-width: 0 !important;
+    flex-wrap: wrap !important;
+  }
+
+  #job_radar .filter-search {
+    order: 4 !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    margin-left: 0 !important;
+    flex: 1 1 100% !important;
+  }
+
+  #job_radar .radar-tabs {
+    height: auto !important;
+    min-height: 40px !important;
+    padding-top: 7px !important;
+    padding-bottom: 7px !important;
+    align-items: center !important;
+  }
+}
+
+@media (min-width: 641px) and (max-width: 900px) {
+  #job_radar .kanban-board-v3 {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    overflow: visible !important;
+    padding: 14px 14px 96px !important;
+    gap: 14px !important;
+    scroll-snap-type: none !important;
+  }
+
+  #job_radar .kanban-col-v3 {
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    flex: 1 1 auto !important;
+    flex-basis: auto !important;
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    overflow: visible !important;
+    scroll-snap-align: none !important;
+  }
+
+  #job_radar .kanban-body {
+    overflow: visible !important;
+    max-height: none !important;
+  }
+}
+
+#job_radar .jcard-company {
+  max-width: 100% !important;
+  white-space: normal !important;
+  overflow-wrap: anywhere !important;
+  word-break: break-word;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+#code_practice .cp-editor,
+#code_practice .code-practice-shell .CodeMirror {
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+#code_practice .CodeMirror-scroll {
+  margin-right: 0 !important;
+  padding-bottom: 0 !important;
+  overflow: auto !important;
+}
+
+#code_practice .CodeMirror-sizer,
+#code_practice .CodeMirror-lines {
+  min-width: 0 !important;
+  max-width: 100% !important;
+  box-sizing: border-box;
+}
+
+#code_practice .CodeMirror pre.CodeMirror-line,
+#code_practice .CodeMirror pre.CodeMirror-line-like {
+  white-space: pre-wrap !important;
+  overflow-wrap: anywhere !important;
+  word-break: break-word;
+}
+
+.career-summary-card {
+  overflow: clip;
+}
+
+.career-summary-card .card-icon-bg {
+  right: 8px !important;
+  top: 8px !important;
+  max-width: 72px;
+  max-height: 72px;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+#loginOverlay > div {
+  box-sizing: border-box !important;
+  max-width: min(440px, calc(100vw - 24px)) !important;
+  overflow: clip !important;
+}
+
+#loginOverlay > div > div:first-child {
+  right: 8px !important;
+  top: 8px !important;
+  width: 96px !important;
+  height: 96px !important;
+}
+
+@media (max-width: 1100px) {
+  #job_radar .radar-v3-header,
+  #job_radar .analytics-bar-v3,
+  #job_radar .radar-tabs,
+  #job_radar .filter-bar {
+    position: static !important;
+    top: auto !important;
+  }
+
+  #job_radar .radar-v3-header {
+    height: auto !important;
+    min-height: 0 !important;
+    flex-wrap: wrap !important;
+    align-items: flex-start !important;
+    padding: 14px !important;
+  }
+
+  #job_radar .radar-brand {
+    min-width: 0 !important;
+    flex: 1 1 260px !important;
+  }
+
+  #job_radar .radar-header-actions,
+  #job_radar .header-actions-v3,
+  #job_radar .radar-status-stack {
+    margin-left: 0 !important;
+    min-width: 0 !important;
+    flex: 1 1 auto !important;
+    flex-wrap: wrap !important;
+    justify-content: flex-start !important;
+  }
+
+  #job_radar .pipe-stats {
+    display: grid !important;
+    grid-template-columns: repeat(auto-fit, minmax(132px, 1fr)) !important;
+    gap: 8px !important;
+    flex: 1 1 100% !important;
+    width: 100% !important;
+    overflow: visible !important;
+  }
+
+  #job_radar .pstat {
+    max-width: none !important;
+    min-width: 0 !important;
+    padding: 8px 10px !important;
+  }
+
+  #job_radar .pinfo {
+    min-width: 0 !important;
+  }
+
+  #job_radar .plbl {
+    white-space: normal !important;
+    overflow-wrap: anywhere !important;
+    line-height: 1.15 !important;
+  }
+
+  #job_radar .filter-bar {
+    flex-wrap: wrap !important;
+    overflow: visible !important;
+  }
+
+  #job_radar .filter-controls,
+  #job_radar .filter-actions {
+    width: 100% !important;
+    min-width: 0 !important;
+    flex-wrap: wrap !important;
+    justify-content: flex-start !important;
+  }
+
+  #job_radar .filter-search {
+    order: 4 !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    margin-left: 0 !important;
+    flex: 1 1 100% !important;
+  }
+}
+
+@media (min-width: 901px) and (max-width: 1100px) {
+  #job_radar .radar-v3-header {
+    height: 118px !important;
+    min-height: 118px !important;
+  }
+
+  #job_radar .kanban-board-v3 {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    overflow: visible !important;
+    padding: 14px 14px 96px !important;
+    gap: 14px !important;
+    scroll-snap-type: none !important;
+  }
+
+  #job_radar .kanban-col-v3 {
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    flex: 1 1 auto !important;
+    flex-basis: auto !important;
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    overflow: visible !important;
+    scroll-snap-align: none !important;
+  }
+
+  #job_radar .kanban-body {
+    overflow: visible !important;
+    max-height: none !important;
+  }
+}
+
+@media (max-width: 420px) {
+  #loginOverlay > div {
+    padding: 2rem 1rem !important;
+    border-radius: 24px !important;
+  }
+}
+
+@media (max-width: 1100px) {
+  #job_radar .radar-tabs {
+    height: auto !important;
+    min-height: 40px !important;
+    padding-top: 7px !important;
+    padding-bottom: 7px !important;
+    align-items: center !important;
+  }
+}
