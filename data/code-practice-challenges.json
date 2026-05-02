@@ -223,6 +223,121 @@
         { "id": "test", "label": "Mentions test strategy", "file": "AgentActionGuardrails.cls", "regex": "test", "weight": 10 }
       ],
       "aiRubric": "Reward governance clarity, Trust Layer awareness, auditability, access control, and production readiness."
+    },
+    {
+      "id": "html-single-job-card",
+      "title": "Single-File HTML Job Card",
+      "track": "web",
+      "practiceMode": "html-single",
+      "difficulty": "Foundation",
+      "experienceLevels": [1, 2, 3],
+      "designations": ["Salesforce Developer", "Admin + Developer"],
+      "summary": "Build and test one complete HTML file with embedded style and UI content.",
+      "instructions": "Create a single HTML file that renders a Salesforce job card with company, role, skill chips, and an apply button.",
+      "expectedBehavior": "The preview should show a complete card, include Salesforce role content, and expose an apply action.",
+      "files": [
+        {
+          "name": "job-card.html",
+          "language": "html",
+          "content": "<!doctype html>\n<html>\n<head>\n  <meta charset=\"utf-8\">\n  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">\n  <title>Salesforce Job Card</title>\n  <style>\n    body { font-family: system-ui, sans-serif; background: #f8fafc; margin: 0; padding: 24px; }\n    .job-card { max-width: 420px; border: 1px solid #d8dde6; border-radius: 8px; background: #fff; padding: 18px; }\n    .skills { display: flex; gap: 8px; flex-wrap: wrap; }\n    .skills span { background: #eef4ff; color: #1b4d89; padding: 5px 8px; border-radius: 999px; }\n    button { margin-top: 16px; border: 0; border-radius: 6px; background: #0176d3; color: #fff; padding: 10px 14px; font-weight: 700; }\n  </style>\n</head>\n<body>\n  <section class=\"job-card\" aria-label=\"Salesforce job card\">\n    <p>CloudKite Consulting</p>\n    <h1>Salesforce Developer</h1>\n    <div class=\"skills\"><span>Apex</span><span>LWC</span><span>SOQL</span></div>\n    <button data-testid=\"apply-button\">Apply Now</button>\n  </section>\n</body>\n</html>"
+        }
+      ],
+      "staticChecks": [
+        { "id": "doctype", "label": "Uses a complete HTML document", "file": "*", "regex": "<!doctype|<html", "weight": 10 },
+        { "id": "role", "label": "Mentions Salesforce Developer role", "file": "*", "regex": "Salesforce\\s+Developer", "weight": 15 },
+        { "id": "style", "label": "Includes embedded styling", "file": "*", "regex": "<style[\\s\\S]*\\.job-card", "weight": 15 },
+        { "id": "button", "label": "Includes an apply button", "file": "*", "regex": "<button[\\s\\S]*Apply", "weight": 20 }
+      ],
+      "tests": [
+        { "id": "card-renders", "label": "Job card renders in the DOM", "expression": "!!document.querySelector('.job-card')", "weight": 20 },
+        { "id": "apply-action", "label": "Apply action is visible", "expression": "document.querySelector('[data-testid=\"apply-button\"], button')?.textContent.toLowerCase().includes('apply')", "weight": 20 }
+      ],
+      "aiRubric": "Reward semantic HTML, responsive card styling, accessible labels, and clean single-file structure."
+    },
+    {
+      "id": "js-single-rank-jobs",
+      "title": "Single-File JavaScript Job Ranking",
+      "track": "web",
+      "practiceMode": "js-single",
+      "difficulty": "Core Developer",
+      "experienceLevels": [2, 3, 4],
+      "designations": ["Salesforce Developer", "Senior Salesforce Developer"],
+      "summary": "Write and test one JavaScript file that ranks job radar results.",
+      "instructions": "Implement rankJobs(jobs, minScore) so it filters out low-score jobs, sorts by score descending, and does not mutate the original array.",
+      "expectedBehavior": "The function should be available as window.rankJobs, return high-score roles first, and safely handle blank input.",
+      "files": [
+        {
+          "name": "solution.js",
+          "language": "javascript",
+          "content": "function rankJobs(jobs, minScore = 80) {\n  const source = Array.isArray(jobs) ? jobs : [];\n  return source\n    .filter(job => Number(job.score || 0) >= minScore)\n    .slice()\n    .sort((a, b) => Number(b.score || 0) - Number(a.score || 0));\n}\n\nwindow.rankJobs = rankJobs;"
+        }
+      ],
+      "staticChecks": [
+        { "id": "function", "label": "Defines rankJobs", "file": "*", "regex": "function\\s+rankJobs|const\\s+rankJobs", "weight": 15 },
+        { "id": "window-export", "label": "Exports function to window for tests", "file": "*", "regex": "window\\.rankJobs", "weight": 15 },
+        { "id": "filter", "label": "Filters by score", "file": "*", "regex": "\\.filter\\s*\\(", "weight": 15 },
+        { "id": "sort", "label": "Sorts results", "file": "*", "regex": "\\.sort\\s*\\(", "weight": 15 }
+      ],
+      "tests": [
+        { "id": "safe-empty", "label": "Handles blank input", "expression": "Array.isArray(window.rankJobs(null)) && window.rankJobs(null).length === 0", "weight": 15 },
+        { "id": "filters-low", "label": "Filters out low-score jobs", "expression": "window.rankJobs([{company:'A', score:70}, {company:'B', score:92}], 80).length === 1", "weight": 20 },
+        { "id": "sorts-high-first", "label": "Sorts highest score first", "expression": "window.rankJobs([{company:'A', score:82}, {company:'B', score:95}], 80)[0].company === 'B'", "weight": 25 }
+      ],
+      "aiRubric": "Reward pure function design, null safety, non-mutating array handling, and readable Salesforce job-radar logic."
+    },
+    {
+      "id": "apex-single-fit-scorer",
+      "title": "Single Apex Class Fit Scorer",
+      "track": "salesforce",
+      "practiceMode": "apex-single",
+      "difficulty": "Core Developer",
+      "experienceLevels": [3, 4, 5],
+      "designations": ["Salesforce Developer", "Senior Salesforce Developer"],
+      "summary": "Practice one Apex class file with local static validation.",
+      "instructions": "Create AccountFitScorer with a static score method that returns an Integer score based on account tier and active status.",
+      "expectedBehavior": "Class uses sharing, handles null input, returns an Integer, and keeps logic simple enough to test.",
+      "files": [
+        {
+          "name": "AccountFitScorer.cls",
+          "language": "apex",
+          "content": "public with sharing class AccountFitScorer {\n  public static Integer score(Account acct) {\n    if (acct == null) return 0;\n    Integer result = 50;\n    if (acct.Active__c == 'Yes') result += 25;\n    if (acct.Customer_Tier__c == 'Gold') result += 25;\n    return Math.min(100, result);\n  }\n}"
+        }
+      ],
+      "staticChecks": [
+        { "id": "class-name", "label": "Defines AccountFitScorer class", "file": "*", "regex": "class\\s+AccountFitScorer", "weight": 20 },
+        { "id": "sharing", "label": "Uses sharing-aware class posture", "file": "*", "regex": "with\\s+sharing|inherited\\s+sharing", "weight": 15 },
+        { "id": "static-method", "label": "Defines static score method", "file": "*", "regex": "static\\s+Integer\\s+score\\s*\\(", "weight": 20 },
+        { "id": "null-safe", "label": "Handles null input", "file": "*", "regex": "acct\\s*==\\s*null|acct\\s*!=\\s*null", "weight": 15 },
+        { "id": "return-integer", "label": "Returns an Integer result", "file": "*", "regex": "return\\s+", "weight": 10 }
+      ],
+      "aiRubric": "Reward Apex syntax shape, null safety, simple scoring logic, and testability."
+    },
+    {
+      "id": "trigger-single-stage-audit",
+      "title": "Single Trigger Stage Audit",
+      "track": "salesforce",
+      "practiceMode": "apex-trigger-single",
+      "difficulty": "Core Developer",
+      "experienceLevels": [3, 4, 5],
+      "designations": ["Salesforce Developer", "Senior Salesforce Developer"],
+      "summary": "Practice a one-file trigger and validate key trigger syntax locally.",
+      "instructions": "Write an Opportunity trigger that detects Closed Won stage changes and creates follow-up Tasks outside the loop.",
+      "expectedBehavior": "Trigger runs after update, compares Trigger.new with Trigger.oldMap, collects Task records, and performs DML once outside the loop.",
+      "files": [
+        {
+          "name": "OpportunityStageAudit.trigger",
+          "language": "apex",
+          "content": "trigger OpportunityStageAudit on Opportunity (after update) {\n  List<Task> tasksToInsert = new List<Task>();\n\n  for (Opportunity opp : Trigger.new) {\n    Opportunity oldOpp = Trigger.oldMap.get(opp.Id);\n    if (opp.StageName == 'Closed Won' && oldOpp.StageName != 'Closed Won') {\n      tasksToInsert.add(new Task(\n        WhatId = opp.Id,\n        Subject = 'Send welcome package',\n        ActivityDate = Date.today().addDays(1),\n        Status = 'Not Started',\n        Priority = 'Normal'\n      ));\n    }\n  }\n\n  if (!tasksToInsert.isEmpty()) {\n    insert tasksToInsert;\n  }\n}"
+        }
+      ],
+      "staticChecks": [
+        { "id": "trigger-name", "label": "Defines OpportunityStageAudit trigger", "file": "*", "regex": "trigger\\s+OpportunityStageAudit\\s+on\\s+Opportunity", "weight": 20 },
+        { "id": "after-update", "label": "Runs after update", "file": "*", "regex": "after\\s+update", "weight": 15 },
+        { "id": "oldmap", "label": "Compares with Trigger.oldMap", "file": "*", "regex": "Trigger\\.oldMap", "weight": 20 },
+        { "id": "task-list", "label": "Collects Task records in a list", "file": "*", "regex": "List\\s*<\\s*Task\\s*>", "weight": 15 },
+        { "id": "dml-outside-loop", "label": "Avoids obvious DML inside loop", "file": "*", "negativeRegex": "for\\s*\\([^)]*\\)\\s*\\{[^{}]*\\binsert\\b", "weight": 20 }
+      ],
+      "aiRubric": "Reward trigger context usage, bulk-safe collection, one DML statement, and clear stage-change logic."
     }
   ]
 }

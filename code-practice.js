@@ -311,6 +311,8 @@
       let tests = [];
       if (challenge.track === 'web') {
         tests = await runWebTests(challenge);
+      } else if (challenge.track === 'salesforce') {
+        tests = runSalesforceStaticTests(challenge, filesToMap());
       }
       state.runResult = { tests };
       state.evaluation = runDeterministicChecks(challenge, filesToMap(), state.runResult);
@@ -463,9 +465,146 @@
     };
   }
 
+  function getPracticeMode(challenge) {
+    if (challenge.practiceMode) return challenge.practiceMode;
+    const files = state.files || challenge.files || [];
+    if (files.length !== 1) return 'multi-file';
+    const name = String(files[0]?.name || '').toLowerCase();
+    if (name.endsWith('.html')) return 'html-single';
+    if (name.endsWith('.js')) return 'js-single';
+    if (name.endsWith('.trigger')) return 'apex-trigger-single';
+    if (name.endsWith('.cls')) return 'apex-single';
+    return 'single-file';
+  }
+
+  function findFileContent(files, exactNames, extension) {
+    const names = exactNames.map(name => name.toLowerCase());
+    const exact = Object.entries(files).find(([name]) => names.includes(name.toLowerCase()));
+    if (exact) return { name: exact[0], content: String(exact[1] || '') };
+    const byExt = Object.entries(files).find(([name]) => name.toLowerCase().endsWith(extension));
+    return byExt ? { name: byExt[0], content: String(byExt[1] || '') } : { name: '', content: '' };
+  }
+
+  function runWebSyntaxChecks(challenge) {
+    const files = filesToMap();
+    const mode = getPracticeMode(challenge);
+    const jsFile = findFileContent(files, ['script.js', 'solution.js'], '.js');
+    if (!jsFile.content.trim()) return [];
+
+    try {
+      // Compile only. DOM-dependent code is executed inside the preview iframe.
+      // eslint-disable-next-line no-new-func
+      new Function(jsFile.content);
+      return [{
+        id: mode === 'js-single' ? 'single-js-syntax' : 'js-syntax',
+        label: `${jsFile.name} has valid JavaScript syntax`,
+        pass: true,
+        weight: 10
+      }];
+    } catch (err) {
+      return [{
+        id: mode === 'js-single' ? 'single-js-syntax' : 'js-syntax',
+        label: `${jsFile.name} has valid JavaScript syntax`,
+        pass: false,
+        message: err.message,
+        weight: 10
+      }];
+    }
+  }
+
+  function isBalancedSource(source) {
+    const pairs = { '(': ')', '{': '}', '[': ']' };
+    const closers = new Set(Object.values(pairs));
+    const stack = [];
+    let quote = '';
+    let escaped = false;
+
+    for (const char of String(source || '')) {
+      if (quote) {
+        if (escaped) {
+          escaped = false;
+        } else if (char === '\\') {
+          escaped = true;
+        } else if (char === quote) {
+          quote = '';
+        }
+        continue;
+      }
+      if (char === '"' || char === "'") {
+        quote = char;
+      } else if (pairs[char]) {
+        stack.push(pairs[char]);
+      } else if (closers.has(char) && stack.pop() !== char) {
+        return false;
+      }
+    }
+    return !quote && stack.length === 0;
+  }
+
+  function runSalesforceStaticTests(challenge, files) {
+    const combined = Object.entries(files).map(([name, content]) => `// ${name}\n${content}`).join('\n\n');
+    const hasTriggerFile = Object.keys(files).some(name => name.toLowerCase().endsWith('.trigger'));
+    const hasClassFile = Object.keys(files).some(name => name.toLowerCase().endsWith('.cls'));
+    const tests = [
+      {
+        id: 'apex-balanced-delimiters',
+        label: 'Braces, parentheses, and brackets are balanced',
+        pass: isBalancedSource(combined),
+        weight: 10
+      },
+      {
+        id: hasTriggerFile ? 'trigger-declaration-shape' : 'apex-class-declaration-shape',
+        label: hasTriggerFile ? 'Trigger declaration has object and event block' : 'Apex class declaration is present',
+        pass: hasTriggerFile
+          ? /trigger\s+\w+\s+on\s+\w+\s*\([^)]*\)\s*\{/i.test(combined)
+          : /class\s+\w+/i.test(combined),
+        weight: 10
+      },
+      {
+        id: 'apex-no-empty-source',
+        label: 'Source file is not empty',
+        pass: combined.replace(/\/\/.*$/gm, '').trim().length > 20,
+        weight: 10
+      },
+      {
+        id: 'apex-loop-query-smell',
+        label: 'No obvious SOQL query inside a loop',
+        pass: !/for\s*\([^)]*\)\s*\{[\s\S]{0,400}\[[\s\S]{0,80}\bSELECT\b/i.test(combined),
+        weight: 10
+      },
+      {
+        id: 'apex-loop-dml-smell',
+        label: 'No obvious DML statement inside a loop',
+        pass: !/for\s*\([^)]*\)\s*\{[^{}]*\b(insert|update|delete|upsert)\b\s+\w+/i.test(combined),
+        weight: 10
+      }
+    ];
+
+    if (hasClassFile && /Test\.|@IsTest|System\.assert/i.test(combined)) {
+      tests.push({
+        id: 'apex-test-signal',
+        label: 'Includes a test or assertion signal',
+        pass: true,
+        weight: 8
+      });
+    }
+
+    if (challenge.practiceMode === 'apex-trigger-single') {
+      tests.push({
+        id: 'trigger-context-usage',
+        label: 'Uses Trigger context variables',
+        pass: /\bTrigger\.(new|old|newMap|oldMap|isInsert|isUpdate|isDelete|isUndelete)\b/i.test(combined),
+        weight: 10
+      });
+    }
+
+    return tests;
+  }
+
   function runWebTests(challenge) {
     const tests = challenge.tests || [];
-    if (!tests.length) return Promise.resolve([]);
+    const syntaxTests = runWebSyntaxChecks(challenge);
+    if (!tests.length) return Promise.resolve(syntaxTests);
     return new Promise(resolve => {
       const iframe = document.createElement('iframe');
       iframe.setAttribute('sandbox', 'allow-scripts');
@@ -477,13 +616,17 @@
       };
       const timer = setTimeout(() => {
         cleanup();
-        resolve(tests.map(test => ({ id: test.id, label: test.label, pass: false, message: 'Test timed out.' })));
+        resolve([
+          ...syntaxTests,
+          ...tests.map(test => ({ id: test.id, label: test.label, pass: false, message: 'Test timed out.' }))
+        ]);
       }, 1800);
       const onMessage = event => {
         if (!event.data || event.data.type !== 'code-practice-tests' || event.data.challengeId !== challenge.id) return;
         clearTimeout(timer);
         cleanup();
-        resolve(Array.isArray(event.data.results) ? event.data.results : []);
+        const results = Array.isArray(event.data.results) ? event.data.results : [];
+        resolve([...syntaxTests, ...results]);
       };
 
       window.addEventListener('message', onMessage);
@@ -494,26 +637,40 @@
 
   function buildPreviewSrcdoc(challenge, includeTests) {
     const files = filesToMap();
-    const html = files['index.html'] || '<main id="app"></main>';
-    const css = files['style.css'] || '';
-    const js = files['script.js'] || '';
-    const tests = JSON.stringify(challenge.tests || []).replace(/</g, '\\u003c');
-    const testScript = includeTests ? `
-      <script>
-        (function () {
-          var tests = ${tests};
-          setTimeout(function () {
-            var results = tests.map(function (test) {
-              try {
-                return { id: test.id, label: test.label, pass: !!eval(test.expression) };
-              } catch (err) {
-                return { id: test.id, label: test.label, pass: false, message: err.message };
-              }
-            });
-            parent.postMessage({ type: 'code-practice-tests', challengeId: ${JSON.stringify(challenge.id)}, results: results }, '*');
-          }, 80);
-        })();
-      <\/script>` : '';
+    const mode = getPracticeMode(challenge);
+    const htmlFile = findFileContent(files, ['index.html'], '.html');
+    const cssFile = findFileContent(files, ['style.css', 'styles.css'], '.css');
+    const jsFile = findFileContent(files, ['script.js', 'solution.js'], '.js');
+    const testScript = buildPreviewTestScript(challenge, includeTests);
+
+    if (mode === 'html-single') {
+      return buildSingleHtmlDocument(htmlFile.content || '<main id="app"></main>', testScript);
+    }
+
+    if (mode === 'js-single') {
+      return `<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; padding: 18px; font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; color: #172033; background: #f8fafc; }
+    .runner-card { max-width: 560px; padding: 16px; border: 1px solid #d8dde6; border-radius: 8px; background: #fff; }
+    code { display: block; margin-top: 8px; padding: 8px; border-radius: 6px; background: #eef2f7; white-space: pre-wrap; }
+  </style>
+</head>
+<body>
+  ${challenge.previewHtml || '<main class="runner-card"><h1>JavaScript Logic Runner</h1><p>Run tests to validate the single file solution.</p><code id="output">Ready</code></main>'}
+  <script>${escapeScriptEnd(jsFile.content)}<\/script>
+  ${testScript}
+</body>
+</html>`;
+    }
+
+    const html = htmlFile.content || '<main id="app"></main>';
+    const css = cssFile.content || '';
+    const js = jsFile.content || '';
 
     return `<!doctype html>
 <html>
@@ -529,6 +686,52 @@
 <body>
   ${html}
   <script>${escapeScriptEnd(js)}<\/script>
+  ${testScript}
+</body>
+</html>`;
+  }
+
+  function buildPreviewTestScript(challenge, includeTests) {
+    if (!includeTests) return '';
+    const tests = JSON.stringify(challenge.tests || []).replace(/</g, '\\u003c');
+    return `
+      <script>
+        (function () {
+          var tests = ${tests};
+          setTimeout(function () {
+            var results = tests.map(function (test) {
+              try {
+                return { id: test.id, label: test.label, pass: !!eval(test.expression) };
+              } catch (err) {
+                return { id: test.id, label: test.label, pass: false, message: err.message };
+              }
+            });
+            parent.postMessage({ type: 'code-practice-tests', challengeId: ${JSON.stringify(challenge.id)}, results: results }, '*');
+          }, 80);
+        })();
+      <\/script>`;
+  }
+
+  function buildSingleHtmlDocument(source, testScript) {
+    const html = String(source || '');
+    const safeHtml = html;
+    if (/<!doctype|<html[\s>]/i.test(safeHtml)) {
+      if (/<\/body>/i.test(safeHtml)) return safeHtml.replace(/<\/body>/i, `${testScript}</body>`);
+      if (/<\/html>/i.test(safeHtml)) return safeHtml.replace(/<\/html>/i, `${testScript}</html>`);
+      return safeHtml + testScript;
+    }
+    return `<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; padding: 18px; font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; color: #172033; background: #f8fafc; }
+  </style>
+</head>
+<body>
+  ${safeHtml}
   ${testScript}
 </body>
 </html>`;
@@ -622,6 +825,7 @@
 
   function renderChallengeCard(challenge) {
     const best = state.progress?.bestScores?.[challenge.id];
+    const modeLabel = formatPracticeMode(challenge);
     return `
       <button type="button" class="cp-challenge-card${challenge.id === state.selectedId ? ' is-active' : ''}" data-cp-action="select-challenge" data-id="${escapeAttr(challenge.id)}">
         <span class="cp-challenge-title">
@@ -631,6 +835,7 @@
         <span class="cp-challenge-summary">${escapeHtml(challenge.summary || '')}</span>
         <span class="cp-badge-row">
           <span class="cp-badge">${escapeHtml(challenge.track === 'web' ? 'HTML/JS' : 'Apex')}</span>
+          ${modeLabel ? `<span class="cp-badge single">${escapeHtml(modeLabel)}</span>` : ''}
           <span class="cp-badge">${escapeHtml(challenge.difficulty || 'Practice')}</span>
           <span class="cp-badge">${escapeHtml(formatYears(challenge.experienceLevels))}</span>
         </span>
@@ -662,6 +867,7 @@
               <h3>${escapeHtml(challenge.title)}</h3>
               <div class="cp-badge-row">
                 <span class="cp-badge">${escapeHtml(challenge.difficulty || 'Practice')}</span>
+                ${formatPracticeMode(challenge) ? `<span class="cp-badge single">${escapeHtml(formatPracticeMode(challenge))}</span>` : ''}
                 <span class="cp-badge">${escapeHtml(formatYears(challenge.experienceLevels))}</span>
                 <span class="cp-badge">${escapeHtml((challenge.designations || []).slice(0, 2).join(' / '))}</span>
               </div>
@@ -695,6 +901,15 @@
 
   function renderPanelTab(panel, label) {
     return `<button type="button" class="cp-panel-tab${state.activePanel === panel ? ' is-active' : ''}" data-cp-action="panel" data-panel="${panel}">${label}</button>`;
+  }
+
+  function formatPracticeMode(challenge) {
+    const mode = challenge.practiceMode || '';
+    if (mode === 'html-single') return 'Single HTML';
+    if (mode === 'js-single') return 'Single JS';
+    if (mode === 'apex-single') return 'Single Class';
+    if (mode === 'apex-trigger-single') return 'Single Trigger';
+    return '';
   }
 
   function renderFilesPanel() {
@@ -743,7 +958,7 @@
     return `
       <div class="cp-salesforce-preview">
         <div class="cp-section-title">Apex / Trigger Review</div>
-        <div class="cp-subtle" style="margin-top:8px;">Apex is validated with static rules and AI review in v1. It is not executed against a Salesforce org.</div>
+        <div class="cp-subtle" style="margin-top:8px;">Apex is checked locally for syntax shape, trigger patterns, and static rules. Org compilation still requires Salesforce CLI or a connected org.</div>
         <div class="cp-file-summary">
           ${state.files.map(file => `<code>${escapeHtml(file.name)} - ${String(file.content || '').split(/\n/).length} lines</code>`).join('')}
         </div>

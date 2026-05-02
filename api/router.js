@@ -48,6 +48,34 @@ function isMongoConnected() {
   return mongoose.connection.readyState === 1;
 }
 
+function hasEnv(name) {
+  return Boolean(String(process.env[name] || '').trim());
+}
+
+function buildHealthPayload() {
+  const env = {
+    MONGODB_URI: hasEnv('MONGODB_URI'),
+    GOOGLE_CLIENT_ID: hasEnv('GOOGLE_CLIENT_ID'),
+    OPENAI_API_KEY: hasEnv('OPENAI_API_KEY'),
+    GITHUB_REPOSITORY: hasEnv('GITHUB_REPOSITORY') || hasEnv('JOB_RADAR_GITHUB_REPO'),
+    GITHUB_TOKEN: hasEnv('GITHUB_TOKEN') || hasEnv('GH_TOKEN') || hasEnv('JOB_RADAR_GITHUB_TOKEN'),
+    TELEGRAM_BOT_TOKEN: hasEnv('TELEGRAM_BOT_TOKEN'),
+    TURSO_DATABASE_URL: hasEnv('TURSO_DATABASE_URL'),
+    TURSO_AUTH_TOKEN: hasEnv('TURSO_AUTH_TOKEN')
+  };
+  const missingCore = ['MONGODB_URI', 'GOOGLE_CLIENT_ID'].filter(name => !env[name]);
+  return {
+    success: true,
+    service: 'salesforce-job-radar-agent',
+    runtime: process.env.VERCEL ? 'vercel' : 'local',
+    generatedAt: new Date().toISOString(),
+    mongoConnected: isMongoConnected(),
+    env,
+    ready: missingCore.length === 0,
+    missingCore
+  };
+}
+
 async function getUserId(req) {
   const authHeader = req.headers.authorization;
   if (!authHeader || !authHeader.startsWith('Bearer ')) return null;
@@ -657,6 +685,10 @@ export default async function(req, res) {
     if (path === 'code-practice/challenges' && req.method === 'GET') {
       const requestUrl = new URL(req.url || '', 'http://localhost');
       return res.status(200).json({ success: true, ...filterCodePracticeChallenges(requestUrl.searchParams) });
+    }
+
+    if (path === 'health' && req.method === 'GET') {
+      return res.status(200).json(buildHealthPayload());
     }
 
     // --- REQUIRE AUTH FOR DATA ROUTES ---

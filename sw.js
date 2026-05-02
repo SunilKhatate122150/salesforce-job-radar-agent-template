@@ -1,12 +1,15 @@
-const CACHE_NAME = 'sf-prep-v1372';
+const CACHE_NAME = 'sf-prep-v20260502-upgrade2';
 const ASSETS = [
   '/',
   '/index.html',
   '/styles.css',
-  '/app.v1372.js',
+  '/responsive.css',
+  '/src/components.js',
+  '/app.js',
+  '/src/ui-shell.js',
+  '/code-practice.js',
   '/manifest.json',
-  'https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=Plus+Jakarta+Sans:wght@400;600;700&display=swap',
-  'https://cdn.jsdelivr.net/npm/marked/marked.min.js'
+  'https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=Plus+Jakarta+Sans:wght@400;600;700&family=Syne:wght@400;600;700;800&family=JetBrains+Mono:wght@400;500&family=Outfit:wght@300;400;500;600&display=swap'
 ];
 
 // Install Service Worker

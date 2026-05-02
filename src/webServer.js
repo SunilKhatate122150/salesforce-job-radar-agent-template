@@ -21,6 +21,34 @@ const dataCache = new Map();
 
 const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
+function hasEnv(name) {
+  return Boolean(String(process.env[name] || '').trim());
+}
+
+function buildHealthPayload(isMongoConnected = false) {
+  const env = {
+    MONGODB_URI: hasEnv('MONGODB_URI'),
+    GOOGLE_CLIENT_ID: hasEnv('GOOGLE_CLIENT_ID'),
+    OPENAI_API_KEY: hasEnv('OPENAI_API_KEY'),
+    GITHUB_REPOSITORY: hasEnv('GITHUB_REPOSITORY') || hasEnv('JOB_RADAR_GITHUB_REPO'),
+    GITHUB_TOKEN: hasEnv('GITHUB_TOKEN') || hasEnv('GH_TOKEN') || hasEnv('JOB_RADAR_GITHUB_TOKEN'),
+    TELEGRAM_BOT_TOKEN: hasEnv('TELEGRAM_BOT_TOKEN'),
+    TURSO_DATABASE_URL: hasEnv('TURSO_DATABASE_URL'),
+    TURSO_AUTH_TOKEN: hasEnv('TURSO_AUTH_TOKEN')
+  };
+  const missingCore = ['MONGODB_URI', 'GOOGLE_CLIENT_ID'].filter(name => !env[name]);
+  return {
+    success: true,
+    service: 'salesforce-job-radar-agent',
+    runtime: process.env.VERCEL ? 'vercel' : 'local',
+    generatedAt: new Date().toISOString(),
+    mongoConnected: Boolean(isMongoConnected),
+    env,
+    ready: missingCore.length === 0,
+    missingCore
+  };
+}
+
 function readDataJson(fileName, fallback = {}) {
   if (dataCache.has(fileName)) return dataCache.get(fileName);
   try {
@@ -508,7 +536,7 @@ export default async function handler(req, res) {
     }
 
     const isPublicFile = url === '/manifest.json' || url.endsWith('.png') || url.endsWith('.ico');
-    const isPublicApi = url === '/api/jobs' || url === '/api/jobs/analytics' || url === '/api/auth/google' || url === '/api/code-practice/challenges';
+    const isPublicApi = url === '/api/jobs' || url === '/api/jobs/analytics' || url === '/api/auth/google' || url === '/api/code-practice/challenges' || url === '/api/health';
     
     if (!userId && !isPublicFile && !isPublicApi) {
       res.writeHead(401);
@@ -517,7 +545,11 @@ export default async function handler(req, res) {
     }
 
     try {
-      if (url === '/api/code-practice/challenges' && method === 'GET') {
+      if (url === '/api/health' && method === 'GET') {
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify(buildHealthPayload(isMongoConnected)));
+      }
+      else if (url === '/api/code-practice/challenges' && method === 'GET') {
         const requestUrl = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
         res.writeHead(200, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ success: true, ...filterCodePracticeChallenges(requestUrl.searchParams) }));

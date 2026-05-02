@@ -681,6 +681,8 @@ function syncMobileBoardStageNav(cols) {
   const board = document.querySelector('#job_radar .kanban-board-v3');
   if (!board) return;
 
+  renderMobileRadarActionBar(board);
+
   let nav = document.getElementById('mobileBoardStageNav');
   if (!nav) {
     nav = document.createElement('div');
@@ -716,6 +718,43 @@ function syncMobileBoardStageNav(cols) {
   });
   board.classList.add('mobile-stage-mode');
 }
+
+function renderMobileRadarActionBar(board) {
+  let bar = document.getElementById('mobileRadarActionBar');
+  if (!bar) {
+    bar = document.createElement('div');
+    bar.id = 'mobileRadarActionBar';
+    bar.className = 'mobile-radar-actionbar';
+    board.parentElement?.insertBefore(bar, board);
+  }
+
+  const data = buildDailyCockpitData();
+  bar.innerHTML = `
+    <button type="button" onclick="runMobileRadarAction('apply')"><span>Apply</span><b>${componentEscapeHtml(data.highFit.length || data.fresh.length)}</b></button>
+    <button type="button" onclick="runMobileRadarAction('resume')"><span>Resume</span><b>${componentEscapeHtml(data.resumeReady.length)}</b></button>
+    <button type="button" onclick="runMobileRadarAction('follow')"><span>Follow</span><b>${componentEscapeHtml(data.followUps.length)}</b></button>
+    <button type="button" onclick="runMobileRadarAction('add')"><span>Add</span><b>+</b></button>
+  `;
+}
+
+window.runMobileRadarAction = function(action) {
+  const pickFilterButton = filter => Array.from(document.querySelectorAll('#job_radar .fb'))
+    .find(btn => (btn.getAttribute('onclick') || '').includes(`'${filter}'`));
+
+  if (action === 'apply') {
+    if (typeof window.setBoardFilter === 'function') window.setBoardFilter('high', pickFilterButton('high'));
+    window.setMobileBoardStage?.('todo');
+  } else if (action === 'resume') {
+    if (typeof window.setBoardFilter === 'function') window.setBoardFilter('all', pickFilterButton('all'));
+    window.setMobileBoardStage?.('todo');
+    window.showToast?.('Resume-ready roles are highlighted in the cockpit.');
+  } else if (action === 'follow') {
+    if (typeof window.setBoardFilter === 'function') window.setBoardFilter('all', pickFilterButton('all'));
+    window.setMobileBoardStage?.('applied');
+  } else if (action === 'add') {
+    window.openAddJobModal?.();
+  }
+};
 
 window.setMobileBoardStage = function(col) {
   window.currentMobileBoardStage = col || 'todo';
@@ -773,16 +812,199 @@ function renderBoard() {
   });
 
   syncMobileBoardStageNav(cols);
+  renderJobRadarCockpit();
 }
 
 function getFollowUpStatus(job) {
   if (componentText(job.status, 'todo') !== 'applied') return null;
-  const lastContact = job.lastContact ? new Date(job.lastContact) : new Date(job.created_at || job.dateAdded);
+  const lastContact = job.lastContact
+    ? new Date(job.lastContact)
+    : new Date(job.appliedAt || job.dateApplied || job.statusUpdatedAt || job.created_at || job.dateAdded);
   const diffDays = Math.floor((new Date() - lastContact) / (1000 * 60 * 60 * 24));
   
   if (diffDays >= 7) return { label: '7d+ No Response', class: 'ghost' };
   if (diffDays >= 3) return { label: '3d+ Since Contact', class: 'warn' };
   return null;
+}
+
+function jobRadarDate(job) {
+  const value = job.updatedAt || job.createdAt || job.dateAdded || job.created_at || job.date_added || job.appliedAt || job.dateApplied;
+  const parsed = new Date(value || 0);
+  return Number.isNaN(parsed.getTime()) ? new Date(0) : parsed;
+}
+
+function jobRadarDaysOld(job) {
+  const date = jobRadarDate(job);
+  if (!date.getTime()) return 999;
+  return Math.max(0, Math.floor((Date.now() - date.getTime()) / 86400000));
+}
+
+function isResumeReadyJob(job) {
+  return componentText(job.status, 'todo') === 'todo' && componentList(job.resume_actions).length > 0;
+}
+
+function isHighFitTodo(job) {
+  const status = componentText(job.status, 'todo');
+  const score = componentScore(job.score || job.match_score || 75);
+  const prob = componentProbability(job.prob || job.probability, score);
+  return status === 'todo' && (prob === 'high' || score >= 82);
+}
+
+function getJobNextAction(job, followUp) {
+  const status = componentText(job.status, 'todo');
+  const score = componentScore(job.score || job.match_score || 75);
+  const prob = componentProbability(job.prob || job.probability, score);
+  const gapCount = componentList(job.missing_skills).length;
+  const resumeCount = componentList(job.resume_actions).length;
+
+  if (followUp) {
+    return { label: 'Follow up', detail: followUp.label, className: 'due' };
+  }
+  if (status === 'todo' && (prob === 'high' || score >= 82) && resumeCount === 0) {
+    return { label: 'Apply today', detail: 'High fit and ready', className: 'apply' };
+  }
+  if (status === 'todo' && resumeCount > 0) {
+    return { label: 'Tune resume', detail: `${resumeCount} edit${resumeCount === 1 ? '' : 's'}`, className: 'resume' };
+  }
+  if (status === 'todo' && gapCount > 0) {
+    return { label: 'Close gap', detail: `${gapCount} skill${gapCount === 1 ? '' : 's'}`, className: 'review' };
+  }
+  if (status === 'interview') {
+    return { label: 'Prep story', detail: 'Interview active', className: 'interview' };
+  }
+  if (status === 'offer') {
+    return { label: 'Compare offer', detail: 'Decision stage', className: 'offer' };
+  }
+  if (status === 'rejected') {
+    return { label: 'Archived', detail: 'Noise removed', className: 'quiet' };
+  }
+  return { label: 'Review fit', detail: `${score}% match`, className: 'review' };
+}
+
+function getJobSignalNotes(job, matchedSkills, gapSkills, resumeActions) {
+  const notes = [];
+  if (matchedSkills.length) notes.push(`Strength: ${matchedSkills[0]}`);
+  if (gapSkills.length) notes.push(`Gap: ${gapSkills[0]}`);
+  if (resumeActions.length) notes.push(`Resume: ${resumeActions[0]}`);
+  if (!notes.length && job.why_apply) notes.push(componentText(job.why_apply, '').slice(0, 70));
+  return notes.slice(0, 2);
+}
+
+function buildProfileFocus(todoJobs) {
+  const gapCounts = new Map();
+  const resumeCounts = new Map();
+
+  todoJobs.forEach(job => {
+    componentList(job.missing_skills).forEach(skill => {
+      const key = componentText(skill, '').trim();
+      if (key) gapCounts.set(key, (gapCounts.get(key) || 0) + 1);
+    });
+    componentList(job.resume_actions).forEach(action => {
+      const key = componentText(action, '').trim();
+      if (key) resumeCounts.set(key, (resumeCounts.get(key) || 0) + 1);
+    });
+  });
+
+  const topGap = Array.from(gapCounts.entries()).sort((a, b) => b[1] - a[1])[0];
+  const topResume = Array.from(resumeCounts.entries()).sort((a, b) => b[1] - a[1])[0];
+  return {
+    gap: topGap ? `${topGap[0]} (${topGap[1]})` : 'No repeated gap yet',
+    resume: topResume ? topResume[0] : 'Resume actions are clear'
+  };
+}
+
+function buildDailyCockpitData() {
+  const jobs = window.pipelineJobs || [];
+  const todoJobs = jobs.filter(job => componentText(job.status, 'todo') === 'todo');
+  const highFit = todoJobs.filter(isHighFitTodo).sort((a, b) => componentScore(b.score || b.match_score || 75) - componentScore(a.score || a.match_score || 75));
+  const resumeReady = todoJobs.filter(isResumeReadyJob).sort((a, b) => componentList(b.resume_actions).length - componentList(a.resume_actions).length);
+  const followUps = jobs.filter(job => getFollowUpStatus(job)).sort((a, b) => jobRadarDate(a) - jobRadarDate(b));
+  const needsReview = todoJobs
+    .filter(job => !isHighFitTodo(job) || componentList(job.missing_skills).length > 0)
+    .sort((a, b) => componentList(b.missing_skills).length - componentList(a.missing_skills).length || componentScore(b.score || b.match_score) - componentScore(a.score || a.match_score));
+  const fresh = todoJobs.filter(job => jobRadarDaysOld(job) <= 1).sort((a, b) => jobRadarDate(b) - jobRadarDate(a));
+  const suppressed = jobs.filter(job => componentText(job.status, 'todo') === 'rejected').length;
+
+  return {
+    highFit,
+    resumeReady,
+    followUps,
+    needsReview,
+    fresh,
+    suppressed,
+    profileFocus: buildProfileFocus(todoJobs),
+    totalTodo: todoJobs.length
+  };
+}
+
+function renderCockpitList(items, emptyText) {
+  if (!items.length) return `<div class="cockpit-empty">${componentEscapeHtml(emptyText)}</div>`;
+  return items.slice(0, 3).map(job => {
+    const id = componentText(job.id, '');
+    const idJs = componentEscapeJsArg(id);
+    const score = componentScore(job.score || job.match_score || 75);
+    const company = componentText(job.company, 'Confidential');
+    const role = componentText(job.role || job.title, 'Salesforce Role');
+    return `
+      <button type="button" class="cockpit-job-row" onclick="openJobDetailsFlyout('${idJs}')">
+        <span>
+          <b>${componentEscapeHtml(company)}</b>
+          <small>${componentEscapeHtml(role)}</small>
+        </span>
+        <em>${score}%</em>
+      </button>
+    `;
+  }).join('');
+}
+
+function renderJobRadarCockpit() {
+  const mount = document.getElementById('jobRadarCockpit');
+  if (!mount) return;
+
+  const data = buildDailyCockpitData();
+  const firstAction = data.highFit[0] || data.resumeReady[0] || data.followUps[0] || data.fresh[0] || null;
+  const firstActionText = firstAction
+    ? `${componentText(firstAction.company, 'Confidential')} - ${componentText(firstAction.role || firstAction.title, 'Salesforce Role')}`
+    : 'Run a scan or add a custom role to start today.';
+
+  mount.innerHTML = `
+    <div class="cockpit-head">
+      <div>
+        <span class="cockpit-kicker">Daily Cockpit</span>
+        <h2>What should you act on today?</h2>
+      </div>
+      <div class="cockpit-primary-action">
+        <span>Next best action</span>
+        <strong>${componentEscapeHtml(firstActionText)}</strong>
+      </div>
+    </div>
+    <div class="cockpit-metrics">
+      <div class="cockpit-metric high"><b>${data.highFit.length}</b><span>High-fit jobs</span></div>
+      <div class="cockpit-metric ready"><b>${data.resumeReady.length}</b><span>Resume ready</span></div>
+      <div class="cockpit-metric due"><b>${data.followUps.length}</b><span>Follow-ups due</span></div>
+      <div class="cockpit-metric review"><b>${data.needsReview.length}</b><span>Needs review</span></div>
+      <div class="cockpit-metric quiet"><b>${data.suppressed}</b><span>Suppressed</span></div>
+    </div>
+    <div class="cockpit-profile-note">
+      <span>Profile focus</span>
+      <strong>${componentEscapeHtml(data.profileFocus.gap)}</strong>
+      <em>${componentEscapeHtml(data.profileFocus.resume)}</em>
+    </div>
+    <div class="cockpit-lanes">
+      <section>
+        <h3>Apply First</h3>
+        ${renderCockpitList(data.highFit.length ? data.highFit : data.fresh, 'No fresh high-fit jobs yet.')}
+      </section>
+      <section>
+        <h3>Resume Pack Ready</h3>
+        ${renderCockpitList(data.resumeReady, 'No resume actions captured yet.')}
+      </section>
+      <section>
+        <h3>Follow Up</h3>
+        ${renderCockpitList(data.followUps, 'No follow-ups due today.')}
+      </section>
+    </div>
+  `;
 }
 
 function renderJobCard(job) {
@@ -802,6 +1024,8 @@ function renderJobCard(job) {
   const resumeActions = componentList(job.resume_actions).slice(0, 2);
   const prob = componentProbability(job.prob || job.probability, score);
   const applyUrl = componentSafeUrl(job.url || job.apply_link);
+  const nextAction = getJobNextAction(job, followUp);
+  const signalNotes = getJobSignalNotes(job, matchedSkills, gapSkills, resumeActions);
   
   const actions = [];
   if (status === 'todo') {
@@ -834,6 +1058,11 @@ function renderJobCard(job) {
         <span class="prob-badge ${componentEscapeAttr(prob)}">${componentEscapeHtml(componentProbLabel(prob))}</span>
         <span class="jcard-age">${componentEscapeHtml(timeAgo(job.updatedAt || job.createdAt || job.dateAdded || job.created_at))}</span>
       </div>
+
+      <div class="jcard-intel-row ${componentEscapeAttr(nextAction.className)}">
+        <span>${componentEscapeHtml(nextAction.label)}</span>
+        <b>${componentEscapeHtml(nextAction.detail)}</b>
+      </div>
       
       <div class="jcard-role">${componentEscapeHtml(role)}</div>
       
@@ -848,6 +1077,11 @@ function renderJobCard(job) {
         ${matchedSkills.map(s => `<span class="skill-tag">${componentEscapeHtml(s)}</span>`).join('')}
         ${gapSkills.map(s => `<span class="skill-gap-tag">${componentEscapeHtml(s)}</span>`).join('')}
       </div>
+
+      ${signalNotes.length ? `
+      <div class="jcard-signal-row">
+        ${signalNotes.map(note => `<span>${componentEscapeHtml(note)}</span>`).join('')}
+      </div>` : ''}
 
       ${job.why_apply ? `
       <div class="jcard-why">
@@ -893,10 +1127,7 @@ function renderInsights() {
   `).join('');
 }
 
-function renderDevelopment() {
-  const container = document.getElementById('radar-development-view');
-  if (!container) return;
-  
+function renderDevelopmentUI() {
   const phases = [
     { name: 'Phase 1: Foundation', status: 'completed', desc: 'Core agent logic and environment setup.' },
     { name: 'Phase 2: Job Fetching', status: 'completed', desc: 'LinkedIn & Naukri integration with deduplication.' },
@@ -913,7 +1144,7 @@ function renderDevelopment() {
     { skill: 'Agentforce', value: 58 }
   ];
 
-  container.innerHTML = `
+  return `
     <div class="development-view">
       <div class="dev-header">
         <div class="dev-eyebrow">Project Evolution</div>
@@ -954,9 +1185,55 @@ function renderDevelopment() {
             `).join('')}
           </div>
         </div>
+
+        <div class="dev-panel vercel-health-panel">
+          <div class="vercel-health-head">
+            <h3>Vercel Health</h3>
+            <button type="button" class="radar-inline-btn" onclick="renderVercelHealthPanel()">Refresh</button>
+          </div>
+          <div id="vercelHealthPanel" class="vercel-health-body">
+            <div class="cockpit-empty">Checking deployment configuration...</div>
+          </div>
+        </div>
       </div>
     </div>
   `;
+}
+
+function renderDevelopment() {
+  const container = document.getElementById('radar-development-view');
+  if (!container) return;
+  container.innerHTML = renderDevelopmentUI();
+  renderVercelHealthPanel();
+}
+
+async function renderVercelHealthPanel() {
+  const mount = document.getElementById('vercelHealthPanel');
+  if (!mount) return;
+  mount.innerHTML = '<div class="cockpit-empty">Checking deployment configuration...</div>';
+  try {
+    const response = await fetch('/api/health', { headers: { Accept: 'application/json' } });
+    if (!response.ok) throw new Error(`health ${response.status}`);
+    const data = await response.json();
+    const entries = Object.entries(data.env || {});
+    mount.innerHTML = `
+      <div class="vercel-health-status ${data.ready ? 'ready' : 'warn'}">
+        <span>${data.ready ? 'Ready' : 'Needs attention'}</span>
+        <b>${componentEscapeHtml(data.runtime || 'runtime')}</b>
+      </div>
+      <div class="vercel-health-grid">
+        ${entries.map(([name, ok]) => `
+          <span class="${ok ? 'ok' : 'missing'}">
+            <b>${componentEscapeHtml(name)}</b>
+            <em>${ok ? 'set' : 'missing'}</em>
+          </span>
+        `).join('')}
+      </div>
+      <div class="cp-subtle" style="margin-top:10px;">Mongo connection: ${data.mongoConnected ? 'connected' : 'not connected here'}</div>
+    `;
+  } catch (err) {
+    mount.innerHTML = '<div class="cockpit-empty">Health check is unavailable on this server.</div>';
+  }
 }
 
 function renderRevisionAlerts() {
