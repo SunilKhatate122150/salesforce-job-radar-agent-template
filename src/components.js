@@ -452,6 +452,13 @@ function componentSafeUrl(value) {
   }
 }
 
+function componentFormatDate(value) {
+  if (!value) return 'Not tracked';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return 'Not tracked';
+  return date.toLocaleString([], { year: 'numeric', month: 'short', day: '2-digit', hour: '2-digit', minute: '2-digit' });
+}
+
 function componentList(value) {
   if (Array.isArray(value)) return value.map(item => componentText(item)).filter(Boolean);
   if (typeof value === 'string') return value.split(/[,;\n]/).map(item => item.trim()).filter(Boolean);
@@ -487,6 +494,187 @@ function componentInitials(value) {
 function componentScore(value) {
   const score = Math.round(Number(value || 0));
   return Math.max(0, Math.min(100, Number.isFinite(score) ? score : 0));
+}
+
+function componentFindJob(jobId) {
+  const target = String(jobId || '');
+  return (window.pipelineJobs || []).find(job => String(job.id) === target || String(job.job_hash) === target);
+}
+
+function renderJobFlyoutActions(job, idJs, applyUrl) {
+  const status = componentText(job.status, 'todo');
+  const actions = [];
+  if (applyUrl !== '#') actions.push(`<a class="job-flyout-action primary" href="${componentEscapeAttr(applyUrl)}" target="_blank" rel="noopener noreferrer">Open Apply Link</a>`);
+  if (status === 'todo') {
+    actions.push(`<button type="button" class="job-flyout-action success" onclick="moveTo('${idJs}', 'applied'); closeJobDetailsFlyout();">Mark Applied</button>`);
+    actions.push(`<button type="button" class="job-flyout-action danger" onclick="moveTo('${idJs}', 'rejected'); closeJobDetailsFlyout();">Reject</button>`);
+  } else if (status === 'applied') {
+    actions.push(`<button type="button" class="job-flyout-action primary" onclick="moveTo('${idJs}', 'interview'); closeJobDetailsFlyout();">Move to Interview</button>`);
+    actions.push(`<button type="button" class="job-flyout-action secondary" onclick="moveTo('${idJs}', 'todo'); closeJobDetailsFlyout();">Back to Backlog</button>`);
+  } else if (status === 'interview') {
+    actions.push(`<button type="button" class="job-flyout-action success" onclick="moveTo('${idJs}', 'offer'); closeJobDetailsFlyout();">Offer Received</button>`);
+    actions.push(`<button type="button" class="job-flyout-action secondary" onclick="moveTo('${idJs}', 'applied'); closeJobDetailsFlyout();">Back to Applied</button>`);
+  } else if (status === 'offer') {
+    actions.push(`<button type="button" class="job-flyout-action secondary" onclick="moveTo('${idJs}', 'interview'); closeJobDetailsFlyout();">Back to Interview</button>`);
+  } else {
+    actions.push(`<button type="button" class="job-flyout-action secondary" onclick="moveTo('${idJs}', 'todo'); closeJobDetailsFlyout();">Reopen</button>`);
+  }
+  return actions.join('');
+}
+
+function renderJobDetailsFlyout(job) {
+  const id = componentText(job.id, '');
+  const idJs = componentEscapeJsArg(id);
+  const company = componentText(job.company, 'Confidential');
+  const role = componentText(job.role || job.title, 'Salesforce Role');
+  const location = componentText(job.loc || job.location, 'India');
+  const experience = componentText(job.experience, '3-5 Yrs');
+  const companyType = componentText(job.company_type, 'Company');
+  const status = componentText(job.status, 'todo');
+  const score = componentScore(job.score || job.match_score || 75);
+  const prob = componentProbability(job.prob || job.probability, score);
+  const salary = componentText(job.sal || job.salary, 'Not specified');
+  const applyUrl = componentSafeUrl(job.url || job.apply_link);
+  const matchedSkills = componentList(job.matched_skills?.length ? job.matched_skills : job.skills);
+  const gapSkills = componentList(job.missing_skills);
+  const resumeActions = componentList(job.resume_actions);
+  const notes = componentText(job.notes || job.internal_notes || '');
+  const source = componentText(job.source || job.provider || job.origin || 'Job Radar');
+  const created = componentFormatDate(job.createdAt || job.dateAdded || job.created_at || job.date_added);
+  const updated = componentFormatDate(job.updatedAt || job.statusUpdatedAt || job.updated_at);
+  const whyApply = componentText(job.why_apply, 'This role is available in your Job Radar pipeline. Add notes or profile data to improve AI fit guidance.');
+
+  const pillList = (items, cls) => items.length
+    ? items.map(item => `<span class="${cls}">${componentEscapeHtml(item)}</span>`).join('')
+    : '<span class="job-flyout-muted">No data captured yet.</span>';
+
+  return `
+    <div class="job-flyout-backdrop" onclick="closeJobDetailsFlyout()"></div>
+    <aside class="job-flyout-panel" role="dialog" aria-modal="true" aria-labelledby="jobFlyoutTitle" onclick="event.stopPropagation()">
+      <div class="job-flyout-head">
+        <div class="job-flyout-company-mark" style="background:${componentEscapeAttr(stringToColor(company))}">${componentEscapeHtml(componentInitials(company))}</div>
+        <div class="job-flyout-title-wrap">
+          <div class="job-flyout-kicker">${componentEscapeHtml(companyType)} · ${componentEscapeHtml(source)}</div>
+          <h2 id="jobFlyoutTitle">${componentEscapeHtml(role)}</h2>
+          <div class="job-flyout-company">${componentEscapeHtml(company)}</div>
+        </div>
+        <button type="button" class="job-flyout-close" onclick="closeJobDetailsFlyout()" aria-label="Close job details">×</button>
+      </div>
+
+      <div class="job-flyout-score-row">
+        <div class="job-flyout-score" style="--score:${score};"><span>${score}%</span></div>
+        <div class="job-flyout-score-copy">
+          <span class="prob-badge ${componentEscapeAttr(prob)}">${componentEscapeHtml(componentProbLabel(prob))}</span>
+          <span>${componentEscapeHtml(status.toUpperCase())} · Updated ${componentEscapeHtml(timeAgo(job.updatedAt || job.createdAt || job.dateAdded || job.created_at))}</span>
+        </div>
+      </div>
+
+      <div class="job-flyout-meta-grid">
+        <div><span>Location</span><b>${componentEscapeHtml(location)}</b></div>
+        <div><span>Experience</span><b>${componentEscapeHtml(experience)}</b></div>
+        <div><span>Salary</span><b>${componentEscapeHtml(salary)}</b></div>
+        <div><span>Status</span><b>${componentEscapeHtml(status)}</b></div>
+      </div>
+
+      <section class="job-flyout-section">
+        <h3>AI Fit Summary</h3>
+        <p>${componentEscapeHtml(whyApply)}</p>
+      </section>
+
+      <section class="job-flyout-section">
+        <h3>Matched Skills</h3>
+        <div class="job-flyout-tags">${pillList(matchedSkills, 'skill-tag')}</div>
+      </section>
+
+      <section class="job-flyout-section">
+        <h3>Skill Gaps</h3>
+        <div class="job-flyout-tags">${pillList(gapSkills, 'skill-gap-tag')}</div>
+      </section>
+
+      <section class="job-flyout-section">
+        <h3>Resume Focus</h3>
+        ${resumeActions.length
+          ? `<ul class="job-flyout-list">${resumeActions.map(action => `<li>${componentEscapeHtml(action)}</li>`).join('')}</ul>`
+          : '<p class="job-flyout-muted">No resume actions captured yet.</p>'}
+      </section>
+
+      <section class="job-flyout-section compact">
+        <h3>Tracking</h3>
+        <div class="job-flyout-timeline">
+          <div><span>Created</span><b>${componentEscapeHtml(created)}</b></div>
+          <div><span>Updated</span><b>${componentEscapeHtml(updated)}</b></div>
+          ${notes ? `<div><span>Notes</span><b>${componentEscapeHtml(notes)}</b></div>` : ''}
+        </div>
+      </section>
+
+      <div class="job-flyout-actions">
+        ${renderJobFlyoutActions(job, idJs, applyUrl)}
+      </div>
+    </aside>
+  `;
+}
+
+window.openJobDetailsFlyout = function(jobId) {
+  const job = componentFindJob(jobId);
+  if (!job) return;
+  let flyout = document.getElementById('jobDetailsFlyout');
+  if (!flyout) {
+    flyout = document.createElement('div');
+    flyout.id = 'jobDetailsFlyout';
+    flyout.className = 'job-details-flyout';
+    document.body.appendChild(flyout);
+  }
+  flyout.innerHTML = renderJobDetailsFlyout(job);
+  flyout.classList.add('open');
+  flyout.setAttribute('aria-hidden', 'false');
+  document.body.classList.add('job-flyout-open');
+  setTimeout(() => flyout.querySelector('.job-flyout-close')?.focus(), 30);
+};
+
+window.closeJobDetailsFlyout = function() {
+  const flyout = document.getElementById('jobDetailsFlyout');
+  if (!flyout) return;
+  flyout.classList.remove('open');
+  flyout.setAttribute('aria-hidden', 'true');
+  document.body.classList.remove('job-flyout-open');
+};
+
+window.handleJobCardKey = function(event, jobId) {
+  if (event.key !== 'Enter' && event.key !== ' ') return;
+  event.preventDefault();
+  window.openJobDetailsFlyout(jobId);
+};
+
+if (!window.__jobDetailsFlyoutEscBound) {
+  window.__jobDetailsFlyoutEscBound = true;
+  window.addEventListener('keydown', event => {
+    if (event.key === 'Escape') window.closeJobDetailsFlyout();
+  });
+}
+
+if (!window.__jobCardDetailsClickBound) {
+  window.__jobCardDetailsClickBound = true;
+  let pointerStart = null;
+  const getDetailsCardFromEvent = event => {
+    if (event.target.closest('#job_radar .jcard-actions, #job_radar .jcard-btn, #job_radar a, #job_radar button')) return null;
+    return event.target.closest('#job_radar .jcard-v3[data-job-id]');
+  };
+  document.addEventListener('pointerdown', event => {
+    const card = getDetailsCardFromEvent(event);
+    pointerStart = card ? { id: card.dataset.jobId, x: event.clientX, y: event.clientY } : null;
+  });
+  document.addEventListener('pointerup', event => {
+    const card = getDetailsCardFromEvent(event);
+    if (!card || !pointerStart || pointerStart.id !== card.dataset.jobId) return;
+    const moved = Math.hypot(event.clientX - pointerStart.x, event.clientY - pointerStart.y);
+    pointerStart = null;
+    if (moved <= 8) window.openJobDetailsFlyout(card.dataset.jobId);
+  });
+  document.addEventListener('click', event => {
+    const card = getDetailsCardFromEvent(event);
+    if (!card) return;
+    window.openJobDetailsFlyout(card.dataset.jobId);
+  });
 }
 
 function syncMobileBoardStageNav(cols) {
@@ -630,7 +818,7 @@ function renderJobCard(job) {
   }
 
   return `
-    <div class="jcard-v3" data-prob="${componentEscapeAttr(prob)}" id="card-${idAttr}" draggable="true" ondragstart="handleDragStart(event, '${idJs}')" ondragend="handleDragEnd(event)">
+    <div class="jcard-v3" data-job-id="${idAttr}" data-prob="${componentEscapeAttr(prob)}" id="card-${idAttr}" role="button" tabindex="0" aria-label="Open details for ${componentEscapeAttr(role)} at ${componentEscapeAttr(company)}" draggable="true" onclick="openJobDetailsFlyout('${idJs}')" onkeydown="handleJobCardKey(event, '${idJs}')" ondragstart="handleDragStart(event, '${idJs}')" ondragend="handleDragEnd(event)">
       <div class="jcard-top">
         <div class="jcard-company-block">
           <div class="jcard-icon" style="background:${componentEscapeAttr(stringToColor(company))}">${componentEscapeHtml(componentInitials(company))}</div>
@@ -674,7 +862,7 @@ function renderJobCard(job) {
         </ul>
       </div>` : ''}
 
-      <div class="jcard-actions">
+      <div class="jcard-actions" onclick="event.stopPropagation()">
         ${actions.map(a => a.href 
           ? `<a href="${componentEscapeAttr(a.href)}" target="_blank" rel="noopener noreferrer" class="jcard-btn ${componentEscapeAttr(a.cls)}">${componentEscapeHtml(a.label)}</a>`
           : `<button type="button" class="jcard-btn ${componentEscapeAttr(a.cls)}" onclick="${componentEscapeAttr(a.onClick)}">${componentEscapeHtml(a.label)}</button>`
