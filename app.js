@@ -277,11 +277,29 @@ function signOut() {
 
 async function apiFetch(url, options = {}) {
   const token = localStorage.getItem('google_auth_token');
+  const method = String(options.method || 'GET').toUpperCase();
+  const path = (() => {
+    try {
+      return new URL(url, window.location.origin).pathname;
+    } catch (e) {
+      return String(url || '').split('?')[0];
+    }
+  })();
+  const isPublicApi =
+    path === '/api/auth/google' ||
+    (method === 'GET' && (path === '/api/jobs' || path === '/api/jobs/analytics' || path === '/api/code-practice/challenges'));
+  const hasToken = token && token !== 'null' && token !== 'undefined';
+  if (!hasToken && path.startsWith('/api/') && !isPublicApi) {
+    return new Response(JSON.stringify({ success: false, error: 'login_required' }), {
+      status: 401,
+      headers: { 'Content-Type': 'application/json', 'X-Local-Auth-State': 'login_required' }
+    });
+  }
   const headers = {
     ...options.headers,
     'Authorization': `Bearer ${token}`
   };
-  if (options.body && !(options.body instanceof FormData) && !headers['Content-Type']) {
+  if (method !== 'GET' && options.body && !(options.body instanceof FormData) && !headers['Content-Type']) {
     headers['Content-Type'] = 'application/json';
   }
   return fetch(url, { ...options, headers });
@@ -1373,6 +1391,19 @@ var topicConfig = {
 async function fetchWithTimeout(resource, options = {}) {
   const { timeout = 10000 } = options;
   const token = localStorage.getItem('google_auth_token');
+  const path = (() => {
+    try {
+      return new URL(resource, window.location.origin).pathname;
+    } catch (e) {
+      return String(resource || '').split('?')[0];
+    }
+  })();
+  if ((!token || token === 'null' || token === 'undefined') && path.startsWith('/api/')) {
+    return new Response(JSON.stringify({ success: false, error: 'login_required', completedTasks: [] }), {
+      status: 401,
+      headers: { 'Content-Type': 'application/json', 'X-Local-Auth-State': 'login_required' }
+    });
+  }
   
   const headers = {
     ...options.headers,
@@ -1406,6 +1437,9 @@ async function getStudyData(force = false) {
       fetchWithTimeout('/api/study/history?cb=' + Date.now()),
       fetchWithTimeout('/api/study/tasks?cb=' + Date.now())
     ]);
+    if (!historyRes.ok || !tasksRes.ok) {
+      return globalStudyData || { topics: {}, sessions: [], completedTasks: [] };
+    }
     const sessions = await historyRes.json();
     const { completedTasks } = await tasksRes.json();
     
@@ -1916,6 +1950,14 @@ async function renderHistory() {
   // STEP 1: INSTANT LOAD (If we have cache, show it immediately to avoid glitch)
   if (Object.keys(cachedHistories).length > 0) {
     renderHistoryUI(container, cachedHistories, todayStr, yestStr);
+  }
+
+  const token = localStorage.getItem('google_auth_token');
+  if (!token || token === 'null' || token === 'undefined') {
+    if (Object.keys(cachedHistories).length === 0) {
+      renderHistoryUI(container, {}, todayStr, yestStr);
+    }
+    return;
   }
 
   try {

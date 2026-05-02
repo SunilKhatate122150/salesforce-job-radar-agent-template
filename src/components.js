@@ -489,6 +489,52 @@ function componentScore(value) {
   return Math.max(0, Math.min(100, Number.isFinite(score) ? score : 0));
 }
 
+function syncMobileBoardStageNav(cols) {
+  const board = document.querySelector('#job_radar .kanban-board-v3');
+  if (!board) return;
+
+  let nav = document.getElementById('mobileBoardStageNav');
+  if (!nav) {
+    nav = document.createElement('div');
+    nav.id = 'mobileBoardStageNav';
+    nav.className = 'mobile-board-stage-nav';
+    board.parentElement?.insertBefore(nav, board);
+  }
+
+  const labels = {
+    todo: 'Backlog',
+    applied: 'Applied',
+    interview: 'Interview',
+    offer: 'Offer',
+    rejected: 'Rejected'
+  };
+  const current = cols.includes(window.currentMobileBoardStage) ? window.currentMobileBoardStage : 'todo';
+  window.currentMobileBoardStage = current;
+
+  nav.innerHTML = cols.map(col => {
+    const count = typeof window.getBoardColumnJobs === 'function'
+      ? window.getBoardColumnJobs(col).length
+      : (document.getElementById(`count-${col}`)?.textContent || '0');
+    return `
+      <button type="button" class="mobile-stage-btn ${col === current ? 'active' : ''}" onclick="setMobileBoardStage('${col}')">
+        <span>${componentEscapeHtml(labels[col] || col)}</span>
+        <b>${componentEscapeHtml(count)}</b>
+      </button>
+    `;
+  }).join('');
+
+  cols.forEach(col => {
+    document.getElementById(`col-${col}`)?.classList.toggle('mobile-stage-active', col === current);
+  });
+  board.classList.add('mobile-stage-mode');
+}
+
+window.setMobileBoardStage = function(col) {
+  window.currentMobileBoardStage = col || 'todo';
+  syncMobileBoardStageNav(['todo', 'applied', 'interview', 'offer', 'rejected']);
+  document.querySelector('#job_radar .kanban-board-v3')?.scrollIntoView({ block: 'start', behavior: 'smooth' });
+};
+
 function renderBoard() {
   const cols = ['todo', 'applied', 'interview', 'offer', 'rejected'];
   const searchTerm = (document.getElementById("boardSearch")?.value || '').toLowerCase();
@@ -537,6 +583,8 @@ function renderBoard() {
       pager.innerHTML = renderPager(filtered.length, page, pageSize, `setBoardPage('${col}', -1)`, `setBoardPage('${col}', 1)`, true);
     }
   });
+
+  syncMobileBoardStageNav(cols);
 }
 
 function getFollowUpStatus(job) {

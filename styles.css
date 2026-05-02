@@ -9026,3 +9026,88 @@ table {
     align-items: center !important;
   }
 }
+
+.mobile-board-stage-nav {
+  display: none;
+}
+
+@media (max-width: 640px) {
+  #job_radar .mobile-board-stage-nav {
+    position: sticky;
+    top: calc(var(--header-h, 56px) + 4px);
+    z-index: 9;
+    display: grid;
+    grid-template-columns: repeat(5, minmax(72px, 1fr));
+    gap: 7px;
+    overflow-x: auto;
+    padding: 9px 10px;
+    border-top: 1px solid rgba(148, 163, 184, 0.14);
+    border-bottom: 1px solid rgba(148, 163, 184, 0.14);
+    background: rgba(8, 13, 25, 0.94);
+    backdrop-filter: blur(14px);
+  }
+
+  #job_radar .mobile-stage-btn {
+    min-width: 72px;
+    min-height: 42px;
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    border: 1px solid rgba(148, 163, 184, 0.18);
+    border-radius: 9px;
+    background: rgba(15, 23, 42, 0.72);
+    color: var(--jr-text3, #91a4c2);
+    font: inherit;
+    cursor: pointer;
+  }
+
+  #job_radar .mobile-stage-btn span {
+    font-size: 9.5px;
+    line-height: 1.1;
+    font-weight: 800;
+    letter-spacing: 0;
+  }
+
+  #job_radar .mobile-stage-btn b {
+    color: var(--jr-text, #e5edf8);
+    font-family: var(--app-font-mono, 'IBM Plex Mono', monospace);
+    font-size: 11px;
+    line-height: 1;
+  }
+
+  #job_radar .mobile-stage-btn.active {
+    border-color: rgba(59, 130, 246, 0.48);
+    background: rgba(59, 130, 246, 0.15);
+    color: var(--jr-blue, #60a5fa);
+  }
+
+  #job_radar .kanban-board-v3.mobile-stage-mode {
+    display: block !important;
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    overflow: visible !important;
+    padding: 12px 10px 96px !important;
+  }
+
+  #job_radar .kanban-board-v3.mobile-stage-mode .kanban-col-v3 {
+    display: none !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+  }
+
+  #job_radar .kanban-board-v3.mobile-stage-mode .kanban-col-v3.mobile-stage-active {
+    display: flex !important;
+  }
+
+  #job_radar .kanban-board-v3.mobile-stage-mode .kanban-body {
+    max-height: none !important;
+    overflow: visible !important;
+  }
+}
