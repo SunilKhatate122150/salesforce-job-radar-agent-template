@@ -50,6 +50,94 @@ window.modalTopicPage = 0;
 // --- DYNAMIC DATA REGISTRY (MODULAR v1412) ---
 let TOPIC_DATA = {};
 let PREP_REGISTRY = {};
+const DATA_DRIVEN_TOPIC_IDS = new Set([
+  'deloitte',
+  'accenture',
+  'security_5_layers',
+  'order_of_execution',
+  'flow_master',
+  'sales_cloud',
+  'service_cloud',
+  'experience_cloud'
+]);
+
+const STATIC_TOPIC_FALLBACKS = {
+  accenture: {
+    title: 'Accenture Salesforce Prep',
+    subtitle: 'Global delivery, scalable frameworks, LWC, async Apex, and enterprise interview patterns.',
+    blocks: [
+      { type: 'section', title: 'Scalable Development' },
+      { type: 'qa', question: 'Why is a Trigger Framework mandatory in Accenture projects?', answer: '<p class="ans-p">Large delivery teams need one trigger per object, predictable handler order, bulk-safe service classes, and shared logging/error patterns. A framework prevents duplicate logic, recursion bugs, and release conflicts across squads.</p>' },
+      { type: 'qa', question: 'What should you revise before an Accenture Salesforce round?', answer: '<p class="ans-p">Prepare LWC communication, Apex bulkification, Queueable/Batch patterns, integration error handling, deployment discipline, and how you coordinate work in agile/global delivery teams.</p>' }
+    ]
+  },
+  deloitte: {
+    title: 'Deloitte Salesforce Interview (2026)',
+    subtitle: 'Architecture, delivery governance, LDV, security, integration, and senior scenario drills.',
+    blocks: [
+      { type: 'section', title: 'Enterprise Architecture' },
+      { type: 'qa', question: 'How do you handle Large Data Volumes (LDV) in a Deloitte global org?', answer: '<p class="ans-p">Use selective SOQL, indexed filters, skinny tables when justified, async processing, archival strategy, pagination, and careful sharing recalculation planning. Explain how you monitor query plans and avoid lock contention.</p>' },
+      { type: 'qa', question: 'What senior topics should you study for Deloitte Salesforce roles?', answer: '<p class="ans-p">Revise integration design, security/sharing, order of execution, Flow vs Apex tradeoffs, release governance, test strategy, and architecture decision records with business impact.</p>' }
+    ]
+  },
+  security_5_layers: {
+    title: 'Salesforce 5 Layers of Security',
+    subtitle: 'Complete breakdown of organization, object, field, record, and folder/app-level controls.',
+    blocks: [
+      { type: 'section', title: 'The Security Gates' },
+      { type: 'qa', question: 'Layer 1: Organization Level Security?', answer: '<p class="ans-p">Login hours, IP ranges, MFA, password policies, session settings, trusted locations, and identity provider controls protect access before users reach records.</p>' },
+      { type: 'qa', question: 'Layer 2: Object Level Security?', answer: '<p class="ans-p">Profiles and permission sets grant object CRUD. In interviews, always separate CRUD from field-level and record-level access.</p>' },
+      { type: 'qa', question: 'Layer 3: Field Level Security?', answer: '<p class="ans-p">FLS controls field visibility/editability. In Apex, discuss stripInaccessible, WITH SECURITY_ENFORCED, and user-mode database operations where suitable.</p>' },
+      { type: 'qa', question: 'Layer 4: Record Level Security?', answer: '<p class="ans-p">OWD, role hierarchy, sharing rules, teams, territories, manual sharing, and Apex-managed sharing decide which records a user can see.</p>' },
+      { type: 'qa', question: 'Layer 5: Folder and App Access?', answer: '<p class="ans-p">Reports, dashboards, email templates, apps, tabs, and permission set groups complete the user access model.</p>' }
+    ]
+  },
+  order_of_execution: {
+    title: 'Order of Execution',
+    subtitle: 'Master the Salesforce save cycle from validation through commit and post-commit automation.',
+    blocks: [
+      { type: 'section', title: 'Critical Sequence' },
+      { type: 'qa', question: 'What happens before triggers run?', answer: '<p class="ans-p">Salesforce loads the original record, runs basic system validation, and prepares the record values. Before triggers then run before custom validation rules.</p>' },
+      { type: 'qa', question: 'Explain the interview-safe order of execution.', answer: '<p class="ans-p">Mention system validation, before triggers, custom validation, duplicate rules, database save without commit, after triggers, assignment/auto-response/escalation/workflow, Flow/process automation, roll-up recalculation, sharing, commit, and post-commit async actions.</p>' }
+    ]
+  },
+  flow_master: {
+    title: 'Flow Master Class',
+    subtitle: 'Industrial Flow patterns, fault paths, invocable Apex, orchestration, and automation decisions.',
+    blocks: [
+      { type: 'section', title: 'Logic and Automation' },
+      { type: 'qa', question: 'When should you use Screen Flow vs Record-Triggered Flow?', answer: '<p class="ans-p">Use Screen Flow for guided user input and Record-Triggered Flow for background automation on DML events. Explain before-save for fast field updates and after-save for related records/actions.</p>' },
+      { type: 'qa', question: 'What makes a Flow production-ready?', answer: '<p class="ans-p">Fault paths, subflows, naming standards, entry criteria, bulk-safe element usage, debug logs, error notifications, and clear handoff rules between Flow and Apex.</p>' }
+    ]
+  },
+  sales_cloud: {
+    title: 'Sales Cloud Architecture',
+    subtitle: 'Lead-to-cash, pipeline management, forecasting, teams, territories, and revenue operations.',
+    blocks: [
+      { type: 'section', title: 'Revenue Operations' },
+      { type: 'qa', question: 'What are Opportunity Splits?', answer: '<p class="ans-p">Opportunity Splits let multiple contributors receive credit for an opportunity. Explain revenue splits, overlay splits, forecasts, and how sales teams use them for attribution.</p>' },
+      { type: 'qa', question: 'What Sales Cloud topics are common in interviews?', answer: '<p class="ans-p">Lead conversion, account/contact/opportunity model, products and price books, forecasting, territories, duplicate management, approval process, and reporting architecture.</p>' }
+    ]
+  },
+  service_cloud: {
+    title: 'Service Cloud Architecture',
+    subtitle: 'Case lifecycle, entitlement management, Omni-Channel, console productivity, and support operations.',
+    blocks: [
+      { type: 'section', title: 'Service Intelligence' },
+      { type: 'qa', question: 'What is the difference between Entitlements and Service Contracts?', answer: '<p class="ans-p">Service Contracts represent the commercial support agreement. Entitlements define the support rights and SLA milestones customers receive under that agreement.</p>' },
+      { type: 'qa', question: 'How does Omni-Channel routing work?', answer: '<p class="ans-p">Omni-Channel pushes work items to agents based on service channels, routing configurations, capacity, skills, and presence status.</p>' }
+    ]
+  },
+  experience_cloud: {
+    title: 'Experience Cloud Architecture',
+    subtitle: 'Secure portals, guest user access, sharing sets, branding, performance, and external identity.',
+    blocks: [
+      { type: 'section', title: 'Portal and Site Architecture' },
+      { type: 'qa', question: 'Explain Guest User Security in Experience Cloud.', answer: '<p class="ans-p">Guest users cannot own records and should have minimum permissions. Use secure guest access, sharing rules/sharing sets, and avoid exposing sensitive Apex or unauthenticated data.</p>' },
+      { type: 'qa', question: 'What should you revise for Experience Cloud interviews?', answer: '<p class="ans-p">External users, profiles/permission sets, sharing sets, login and SSO, CMS, LWR vs Aura sites, record access, site performance, and deployment strategy.</p>' }
+    ]
+  }
+};
 
 async function loadKnowledgeData(topicId) {
   if (TOPIC_DATA[topicId]) return TOPIC_DATA[topicId];
@@ -82,6 +170,11 @@ async function loadKnowledgeData(topicId) {
     } catch (fallbackErr) {
       console.warn(`[KNOWLEDGE] Static fallback failed for ${topicId} from ${source}:`, fallbackErr.message);
     }
+  }
+
+  if (STATIC_TOPIC_FALLBACKS[topicId]) {
+    TOPIC_DATA[topicId] = STATIC_TOPIC_FALLBACKS[topicId];
+    return STATIC_TOPIC_FALLBACKS[topicId];
   }
 
   return null;
@@ -3093,12 +3186,21 @@ async function showPage(id) {
   console.log(`🧹 [NAV] Hiding all .page elements...`);
   document.querySelectorAll('.page').forEach(function(p) { 
     p.classList.remove('active'); 
+    p.style.display = 'none';
   });
   
   document.querySelectorAll('.nav-item').forEach(function(n) { n.classList.remove('active'); });
   
   let page = document.getElementById(id);
   let isIndustrial = false;
+  if (DATA_DRIVEN_TOPIC_IDS.has(id)) {
+    isIndustrial = await renderTopicContent(id);
+    if (isIndustrial) {
+      console.log(`🏰 [NAV] Data-driven topic rendered for: ${id}`);
+      page = document.getElementById('topic_viewer');
+    }
+  }
+
   if (!page || id === 'topic_viewer') {
     isIndustrial = await renderTopicContent(id);
     if (isIndustrial) {
@@ -3122,6 +3224,7 @@ async function showPage(id) {
 
     console.log(`âœ¨ [NAV] ENABLING PAGE: #${page.id}`);
     page.classList.add('active');
+    page.style.display = '';
 
     
     const finalStyle = getComputedStyle(page);

@@ -8321,3 +8321,76 @@ body:has(#job_radar.active) #headerTitle {
     grid-template-columns: minmax(0, 1fr);
   }
 }
+
+/* Sidebar dropdown polish for company/master topic sections */
+#sidebar .nav-parent-section {
+  min-width: 0;
+}
+
+#sidebar .nav-parent-title {
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  min-height: 36px !important;
+  padding: 8px 12px !important;
+  cursor: pointer;
+  user-select: none;
+}
+
+#sidebar .nav-parent-title > svg {
+  flex: 0 0 14px !important;
+  width: 14px !important;
+  height: 14px !important;
+}
+
+#sidebar .nav-parent-title .nav-section-chevron {
+  margin-left: auto !important;
+  flex: 0 0 14px !important;
+}
+
+#sidebar .nav-item {
+  min-width: 0;
+}
+
+#sidebar .nav-item .nav-label {
+  min-width: 0;
+  flex: 1 1 auto;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+#sidebar .nav-item .count {
+  margin-left: auto;
+  flex: 0 0 auto;
+}
+
+#topic_viewer.active {
+  display: block !important;
+  width: 100%;
+  min-height: calc(100dvh - var(--header-h, 60px));
+}
+
+#topic_viewer .topic-content-body {
+  display: grid;
+  gap: 12px;
+  max-width: 980px;
+}
+
+#topic_viewer .topic-section-divider {
+  margin-top: 8px;
+  color: var(--blue);
+  font-family: var(--app-font-mono, 'IBM Plex Mono', monospace);
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+#main > .page:not(.active) {
+  display: none !important;
+}
+
+#main > #job_radar.page.active {
+  display: flex !important;
+}
