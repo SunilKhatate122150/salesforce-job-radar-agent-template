@@ -8605,3 +8605,152 @@ body:has(#job_radar.active) #headerTitle {
     font-size: 9.5px !important;
   }
 }
+
+/* Responsive hardening: keep the production dashboard usable on narrow devices. */
+html,
+body {
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+#main,
+.page,
+.content-card,
+.modal-content,
+.qa-block,
+.section,
+.panel {
+  min-width: 0;
+  max-width: 100%;
+}
+
+img,
+svg,
+video,
+canvas,
+iframe,
+table,
+pre,
+code {
+  max-width: 100%;
+}
+
+pre,
+table {
+  overflow-x: auto;
+}
+
+#job_radar .radar-tabs {
+  overflow-x: auto !important;
+  overflow-y: hidden !important;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+
+#job_radar .radar-tabs::-webkit-scrollbar {
+  display: none;
+}
+
+#job_radar .radar-tab-btn {
+  flex: 0 0 auto !important;
+  white-space: nowrap !important;
+}
+
+@media (max-width: 640px) {
+  #job_radar {
+    overflow-x: hidden !important;
+  }
+
+  #job_radar .radar-v3-header {
+    align-items: flex-start !important;
+    gap: 10px !important;
+  }
+
+  #job_radar .radar-status-stack,
+  #job_radar .header-actions-v3,
+  #job_radar .pipe-stats,
+  #job_radar .filter-controls {
+    width: 100% !important;
+    min-width: 0 !important;
+    margin-left: 0 !important;
+    justify-content: flex-start !important;
+    flex-wrap: wrap !important;
+  }
+
+  #job_radar .pipe-stats {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+
+  #job_radar .pipe-stat,
+  #job_radar .filter-select,
+  #job_radar .filter-btn {
+    min-width: 0 !important;
+  }
+
+  #job_radar .kanban-board-v3 {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) !important;
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    overflow: visible !important;
+    padding: 12px 10px 96px !important;
+    gap: 12px !important;
+    scroll-snap-type: none !important;
+  }
+
+  #job_radar .kanban-col-v3 {
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    flex: 1 1 auto !important;
+    flex-basis: auto !important;
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    overflow: visible !important;
+    scroll-snap-align: none !important;
+  }
+
+  #job_radar .kanban-body {
+    overflow: visible !important;
+    max-height: none !important;
+    scrollbar-gutter: auto !important;
+  }
+
+  #job_radar .jcard-v3 {
+    min-height: 0 !important;
+  }
+
+  #job_radar .jcard-company {
+    max-width: 100% !important;
+  }
+
+  #job_radar .fab-add,
+  .fab-add {
+    display: none !important;
+  }
+}
+
+@media (max-width: 380px) {
+  #job_radar .radar-tabs {
+    gap: 4px !important;
+    padding-left: 10px !important;
+    padding-right: 10px !important;
+  }
+
+  #job_radar .radar-tab-btn {
+    min-height: 28px !important;
+    padding: 6px 8px !important;
+    font-size: 9px !important;
+  }
+
+  #job_radar .pipe-stats {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  #job_radar .jcard-actions {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+}
