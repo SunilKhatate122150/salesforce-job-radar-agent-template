@@ -1,4 +1,4 @@
-import { enrichJobsWithResumeMatch } from './src/resume/matchResume.js';
+import { enrichJobsWithResumeMatch } from '../src/resume/matchResume.js';
 import dotenv from 'dotenv';
 
 dotenv.config();

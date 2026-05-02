@@ -7337,6 +7337,47 @@ body:has(#job_radar.active) #headerTitle {
 #sidebar.mobile-open ~ #main #mobileToggle .h-bar:nth-child(2) { opacity: 0; }
 #sidebar.mobile-open ~ #main #mobileToggle .h-bar:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
 
+@media (min-width: 769px) {
+  .mobile-toggle {
+    display: none !important;
+  }
+}
+
+@media (max-width: 768px) {
+  .mobile-toggle {
+    display: flex !important;
+  }
+}
+
+#job_radar .score-chip {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  border-radius: 999px !important;
+  background:
+    radial-gradient(circle at center, var(--jr-surface) 0 57%, transparent 58%),
+    conic-gradient(var(--jr-green) calc(var(--score, 0) * 1%), rgba(255,255,255,0.08) 0) !important;
+  border: 1px solid rgba(255,255,255,0.08) !important;
+}
+
+#job_radar .jcard-company,
+#job_radar .jcard-role,
+#job_radar .jcard-why,
+#job_radar .meta-pill,
+#job_radar .skill-tag,
+#job_radar .skill-gap-tag {
+  overflow-wrap: anywhere;
+}
+
+#job_radar .jcard-actions {
+  min-width: 0;
+}
+
+#job_radar .jcard-btn {
+  min-width: 0;
+  max-width: 100%;
+}
+
 .qa-block {
   background: hsla(var(--surface-h), var(--surface-s), 14%, 0.4);
   backdrop-filter: blur(10px);

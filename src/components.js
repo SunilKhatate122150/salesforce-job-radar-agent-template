@@ -416,6 +416,79 @@ function renderJobIntelligence(data) {
   return html;
 }
 
+function componentText(value, fallback = '') {
+  const text = String(value ?? '').trim();
+  return text || fallback;
+}
+
+function componentEscapeHtml(value) {
+  return String(value ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+function componentEscapeAttr(value) {
+  return componentEscapeHtml(value).replace(/`/g, '&#96;');
+}
+
+function componentEscapeJsArg(value) {
+  return String(value ?? '')
+    .replace(/\\/g, '\\\\')
+    .replace(/'/g, "\\'")
+    .replace(/\r?\n/g, ' ');
+}
+
+function componentSafeUrl(value) {
+  if (!value) return '#';
+  try {
+    const parsed = new URL(String(value), window.location.origin);
+    if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') return '#';
+    return parsed.href;
+  } catch (err) {
+    return '#';
+  }
+}
+
+function componentList(value) {
+  if (Array.isArray(value)) return value.map(item => componentText(item)).filter(Boolean);
+  if (typeof value === 'string') return value.split(/[,;\n]/).map(item => item.trim()).filter(Boolean);
+  return [];
+}
+
+function componentProbability(value, score) {
+  const prob = String(value || '').toLowerCase();
+  if (prob === 'high' || prob === 'medium' || prob === 'stretch') return prob;
+  const numericScore = Number(score || 0);
+  if (numericScore >= 85) return 'high';
+  if (numericScore >= 70) return 'medium';
+  return 'stretch';
+}
+
+function componentProbLabel(prob) {
+  if (prob === 'high') return 'High fit';
+  if (prob === 'stretch') return 'Stretch';
+  return 'Medium fit';
+}
+
+function componentInitials(value) {
+  return componentText(value, 'SF')
+    .replace(/[^a-z0-9\s]/gi, ' ')
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map(part => part[0])
+    .join('')
+    .toUpperCase() || 'SF';
+}
+
+function componentScore(value) {
+  const score = Math.round(Number(value || 0));
+  return Math.max(0, Math.min(100, Number.isFinite(score) ? score : 0));
+}
+
 function renderBoard() {
   const cols = ['todo', 'applied', 'interview', 'offer', 'rejected'];
   const searchTerm = (document.getElementById("boardSearch")?.value || '').toLowerCase();
@@ -428,9 +501,21 @@ function renderBoard() {
     if (!list) return;
 
     const filtered = (window.pipelineJobs || [])
-      .filter(j => j.status === col)
-      .filter(j => filter === 'all' || j.prob === filter)
-      .filter(j => !searchTerm || j.company.toLowerCase().includes(searchTerm) || j.role.toLowerCase().includes(searchTerm))
+      .filter(j => componentText(j.status, 'todo') === col)
+      .filter(j => filter === 'all' || componentProbability(j.prob || j.probability, j.score) === filter)
+      .filter(j => {
+        if (!searchTerm) return true;
+        const haystack = [
+          j.company,
+          j.role || j.title,
+          j.loc || j.location,
+          j.company_type,
+          j.why_apply,
+          ...componentList(j.matched_skills || j.skills),
+          ...componentList(j.missing_skills)
+        ].join(' ').toLowerCase();
+        return haystack.includes(searchTerm);
+      })
       .sort((a, b) => new Date(b.dateAdded || b.created_at) - new Date(a.dateAdded || a.created_at));
 
     if (count) count.textContent = filtered.length;
@@ -453,71 +538,96 @@ function renderBoard() {
 }
 
 function getFollowUpStatus(job) {
-  if (job.status !== 'applied') return null;
+  if (componentText(job.status, 'todo') !== 'applied') return null;
   const lastContact = job.lastContact ? new Date(job.lastContact) : new Date(job.created_at || job.dateAdded);
   const diffDays = Math.floor((new Date() - lastContact) / (1000 * 60 * 60 * 24));
   
-  if (diffDays >= 7) return { label: '7d+ No Response', class: 'critical' };
-  if (diffDays >= 3) return { label: '3d+ Since Contact', class: 'warning' };
+  if (diffDays >= 7) return { label: '7d+ No Response', class: 'ghost' };
+  if (diffDays >= 3) return { label: '3d+ Since Contact', class: 'warn' };
   return null;
 }
 
 function renderJobCard(job) {
+  const id = componentText(job.id, 'job_' + Math.random().toString(36).slice(2, 10));
+  const idAttr = componentEscapeAttr(id);
+  const idJs = componentEscapeJsArg(id);
+  const company = componentText(job.company, 'Confidential');
+  const role = componentText(job.role || job.title, 'Salesforce Role');
+  const location = componentText(job.loc || job.location, 'India');
+  const experience = componentText(job.experience, '3-5 Yrs');
+  const companyType = componentText(job.company_type, 'MNC');
+  const status = componentText(job.status, 'todo');
+  const score = componentScore(job.score || job.match_score || 75);
   const followUp = getFollowUpStatus(job);
-  const matchedSkills = job.matched_skills || [];
-  const gapSkills = job.missing_skills || [];
-  const prob = job.prob || 'medium';
+  const matchedSkills = componentList(job.matched_skills?.length ? job.matched_skills : job.skills).slice(0, 4);
+  const gapSkills = componentList(job.missing_skills).slice(0, 3);
+  const resumeActions = componentList(job.resume_actions).slice(0, 3);
+  const prob = componentProbability(job.prob || job.probability, score);
+  const applyUrl = componentSafeUrl(job.url || job.apply_link);
   
   const actions = [];
-  if (job.status === 'todo') {
-    actions.push({ label: 'Apply Now', href: job.url, cls: 'primary' });
-    actions.push({ label: 'Mark Applied', onClick: `moveTo('${job.id}', 'applied')`, cls: 'success' });
-  } else if (job.status === 'applied') {
-    actions.push({ label: 'Schedule Interview', onClick: `moveTo('${job.id}', 'interview')`, cls: 'primary' });
-    actions.push({ label: 'No Response', onClick: `moveTo('${job.id}', 'todo')`, cls: 'secondary' });
-  } else if (job.status === 'interview') {
-    actions.push({ label: 'Offer Received', onClick: `moveTo('${job.id}', 'offer')`, cls: 'success' });
-    actions.push({ label: 'Back to Pipeline', onClick: `moveTo('${job.id}', 'applied')`, cls: 'secondary' });
+  if (status === 'todo') {
+    if (applyUrl !== '#') actions.push({ label: 'Apply Now', href: applyUrl, cls: 'primary' });
+    actions.push({ label: 'Mark Applied', onClick: `moveTo('${idJs}', 'applied')`, cls: 'success' });
+  } else if (status === 'applied') {
+    actions.push({ label: 'Schedule Interview', onClick: `moveTo('${idJs}', 'interview')`, cls: 'primary' });
+    actions.push({ label: 'No Response', onClick: `moveTo('${idJs}', 'todo')`, cls: 'secondary' });
+  } else if (status === 'interview') {
+    actions.push({ label: 'Offer Received', onClick: `moveTo('${idJs}', 'offer')`, cls: 'success' });
+    actions.push({ label: 'Back to Pipeline', onClick: `moveTo('${idJs}', 'applied')`, cls: 'secondary' });
   } else {
-    actions.push({ label: 'Reopen', onClick: `moveTo('${job.id}', 'todo')`, cls: 'secondary' });
+    actions.push({ label: 'Reopen', onClick: `moveTo('${idJs}', 'todo')`, cls: 'secondary' });
   }
 
   return `
-    <div class="jcard-v3" data-prob="${prob}" id="card-${job.id}" draggable="true" ondragstart="handleDragStart(event, '${job.id}')">
+    <div class="jcard-v3" data-prob="${componentEscapeAttr(prob)}" id="card-${idAttr}" draggable="true" ondragstart="handleDragStart(event, '${idJs}')">
       <div class="jcard-top">
         <div class="jcard-company-block">
-          <div class="jcard-icon" style="background:${stringToColor(job.company)}">${job.company.substring(0,2).toUpperCase()}</div>
+          <div class="jcard-icon" style="background:${componentEscapeAttr(stringToColor(company))}">${componentEscapeHtml(componentInitials(company))}</div>
           <div class="jcard-company-copy">
-             <div class="jcard-company">${job.company}</div>
-             <div class="jcard-company-type">${job.company_type || 'MNC'}</div>
+             <div class="jcard-company" title="${componentEscapeAttr(company)}">${componentEscapeHtml(company)}</div>
+             <div class="jcard-company-type">${componentEscapeHtml(companyType)}</div>
           </div>
         </div>
-        <div class="jcard-age">${timeAgo(job.created_at)}</div>
+        <div class="score-chip" style="--score:${score};"><span class="score-chip-value">${score}%</span></div>
       </div>
       
-      <div class="jcard-role">${job.role}</div>
+      <div class="jcard-stage-row">
+        <span class="prob-badge ${componentEscapeAttr(prob)}">${componentEscapeHtml(componentProbLabel(prob))}</span>
+        <span class="jcard-age">${componentEscapeHtml(timeAgo(job.updatedAt || job.createdAt || job.dateAdded || job.created_at))}</span>
+      </div>
+      
+      <div class="jcard-role">${componentEscapeHtml(role)}</div>
       
       <div class="jcard-meta-grid">
-         <div class="meta-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:12px;height:12px;"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg> ${job.loc || 'India'}</div>
-         <div class="meta-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:12px;height:12px;"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path></svg> ${job.experience || '3-5 Yrs'}</div>
+         <span class="meta-pill"><b>Loc</b> ${componentEscapeHtml(location)}</span>
+         <span class="meta-pill"><b>Exp</b> ${componentEscapeHtml(experience)}</span>
       </div>
 
-      ${followUp && job.status === 'applied' ? `<div class="followup-badge ${followUp.class}">${followUp.label}</div>` : ''}
+      ${followUp && status === 'applied' ? `<div class="followup-inline ${componentEscapeAttr(followUp.class)}">${componentEscapeHtml(followUp.label)}</div>` : ''}
 
       <div class="jcard-skill-row">
-        ${matchedSkills.slice(0,3).map(s => `<span class="tag-match">${s}</span>`).join('')}
-        ${gapSkills.slice(0,2).map(s => `<span class="tag-gap">${s}</span>`).join('')}
+        ${matchedSkills.map(s => `<span class="skill-tag">${componentEscapeHtml(s)}</span>`).join('')}
+        ${gapSkills.map(s => `<span class="skill-gap-tag">${componentEscapeHtml(s)}</span>`).join('')}
       </div>
 
       ${job.why_apply ? `
       <div class="jcard-why">
-        <strong>AI Fit:</strong> ${job.why_apply}
+        <strong>AI Fit:</strong> ${componentEscapeHtml(job.why_apply)}
+      </div>` : ''}
+
+      ${resumeActions.length ? `
+      <div class="jcard-resume">
+        <div class="jcard-resume-title">Resume focus</div>
+        <ul class="jcard-resume-list">
+          ${resumeActions.map(action => `<li>${componentEscapeHtml(action)}</li>`).join('')}
+        </ul>
       </div>` : ''}
 
       <div class="jcard-actions">
         ${actions.map(a => a.href 
-          ? `<a href="${a.href}" target="_blank" class="jcard-btn ${a.cls}">${a.label}</a>`
-          : `<button class="jcard-btn ${a.cls}" onclick="${a.onClick}">${a.label}</button>`
+          ? `<a href="${componentEscapeAttr(a.href)}" target="_blank" rel="noopener noreferrer" class="jcard-btn ${componentEscapeAttr(a.cls)}">${componentEscapeHtml(a.label)}</a>`
+          : `<button type="button" class="jcard-btn ${componentEscapeAttr(a.cls)}" onclick="${componentEscapeAttr(a.onClick)}">${componentEscapeHtml(a.label)}</button>`
         ).join('')}
       </div>
     </div>

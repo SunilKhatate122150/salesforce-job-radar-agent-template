@@ -63,6 +63,27 @@ async function loadKnowledgeData(topicId) {
   } catch (err) {
     console.error(`[KNOWLEDGE] Failed to load ${topicId}:`, err);
   }
+
+  const staticSources = [
+    '/data/topics/master_knowledge.json',
+    `/data/topics/${topicId}.json`
+  ];
+
+  for (const source of staticSources) {
+    try {
+      const res = await fetch(source, { headers: { Accept: 'application/json' } });
+      if (!res.ok) continue;
+      const data = await res.json();
+      const topicData = source.includes('master_knowledge') ? data?.[topicId] : data;
+      if (topicData) {
+        TOPIC_DATA[topicId] = topicData;
+        return topicData;
+      }
+    } catch (fallbackErr) {
+      console.warn(`[KNOWLEDGE] Static fallback failed for ${topicId} from ${source}:`, fallbackErr.message);
+    }
+  }
+
   return null;
 }
 
@@ -3092,6 +3113,13 @@ async function showPage(id) {
   }
 
   if (page) { 
+    if (topicConfig[id] && page.id === id && page.innerHTML.trim().length < 40) {
+      const renderedTopic = await renderTopicContent(id);
+      if (renderedTopic) {
+        page = document.getElementById('topic_viewer');
+      }
+    }
+
     console.log(`âœ¨ [NAV] ENABLING PAGE: #${page.id}`);
     page.classList.add('active');
 
@@ -3192,7 +3220,13 @@ async function showPage(id) {
   const sidebarOverlay = document.getElementById('sidebarOverlay');
   if (sidebar && sidebar.classList.contains('mobile-open')) {
     sidebar.classList.remove('mobile-open');
-    if (sidebarOverlay) sidebarOverlay.style.display = 'none';
+    const mobileToggle = document.getElementById('mobileToggle');
+    if (mobileToggle) mobileToggle.setAttribute('aria-expanded', 'false');
+    if (sidebarOverlay) {
+      sidebarOverlay.style.display = 'none';
+      sidebarOverlay.style.opacity = '0';
+      sidebarOverlay.setAttribute('aria-hidden', 'true');
+    }
     document.body.style.overflow = '';
   }
 
@@ -3580,6 +3614,27 @@ window.scrollToCol = function(colId) {
 
 window.switchRadarSubTab = function(tabId) {
   console.log(`[TAB] Radar Sub-Tab -> ${tabId}`);
+
+  const modernView = document.getElementById(`radar-${tabId}-view`);
+  if (modernView || document.querySelector('#job_radar .radar-tab-btn')) {
+    window.currentRadarSubTab = tabId;
+    document.querySelectorAll('#job_radar .radar-tab-btn').forEach(btn => btn.classList.remove('active'));
+    document.getElementById(`tab-${tabId}`)?.classList.add('active');
+
+    document.querySelectorAll('#job_radar .radar-view').forEach(view => {
+      view.style.display = 'none';
+    });
+    if (modernView) modernView.style.display = 'block';
+
+    if (tabId === 'pipeline') renderBoard();
+    if (tabId === 'insights') {
+      renderInsights();
+      renderLog();
+    }
+    if (tabId === 'development' || tabId === 'agentforce') renderDevelopment();
+    return;
+  }
+
   document.querySelectorAll('.radar-sub-tab').forEach(t => t.classList.remove('active'));
   document.querySelectorAll('.radar-sub-page').forEach(p => p.classList.remove('active'));
   
@@ -3983,14 +4038,21 @@ function setBookmarksPage(delta) {
 // =============================================
 // MOBILE SIDEBAR TOGGLE (v1340)
 // =============================================
-function toggleMobileSidebar() {
+function toggleMobileSidebar(forceOpen) {
   const sidebar = document.getElementById('sidebar');
   const overlay = document.getElementById('sidebarOverlay');
+  const toggle = document.getElementById('mobileToggle');
   if (!sidebar) return;
   
-  const isOpen = sidebar.classList.contains('mobile-open');
+  const isOpen = typeof forceOpen === 'boolean' ? !forceOpen : sidebar.classList.contains('mobile-open');
+  const syncA11y = open => {
+    if (toggle) toggle.setAttribute('aria-expanded', String(open));
+    if (overlay) overlay.setAttribute('aria-hidden', String(!open));
+  };
+
   if (isOpen) {
     sidebar.classList.remove('mobile-open');
+    syncA11y(false);
     if (overlay) {
       overlay.style.opacity = '0';
       setTimeout(() => { overlay.style.display = 'none'; }, 300);
@@ -3998,6 +4060,7 @@ function toggleMobileSidebar() {
     document.body.style.overflow = '';
   } else {
     sidebar.classList.add('mobile-open');
+    syncA11y(true);
     if (overlay) {
       overlay.style.display = 'block';
       requestAnimationFrame(() => { overlay.style.opacity = '1'; });
