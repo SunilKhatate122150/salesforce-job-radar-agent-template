@@ -962,7 +962,7 @@ async function loadUserProfile() {
       return;
     }
     const data = await res.json();
-	    console.log('ðŸ“¦ [Profile] Cloud Data Received:', data);
+	    console.log('[Profile] Cloud Data Received:', data);
 	    
 	    if (data.exists && data.profile) {
 	      const loginModeIntent = getLoginUiModeIntent();
@@ -1003,7 +1003,7 @@ async function loadUserProfile() {
       if (data.profile.bookmarks) {
         userBookmarks = data.profile.bookmarks;
         writeScopedJson('bookmarks', userBookmarks);
-        console.log('â­ [BOOKMARKS] Total Loaded:', userBookmarks.length);
+        console.log('* [BOOKMARKS] Total Loaded:', userBookmarks.length);
         if (userBookmarks.length > 0) {
           console.table(userBookmarks.map(b => ({ Question: b.q, Topic: b.topic })));
         }
@@ -2082,7 +2082,7 @@ function renderTimelineView(container, dates, histories, todayStr, yestStr) {
         
         <div style="border-top:1px solid rgba(255,255,255,0.05); padding-top:10px; display:flex; justify-content:space-between; align-items:center;">
            <div style="display:flex; gap:10px; align-items:center;">
-             <span style="font-size:0.7rem; background:rgba(79,142,247,0.1); color:var(--blue); padding:3px 10px; border-radius:20px;">ðŸ“¡ Radar Active</span>
+             <span style="font-size:0.7rem; background:rgba(79,142,247,0.1); color:var(--blue); padding:3px 10px; border-radius:20px;">Radar Active</span>
              <span style="font-size:0.75rem; color:var(--text);">${jobsCount} Jobs Found</span>
            </div>
            <div style="font-size:0.7rem; color:var(--muted); font-family:'IBM Plex Mono';">#${date.replace(/-/g,'')}</div>
@@ -2259,7 +2259,7 @@ async function updateTrackerUI(useCache = false) {
       var pct = Math.min((s/maxSeconds)*100, 100);
       if (s===0 && maxSeconds>1) pct = 0;
       var color = colors[cfg.group] || colors['General'];
-      var active = currentTrackedPage===id ? ' <span style="color:var(--green);font-size:0.6rem;">â— LIVE</span>' : '';
+      var active = currentTrackedPage===id ? ' <span style="color:var(--green);font-size:0.6rem;"> LIVE</span>' : '';
       chartHtml += '<div class="chart-bar-container"><div class="chart-bar-label">'+cfg.name+active+'</div><div class="chart-bar-wrap"><div class="chart-bar-value" style="width:'+pct+'%;background:'+color+';"></div></div><div class="chart-bar-time">'+formatTime(s)+'</div></div>';
     });
     chartEl.innerHTML = chartHtml;
@@ -2282,11 +2282,11 @@ async function updateTrackerUI(useCache = false) {
       var last = td&&td.lastStudied ? new Date(td.lastStudied).toLocaleDateString() : 'Never';
       var isActive = currentTrackedPage===id;
       gridHtml += '<div class="tracker-card" style="--progress:'+pct+'%;'+(isActive?'border-color:var(--green);':'')+'">';
-      gridHtml += '<div class="tracker-status '+status.cls+'">'+(isActive?(isPaused?'â¸ PAUSED':'â— LIVE'):status.label)+'</div>';
+      gridHtml += '<div class="tracker-status '+status.cls+'">'+(isActive?(isPaused?' PAUSED':' LIVE'):status.label)+'</div>';
       gridHtml += '<div class="tracker-topic">'+cfg.name+'</div>';
       gridHtml += '<div class="tracker-time">'+formatTime(s)+' <span style="font-size:0.7rem;color:var(--muted);font-weight:400;">/ '+cfg.recommended+'m</span></div>';
       gridHtml += '<div class="tracker-bar"><div class="tracker-bar-fill" style="width:'+pct+'%;"></div></div>';
-      gridHtml += '<div class="tracker-sessions">'+(td?td.sessions:0)+' sessions Â· Last: '+last+'</div></div>';
+      gridHtml += '<div class="tracker-sessions">'+(td?td.sessions:0)+' sessions  -  Last: '+last+'</div></div>';
     });
     gridEl.innerHTML = gridHtml;
   }
@@ -2507,12 +2507,12 @@ function resetBoardPages() {
 }
 
 async function fetchJobsList() {
-  console.log('ðŸ“¡ [RADAR] Fetching jobs from database...');
+  console.log('[RADAR] Fetching jobs from database...');
   try {
     const response = await apiFetch('/api/jobs');
     if (!response.ok) throw new Error('Unauthorized or Server Down');
     const data = await response.json();
-    console.log('ðŸ“¦ [RADAR] Raw Server Response:', data);
+    console.log('[RADAR] Raw Server Response:', data);
     const rawRecords = data.records || [];
     window.allJobRecords = rawRecords.filter(rec => {
       // Defensive filter: Exclude metadata/system records that might leak into the jobs array
@@ -2951,32 +2951,32 @@ function getActionSetForJob(job) {
 
 const SCHEDULE_DATA = [
   { 
-    time: '05:00', end: '05:40', title: 'Wake up naturally â€” no alarm panic', 
-    desc: 'You already wake between 5 and 6 AM naturally â€” this is a powerful advantage. Your cortisol is highest in the early morning which means peak alertness and energy. Drink one large glass of water the moment you wake. Do NOT open your phone, WhatsApp, or social media before your workout. Start the body first, screens later.', 
+    time: '05:00', end: '05:40', title: 'Wake up naturally  -  no alarm panic', 
+    desc: 'You already wake between 5 and 6 AM naturally  -  this is a powerful advantage. Your cortisol is highest in the early morning which means peak alertness and energy. Drink one large glass of water the moment you wake. Do NOT open your phone, WhatsApp, or social media before your workout. Start the body first, screens later.', 
     tag: 'Fitness' 
   },
   { 
-    time: '05:40', end: '06:10', title: 'Morning Workout â€” strength, bodyweight, or gym', 
-    desc: 'Whatever your current workout routine is â€” keep doing it exactly as you are. Exercise before study has been shown to boost memory retention, focus, and mood for 2â€“4 hours afterward. This is not time away from preparation â€” the workout IS preparation. It makes every study session more effective.', 
+    time: '05:40', end: '06:10', title: 'Morning Workout  -  strength, bodyweight, or gym', 
+    desc: 'Whatever your current workout routine is  -  keep doing it exactly as you are. Exercise before study has been shown to boost memory retention, focus, and mood for 2 - 4 hours afterward. This is not time away from preparation  -  the workout IS preparation. It makes every study session more effective.', 
     tag: 'Fitness' 
   },
   { 
-    time: '06:10', end: '08:00', title: '10,000 Steps Walk â€” outdoor walk', 
+    time: '06:10', end: '08:00', title: '10,000 Steps Walk  -  outdoor walk', 
     desc: 'Outdoor walk. Rehearse STAR stories or listen to podcasts. Subconscious processing happens here. Choose tech blogs or speaking practice.', 
     tag: 'Fitness' 
   },
   { 
-    time: '08:00', end: '08:30', title: 'Communication Block 1 â€” Read aloud + Vocab', 
+    time: '08:00', end: '08:30', title: 'Communication Block 1  -  Read aloud + Vocab', 
     desc: 'Read one tech article aloud slowly. Trains pronunciation, fluency, and confidence. Pick 3 new words and use them in a Salesforce context.', 
     tag: 'Comm' 
   },
   { 
-    time: '08:30', end: '10:30', title: 'Core Technical Study Block 1 â€” Deep Focus', 
+    time: '08:30', end: '10:30', title: 'Core Technical Study Block 1  -  Deep Focus', 
     desc: 'Post-workout, post-walk, your brain is at absolute peak performance. Focus on today topic. No phone, no music, no interruptions. Explain it aloud to yourself from memory.', 
     tag: 'Technical' 
   },
   { 
-    time: '10:30', end: '12:00', title: 'Hands-on Coding â€” Trailhead / Dev Org', 
+    time: '10:30', end: '12:00', title: 'Hands-on Coding  -  Trailhead / Dev Org', 
     desc: 'Build what you just studied. Write every line from scratch in your Dev Org. Do not copy-paste. Coding errors you solve now are your best teachers.', 
     tag: 'Coding' 
   },
@@ -2986,37 +2986,37 @@ const SCHEDULE_DATA = [
     tag: 'Comm' 
   },
   { 
-    time: '13:00', end: '14:30', title: 'Lunch + Power Nap â€” Brain Reset', 
+    time: '13:00', end: '14:30', title: 'Lunch + Power Nap  -  Brain Reset', 
     desc: 'Eat a proper lunch. Move completely away from the desk. No studying, no screens. Quality rest leads to a quality afternoon session.', 
     tag: 'Rest' 
   },
   { 
-    time: '14:30', end: '16:00', title: 'Core Technical Study Block 2 â€” Deep Dive', 
+    time: '14:30', end: '16:00', title: 'Core Technical Study Block 2  -  Deep Dive', 
     desc: 'Go deeper into this morning topic or related sub-topics. Depth beats breadth. Write code for every concept. Study aggregate functions, bind variables, etc.', 
     tag: 'Technical' 
   },
   { 
-    time: '16:00', end: '16:30', title: 'Job Radar Application â€” Radar Dashboard', 
-    desc: 'Apply to 3-5 roles via Radar Dashboard. Send 2 personalized recruiter messages. Consistency here is everything â€” zero applications = zero chances.', 
+    time: '16:00', end: '16:30', title: 'Job Radar Application  -  Radar Dashboard', 
+    desc: 'Apply to 3-5 roles via Radar Dashboard. Send 2 personalized recruiter messages. Consistency here is everything  -  zero applications = zero chances.', 
     tag: 'Radar' 
   },
   { 
-    time: '16:30', end: '17:00', title: 'Chai + Micro-break â€” Disconnect', 
+    time: '16:30', end: '17:00', title: 'Chai + Micro-break  -  Disconnect', 
     desc: 'Step away from screen. Rest your eyes. Let your brain move short-term memory to long-term storage. No phone during this window.', 
     tag: 'Rest' 
   },
   { 
-    time: '17:00', end: '18:00', title: 'Communication Block 2 â€” STAR Stories', 
+    time: '17:00', end: '18:00', title: 'Communication Block 2  -  STAR Stories', 
     desc: 'Master 2 STAR stories today. Practice out loud. Each story should be 2-2.5 minutes. Lead with the result: "I reduced pull time from 25m to 30s."', 
     tag: 'Comm' 
   },
   { 
-    time: '18:00', end: '19:00', title: 'Project/Portfolio Build â€” Developer Org', 
+    time: '18:00', end: '19:00', title: 'Project/Portfolio Build  -  Developer Org', 
     desc: 'Extend your mortgage platform or campaign feature. Gives you fresh real-world examples to discuss in interviews. build something new every week.', 
     tag: 'Coding' 
   },
   { 
-    time: '19:00', end: '19:30', title: 'Evening Walk â€” Mental Decompression', 
+    time: '19:00', end: '19:30', title: 'Evening Walk  -  Mental Decompression', 
     desc: 'Short outdoor break to separate study from evening. Important for mental health and mood regulation. Fully disconnect.', 
     tag: 'Rest' 
   },
@@ -3026,26 +3026,26 @@ const SCHEDULE_DATA = [
     tag: 'Technical' 
   },
   { 
-    time: '20:30', end: '22:00', title: 'Dinner + Family â€” Fully Disconnected', 
+    time: '20:30', end: '22:00', title: 'Dinner + Family  -  Fully Disconnected', 
     desc: 'Consolidate learning by resting. No phone, no LinkedIn. Protect this window to allow neurological processing of the day learning.', 
     tag: 'Rest' 
   },
   { 
-    time: '22:00', end: '22:30', title: 'Night Review â€” 20 Min Preview', 
+    time: '22:00', end: '22:30', title: 'Night Review  -  20 Min Preview', 
     desc: 'Read only your notebook notes. Preview tomorrow topic title. Prime your brain for sleep. Dim lights and no screens after this.', 
     tag: 'Review' 
   }
 ];
 
 async function renderTimetable() {
-  console.log('ðŸ“… [SCHEDULE] renderTimetable() triggered');
+  console.log(' [SCHEDULE] renderTimetable() triggered');
   const container = document.getElementById('timetableContainer');
   if (!container) {
-    console.error('âŒ [SCHEDULE] timetableContainer NOT FOUND in DOM!');
+    console.error('ERROR [SCHEDULE] timetableContainer NOT FOUND in DOM!');
     return;
   }
   
-  console.log('â³ [SCHEDULE] Population started...');
+  console.log('WAIT [SCHEDULE] Population started...');
   container.innerHTML = '<div style="padding:2rem; text-align:center; color:var(--muted);">Loading daily schedule...</div>';
 
   const now = new Date();
@@ -3064,7 +3064,7 @@ async function renderTimetable() {
 
   try {
     const data = await getStudyData();
-    console.log('ðŸ“¦ [SCHEDULE] Data received:', data);
+    console.log(' [SCHEDULE] Data received:', data);
     const completedTasks = data.completedTasks || [];
 
     const html = `
@@ -3099,13 +3099,13 @@ async function renderTimetable() {
     container.innerHTML = html;
     console.log(`✅ [SCHEDULE] Population COMPLETE. HTML Length: ${html.length}`);
   } catch (e) {
-    console.error('âŒ [SCHEDULE] Failed to render:', e);
+    console.error('ERROR [SCHEDULE] Failed to render:', e);
     container.innerHTML = '<div style="padding:2rem; text-align:center; color:var(--red);">Failed to load schedule. Ensure the agent server is running.</div>';
   }
 }
 
 function switchTrackerTab(tabId) {
-  console.log(`%c ðŸ“‘ [TRACKER] Switching Tab: ${tabId}`, 'color: #3b82f6; font-weight: bold;');
+  console.log(`%c  [TRACKER] Switching Tab: ${tabId}`, 'color: #3b82f6; font-weight: bold;');
   // Update Buttons
   document.querySelectorAll('.tracker-tab').forEach(btn => {
     btn.classList.remove('active');
@@ -3118,7 +3118,7 @@ function switchTrackerTab(tabId) {
   });
   const target = document.getElementById(tabId);
   if (target) {
-    console.log(`ðŸ‘ï¸ [TRACKER] Showing: #${tabId}`);
+    console.log(` [TRACKER] Showing: #${tabId}`);
     target.style.display = 'block';
   }
 
@@ -3147,9 +3147,9 @@ async function fetchLeaderboard() {
     
     container.innerHTML = data.leaderboard.map((user, index) => {
       let medal = '';
-      if (index === 0) medal = 'ðŸ¥‡';
-      else if (index === 1) medal = 'ðŸ¥ˆ';
-      else if (index === 2) medal = 'ðŸ¥‰';
+      if (index === 0) medal = 'Gold';
+      else if (index === 1) medal = 'Silver';
+      else if (index === 2) medal = 'Bronze';
       else medal = `<span style="opacity:0.5;">#${index + 1}</span>`;
       
       const pic = user.picture ? `<img src="${user.picture}" style="width:32px; height:32px; border-radius:50%; border:2px solid var(--blue);">` : `<div style="width:32px; height:32px; border-radius:50%; background:var(--blue); color:white; display:flex; align-items:center; justify-content:center; font-weight:bold;">${user.name ? user.name.charAt(0) : '?'}</div>`;
@@ -3187,14 +3187,14 @@ async function ensurePageLoaded(pageId) {
     ];
 
     if (!modularPages.includes(pageId)) {
-        console.log(`â„¹ï¸ [LOADER] ${pageId} is a dynamic topic. Skipping modular load.`);
+        console.log(`INFO [LOADER] ${pageId} is a dynamic topic. Skipping modular load.`);
         return true;
     }
 
     console.log(`%c 🔍 [LOADER] Checking if modular page is loaded: ${pageId}`, 'color: #a855f7; font-weight: bold;');
     const pageEl = document.getElementById(pageId);
     if (!pageEl) {
-        console.error(`%c âŒ [LOADER] CRITICAL: Element not found in DOM for modular page: #${pageId}`, 'color: #ef4444; font-weight: bold;');
+        console.error(`%c ERROR [LOADER] CRITICAL: Element not found in DOM for modular page: #${pageId}`, 'color: #ef4444; font-weight: bold;');
         return false;
     }
     
@@ -3209,7 +3209,7 @@ async function ensurePageLoaded(pageId) {
         return true;
     }
 
-    console.log(`ðŸ“¡ [LOADER] Fetching modular page: /pages/${pageId}.html ...`);
+    console.log(` [LOADER] Fetching modular page: /pages/${pageId}.html ...`);
     try {
         const response = await fetch(`/pages/${pageId}.html?v=${Date.now()}`);
         if (!response.ok) throw new Error(`HTTP Error: ${response.status}`);
@@ -3287,7 +3287,7 @@ async function showPage(id) {
       }
     }
 
-    console.log(`âœ¨ [NAV] ENABLING PAGE: #${page.id}`);
+    console.log(` [NAV] ENABLING PAGE: #${page.id}`);
     page.classList.add('active');
     page.style.display = '';
 
@@ -3301,7 +3301,7 @@ async function showPage(id) {
     
     // Init Logic
     if (id === 'schedule') {
-        console.log('ðŸ“… [NAV] Rendering Timetable...');
+        console.log(' [NAV] Rendering Timetable...');
         await renderTimetable(); 
     }
     if (id === 'study_history') {
@@ -4574,7 +4574,7 @@ function submitCustomJob() {
   const newJob = {
     id: 'custom_' + Date.now(), company, role,
     loc: document.getElementById('aj-loc').value || 'Remote',
-    sal: document.getElementById('aj-sal').value || 'â€”',
+    sal: document.getElementById('aj-sal').value || ' - ',
     prob: document.getElementById('aj-prob').value,
     score: document.getElementById('aj-score').value || 75,
     status: 'todo'
@@ -4656,7 +4656,7 @@ function checkOfferComparison() {
       container.innerHTML = `
         <table style="width:100%; border-collapse:collapse; min-width:600px;">
           <thead><tr style="border-bottom:2px solid var(--border); color:var(--muted); font-size:0.7rem; text-transform:uppercase;"><th style="padding:12px; text-align:left;">Company</th><th style="padding:12px; text-align:left;">Salary</th><th style="padding:12px; text-align:left;">Fit</th></tr></thead>
-          <tbody>${offers.map(o => `<tr style="border-bottom:1px solid var(--border);"><td style="padding:12px; font-weight:700;">${o.company}</td><td style="padding:12px; color:var(--green);">${o.sal}</td><td style="padding:12px;">âš¡ ${o.score}%</td></tr>`).join('')}</tbody>
+          <tbody>${offers.map(o => `<tr style="border-bottom:1px solid var(--border);"><td style="padding:12px; font-weight:700;">${o.company}</td><td style="padding:12px; color:var(--green);">${o.sal}</td><td style="padding:12px;"> ${o.score}%</td></tr>`).join('')}</tbody>
         </table>`;
     }
   } else {
@@ -4805,21 +4805,21 @@ window.runAgentforceSimulation = async function() {
   let sidebarReady = false;
 
   const textReplacements = [
-    [/â€”|â€“|â|â/g, ' - '],
-    [/â†’|â/g, '->'],
-    [/â€¢/g, '-'],
-    [/â€¦/g, '...'],
-    [/â€œ|â€/g, '"'],
-    [/â€˜|â€™/g, "'"],
-    [/â„¹ï¸|â¹ï¸/g, 'Info'],
-    [/âœ…|â/g, 'OK'],
-    [/âŒ|â/g, 'Error'],
-    [/âš¡|â¡/g, ''],
-    [/â±ï¸|â±/g, ''],
-    [/â–¼/g, 'v'],
-    [/Â/g, ''],
-    [/ï¿½/g, ''],
-    [/ð\S*/g, ''],
+    [/\u00e2\u20ac\u201d|\u00e2\u20ac\u201c|\u00e2\u0080\u0094|\u00e2\u0080\u0093/g, ' - '],
+    [/\u00e2\u2020\u2019|\u00e2\u0086\u0092/g, '->'],
+    [/\u00e2\u20ac\u00a2/g, '-'],
+    [/\u00e2\u20ac\u00a6/g, '...'],
+    [/\u00e2\u20ac\u0153|\u00e2\u20ac\u009d/g, '"'],
+    [/\u00e2\u20ac\u02dc|\u00e2\u20ac\u2122/g, "'"],
+    [/\u00e2\u201e\u00b9\u00ef\u00b8\u008f|\u00e2\u0084\u00b9\u00ef\u00b8\u008f/g, 'Info'],
+    [/\u00e2\u0153\u2026|\u00e2\u009c\u0085/g, 'OK'],
+    [/\u00e2\u009d\u0152|\u00e2\u009d\u008c/g, 'Error'],
+    [/\u00e2\u0161\u00a1|\u00e2\u009a\u00a1/g, ''],
+    [/\u00e2\u008f\u00b1\u00ef\u00b8\u008f|\u00e2\u008f\u00b1/g, ''],
+    [/\u00e2\u2013\u00bc/g, 'v'],
+    [/\u00c2/g, ''],
+    [/\u00ef\u00bf\u00bd/g, ''],
+    [/\u00f0\S*/g, ''],
     [/≡\S*/g, ''],
     [/ƒ\S*/g, '']
   ];
@@ -4867,7 +4867,7 @@ window.runAgentforceSimulation = async function() {
           if (/^(SCRIPT|STYLE|TEXTAREA|INPUT|CODE|PRE)$/i.test(parent.tagName)) {
             return NodeFilter.FILTER_REJECT;
           }
-          return /[âïðÂ�≡ƒ]/.test(node.nodeValue || '')
+          return /[\u00e2\u00ef\u00f0\ufffd\u2261\u0192]/.test(node.nodeValue || '')
             ? NodeFilter.FILTER_ACCEPT
             : NodeFilter.FILTER_SKIP;
         }

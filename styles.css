@@ -851,7 +851,7 @@ pre.code .num {
 }
 
 .ans-list li::before {
-  content: "â–¸";
+  content: ">";
   position: absolute;
   left: 0;
   color: var(--green);
@@ -1141,7 +1141,7 @@ pre.code .num {
 }
 
 .domain-card ul li::before {
-  content: "Â·";
+  content: " - ";
   position: absolute;
   left: 0;
   color: var(--cyan);
@@ -3594,7 +3594,7 @@ pre.code .num {
   gap: 12px !important;
 }
 
-/* â”€â”€â”€ PREMIUM JOB TRACKER V3 INTEGRATION â”€â”€â”€ */
+/* PREMIUM JOB TRACKER V3 INTEGRATION */
 .kanban-col {
   width: 300px;
   flex-shrink: 0;
@@ -3648,7 +3648,7 @@ pre.code .num {
   padding-right: 4px;
 }
 
-/* â”€â”€â”€ JOB CARD (V3 STYLE) â”€â”€â”€ */
+/* JOB CARD (V3 STYLE) */
 .jcard {
   background: var(--surface) !important;
   border: 1px solid var(--border) !important;
@@ -4805,7 +4805,7 @@ pre.code .num {
 /* Shared UI rescue layer for the legacy dashboard shell.
    Keep this scoped to layout/navigation/common cards so feature CSS can evolve
    independently without fighting the older global stylesheet.
-   v1413 â€” Responsive hardening & collapsed-section fix */
+   v1413  -  Responsive hardening & collapsed-section fix */
 
 :root {
   --app-font-body: 'Outfit', 'Plus Jakarta Sans', sans-serif;
@@ -4819,7 +4819,7 @@ pre.code .num {
    =========================================
    Login overlay:  99999
    Toast:          20000
-   Modals:         10001 â€” 10005
+   Modals:         10001  -  10005
    Sidebar:        10000
    Sidebar overlay: 9999
    Main header:    2000

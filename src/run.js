@@ -2305,9 +2305,9 @@ async function sendRunSummary({
     });
 
     if (result.anyOk) {
-      console.log("ðŸ“£ Heartbeat summary sent");
+      console.log("Heartbeat summary sent");
     } else {
-      console.log("âš ï¸ Heartbeat summary failed on all channels");
+      console.log("WARNING Heartbeat summary failed on all channels");
     }
     return;
   }

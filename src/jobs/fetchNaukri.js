@@ -866,7 +866,7 @@ export async function fetchNaukriJobs() {
         providerReport.reason = providerReport.reason || "No results returned";
       }
       console.log(
-        `ðŸ“¦ Provider '${provider}': raw=${providerJobs.length}, salesforce=${providerSalesforceJobs.length}, live=${liveProviderSalesforceJobs.length}, shadow=${shadowProviderSalesforceJobs.length}, contributed=${added}. Total: ${uniqueJobs.size}`
+        `Provider '${provider}': raw=${providerJobs.length}, salesforce=${providerSalesforceJobs.length}, live=${liveProviderSalesforceJobs.length}, shadow=${shadowProviderSalesforceJobs.length}, contributed=${added}. Total: ${uniqueJobs.size}`
       );
 
       if (

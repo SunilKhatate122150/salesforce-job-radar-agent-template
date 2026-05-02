@@ -22,9 +22,16 @@ const DATA_DIR = path.join(process.cwd(), 'data');
 const dataCache = new Map();
 
 let cachedDb = null;
+let dbConnectionAttempted = false;
 async function connectDB() {
   if (cachedDb) return cachedDb;
+  if (!process.env.MONGODB_URI) {
+    if (!dbConnectionAttempted) console.warn('[DB] MONGODB_URI missing; MongoDB routes will use fallback data only.');
+    dbConnectionAttempted = true;
+    return null;
+  }
   try {
+    dbConnectionAttempted = true;
     const db = await mongoose.connect(process.env.MONGODB_URI, {
       serverSelectionTimeoutMS: 5000 // 5 second timeout
     });
@@ -35,6 +42,10 @@ async function connectDB() {
     console.error('[DB] MongoDB Connection Failed (Skipping):', err.message);
     return null; 
   }
+}
+
+function isMongoConnected() {
+  return mongoose.connection.readyState === 1;
 }
 
 async function getUserId(req) {
@@ -61,6 +72,16 @@ async function safeTursoRead(label, operation, fallback) {
     return await operation();
   } catch (err) {
     console.warn(`[Turso] ${label} unavailable; continuing with MongoDB only:`, err.message);
+    return fallback;
+  }
+}
+
+async function safeMongoRead(label, operation, fallback) {
+  if (!isMongoConnected()) return fallback;
+  try {
+    return await operation();
+  } catch (err) {
+    console.warn(`[Mongo] ${label} unavailable; continuing with fallback data:`, err.message);
     return fallback;
   }
 }
@@ -644,6 +665,13 @@ export default async function(req, res) {
 
     const jobStatusRoute = path.match(/^jobs\/([^/]+)\/status$/);
     if (jobStatusRoute && req.method === 'PATCH') {
+      if (!isMongoConnected()) {
+        return res.status(503).json({
+          success: false,
+          error: 'Job status sync is temporarily unavailable. Please try again after the database reconnects.'
+        });
+      }
+
       const payload = readBody(req);
       const routeId = decodeURIComponent(jobStatusRoute[1] || '');
       const rawKey = payload.job_hash || payload.jobHash || payload.jobId || routeId;
@@ -986,12 +1014,12 @@ export default async function(req, res) {
 
     if (path === 'profile/match') {
       const tursoProfile = await safeTursoRead('profile/match profile', () => TursoDB.getProfile(userId), null);
-      const mongoProfile = await UserProfile.findOne({ userId }).lean();
+      const mongoProfile = await safeMongoRead('profile/match profile', () => UserProfile.findOne({ userId }).lean(), null);
       const profile = tursoProfile || mongoProfile;
 
       // Get Jobs from both tiers
       const tursoJobs = await safeTursoRead('profile/match jobs', () => TursoDB.getJobAnalytics(userId), []);
-      const mongoJobs = await JobRecord.find({ userId }).lean();
+      const mongoJobs = await safeMongoRead('profile/match jobs', () => JobRecord.find({ userId }).lean(), []);
       const allJobs = [...tursoJobs, ...mongoJobs];
 
       console.log(`[MATCH] Analyzing ${allJobs.length} total jobs for ${userId}`);
@@ -1018,7 +1046,11 @@ export default async function(req, res) {
     // 3. JOBS ENDPOINTS
     if (path === 'jobs') {
       const tursoJobs = await safeTursoRead('jobs', () => TursoDB.getJobs(userId), []);
-      const mongoJobs = await JobRecord.find({ $or: [{ userId }, { userId: 'system' }] }).sort({ createdAt: -1 }).limit(100).lean();
+      const mongoJobs = await safeMongoRead(
+        'jobs',
+        () => JobRecord.find({ $or: [{ userId }, { userId: 'system' }] }).sort({ createdAt: -1 }).limit(100).lean(),
+        []
+      );
       const unifiedMap = new Map();
       mongoJobs.forEach(j => unifiedMap.set(j.job_hash, { ...j, source: 'Legacy (Mongo)' }));
       tursoJobs.forEach(j => unifiedMap.set(j.job_hash, { ...j, source: 'Primary (Turso)' }));
@@ -1031,9 +1063,14 @@ export default async function(req, res) {
       console.log(`[JOBS] Unified Fetch -> Turso: ${tursoJobs.length}, Mongo: ${mongoJobs.length}, Total: ${finalJobs.length}`);
 
       checkAndArchiveOverflow(userId);
-      const mongoCount = await JobRecord.countDocuments({ userId });
+      const mongoCount = await safeMongoRead('jobs count', () => JobRecord.countDocuments({ userId }), 0);
       const capacityUsed = Math.min(Math.round((mongoCount / 1500) * 100), 100);
-      return res.status(200).json({ records: finalJobs, dbStatus: true, count: finalJobs.length, storageCapacity: `${100 - capacityUsed}% Free` });
+      return res.status(200).json({
+        records: finalJobs,
+        dbStatus: isMongoConnected(),
+        count: finalJobs.length,
+        storageCapacity: isMongoConnected() ? `${100 - capacityUsed}% Free` : 'MongoDB Offline'
+      });
     }
 
     if (path === 'jobs/scan' && req.method === 'POST') {
@@ -1056,7 +1093,7 @@ export default async function(req, res) {
 
     if (path === 'jobs/analytics') {
       const tursoJobs = await safeTursoRead('jobs/analytics', () => TursoDB.getJobAnalytics(userId), []);
-      const mongoJobs = await JobRecord.find({ userId }).lean();
+      const mongoJobs = await safeMongoRead('jobs/analytics', () => JobRecord.find({ userId }).lean(), []);
       const combined = applyJobStatusOverrides([...tursoJobs, ...mongoJobs], await getJobStatusOverrides(userId));
       console.log(`[ANALYTICS] Hybrid Merging ${combined.length} records for ${userId}`);
 
@@ -1090,7 +1127,11 @@ export default async function(req, res) {
     }
 
     if (path === 'jobs/list') {
-        const mongoJobs = await JobRecord.find({ userId }).sort({ date_added: -1 }).lean();
+        const mongoJobs = await safeMongoRead(
+          'jobs/list',
+          () => JobRecord.find({ userId }).sort({ date_added: -1 }).lean(),
+          []
+        );
         const tursoJobs = await safeTursoRead('jobs/list', () => TursoDB.getJobAnalytics(userId), []);
         const jobs = applyJobStatusOverrides([...mongoJobs, ...tursoJobs], await getJobStatusOverrides(userId));
         return res.status(200).json({ success: true, jobs });
@@ -1099,7 +1140,11 @@ export default async function(req, res) {
     // 4. STUDY ENDPOINTS
     if (path === 'study/history') {
       const tursoSessions = await safeTursoRead('study/history', () => TursoDB.getStudyHistory(userId), []);
-      const mongoSessions = await StudySession.find({ userId }).sort({ startTime: -1 }).limit(100).lean();
+      const mongoSessions = await safeMongoRead(
+        'study/history',
+        () => StudySession.find({ userId }).sort({ startTime: -1 }).limit(100).lean(),
+        []
+      );
       const combined = [...tursoSessions, ...mongoSessions].sort((a,b) => new Date(b.startTime) - new Date(a.startTime));
       console.log(`[STUDY] History Fetch -> Turso: ${tursoSessions.length}, Mongo: ${mongoSessions.length}`);
       return res.status(200).json(combined);
@@ -1194,10 +1239,18 @@ export default async function(req, res) {
     // 5. SUMMARY ENDPOINTS (Hybrid History)
     if (path === 'summary/daily' || path === 'summary/all') {
       const tursoSessions = await safeTursoRead('summary/history', () => TursoDB.getFullHistory(userId), []);
-      const mongoSessions = await StudySession.find({ userId }).sort({ startTime: -1 }).limit(1000).lean();
+      const mongoSessions = await safeMongoRead(
+        'summary/history',
+        () => StudySession.find({ userId }).sort({ startTime: -1 }).limit(1000).lean(),
+        []
+      );
       const allSessions = [...tursoSessions, ...mongoSessions];
       
-      const mongoJobs = await JobRecord.find({ userId }).sort({ createdAt: -1 }).limit(1000).lean();
+      const mongoJobs = await safeMongoRead(
+        'summary/jobs',
+        () => JobRecord.find({ userId }).sort({ createdAt: -1 }).limit(1000).lean(),
+        []
+      );
       
       console.log(`[SUMMARY] Hybrid Analyzing ${allSessions.length} sessions and ${mongoJobs.length} jobs`);
       
@@ -1292,11 +1345,12 @@ export default async function(req, res) {
 
   } catch (e) {
     console.error('Hybrid API Error:', e);
-    return res.status(500).json({ 
+    const payload = {
       success: false, 
       error: e.message,
-      stack: e.stack,
       hint: 'This error is coming from the Vercel Serverless Function.'
-    });
+    };
+    if (process.env.NODE_ENV !== 'production') payload.stack = e.stack;
+    return res.status(500).json(payload);
   }
 }
