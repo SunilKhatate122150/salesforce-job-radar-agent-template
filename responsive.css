@@ -1252,6 +1252,52 @@ table {
   }
 }
 
+/* Job Radar scroll containment fix.
+   The Radar page has tall cockpit content above the board; keep the board
+   usable by letting #main own vertical scrolling instead of clipping cards. */
+#main:has(#job_radar.active) {
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  scroll-padding-bottom: 96px;
+}
+
+body:has(#job_radar.active) #main > footer {
+  display: none !important;
+}
+
+#job_radar.page.active,
+#job_radar.active {
+  display: block !important;
+  height: auto !important;
+  min-height: auto !important;
+  overflow: visible !important;
+  padding-bottom: max(96px, calc(72px + env(safe-area-inset-bottom, 0px))) !important;
+}
+
+#job_radar .radar-view,
+#job_radar #radar-pipeline-view {
+  overflow: visible !important;
+}
+
+#job_radar .kanban-board-v3 {
+  max-height: none !important;
+  flex: none !important;
+}
+
+@media (min-width: 769px) {
+  #job_radar .kanban-board-v3 {
+    height: clamp(460px, 72dvh, 720px) !important;
+    min-height: 460px !important;
+  }
+}
+
+@media (min-width: 769px) and (max-height: 760px) {
+  #job_radar .kanban-board-v3 {
+    height: clamp(420px, 70dvh, 560px) !important;
+    min-height: 420px !important;
+  }
+}
+
 /* Job Radar adaptive summary cards and premium detail flyout. */
 #job_radar .jcard-v3 {
   cursor: pointer;

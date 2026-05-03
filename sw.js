@@ -1,4 +1,4 @@
-const CACHE_NAME = 'sf-prep-v20260503-mobile-status';
+const CACHE_NAME = 'sf-prep-v20260503-radar-scroll';
 const ASSETS = [
   '/',
   '/index.html',
