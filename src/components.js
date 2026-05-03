@@ -540,8 +540,8 @@ function renderJobDetailsFlyout(job) {
   const resumeActions = componentList(job.resume_actions);
   const notes = componentText(job.notes || job.internal_notes || '');
   const source = componentText(job.source || job.provider || job.origin || 'Job Radar');
-  const created = componentFormatDate(job.createdAt || job.dateAdded || job.created_at || job.date_added);
-  const updated = componentFormatDate(job.updatedAt || job.statusUpdatedAt || job.updated_at);
+  const created = componentFormatDate(job.posted_at || job.postedAt || job.createdAt || job.dateAdded || job.created_at || job.date_added);
+  const updated = componentFormatDate(job.last_seen_at || job.updatedAt || job.statusUpdatedAt || job.updated_at);
   const whyApply = componentText(job.why_apply, 'This role is available in your Job Radar pipeline. Add notes or profile data to improve AI fit guidance.');
 
   const pillList = (items, cls) => items.length
@@ -565,7 +565,7 @@ function renderJobDetailsFlyout(job) {
         <div class="job-flyout-score" style="--score:${score};"><span>${score}%</span></div>
         <div class="job-flyout-score-copy">
           <span class="prob-badge ${componentEscapeAttr(prob)}">${componentEscapeHtml(componentProbLabel(prob))}</span>
-          <span>${componentEscapeHtml(status.toUpperCase())} · Updated ${componentEscapeHtml(timeAgo(job.updatedAt || job.createdAt || job.dateAdded || job.created_at))}</span>
+          <span>${componentEscapeHtml(status.toUpperCase())} · Updated ${componentEscapeHtml(timeAgo(job.last_seen_at || job.updatedAt || job.updated_at || job.createdAt || job.dateAdded || job.created_at))}</span>
         </div>
       </div>
 
@@ -701,17 +701,27 @@ function syncMobileBoardStageNav(cols) {
   const current = cols.includes(window.currentMobileBoardStage) ? window.currentMobileBoardStage : 'todo';
   window.currentMobileBoardStage = current;
 
-  nav.innerHTML = cols.map(col => {
+  const rows = cols.map(col => {
     const count = typeof window.getBoardColumnJobs === 'function'
       ? window.getBoardColumnJobs(col).length
       : (document.getElementById(`count-${col}`)?.textContent || '0');
-    return `
-      <button type="button" class="mobile-stage-btn ${col === current ? 'active' : ''}" onclick="setMobileBoardStage('${col}')">
-        <span>${componentEscapeHtml(labels[col] || col)}</span>
-        <b>${componentEscapeHtml(count)}</b>
-      </button>
-    `;
-  }).join('');
+    return { col, label: labels[col] || col, count };
+  });
+  const selected = rows.find(row => row.col === current) || rows[0];
+
+  nav.innerHTML = `
+    <label class="mobile-stage-label" for="mobileBoardStageSelect">Status</label>
+    <div class="mobile-stage-select-wrap">
+      <select id="mobileBoardStageSelect" class="mobile-stage-select" onchange="setMobileBoardStage(this.value)" aria-label="Choose job status">
+        ${rows.map(row => `
+          <option value="${componentEscapeAttr(row.col)}" ${row.col === current ? 'selected' : ''}>
+            ${componentEscapeHtml(row.label)} (${componentEscapeHtml(row.count)})
+          </option>
+        `).join('')}
+      </select>
+      <span class="mobile-stage-selected-count">${componentEscapeHtml(selected?.count || 0)}</span>
+    </div>
+  `;
 
   cols.forEach(col => {
     document.getElementById(`col-${col}`)?.classList.toggle('mobile-stage-active', col === current);
@@ -789,7 +799,7 @@ function renderBoard() {
         ].join(' ').toLowerCase();
         return haystack.includes(searchTerm);
       })
-      .sort((a, b) => new Date(b.dateAdded || b.created_at) - new Date(a.dateAdded || a.created_at));
+      .sort((a, b) => jobRadarDate(b) - jobRadarDate(a));
 
     if (count) count.textContent = filtered.length;
 
@@ -828,7 +838,7 @@ function getFollowUpStatus(job) {
 }
 
 function jobRadarDate(job) {
-  const value = job.updatedAt || job.createdAt || job.dateAdded || job.created_at || job.date_added || job.appliedAt || job.dateApplied;
+  const value = job.last_seen_at || job.posted_at || job.postedAt || job.updatedAt || job.updated_at || job.createdAt || job.dateAdded || job.created_at || job.date_added || job.appliedAt || job.dateApplied;
   const parsed = new Date(value || 0);
   return Number.isNaN(parsed.getTime()) ? new Date(0) : parsed;
 }
@@ -1056,7 +1066,7 @@ function renderJobCard(job) {
       
       <div class="jcard-stage-row">
         <span class="prob-badge ${componentEscapeAttr(prob)}">${componentEscapeHtml(componentProbLabel(prob))}</span>
-        <span class="jcard-age">${componentEscapeHtml(timeAgo(job.updatedAt || job.createdAt || job.dateAdded || job.created_at))}</span>
+        <span class="jcard-age">${componentEscapeHtml(timeAgo(job.last_seen_at || job.posted_at || job.updatedAt || job.updated_at || job.createdAt || job.dateAdded || job.created_at))}</span>
       </div>
 
       <div class="jcard-intel-row ${componentEscapeAttr(nextAction.className)}">

@@ -175,8 +175,7 @@ async function upsertJobPayload(payload) {
     const { error } = await withRetry(
       () =>
         supabase.from("job_alerts").upsert(payloadToWrite, {
-          onConflict: "job_hash",
-          ignoreDuplicates: true
+          onConflict: "job_hash"
         }),
       "Supabase save job",
       { retries: 2, delayMs: 1500, ignoreErrorCodes: ["23505"] }
@@ -301,6 +300,22 @@ async function getRemoteExistingHashes(jobHashes) {
   return new Set((data || []).map(row => row.job_hash));
 }
 
+async function refreshSeenRemoteJobs(records, remoteExisting) {
+  const existingPayloads = records
+    .filter(record => remoteExisting.has(record.jobHash))
+    .map(record => record.payload);
+
+  if (existingPayloads.length === 0 || !canUseSupabase()) return;
+
+  try {
+    for (const payload of existingPayloads) {
+      await upsertJobPayload(payload);
+    }
+  } catch (error) {
+    setSupabaseCooldown(error.message);
+  }
+}
+
 export async function getNewJobs(jobs) {
   const uniqueRecords = new Map();
 
@@ -341,6 +356,8 @@ export async function getNewJobs(jobs) {
   } catch (error) {
     setSupabaseCooldown(error.message);
   }
+
+  await refreshSeenRemoteJobs(records, remoteExisting);
 
   return records
     .filter(record =>

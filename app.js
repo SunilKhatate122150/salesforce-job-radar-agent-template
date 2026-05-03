@@ -2476,7 +2476,14 @@ function buildPipelineJobFromRecord(record, existingJob) {
     status: mappedStatus,
     statusUpdatedAt,
     url: safeUrl(record.apply_link || record.url || existing.url || '#'),
-    created_at: record.createdAt || record.date_added || record.created_at || existing.created_at || new Date().toISOString(),
+    createdAt: record.createdAt || record.created_at || existing.createdAt || existing.created_at || '',
+    created_at: record.created_at || record.createdAt || record.date_added || existing.created_at || existing.createdAt || new Date().toISOString(),
+    date_added: record.date_added || record.created_at || record.createdAt || existing.date_added || '',
+    updatedAt: record.last_seen_at || record.lastSeenAt || record.updated_at || record.updatedAt || existing.updatedAt || existing.last_seen_at || '',
+    updated_at: record.updated_at || record.updatedAt || record.last_seen_at || existing.updated_at || '',
+    last_seen_at: record.last_seen_at || record.lastSeenAt || existing.last_seen_at || '',
+    posted_at: record.posted_at || record.postedAt || record.posted_date || existing.posted_at || '',
+    source_platform: record.source_platform || record.source || existing.source_platform || '',
     match_level: record.match_level || existing.match_level || '',
     dateApplied: record.appliedAt || existing.dateApplied || (mappedStatus === 'applied' ? new Date().toISOString() : ''),
     outreach: existing.outreach || null,
@@ -2518,9 +2525,8 @@ function sortBoardJobs(a, b) {
   const scoreDelta = Number(b.score || 0) - Number(a.score || 0);
   if (scoreDelta !== 0) return scoreDelta;
 
-  // Use the most precise date available: updatedAt, createdAt, date_added, or created_at
-  const dateA = new Date(a.updatedAt || a.createdAt || a.date_added || a.created_at || 0);
-  const dateB = new Date(b.updatedAt || b.createdAt || b.date_added || b.created_at || 0);
+  const dateA = new Date(a.last_seen_at || a.posted_at || a.updatedAt || a.updated_at || a.createdAt || a.date_added || a.created_at || 0);
+  const dateB = new Date(b.last_seen_at || b.posted_at || b.updatedAt || b.updated_at || b.createdAt || b.date_added || b.created_at || 0);
   return dateB - dateA;
 }
 

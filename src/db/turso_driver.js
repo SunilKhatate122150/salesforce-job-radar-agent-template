@@ -2,9 +2,11 @@ import { createClient } from '@libsql/client';
 
 let client = null;
 
-if (process.env.TURSO_URL && process.env.TURSO_AUTH_TOKEN) {
+const tursoUrl = process.env.TURSO_URL || process.env.TURSO_DATABASE_URL;
+
+if (tursoUrl && process.env.TURSO_AUTH_TOKEN) {
   client = createClient({
-    url: process.env.TURSO_URL,
+    url: tursoUrl,
     authToken: process.env.TURSO_AUTH_TOKEN,
   });
 }

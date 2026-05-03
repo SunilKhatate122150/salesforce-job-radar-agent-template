@@ -5,6 +5,16 @@ import fs from 'fs';
 import path from 'path';
 import { User, UserProfile, JobRecord, StudySession, TaskStatus } from '../src/models/models.js';
 import { TursoDB } from '../src/db/turso_driver.js';
+import {
+  filterDashboardFreshness,
+  getDashboardFreshnessDays,
+  mergeArrayValues,
+  mergeDashboardJobs,
+  normalizeDashboardJob,
+  parseMaybeArray,
+  readSupabaseJobAlertRows,
+  readSupabaseTrackerJobs
+} from '../src/jobs/dashboardJobs.js';
 
 /**
  * 🔒 ARCHITECTURAL GUARDIAN: HYBRID HOT-COLD STORAGE PATTERN
@@ -60,7 +70,9 @@ function buildHealthPayload() {
     GITHUB_REPOSITORY: hasEnv('GITHUB_REPOSITORY') || hasEnv('JOB_RADAR_GITHUB_REPO'),
     GITHUB_TOKEN: hasEnv('GITHUB_TOKEN') || hasEnv('GH_TOKEN') || hasEnv('JOB_RADAR_GITHUB_TOKEN'),
     TELEGRAM_BOT_TOKEN: hasEnv('TELEGRAM_BOT_TOKEN'),
-    TURSO_DATABASE_URL: hasEnv('TURSO_DATABASE_URL'),
+    SUPABASE_URL: hasEnv('SUPABASE_URL'),
+    SUPABASE_SERVICE_KEY: hasEnv('SUPABASE_SERVICE_ROLE_KEY') || hasEnv('SUPABASE_SERVICE_KEY'),
+    TURSO_URL: hasEnv('TURSO_URL') || hasEnv('TURSO_DATABASE_URL'),
     TURSO_AUTH_TOKEN: hasEnv('TURSO_AUTH_TOKEN')
   };
   const missingCore = ['MONGODB_URI', 'GOOGLE_CLIENT_ID'].filter(name => !env[name]);
@@ -138,6 +150,7 @@ function readBody(req) {
 function normalizeBoardStatus(value) {
   const normalized = String(value || '').trim().toLowerCase();
   if (normalized === 'new') return 'todo';
+  if (normalized === 'shortlisted' || normalized === 'follow_up') return 'todo';
   if (normalized === 'ignored') return 'rejected';
   if (['todo', 'applied', 'interview', 'offer', 'rejected'].includes(normalized)) return normalized;
   return 'todo';
@@ -1077,22 +1090,28 @@ export default async function(req, res) {
 
     // 3. JOBS ENDPOINTS
     if (path === 'jobs') {
-      const tursoJobs = await safeTursoRead('jobs', () => TursoDB.getJobs(userId), []);
-      const mongoJobs = await safeMongoRead(
-        'jobs',
-        () => JobRecord.find({ $or: [{ userId }, { userId: 'system' }] }).sort({ createdAt: -1 }).limit(100).lean(),
-        []
-      );
-      const unifiedMap = new Map();
-      mongoJobs.forEach(j => unifiedMap.set(j.job_hash, { ...j, source: 'Legacy (Mongo)' }));
-      tursoJobs.forEach(j => unifiedMap.set(j.job_hash, { ...j, source: 'Primary (Turso)' }));
+      const [tursoJobs, mongoJobs, trackerJobs, alertJobs] = await Promise.all([
+        safeTursoRead('jobs', () => TursoDB.getJobs(userId, 160), []),
+        safeMongoRead(
+          'jobs',
+          () => JobRecord.find({ $or: [{ userId }, { userId: 'system' }] }).sort({ updatedAt: -1, createdAt: -1 }).limit(160).lean(),
+          []
+        ),
+        readSupabaseTrackerJobs(),
+        readSupabaseJobAlertRows(180)
+      ]);
       const statusOverrides = await getJobStatusOverrides(userId);
-      const finalJobs = applyJobStatusOverrides(
-        Array.from(unifiedMap.values()).sort((a,b) => new Date(b.created_at || b.createdAt) - new Date(a.created_at || a.createdAt)),
-        statusOverrides
+      const mergedJobs = mergeDashboardJobs(
+        mongoJobs.map(job => normalizeDashboardJob(job, 'Legacy (Mongo)')),
+        tursoJobs.map(job => normalizeDashboardJob(job, 'Primary (Turso)')),
+        trackerJobs,
+        alertJobs
       );
+      const finalJobs = filterDashboardFreshness(
+        applyJobStatusOverrides(mergedJobs, statusOverrides)
+      ).slice(0, 180);
 
-      console.log(`[JOBS] Unified Fetch -> Turso: ${tursoJobs.length}, Mongo: ${mongoJobs.length}, Total: ${finalJobs.length}`);
+      console.log(`[JOBS] Unified Fetch -> Supabase alerts: ${alertJobs.length}, Tracker: ${trackerJobs.length}, Turso: ${tursoJobs.length}, Mongo: ${mongoJobs.length}, Total: ${finalJobs.length}`);
 
       checkAndArchiveOverflow(userId);
       const mongoCount = await safeMongoRead('jobs count', () => JobRecord.countDocuments({ userId }), 0);
@@ -1101,6 +1120,13 @@ export default async function(req, res) {
         records: finalJobs,
         dbStatus: isMongoConnected(),
         count: finalJobs.length,
+        freshnessDays: getDashboardFreshnessDays(),
+        sourceCounts: {
+          supabaseAlerts: alertJobs.length,
+          applicationTracker: trackerJobs.length,
+          turso: tursoJobs.length,
+          mongo: mongoJobs.length
+        },
         storageCapacity: isMongoConnected() ? `${100 - capacityUsed}% Free` : 'MongoDB Offline'
       });
     }
@@ -1124,9 +1150,16 @@ export default async function(req, res) {
     }
 
     if (path === 'jobs/analytics') {
-      const tursoJobs = await safeTursoRead('jobs/analytics', () => TursoDB.getJobAnalytics(userId), []);
-      const mongoJobs = await safeMongoRead('jobs/analytics', () => JobRecord.find({ userId }).lean(), []);
-      const combined = applyJobStatusOverrides([...tursoJobs, ...mongoJobs], await getJobStatusOverrides(userId));
+      const [tursoJobs, mongoJobs, trackerJobs, alertJobs] = await Promise.all([
+        safeTursoRead('jobs/analytics', () => TursoDB.getJobAnalytics(userId), []),
+        safeMongoRead('jobs/analytics', () => JobRecord.find({ userId }).lean(), []),
+        readSupabaseTrackerJobs(),
+        readSupabaseJobAlertRows(180)
+      ]);
+      const combined = applyJobStatusOverrides(
+        mergeDashboardJobs([...tursoJobs, ...mongoJobs, ...trackerJobs, ...alertJobs]),
+        await getJobStatusOverrides(userId)
+      );
       console.log(`[ANALYTICS] Hybrid Merging ${combined.length} records for ${userId}`);
 
       // Aggregate matched skills, missing skills, and top companies
@@ -1135,8 +1168,8 @@ export default async function(req, res) {
       const companyMap = {};
 
       combined.forEach(j => {
-        const matched = typeof j.matched_skills === 'string' ? JSON.parse(j.matched_skills || '[]') : (j.matched_skills || []);
-        const missing = typeof j.missing_skills === 'string' ? JSON.parse(j.missing_skills || '[]') : (j.missing_skills || []);
+        const matched = mergeArrayValues(j.skills, j.matched_skills);
+        const missing = parseMaybeArray(j.missing_skills);
         const company = j.company || 'Unknown';
         
         matched.forEach(s => { if (s) matchedMap[s] = (matchedMap[s] || 0) + 1; });
@@ -1159,14 +1192,23 @@ export default async function(req, res) {
     }
 
     if (path === 'jobs/list') {
-        const mongoJobs = await safeMongoRead(
+      const [mongoJobs, tursoJobs, trackerJobs, alertJobs] = await Promise.all([
+        safeMongoRead(
           'jobs/list',
           () => JobRecord.find({ userId }).sort({ date_added: -1 }).lean(),
           []
-        );
-        const tursoJobs = await safeTursoRead('jobs/list', () => TursoDB.getJobAnalytics(userId), []);
-        const jobs = applyJobStatusOverrides([...mongoJobs, ...tursoJobs], await getJobStatusOverrides(userId));
-        return res.status(200).json({ success: true, jobs });
+        ),
+        safeTursoRead('jobs/list', () => TursoDB.getJobAnalytics(userId), []),
+        readSupabaseTrackerJobs(),
+        readSupabaseJobAlertRows(180)
+      ]);
+      const jobs = filterDashboardFreshness(
+        applyJobStatusOverrides(
+          mergeDashboardJobs(mongoJobs, tursoJobs, trackerJobs, alertJobs),
+          await getJobStatusOverrides(userId)
+        )
+      );
+      return res.status(200).json({ success: true, jobs });
     }
 
     // 4. STUDY ENDPOINTS

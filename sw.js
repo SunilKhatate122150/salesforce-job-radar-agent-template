@@ -1,4 +1,4 @@
-const CACHE_NAME = 'sf-prep-v20260502-upgrade2';
+const CACHE_NAME = 'sf-prep-v20260503-mobile-status';
 const ASSETS = [
   '/',
   '/index.html',

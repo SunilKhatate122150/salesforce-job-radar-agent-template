@@ -9,6 +9,15 @@ import { StudySession, TaskStatus, User, JobRecord, UserProfile } from './models
 import { OAuth2Client } from 'google-auth-library';
 import { spawn } from 'child_process';
 import { attemptAutoApply } from './tools/autoApply.js';
+import {
+  filterDashboardFreshness,
+  getDashboardFreshnessDays,
+  mergeDashboardJobs,
+  normalizeDashboardJob,
+  parseMaybeArray,
+  readSupabaseJobAlertRows,
+  readSupabaseTrackerJobs
+} from './jobs/dashboardJobs.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -33,7 +42,9 @@ function buildHealthPayload(isMongoConnected = false) {
     GITHUB_REPOSITORY: hasEnv('GITHUB_REPOSITORY') || hasEnv('JOB_RADAR_GITHUB_REPO'),
     GITHUB_TOKEN: hasEnv('GITHUB_TOKEN') || hasEnv('GH_TOKEN') || hasEnv('JOB_RADAR_GITHUB_TOKEN'),
     TELEGRAM_BOT_TOKEN: hasEnv('TELEGRAM_BOT_TOKEN'),
-    TURSO_DATABASE_URL: hasEnv('TURSO_DATABASE_URL'),
+    SUPABASE_URL: hasEnv('SUPABASE_URL'),
+    SUPABASE_SERVICE_KEY: hasEnv('SUPABASE_SERVICE_ROLE_KEY') || hasEnv('SUPABASE_SERVICE_KEY'),
+    TURSO_URL: hasEnv('TURSO_URL') || hasEnv('TURSO_DATABASE_URL'),
     TURSO_AUTH_TOKEN: hasEnv('TURSO_AUTH_TOKEN')
   };
   const missingCore = ['MONGODB_URI', 'GOOGLE_CLIENT_ID'].filter(name => !env[name]);
@@ -63,6 +74,7 @@ function readDataJson(fileName, fallback = {}) {
 function normalizeBoardStatus(value) {
   const normalized = String(value || '').trim().toLowerCase();
   if (normalized === 'new') return 'todo';
+  if (normalized === 'shortlisted' || normalized === 'follow_up') return 'todo';
   if (normalized === 'ignored') return 'rejected';
   if (['todo', 'applied', 'interview', 'offer', 'rejected'].includes(normalized)) return normalized;
   return 'todo';
@@ -666,50 +678,80 @@ export default async function handler(req, res) {
         res.end(JSON.stringify({ success: true, status, updatedAt, appliedAt, key: statusKey }));
       }
       else if (url === '/api/jobs' && method === 'GET') {
+        const [trackerJobs, alertJobs] = await Promise.all([
+          readSupabaseTrackerJobs(),
+          readSupabaseJobAlertRows(180)
+        ]);
         if (isMongoConnected) {
-          const records = applyJobStatusOverrides(
-            await JobRecord.find({}).sort({ createdAt: -1 }).lean(),
-            await getJobStatusOverrides(userId)
+          const mongoJobs = await JobRecord.find({}).sort({ updatedAt: -1, createdAt: -1 }).limit(180).lean();
+          const mergedJobs = mergeDashboardJobs(
+            mongoJobs.map(job => normalizeDashboardJob(job, 'Legacy (Mongo)')),
+            trackerJobs,
+            alertJobs
           );
-          console.log(`[DB] Brute Force | Found: ${records.length} jobs | Status: ${isMongoConnected}`);
+          const records = filterDashboardFreshness(
+            applyJobStatusOverrides(mergedJobs, await getJobStatusOverrides(userId))
+          ).slice(0, 180);
+          console.log(
+            `[DB] Unified | Mongo: ${mongoJobs.length} | Supabase alerts: ${alertJobs.length} | Tracker: ${trackerJobs.length} | Total: ${records.length}`
+          );
           res.writeHead(200, { 'Content-Type': 'application/json' });
           res.end(JSON.stringify({
             records,
             dbStatus: true,
             source: 'mongodb',
-            count: records.length
+            count: records.length,
+            freshnessDays: getDashboardFreshnessDays(),
+            sourceCounts: {
+              supabaseAlerts: alertJobs.length,
+              applicationTracker: trackerJobs.length,
+              mongo: mongoJobs.length
+            }
           }));
         } else {
+          const records = filterDashboardFreshness(mergeDashboardJobs(trackerJobs, alertJobs)).slice(0, 180);
           res.writeHead(200, { 'Content-Type': 'application/json' });
           res.end(JSON.stringify({
-            records: [],
+            records,
             dbStatus: false,
-            source: 'cache',
-            error: process.env.MONGODB_URI ? 'mongodb_connection_failed' : 'missing_mongodb_uri'
+            source: records.length ? 'supabase' : 'cache',
+            count: records.length,
+            freshnessDays: getDashboardFreshnessDays(),
+            sourceCounts: {
+              supabaseAlerts: alertJobs.length,
+              applicationTracker: trackerJobs.length,
+              mongo: 0
+            },
+            error: records.length ? undefined : (process.env.MONGODB_URI ? 'mongodb_connection_failed' : 'missing_mongodb_uri')
           }));
         }
       }
       else if (url === '/api/jobs/analytics' && method === 'GET') {
-        if (!isMongoConnected) {
-          res.writeHead(200, { 'Content-Type': 'application/json' });
-          res.end(JSON.stringify({ matched_skills: [], missing_skills: [], top_companies: [] }));
-          return;
-        }
-        
-        // Basic analytics aggregation
+        const [mongoJobs, trackerJobs, alertJobs] = await Promise.all([
+          isMongoConnected ? JobRecord.find({ userId }).lean() : [],
+          readSupabaseTrackerJobs(),
+          readSupabaseJobAlertRows(180)
+        ]);
         const records = applyJobStatusOverrides(
-          await JobRecord.find({ userId }).lean(),
+          mergeDashboardJobs(mongoJobs, trackerJobs, alertJobs),
           await getJobStatusOverrides(userId)
         );
+        const hasSkill = (record, skill) => {
+          const skills = [
+            ...parseMaybeArray(record.skills),
+            ...parseMaybeArray(record.matched_skills)
+          ].map(item => item.toLowerCase());
+          return skills.some(item => item.includes(skill.toLowerCase()));
+        };
         
         // This is a simplified version of analytics. Real implementation would use MongoDB aggregation.
         // But for now, we'll return structured data that the frontend expects.
         res.writeHead(200, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({
           matched_skills: [
-            { _id: 'Apex', count: records.filter(r => (r.skills || []).includes('Apex')).length },
-            { _id: 'LWC', count: records.filter(r => (r.skills || []).includes('LWC')).length },
-            { _id: 'Integration', count: records.filter(r => (r.skills || []).includes('REST')).length }
+            { _id: 'Apex', count: records.filter(r => hasSkill(r, 'Apex')).length },
+            { _id: 'LWC', count: records.filter(r => hasSkill(r, 'LWC')).length },
+            { _id: 'Integration', count: records.filter(r => hasSkill(r, 'REST')).length }
           ],
           missing_skills: [
             { _id: 'Data Cloud', count: 5 },

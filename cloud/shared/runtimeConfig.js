@@ -86,6 +86,8 @@ export const sharedRuntimeDefaults = Object.freeze({
   DAILY_SUMMARY_ENABLED: "true",
   DAILY_SUMMARY_TIMEZONE: "Asia/Kolkata",
   DAILY_SUMMARY_HOUR: "21",
+  STATE_BACKEND: "supabase",
+  STATE_BACKEND_TABLE: "agent_state",
   SMTP_HOST: "smtp.gmail.com",
   SMTP_PORT: "465",
   SMTP_SECURE: "true"
