@@ -18,6 +18,8 @@ const viewports = [
   { name: 'mobile-390', width: 390, height: 844 },
   { name: 'mobile-430', width: 430, height: 932 },
   { name: 'tablet-768', width: 768, height: 1024 },
+  { name: 'tablet-900', width: 900, height: 900 },
+  { name: 'desktop-901', width: 901, height: 900 },
   { name: 'tablet-1024', width: 1024, height: 768 },
   { name: 'desktop-1365', width: 1365, height: 768 },
   { name: 'desktop-1440', width: 1440, height: 900 }
@@ -38,6 +40,11 @@ async function waitForApp(page) {
     localStorage.setItem('job_radar_sidebar_collapsed', 'false');
   });
   await page.waitForSelector('#main, #job_radar, .page', { timeout: 10000 });
+  await page.waitForFunction(() => (
+    typeof window.toggleMobileSidebar === 'function'
+    && typeof window.filterSidebar === 'function'
+    && typeof window.showPage === 'function'
+  ), { timeout: 10000 });
 }
 
 async function hideLoginOverlay(page) {
@@ -201,15 +208,88 @@ async function verifySidebar(page, viewport) {
     }).catch(() => false);
     if (!mobileToggleVisible) return { skipped: 'mobile toggle hidden at this breakpoint' };
 
+    await page.evaluate(() => window.toggleMobileSidebar?.(false));
+    await page.waitForFunction(() => !document.getElementById('sidebar')?.classList.contains('mobile-open'), { timeout: 4000 });
+
     await page.click('#mobileToggle');
     await page.waitForFunction(() => document.getElementById('sidebar')?.classList.contains('mobile-open'), { timeout: 4000 });
-    const openState = await page.evaluate(() => ({
-      open: document.getElementById('sidebar')?.classList.contains('mobile-open'),
-      expanded: document.getElementById('mobileToggle')?.getAttribute('aria-expanded')
-    }));
-    await page.keyboard.press('Escape');
+    await new Promise(resolve => setTimeout(resolve, 80));
+    const openState = await page.evaluate(() => {
+      const sidebar = document.getElementById('sidebar');
+      const overlay = document.getElementById('sidebarOverlay');
+      const active = document.activeElement;
+      const overlayRect = overlay?.getBoundingClientRect();
+      const overlayStyle = overlay ? getComputedStyle(overlay) : null;
+      return {
+        open: sidebar?.classList.contains('mobile-open'),
+        expanded: document.getElementById('mobileToggle')?.getAttribute('aria-expanded'),
+        ariaHidden: sidebar?.getAttribute('aria-hidden'),
+        ariaModal: sidebar?.getAttribute('aria-modal'),
+        bodyLocked: document.body.classList.contains('nav-open') && getComputedStyle(document.body).overflow === 'hidden',
+        focusInside: Boolean(active && sidebar?.contains(active)),
+        overlayVisible: Boolean(
+          overlay
+          && overlayRect
+          && overlayRect.width > 0
+          && overlayRect.height > 0
+          && overlayStyle.display !== 'none'
+          && overlayStyle.visibility !== 'hidden'
+          && Number(overlayStyle.opacity || 0) > 0.2
+        )
+      };
+    });
+
+    await page.evaluate(() => document.getElementById('sidebarOverlay')?.click());
     await page.waitForFunction(() => !document.getElementById('sidebar')?.classList.contains('mobile-open'), { timeout: 4000 });
-    return openState;
+    const overlayClosed = await page.evaluate(() => ({
+      closed: !document.getElementById('sidebar')?.classList.contains('mobile-open'),
+      expanded: document.getElementById('mobileToggle')?.getAttribute('aria-expanded'),
+      ariaHidden: document.getElementById('sidebar')?.getAttribute('aria-hidden'),
+      bodyUnlocked: !document.body.classList.contains('nav-open') && getComputedStyle(document.body).overflow !== 'hidden',
+      focusReturned: document.activeElement?.id === 'mobileToggle'
+    }));
+
+    const openedForCloseButton = await page.evaluate(() => {
+      window.toggleMobileSidebar?.(true);
+      return document.getElementById('sidebar')?.classList.contains('mobile-open') || false;
+    });
+    if (openedForCloseButton) {
+      await page.evaluate(() => document.getElementById('sidebarCloseBtn')?.click());
+      await page.waitForFunction(() => !document.getElementById('sidebar')?.classList.contains('mobile-open'), { timeout: 4000 });
+    }
+    const closeButtonClosed = await page.evaluate(() => !document.getElementById('sidebar')?.classList.contains('mobile-open'));
+
+    const openedForEscape = await page.evaluate(() => {
+      window.toggleMobileSidebar?.(true);
+      return document.getElementById('sidebar')?.classList.contains('mobile-open') || false;
+    });
+    if (openedForEscape) {
+      await page.keyboard.press('Escape');
+      await page.waitForFunction(() => !document.getElementById('sidebar')?.classList.contains('mobile-open'), { timeout: 4000 });
+    }
+    const escapeClosed = await page.evaluate(() => !document.getElementById('sidebar')?.classList.contains('mobile-open'));
+
+    const openedForNavItem = await page.evaluate(() => {
+      window.toggleMobileSidebar?.(true);
+      return document.getElementById('sidebar')?.classList.contains('mobile-open') || false;
+    });
+    if (openedForNavItem) {
+      await page.waitForSelector('#sidebar .nav-item[data-page-id]', { timeout: 4000 });
+      await page.evaluate(() => document.querySelector('#sidebar .nav-item[data-page-id]')?.click());
+      await page.waitForFunction(() => !document.getElementById('sidebar')?.classList.contains('mobile-open'), { timeout: 4000 });
+    }
+    const navItemClosed = await page.evaluate(() => !document.getElementById('sidebar')?.classList.contains('mobile-open'));
+
+    return {
+      ...openState,
+      overlayClosed,
+      openedForCloseButton,
+      closeButtonClosed,
+      openedForEscape,
+      escapeClosed,
+      openedForNavItem,
+      navItemClosed
+    };
   }
 
   await page.evaluate(() => document.body.classList.remove('sidebar-collapsed'));
@@ -238,9 +318,182 @@ async function verifySidebar(page, viewport) {
       visibleHeaderText
     };
   });
+  await page.evaluate(() => document.querySelector('#sidebar .nav-group-toggle')?.click());
+  await page.waitForFunction(() => document.getElementById('collapsedNavFlyout')?.classList.contains('is-open'), { timeout: 4000 });
+  const flyout = await page.evaluate(() => {
+    const el = document.getElementById('collapsedNavFlyout');
+    const rect = el?.getBoundingClientRect();
+    return {
+      open: el?.classList.contains('is-open') || false,
+      fitsViewport: Boolean(rect)
+        && rect.left >= -1
+        && rect.top >= -1
+        && rect.right <= innerWidth + 1
+        && rect.bottom <= innerHeight + 1,
+      width: Math.round(rect?.width || 0),
+      height: Math.round(rect?.height || 0),
+      left: Math.round(rect?.left || 0),
+      top: Math.round(rect?.top || 0)
+    };
+  });
+  await page.keyboard.press('Escape');
+  await page.waitForFunction(() => !document.getElementById('collapsedNavFlyout')?.classList.contains('is-open'), { timeout: 4000 });
+  const flyoutClosedByEscape = await page.evaluate(() => !document.getElementById('collapsedNavFlyout')?.classList.contains('is-open'));
   await page.evaluate(() => document.querySelector('.desktop-sidebar-toggle')?.click());
   await page.waitForFunction(() => !document.body.classList.contains('sidebar-collapsed'), { timeout: 4000 });
-  return collapsed;
+  return { ...collapsed, flyout, flyoutClosedByEscape };
+}
+
+async function verifySidebarSearch(page, viewport) {
+  await page.evaluate(() => {
+    window.toggleMobileSidebar?.(false);
+    const input = document.getElementById('searchInput');
+    if (input) input.value = '';
+    window.filterSidebar?.('');
+  });
+
+  const result = await page.evaluate(() => {
+    const input = document.getElementById('searchInput');
+    const sectionStates = () => Array.from(document.querySelectorAll('#sidebar .nav-parent-section'))
+      .filter(section => getComputedStyle(section).display !== 'none')
+      .map(section => {
+        const toggle = section.querySelector('.nav-group-toggle');
+        const panel = section.querySelector('.nav-group-items');
+        const expanded = toggle?.getAttribute('aria-expanded') === 'true';
+        const hidden = Boolean(panel?.hidden);
+        return {
+          expanded,
+          hidden,
+          hasOpenClass: section.classList.contains('is-open'),
+          hasClosedClass: section.classList.contains('is-closed')
+        };
+      });
+    const consistent = states => states.every(state => (
+      state.expanded === !state.hidden
+      && state.hasOpenClass === state.expanded
+      && state.hasClosedClass === !state.expanded
+    ));
+
+    if (input) input.value = 'zzzz-no-topic-match';
+    window.filterSidebar?.(input?.value || '');
+    const empty = document.getElementById('sidebarSearchEmpty');
+    const emptyStyle = empty ? getComputedStyle(empty) : null;
+    const noMatchStates = sectionStates();
+    const noMatchVisibleItems = Array.from(document.querySelectorAll('#sidebar .nav-item'))
+      .filter(item => getComputedStyle(item).display !== 'none').length;
+    const noMatchEmptyVisible = Boolean(
+      empty
+      && !empty.hidden
+      && emptyStyle.display !== 'none'
+      && emptyStyle.visibility !== 'hidden'
+      && /No matching topics/i.test(empty.textContent || '')
+    );
+
+    if (input) input.value = 'apex';
+    window.filterSidebar?.(input?.value || '');
+    const matchStates = sectionStates();
+    const matchVisibleItems = Array.from(document.querySelectorAll('#sidebar .nav-item'))
+      .filter(item => getComputedStyle(item).display !== 'none').length;
+
+    if (input) input.value = '';
+    window.filterSidebar?.('');
+    const resetStates = sectionStates();
+    const resetVisibleItems = Array.from(document.querySelectorAll('#sidebar .nav-item'))
+      .filter(item => getComputedStyle(item).display !== 'none').length;
+    const resetEmpty = document.getElementById('sidebarSearchEmpty');
+    const revisionAlerts = document.getElementById('revisionAlerts');
+
+    return {
+      noMatchEmptyVisible,
+      noMatchVisibleItems,
+      noMatchStateConsistent: consistent(noMatchStates),
+      matchVisibleItems,
+      matchStateConsistent: consistent(matchStates),
+      resetVisibleItems,
+      resetStateConsistent: consistent(resetStates),
+      resetEmptyHidden: !resetEmpty || resetEmpty.hidden,
+      revisionAlertsRestored: !revisionAlerts || getComputedStyle(revisionAlerts).display !== 'none'
+    };
+  });
+
+  if (viewport.width <= 900) {
+    await page.evaluate(() => window.toggleMobileSidebar?.(false));
+  }
+  return result;
+}
+
+async function verifyHeaderControls(page, viewport) {
+  return page.evaluate(() => {
+    const rectFor = selectorOrElement => {
+      const el = typeof selectorOrElement === 'string'
+        ? document.querySelector(selectorOrElement)
+        : selectorOrElement;
+      if (!el) return null;
+      const rect = el.getBoundingClientRect();
+      const style = getComputedStyle(el);
+      const visible = rect.width > 0
+        && rect.height > 0
+        && style.display !== 'none'
+        && style.visibility !== 'hidden'
+        && Number(style.opacity || 1) > 0.01;
+      return {
+        selector: typeof selectorOrElement === 'string' ? selectorOrElement : (el.id ? `#${el.id}` : el.tagName.toLowerCase()),
+        left: Math.round(rect.left),
+        right: Math.round(rect.right),
+        top: Math.round(rect.top),
+        bottom: Math.round(rect.bottom),
+        width: Math.round(rect.width),
+        height: Math.round(rect.height),
+        visible
+      };
+    };
+    const overlap = (a, b) => a.visible && b.visible
+      && a.left < b.right - 2
+      && a.right > b.left + 2
+      && a.top < b.bottom - 2
+      && a.bottom > b.top + 2;
+
+    const header = rectFor('#mainHeader');
+    const title = rectFor('#headerTitle');
+    const mobileToggle = rectFor('#mobileToggle');
+    const themeToggle = rectFor('#themeToggleBtn');
+    const uiModeToggle = rectFor('#uiModeToggle');
+    const profile = rectFor('.floating-profile');
+    const controls = [mobileToggle, title, themeToggle, uiModeToggle, profile].filter(Boolean);
+    const overlaps = [];
+    for (let i = 0; i < controls.length; i += 1) {
+      for (let j = i + 1; j < controls.length; j += 1) {
+        if (overlap(controls[i], controls[j])) overlaps.push(`${controls[i].selector}/${controls[j].selector}`);
+      }
+    }
+
+    const menu = document.getElementById('floatDropdownMenu');
+    if (menu) {
+      menu.style.display = 'flex';
+      menu.setAttribute('aria-hidden', 'false');
+      window.syncFloatingDropdownViewport?.(menu);
+    }
+    const dropdown = rectFor('#floatDropdownMenu');
+    if (menu) {
+      menu.style.display = 'none';
+      menu.setAttribute('aria-hidden', 'true');
+    }
+
+    return {
+      headerFits: Boolean(header)
+        && header.left >= -1
+        && header.right <= innerWidth + 1
+        && header.width <= innerWidth + 1,
+      overlaps,
+      dropdownFits: !dropdown?.visible || (
+        dropdown.left >= -1
+        && dropdown.right <= innerWidth + 1
+        && dropdown.top >= -1
+        && dropdown.bottom <= innerHeight + 1
+      ),
+      dropdown
+    };
+  });
 }
 
 async function seedJobRadarBoard(page) {
@@ -488,6 +741,8 @@ async function run() {
       const overflow = await getOverflowReport(page);
       const shell = await verifyShellLayout(page, viewport);
       const sidebar = await verifySidebar(page, viewport);
+      const sidebarSearch = await verifySidebarSearch(page, viewport);
+      const headerControls = await verifyHeaderControls(page, viewport);
       const radar = await verifyJobRadar(page, viewport);
       const touchTargets = await verifyTouchTargets(page, viewport);
       const postRadarOverflow = await getOverflowReport(page);
@@ -499,6 +754,8 @@ async function run() {
         overflow,
         shell,
         sidebar,
+        sidebarSearch,
+        headerControls,
         radar,
         agentDashboard,
         touchTargets,
@@ -523,6 +780,28 @@ async function run() {
         if (!shell.mobileDrawerClosedOffCanvas) {
           failures.push(`${viewport.name}: mobile drawer is visible before opening`);
         }
+        if (
+          !sidebar.open
+          || sidebar.expanded !== 'true'
+          || sidebar.ariaHidden !== 'false'
+          || sidebar.ariaModal !== 'true'
+          || !sidebar.bodyLocked
+          || !sidebar.focusInside
+          || !sidebar.overlayVisible
+          || !sidebar.overlayClosed?.closed
+          || sidebar.overlayClosed?.expanded !== 'false'
+          || sidebar.overlayClosed?.ariaHidden !== 'true'
+          || !sidebar.overlayClosed?.bodyUnlocked
+          || !sidebar.overlayClosed?.focusReturned
+          || !sidebar.openedForCloseButton
+          || !sidebar.closeButtonClosed
+          || !sidebar.openedForEscape
+          || !sidebar.escapeClosed
+          || !sidebar.openedForNavItem
+          || !sidebar.navItemClosed
+        ) {
+          failures.push(`${viewport.name}: mobile drawer open/close state is not synchronized`);
+        }
       } else {
         if (shell.mobileToggleVisible) {
           failures.push(`${viewport.name}: mobile toggle visible on desktop`);
@@ -533,6 +812,26 @@ async function run() {
         if (!shell.contentAlignedToSidebar || !shell.headerAlignedToContent) {
           failures.push(`${viewport.name}: sidebar, header, and content are misaligned`);
         }
+        if (sidebar.collapsed && (!sidebar.flyout?.open || !sidebar.flyout?.fitsViewport || !sidebar.flyoutClosedByEscape)) {
+          failures.push(`${viewport.name}: collapsed sidebar flyout does not fit or close correctly`);
+        }
+      }
+      if (!sidebarSearch.noMatchEmptyVisible || sidebarSearch.noMatchVisibleItems !== 0) {
+        failures.push(`${viewport.name}: sidebar search empty state did not appear for no-result query`);
+      }
+      if (
+        !sidebarSearch.noMatchStateConsistent
+        || !sidebarSearch.matchStateConsistent
+        || !sidebarSearch.resetStateConsistent
+        || !sidebarSearch.resetEmptyHidden
+        || !sidebarSearch.revisionAlertsRestored
+        || sidebarSearch.matchVisibleItems < 1
+        || sidebarSearch.resetVisibleItems < sidebarSearch.matchVisibleItems
+      ) {
+        failures.push(`${viewport.name}: sidebar search did not keep accordion state synchronized`);
+      }
+      if (!headerControls.headerFits || headerControls.overlaps.length || !headerControls.dropdownFits) {
+        failures.push(`${viewport.name}: header controls or profile dropdown overlap/outgrow viewport`);
       }
       if (viewport.width <= 640) {
         if (!radar.hasMobileStageSelect || radar.optionCount < 5 || radar.visibleColumns.length !== 1 || radar.selectedStage !== 'applied') {

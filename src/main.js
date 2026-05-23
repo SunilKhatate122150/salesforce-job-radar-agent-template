@@ -5,7 +5,7 @@ import './data/navigation.js';
 import './data/salesforceContent.js';
 import './data/studyAnalytics.js';
 import './data/careerIntelligence.js';
-import '../app.js';
+import '../app.js?v=20260523-responsive-shell';
 import './ui-shell.js';
 import '../code-practice.js';
 
@@ -16,4 +16,3 @@ import './modules/studyTracker.js';
 import './modules/jobRadar.js';
 import './modules/profile.js';
 import './modules/theme.js';
-

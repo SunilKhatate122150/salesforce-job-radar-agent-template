@@ -810,6 +810,39 @@
   white-space: nowrap;
 }
 
+#sidebar .sidebar-search-empty {
+  display: grid;
+  gap: 6px;
+  margin: 12px 10px;
+  padding: 14px;
+  border: 1px dashed rgba(96, 165, 250, 0.28);
+  border-radius: 10px;
+  background: rgba(15, 23, 42, 0.48);
+  color: var(--color-text-muted, #bac8e6);
+}
+
+#sidebar .sidebar-search-empty[hidden] {
+  display: none !important;
+}
+
+#sidebar .sidebar-search-empty strong,
+#sidebar .sidebar-search-empty span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+#sidebar .sidebar-search-empty strong {
+  color: var(--color-text, #f8fbff);
+  font-size: 0.82rem;
+  font-weight: 850;
+}
+
+#sidebar .sidebar-search-empty span {
+  color: var(--color-text-faint, #7f96ba);
+  font-size: 0.74rem;
+  line-height: 1.35;
+}
+
 #sidebar .sidebar-branding {
   position: sticky !important;
   top: 0 !important;
@@ -905,7 +938,7 @@ body:not(.sidebar-collapsed) #sidebar .sidebar-branding {
     left: 92px !important;
     top: var(--collapsed-flyout-top, 96px) !important;
     width: min(340px, calc(100vw - 112px)) !important;
-    max-height: calc(100vh - var(--collapsed-flyout-top, 96px) - 24px) !important;
+    max-height: min(var(--collapsed-flyout-max-h, 560px), calc(100dvh - var(--collapsed-flyout-top, 96px) - 24px)) !important;
     display: flex !important;
     flex-direction: column !important;
     gap: 8px !important;
@@ -1051,7 +1084,7 @@ body:not(.sidebar-collapsed) #sidebar .sidebar-branding {
     top: var(--collapsed-flyout-top, 96px);
     z-index: 10050;
     width: min(360px, calc(100vw - var(--sidebar-w, 80px) - 28px));
-    max-height: min(560px, calc(100vh - var(--collapsed-flyout-top, 96px) - 18px));
+    max-height: min(var(--collapsed-flyout-max-h, 560px), calc(100dvh - var(--collapsed-flyout-top, 96px) - 18px));
     display: none;
     flex-direction: column;
     gap: 8px;
@@ -1583,6 +1616,16 @@ body:not(.sidebar-collapsed) #sidebar .sidebar-branding {
     z-index: 9998 !important;
   }
 
+  html body.nav-open #sidebarOverlay {
+    display: block !important;
+    opacity: 1 !important;
+  }
+
+  html body:not(.nav-open) #sidebarOverlay {
+    display: none !important;
+    opacity: 0 !important;
+  }
+
   html body.nav-open {
     overflow: hidden !important;
   }
@@ -1623,6 +1666,55 @@ body:not(.sidebar-collapsed) #sidebar .sidebar-branding {
     padding: 8px 6px !important;
     font-size: 0.76rem !important;
     white-space: nowrap !important;
+  }
+}
+
+/* Header/dropdown guardrails: keep compact controls readable without overlap. */
+html body #mainHeader,
+html body #mainHeader * {
+  box-sizing: border-box;
+}
+
+html body #mainHeader .header-zone-left,
+html body #mainHeader .header-zone-center,
+html body #mainHeader .header-zone-right {
+  min-width: 0 !important;
+}
+
+html body #mainHeader .header-zone-right {
+  overflow: visible !important;
+}
+
+html body #mainHeader #themeToggleBtn,
+html body #mainHeader .theme-toggle-btn,
+html body #mainHeader .mobile-toggle {
+  flex: 0 0 auto !important;
+}
+
+html body #floatDropdownMenu.floating-dropdown {
+  box-sizing: border-box !important;
+  max-width: min(240px, calc(100vw - 24px)) !important;
+  right: max(12px, env(safe-area-inset-right, 0px)) !important;
+}
+
+@media (max-width: 900px) {
+  html body #mainHeader .header-zone-right {
+    max-width: min(42vw, 172px) !important;
+  }
+
+  html body #mainHeader #uiModeToggle {
+    flex: 0 1 auto !important;
+    max-width: 76px !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+  }
+
+  html body #floatDropdownMenu.floating-dropdown {
+    position: fixed !important;
+    top: calc(60px + env(safe-area-inset-top, 0px) + 6px) !important;
+    left: auto !important;
+    width: min(240px, calc(100vw - 24px)) !important;
   }
 }
 
