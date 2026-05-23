@@ -1149,7 +1149,7 @@ body:not(:has(#job_radar.active)) .activity-log-panel {
 }
 
 /* --- JOB RADAR V3 INDUSTRIAL --- */
-.radar-v3-header { height: var(--hdr); background: rgba(7,12,24,.96); backdrop-filter: blur(24px); border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 16px; padding: 0 20px; position: sticky; top: 0; z-index: 100; }
+.radar-v3-header { height: var(--jr-header-h, 72px); background: rgba(7,12,24,.96); backdrop-filter: blur(24px); border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 16px; padding: 0 20px; position: sticky; top: 0; z-index: 100; }
 .pipe-stats { display: flex; gap: 4px; flex: 1; }
 .pstat { display: flex; align-items: center; gap: 6px; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 4px 10px; cursor: pointer; transition: .2s var(--ease); flex: 1; max-width: 140px; }
 .pstat:hover { border-color: var(--border2); }
@@ -1162,7 +1162,7 @@ body:not(:has(#job_radar.active)) .activity-log-panel {
 .pinfo { display: flex; flex-direction: column; }
 .pcount { font-family: 'JetBrains Mono', monospace; font-size: .85rem; font-weight: 500; color: var(--text); line-height: 1; }
 .plbl { font-size: 9px; color: var(--text3); font-weight: 500; text-transform: uppercase; letter-spacing: .06em; }
-.analytics-bar-v3 { height: var(--analytics); background: rgba(13,21,38,.97); border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 20px; padding: 0 20px; position: sticky; top: var(--hdr); z-index: 99; overflow-x: auto; }
+.analytics-bar-v3 { height: var(--jr-analytics-h, 64px); background: rgba(13,21,38,.97); border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 20px; padding: 0 20px; position: sticky; top: var(--jr-header-h, 72px); z-index: 99; overflow-x: auto; }
 .goal-ring-v3 { width: 36px; height: 36px; }
 .goal-track { fill: none; stroke: #1e3055; stroke-width: 3; }
 .goal-arc { fill: none; stroke: var(--green); stroke-width: 3; stroke-linecap: round; transform: rotate(-90deg); transform-origin: 50% 50%; transition: stroke-dasharray .6s var(--ease); }
@@ -2426,7 +2426,7 @@ body:has(#job_radar.active) #headerTitle {
 }
 
 #job_radar .radar-kpis {
-  display: none !important;
+  display: grid !important;
 }
 
 #job_radar .radar-tabs {
@@ -3264,6 +3264,7 @@ body:has(#job_radar.active) #headerTitle {
 /* Job Radar final board stability and pagination */
 #main > #job_radar.page.active {
   display: flex !important;
+  flex-direction: column !important;
 }
 
 /* Job Radar final board stability and pagination */
@@ -3920,6 +3921,9 @@ body:has(#job_radar.active) .activity-log-panel .log-entry {
   }
 
   #job_radar .radar-v3-header {
+    height: auto !important;
+    min-height: min-content !important;
+    flex-wrap: wrap !important;
     gap: 10px !important;
   }
 
@@ -3935,9 +3939,12 @@ body:has(#job_radar.active) .activity-log-panel .log-entry {
   }
 
   #job_radar .analytics-bar-v3 {
+    height: auto !important;
+    min-height: min-content !important;
     display: grid !important;
     grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
     gap: 8px !important;
+    padding-block: 10px !important;
   }
 
   #job_radar .analytics-bar-v3 .radar-divider {

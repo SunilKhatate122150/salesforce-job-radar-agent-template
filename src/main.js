@@ -1,4 +1,6 @@
 // Client entry point for Vite bundling
+import './radar-cloud.js';
+import './components.js';
 import './data/navigation.js';
 import './data/salesforceContent.js';
 import './data/studyAnalytics.js';

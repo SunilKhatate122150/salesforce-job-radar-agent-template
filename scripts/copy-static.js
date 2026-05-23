@@ -28,6 +28,16 @@ if (fs.existsSync(srcPages)) {
   console.warn(`Source pages folder does not exist: ${srcPages}`);
 }
 
+// Copy dynamic src/styles folder
+const srcStyles = path.resolve('src/styles');
+const destStyles = path.resolve('dist/src/styles');
+if (fs.existsSync(srcStyles)) {
+  console.log(`Copying ${srcStyles} to ${destStyles}...`);
+  copyDir(srcStyles, destStyles);
+} else {
+  console.warn(`Source styles folder does not exist: ${srcStyles}`);
+}
+
 // Copy static root files
 const filesToCopy = ['favicon.ico', 'manifest.json', 'sw.js'];
 filesToCopy.forEach(file => {
