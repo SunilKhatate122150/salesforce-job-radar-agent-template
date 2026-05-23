@@ -682,6 +682,7 @@ async function verifyAgentDashboard(page, viewport) {
       const rect = el.getBoundingClientRect();
       return {
         left: Math.round(rect.left),
+        right: Math.round(rect.right),
         width: Math.round(rect.width),
         height: Math.round(rect.height)
       };
@@ -692,6 +693,47 @@ async function verifyAgentDashboard(page, viewport) {
     const actionQueue = actionQueueEl ? rectFor(actionQueueEl) : null;
     const actionItems = Array.from(document.querySelectorAll('#profile_match .career-os-action-item'))
       .map(el => Math.round(el.getBoundingClientRect().width));
+    const roadmapCards = Array.from(document.querySelectorAll('#profile_match .roadmap-topic-card'));
+    const roadmapMeta = roadmapCards.map(card => {
+      const cardRect = card.getBoundingClientRect();
+      const meta = card.querySelector('.topic-meta');
+      const est = card.querySelector('.est-time');
+      const prep = card.querySelector('.start-prep');
+      const metaRect = meta?.getBoundingClientRect();
+      const estRect = est?.getBoundingClientRect();
+      const prepRect = prep?.getBoundingClientRect();
+      const prepStyle = prep ? getComputedStyle(prep) : null;
+      const estStyle = est ? getComputedStyle(est) : null;
+      return {
+        hasMeta: Boolean(meta),
+        hasEst: Boolean(est),
+        hasPrep: Boolean(prep),
+        cardWidth: Math.round(cardRect.width),
+        metaHeight: metaRect ? Math.round(metaRect.height) : 0,
+        estWidth: estRect ? Math.round(estRect.width) : 0,
+        estHeight: estRect ? Math.round(estRect.height) : 0,
+        prepWidth: prepRect ? Math.round(prepRect.width) : 0,
+        prepHeight: prepRect ? Math.round(prepRect.height) : 0,
+        prepWhiteSpace: prepStyle?.whiteSpace || '',
+        estWhiteSpace: estStyle?.whiteSpace || '',
+        fitsCard: Boolean(metaRect)
+          && metaRect.left >= cardRect.left - 1
+          && metaRect.right <= cardRect.right + 1
+          && metaRect.bottom <= cardRect.bottom + 1
+      };
+    });
+    const roadmapMetaStable = roadmapMeta.length > 0 && roadmapMeta.every(item => (
+      item.hasMeta
+      && item.hasEst
+      && item.hasPrep
+      && item.fitsCard
+      && item.estHeight <= 28
+      && item.prepHeight <= 28
+      && item.estWidth >= 46
+      && item.prepWidth >= 64
+      && item.estWhiteSpace === 'nowrap'
+      && item.prepWhiteSpace === 'nowrap'
+    ));
     const visiblePanels = Array.from(document.querySelectorAll('#profile_match .career-os-grid > .career-os-panel'))
       .filter(el => {
         const rect = el.getBoundingClientRect();
@@ -705,6 +747,9 @@ async function verifyAgentDashboard(page, viewport) {
       actionQueue,
       actionListColumns: actionList ? getComputedStyle(actionList).gridTemplateColumns : '',
       actionItems,
+      roadmapCardsVisible: roadmapCards.length,
+      roadmapMeta,
+      roadmapMetaStable,
       actionQueueFullWidth: grid && actionQueue
         ? Math.abs(actionQueue.left - grid.left) <= 2 && actionQueue.width >= grid.width - 4
         : false,
@@ -852,6 +897,9 @@ async function run() {
       }
       if (viewport.width >= 1024 && agentDashboard.minActionItemWidth < 260) {
         failures.push(`${viewport.name}: Agent Dashboard action cards are too narrow`);
+      }
+      if (!agentDashboard.roadmapCardsVisible || !agentDashboard.roadmapMetaStable) {
+        failures.push(`${viewport.name}: roadmap action labels collapse or overflow`);
       }
       if (!radar.interaction?.searchMatched || radar.interaction.searchCards < 1) {
         failures.push(`${viewport.name}: job board search did not return seeded role`);

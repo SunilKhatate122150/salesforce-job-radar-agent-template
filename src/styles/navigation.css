@@ -1776,6 +1776,76 @@ html body #profile_match .career-os-action-item .career-os-link-btn {
   margin-top: 2px !important;
 }
 
+html body #profile_match .premium-roadmap-grid {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 272px), 1fr)) !important;
+  align-items: stretch !important;
+}
+
+html body #profile_match .roadmap-topic-card {
+  display: grid !important;
+  grid-template-rows: auto minmax(42px, 1fr) auto !important;
+  gap: 10px !important;
+  min-width: 0 !important;
+  min-height: 168px !important;
+  overflow: hidden !important;
+}
+
+html body #profile_match .topic-card-head {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) auto !important;
+  gap: 10px !important;
+  align-items: start !important;
+  margin-bottom: 0 !important;
+}
+
+html body #profile_match .topic-name,
+html body #profile_match .topic-reason {
+  min-width: 0 !important;
+  overflow-wrap: normal !important;
+  word-break: normal !important;
+  hyphens: none !important;
+}
+
+html body #profile_match .priority-badge {
+  white-space: nowrap !important;
+}
+
+html body #profile_match .topic-reason {
+  margin-bottom: 0 !important;
+}
+
+html body #profile_match .topic-meta {
+  display: grid !important;
+  grid-template-columns: minmax(74px, auto) minmax(96px, auto) !important;
+  gap: 10px !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  min-width: 0 !important;
+}
+
+html body #profile_match .est-time,
+html body #profile_match .start-prep {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  min-width: 0 !important;
+  line-height: 1.15 !important;
+  white-space: nowrap !important;
+  overflow-wrap: normal !important;
+  word-break: normal !important;
+}
+
+html body #profile_match .est-time svg,
+html body #profile_match .start-prep svg {
+  flex: 0 0 18px !important;
+  width: 18px !important;
+  height: 18px !important;
+}
+
+html body #profile_match .start-prep {
+  justify-self: end !important;
+}
+
 @media (min-width: 901px) and (max-width: 1180px) {
   html body #profile_match .career-os-grid {
     grid-template-columns: 1fr !important;
@@ -1790,5 +1860,16 @@ html body #profile_match .career-os-action-item .career-os-link-btn {
 
   html body #profile_match .career-os-action-item .career-os-link-btn {
     width: 100% !important;
+  }
+}
+
+@media (max-width: 520px) {
+  html body #profile_match .topic-meta {
+    grid-template-columns: 1fr !important;
+    justify-content: start !important;
+  }
+
+  html body #profile_match .start-prep {
+    justify-self: start !important;
   }
 }

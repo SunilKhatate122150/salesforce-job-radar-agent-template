@@ -23,4 +23,5 @@ test('responsive verification tool is available and covers key breakpoints', () 
   assert.match(script, /content is pushed by the mobile drawer/);
   assert.match(script, /verifyAgentDashboard/);
   assert.match(script, /Agent Dashboard action queue is squeezed into a narrow column/);
+  assert.match(script, /roadmap action labels collapse or overflow/);
 });
