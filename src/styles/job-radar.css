@@ -3858,7 +3858,13 @@ body:has(#job_radar.active) .activity-log-panel .log-entry {
 
 #job_radar .pipe-stats {
   min-width: 0 !important;
-  flex-wrap: wrap !important;
+  flex-wrap: nowrap !important;
+}
+
+@media (max-width: 1100px) {
+  #job_radar .pipe-stats {
+    flex-wrap: wrap !important;
+  }
 }
 
 /* Final responsive hardening for the live Vercel surface. These rules keep the

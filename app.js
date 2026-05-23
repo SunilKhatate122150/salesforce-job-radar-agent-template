@@ -35,7 +35,7 @@ let premiumPreviewBound = false;
 let premiumPreviewTimer = null;
 let currentUiMode = localStorage.getItem('sf_premium_ui_mode') || 'modern';
 let lastSidebarTrigger = null;
-const JOB_RADAR_CSS = 'src/styles/job-radar.css?v=20260516-loading-responsive';
+const JOB_RADAR_CSS = '/src/styles/job-radar.css?v=20260523-layout-fix';
 
 const featureStylesheetPromises = new Map();
 
