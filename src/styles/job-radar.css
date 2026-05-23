@@ -2158,6 +2158,8 @@ body:has(#job_radar.active) #headerTitle {
   top: var(--header-h, 48px) !important;
   z-index: 30 !important;
   overflow: visible !important;
+  width: 100% !important;
+  max-width: 100% !important;
 }
 
 #job_radar .radar-brand {
@@ -2297,6 +2299,8 @@ body:has(#job_radar.active) #headerTitle {
   z-index: 29 !important;
   overflow-x: auto;
   overflow-y: hidden;
+  width: 100% !important;
+  max-width: 100% !important;
 }
 
 #job_radar .met {
@@ -2427,6 +2431,8 @@ body:has(#job_radar.active) #headerTitle {
 
 #job_radar .radar-kpis {
   display: grid !important;
+  width: 100% !important;
+  max-width: 100% !important;
 }
 
 #job_radar .radar-tabs {
@@ -2440,6 +2446,8 @@ body:has(#job_radar.active) #headerTitle {
   position: sticky;
   top: calc(var(--header-h, 48px) + var(--jr-header-h) + var(--jr-analytics-h)) !important;
   z-index: 32;
+  width: 100% !important;
+  max-width: 100% !important;
 }
 
 #job_radar .radar-tab-btn {
@@ -2474,6 +2482,8 @@ body:has(#job_radar.active) #headerTitle {
   position: sticky !important;
   top: calc(var(--header-h, 48px) + var(--jr-header-h) + var(--jr-analytics-h) + 40px) !important;
   z-index: 31 !important;
+  width: 100% !important;
+  max-width: 100% !important;
 }
 
 #job_radar .filter-label {
