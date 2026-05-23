@@ -15,6 +15,8 @@ test('responsive verification tool is available and covers key breakpoints', () 
   assert.match(script, /sidebar search empty state did not appear/);
   assert.match(script, /sidebar search did not keep accordion state synchronized/);
   assert.match(script, /header controls or profile dropdown overlap/);
+  assert.match(script, /Job Radar header controls overlap/);
+  assert.match(script, /Job Radar mobile shell title or top spacing is broken/);
   assert.match(script, /collapsed sidebar flyout does not fit or close correctly/);
   assert.match(script, /job card detail flyout did not open/);
   assert.match(script, /touch targets below 44px/);

@@ -605,6 +605,77 @@ async function verifyJobRadar(page, viewport) {
     };
   });
 
+  const header = await page.evaluate(() => {
+    const rectFor = el => {
+      if (!el) return null;
+      const rect = el.getBoundingClientRect();
+      const style = getComputedStyle(el);
+      return {
+        selector: el.id ? `#${el.id}` : `.${Array.from(el.classList || []).join('.')}`,
+        left: rect.left,
+        right: rect.right,
+        top: rect.top,
+        bottom: rect.bottom,
+        width: rect.width,
+        height: rect.height,
+        display: style.display,
+        visibility: style.visibility,
+        opacity: Number(style.opacity || 1)
+      };
+    };
+    const visible = box => Boolean(
+      box
+      && box.width > 0
+      && box.height > 0
+      && box.display !== 'none'
+      && box.visibility !== 'hidden'
+      && box.opacity > 0.01
+    );
+    const overlapPairs = elements => {
+      const boxes = elements.map(rectFor).filter(visible);
+      const overlaps = [];
+      for (let i = 0; i < boxes.length; i += 1) {
+        for (let j = i + 1; j < boxes.length; j += 1) {
+          const a = boxes[i];
+          const b = boxes[j];
+          const horizontal = Math.min(a.right, b.right) - Math.max(a.left, b.left);
+          const vertical = Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top);
+          if (horizontal > 1 && vertical > 1) overlaps.push(`${a.selector} over ${b.selector}`);
+        }
+      }
+      return overlaps;
+    };
+
+    const shellHeader = document.getElementById('mainHeader');
+    const shellTitle = document.getElementById('headerTitle');
+    const radarHeader = document.querySelector('#job_radar .radar-v3-header');
+    const shellHeaderRect = shellHeader?.getBoundingClientRect();
+    const radarHeaderRect = radarHeader?.getBoundingClientRect();
+    const shellTitleBox = rectFor(shellTitle);
+    const directChildren = Array.from(radarHeader?.children || []);
+    const pstats = Array.from(document.querySelectorAll('#job_radar .pipe-stats > .pstat'));
+    const actionButtons = Array.from(document.querySelectorAll('#job_radar .radar-header-actions > *'));
+    const overlaps = [
+      ...overlapPairs(directChildren),
+      ...overlapPairs(pstats),
+      ...overlapPairs(actionButtons)
+    ];
+
+    return {
+      radarHeaderFits: Boolean(radarHeader)
+        && radarHeader.scrollWidth <= radarHeader.clientWidth + 2
+        && radarHeaderRect.left >= -1
+        && radarHeaderRect.right <= innerWidth + 1,
+      overlaps,
+      mobileTopGap: shellHeaderRect && radarHeaderRect
+        ? Math.round(radarHeaderRect.top - shellHeaderRect.bottom)
+        : null,
+      shellTitleText: shellTitle?.textContent?.trim() || '',
+      shellTitleVisible: visible(shellTitleBox)
+        && /job radar/i.test(shellTitle?.textContent || '')
+    };
+  });
+
   if (viewport.width <= 640) {
     await page.waitForSelector('#mobileBoardStageSelect', { timeout: 10000 });
     await page.select('#mobileBoardStageSelect', 'applied');
@@ -620,14 +691,14 @@ async function verifyJobRadar(page, viewport) {
         visibleColumns,
         interaction: window.__lastRadarInteraction || null
       };
-    }).then(result => ({ ...result, interaction }));
+    }).then(result => ({ ...result, header, interaction }));
   }
 
   return page.evaluate(() => ({
     hasBoard: Boolean(document.querySelector('#job_radar .kanban-board-v3')),
     columns: document.querySelectorAll('#job_radar .kanban-col-v3').length,
     stageNavHidden: getComputedStyle(document.getElementById('mobileBoardStageNav') || document.body).display === 'none'
-  })).then(result => ({ ...result, interaction }));
+  })).then(result => ({ ...result, header, interaction }));
 }
 
 async function verifyAgentDashboard(page, viewport) {
@@ -877,6 +948,12 @@ async function run() {
       }
       if (!headerControls.headerFits || headerControls.overlaps.length || !headerControls.dropdownFits) {
         failures.push(`${viewport.name}: header controls or profile dropdown overlap/outgrow viewport`);
+      }
+      if (!radar.header?.radarHeaderFits || radar.header?.overlaps?.length) {
+        failures.push(`${viewport.name}: Job Radar header controls overlap`);
+      }
+      if (viewport.width <= 900 && (!radar.header?.shellTitleVisible || Math.abs(radar.header?.mobileTopGap || 0) > 8)) {
+        failures.push(`${viewport.name}: Job Radar mobile shell title or top spacing is broken`);
       }
       if (viewport.width <= 640) {
         if (!radar.hasMobileStageSelect || radar.optionCount < 5 || radar.visibleColumns.length !== 1 || radar.selectedStage !== 'applied') {

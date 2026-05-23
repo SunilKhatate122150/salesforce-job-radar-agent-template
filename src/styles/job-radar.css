@@ -4064,3 +4064,74 @@ body:has(#job_radar.active) .activity-log-panel .log-entry {
     grid-template-columns: 1fr !important;
   }
 }
+
+/* Header polish: keep the Radar shell readable and prevent desktop chip/action
+   collisions after the module stylesheet loads. */
+@media (max-width: 900px) {
+  body:has(#job_radar.active) #headerTitle {
+    opacity: 1 !important;
+    pointer-events: auto !important;
+  }
+
+  #job_radar.page,
+  #job_radar.page.active {
+    padding-top: 0 !important;
+  }
+}
+
+@media (min-width: 1101px) {
+  #job_radar .radar-v3-header {
+    display: grid !important;
+    grid-template-columns: minmax(184px, max-content) minmax(0, 1fr) auto !important;
+    align-items: center !important;
+    gap: 12px !important;
+  }
+
+  #job_radar .radar-brand {
+    min-width: 0 !important;
+    width: auto !important;
+  }
+
+  #job_radar .pipe-stats {
+    display: grid !important;
+    grid-template-columns: repeat(5, minmax(84px, 1fr)) !important;
+    gap: 6px !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    flex: none !important;
+    overflow: visible !important;
+  }
+
+  #job_radar .pstat {
+    width: 100% !important;
+    max-width: none !important;
+    min-width: 0 !important;
+    justify-content: flex-start !important;
+  }
+
+  #job_radar .pinfo {
+    min-width: 0 !important;
+  }
+
+  #job_radar .plbl {
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    overflow-wrap: normal !important;
+  }
+
+  #job_radar .radar-header-actions {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(86px, auto)) !important;
+    gap: 8px !important;
+    width: auto !important;
+    min-width: 0 !important;
+    margin-left: 0 !important;
+    flex: none !important;
+  }
+
+  #job_radar .radar-quiet-btn {
+    min-height: 38px !important;
+    white-space: nowrap !important;
+  }
+}

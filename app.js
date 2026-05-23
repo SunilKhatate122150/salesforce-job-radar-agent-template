@@ -36,7 +36,7 @@ let premiumPreviewTimer = null;
 let currentUiMode = localStorage.getItem('sf_premium_ui_mode') || 'modern';
 let lastSidebarTrigger = null;
 const NAV_MOBILE_MAX_WIDTH = 900;
-const JOB_RADAR_CSS = '/src/styles/job-radar.css?v=20260523-layout-fix';
+const JOB_RADAR_CSS = '/src/styles/job-radar.css?v=20260523-job-radar-polish';
 
 const featureStylesheetPromises = new Map();
 
