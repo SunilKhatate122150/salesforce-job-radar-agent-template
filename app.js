@@ -561,7 +561,11 @@ function setSidebarCollapsedState(isCollapsed) {
   const collapsed = Boolean(isCollapsed);
   closeCollapsedNavFlyout();
   document.body.classList.toggle('sidebar-collapsed', collapsed);
-  if (sidebar) sidebar.classList.toggle('collapsed', collapsed);
+  if (sidebar) {
+    sidebar.classList.toggle('collapsed', collapsed);
+    sidebar.scrollTop = 0;
+    setTimeout(() => { if (sidebar) sidebar.scrollTop = 0; }, 150);
+  }
   setScopedItem('sidebar_collapsed', collapsed);
   localStorage.setItem('job_radar_sidebar_collapsed', String(collapsed));
   syncDesktopSidebarToggle(collapsed);

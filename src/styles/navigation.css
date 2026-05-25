@@ -1247,7 +1247,8 @@ body:not(.sidebar-collapsed) #sidebar .sidebar-branding {
     width: 56px !important;
     min-width: 56px !important;
     max-width: 56px !important;
-    overflow: hidden !important;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
   }
 
   html body:not(.sidebar-collapsed) #sidebar .nav-group-label,
