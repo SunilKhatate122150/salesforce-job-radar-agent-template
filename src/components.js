@@ -2055,11 +2055,15 @@ function renderJobCard(job) {
 function renderInsights() {
   const funnel = document.getElementById('funnel-container');
   if (!funnel) return;
+  
+  const jobs = Array.isArray(window.pipelineJobs) ? window.pipelineJobs : [];
+  
+  // 1. Pipeline Funnel
   const stages = [
-    { label: 'TO APPLY', count: window.pipelineJobs.filter(j => j.status === 'todo').length, color: 'var(--blue)' },
-    { label: 'APPLIED', count: window.pipelineJobs.filter(j => j.status === 'applied').length, color: 'var(--green)' },
-    { label: 'INTERVIEW', count: window.pipelineJobs.filter(j => j.status === 'interview').length, color: 'var(--amber)' },
-    { label: 'OFFER', count: window.pipelineJobs.filter(j => j.status === 'offer').length, color: 'var(--pink)' }
+    { label: 'TO APPLY', count: jobs.filter(j => j.status === 'todo').length, color: 'var(--blue)' },
+    { label: 'APPLIED', count: jobs.filter(j => j.status === 'applied').length, color: 'var(--green)' },
+    { label: 'INTERVIEW', count: jobs.filter(j => j.status === 'interview').length, color: 'var(--amber)' },
+    { label: 'OFFER', count: jobs.filter(j => j.status === 'offer').length, color: 'var(--pink)' }
   ];
   const max = Math.max(...stages.map(s => s.count), 1);
   funnel.innerHTML = stages.map(s => `
@@ -2071,6 +2075,161 @@ function renderInsights() {
       <div style="width:20px; font-size:0.75rem; font-weight:800;">${s.count}</div>
     </div>
   `).join('');
+
+  // 2. Company Mix (segmented progress bar in #dist-container)
+  const distContainer = document.getElementById('dist-container');
+  if (distContainer) {
+    if (jobs.length === 0) {
+      distContainer.innerHTML = '<span style="color:var(--text3);font-size:0.75rem;">No data yet.</span>';
+    } else {
+      const companyCounts = {};
+      jobs.forEach(job => {
+        const companyName = String(job.company || 'Confidential').trim();
+        companyCounts[companyName] = (companyCounts[companyName] || 0) + 1;
+      });
+      
+      const sortedCompanies = Object.entries(companyCounts)
+        .sort((a, b) => b[1] - a[1])
+        .map(([name, count]) => ({ name, count }));
+        
+      const topLimit = 5;
+      const topSlice = sortedCompanies.slice(0, topLimit);
+      const otherSlice = sortedCompanies.slice(topLimit);
+      const totalJobs = jobs.length || 1;
+      
+      const companyMixData = [];
+      topSlice.forEach(c => {
+        companyMixData.push({
+          name: c.name,
+          count: c.count,
+          percentage: Math.round((c.count / totalJobs) * 100)
+        });
+      });
+      
+      let otherCount = 0;
+      otherSlice.forEach(c => {
+        otherCount += c.count;
+      });
+      if (otherCount > 0) {
+        companyMixData.push({
+          name: 'Other',
+          count: otherCount,
+          percentage: Math.round((otherCount / totalJobs) * 100)
+        });
+      }
+      
+      const colors = [
+        'linear-gradient(90deg, #3b82f6, #06b6d4)', // Blue-Cyan
+        'linear-gradient(90deg, #8b5cf6, #ec4899)', // Violet-Pink
+        'linear-gradient(90deg, #10b981, #34d399)', // Green-Emerald
+        'linear-gradient(90deg, #f59e0b, #fbbf24)', // Amber-Yellow
+        'linear-gradient(90deg, #ef4444, #f87171)', // Red-Rose
+        'linear-gradient(90deg, #6b7280, #9ca3af)'  // Muted Gray
+      ];
+      
+      const dotColors = [
+        '#3b82f6',
+        '#8b5cf6',
+        '#10b981',
+        '#f59e0b',
+        '#ef4444',
+        '#6b7280'
+      ];
+      
+      const segmentsHtml = companyMixData.map((c, idx) => {
+        const color = colors[idx % colors.length];
+        return `<div class="company-dist-segment" style="width: ${c.percentage}%; background: ${color};" title="${componentEscapeAttr(c.name)}: ${c.count} job(s) (${c.percentage}%)"></div>`;
+      }).join('');
+      
+      const legendHtml = companyMixData.map((c, idx) => {
+        const dotColor = dotColors[idx % dotColors.length];
+        return `
+          <div class="company-dist-legend-item">
+            <div class="company-dist-color-dot" style="background: ${dotColor};"></div>
+            <div class="company-dist-details">
+              <span class="company-dist-name" title="${componentEscapeAttr(c.name)}">${componentEscapeHtml(c.name)}</span>
+              <span class="company-dist-count">${c.count} (${c.percentage}%)</span>
+            </div>
+          </div>
+        `;
+      }).join('');
+      
+      distContainer.innerHTML = `
+        <div class="company-dist-bar">
+          ${segmentsHtml}
+        </div>
+        <div class="company-dist-legend">
+          ${legendHtml}
+        </div>
+      `;
+    }
+  }
+
+  // 3. Weekly Velocity (weekly activity in #velocity-container)
+  const velocityContainer = document.getElementById('velocity-container');
+  if (velocityContainer) {
+    const days = [];
+    const now = new Date();
+    
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date(now);
+      d.setDate(now.getDate() - i);
+      
+      const year = d.getFullYear();
+      const month = String(d.getMonth() + 1).padStart(2, '0');
+      const dateVal = String(d.getDate()).padStart(2, '0');
+      const dateStr = `${year}-${month}-${dateVal}`;
+      
+      const weekdays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+      const dayLabel = weekdays[d.getDay()];
+      const displayDate = `${month}/${dateVal}`;
+      
+      days.push({
+        dateStr,
+        dayLabel,
+        displayDate,
+        count: 0
+      });
+    }
+    
+    jobs.forEach(job => {
+      if (job.status === 'todo') return; // Only count jobs moved beyond todo (i.e. applied/active)
+      
+      const rawDate = job.appliedAt || job.statusUpdatedAt || job.updated_at || job.created_at;
+      if (!rawDate) return;
+      
+      const d = new Date(rawDate);
+      if (isNaN(d.getTime())) return;
+      
+      const year = d.getFullYear();
+      const month = String(d.getMonth() + 1).padStart(2, '0');
+      const dateVal = String(d.getDate()).padStart(2, '0');
+      const jobDateStr = `${year}-${month}-${dateVal}`;
+      
+      const matchingDay = days.find(day => day.dateStr === jobDateStr);
+      if (matchingDay) {
+        matchingDay.count++;
+      }
+    });
+    
+    const maxCount = Math.max(...days.map(d => d.count), 1);
+    
+    velocityContainer.innerHTML = days.map(d => {
+      const heightPct = (d.count / maxCount) * 100;
+      return `
+        <div class="velocity-bar-col">
+          <div class="velocity-bar-pill-wrap">
+            <div class="velocity-bar-badge" style="visibility: ${d.count > 0 ? 'visible' : 'hidden'};">${d.count}</div>
+            <div class="velocity-bar-pill" style="height: ${heightPct}%;" title="${d.count} job(s) applied on ${d.dayLabel} (${d.displayDate})"></div>
+          </div>
+          <div class="velocity-bar-label">
+            ${d.dayLabel}
+            <span class="velocity-bar-date">${d.displayDate}</span>
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
 }
 
 function renderDevelopmentUI() {
@@ -2079,7 +2238,7 @@ function renderDevelopmentUI() {
     { name: 'Phase 2: Job Fetching', status: 'completed', desc: 'LinkedIn & Naukri integration with deduplication.' },
     { name: 'Phase 3: AI Matching', status: 'in-progress', desc: 'Resume tailoring and skill gap analysis.' },
     { name: 'Phase 4: Auto-Apply', status: 'pending', desc: 'One-click application and tracking.' },
-    { name: 'Phase 5: Smart Analytics', status: 'pending', desc: 'Market trend reporting and ROI tracking.' }
+    { name: 'Phase 5: Smart Analytics', status: 'completed', desc: 'Market trend reporting and ROI tracking.' }
   ];
 
   const skillProficiency = [
