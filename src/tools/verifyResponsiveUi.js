@@ -213,7 +213,7 @@ async function verifySidebar(page, viewport) {
 
     await page.click('#mobileToggle');
     await page.waitForFunction(() => document.getElementById('sidebar')?.classList.contains('mobile-open'), { timeout: 4000 });
-    await new Promise(resolve => setTimeout(resolve, 80));
+    await new Promise(resolve => setTimeout(resolve, 350));
     const openState = await page.evaluate(() => {
       const sidebar = document.getElementById('sidebar');
       const overlay = document.getElementById('sidebarOverlay');

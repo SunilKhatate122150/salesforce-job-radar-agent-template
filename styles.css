@@ -6292,25 +6292,6 @@ button:active,
   background: var(--surface-hover) !important;
 }
 
-/* --- SIDEBAR & LAYOUT CORE --- */
-#sidebar {
-  position: fixed;
-  left: 0;
-  top: 0;
-  bottom: 0;
-  width: var(--sidebar-w);
-  background: var(--surface);
-  border-right: 1px solid var(--border);
-  display: flex;
-  flex-direction: column;
-  z-index: var(--z-sidebar);
-  transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  overflow: hidden;
-}
-
-#sidebar.collapsed {
-  width: var(--sidebar-collapsed-w);
-}
 
 .main-content {
   margin-left: var(--sidebar-w);
@@ -6338,60 +6319,7 @@ button:active,
   gap: var(--space-4);
 }
 
-/* --- SIDEBAR COMPONENTS --- */
-.sidebar-branding {
-  height: var(--sidebar-header-h);
-  padding: 0 var(--space-6);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  border-bottom: 1px solid var(--border);
-  flex-shrink: 0;
-}
-
-.sidebar-toggle-btn {
-  width: 32px;
-  height: 32px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 8px;
-  border: 1px solid var(--border);
-  background: var(--bg-soft);
-  color: var(--text);
-  cursor: pointer;
-  transition: 0.2s;
-}
-
-.sidebar-toggle-btn:hover {
-  background: var(--surface-hover);
-  border-color: var(--blue);
-}
-
-#sidebar.collapsed .nav-group-text,
-#sidebar.collapsed .nav-item-label,
-#sidebar.collapsed .nav-group-desc,
-#sidebar.collapsed .nav-group-count,
-#sidebar.collapsed .nav-section-chevron,
-#sidebar.collapsed .nav-subsection-title {
-  opacity: 0;
-  pointer-events: none;
-}
-
-#sidebar.collapsed .nav-item,
-#sidebar.collapsed .nav-parent-title {
-  padding: 0;
-  justify-content: center;
-  width: 48px;
-  height: 48px;
-  margin: 4px auto;
-  border-radius: 12px;
-}
-
-#sidebar.collapsed .nav-item svg,
-#sidebar.collapsed .nav-parent-title svg {
-  margin: 0;
-}
+/* Legacy sidebar layout overrides removed (fully managed in navigation.css) */
 
 /* --- INTERACTION FEEDBACK --- */
 .ripple {
