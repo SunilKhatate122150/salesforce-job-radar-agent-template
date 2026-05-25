@@ -1403,10 +1403,11 @@ function syncSidebarRailFlyoutMode() {
   const sidebar = document.getElementById('sidebar');
   const sidebarWidth = sidebar ? Math.round(sidebar.getBoundingClientRect().width) : 0;
   const isCollapsed = document.body.classList.contains('sidebar-collapsed');
-  const isTabletRail = isCollapsed && window.innerWidth >= 768 && window.innerWidth <= 1023;
+  const isMobileDrawer = isMobileNavViewport();
+  const isTabletRail = isCollapsed && !isMobileDrawer && window.innerWidth > NAV_MOBILE_MAX_WIDTH && window.innerWidth <= 1023;
   const isDesktopRail = isCollapsed && window.innerWidth >= 1280;
-  const isVisualRail = sidebarWidth > 0 && sidebarWidth <= 96;
-  const isRail = window.innerWidth >= 768 && (isTabletRail || isDesktopRail || isVisualRail);
+  const isVisualRail = !isMobileDrawer && sidebarWidth > 0 && sidebarWidth <= 96;
+  const isRail = !isMobileDrawer && window.innerWidth >= 768 && (isTabletRail || isDesktopRail || isVisualRail);
   document.body.classList.toggle('sidebar-rail-active', isRail);
   if (sidebar) sidebar.classList.toggle('nav-rail-active', isRail);
   return isRail;
@@ -5916,6 +5917,9 @@ function syncSidebarViewportMode() {
     return;
   }
 
+  closeCollapsedNavFlyout();
+  document.body.classList.remove('sidebar-rail-active');
+  sidebar.classList.remove('nav-rail-active');
   sidebar.setAttribute('role', 'dialog');
   sidebar.setAttribute('aria-modal', String(isOpen));
   sidebar.setAttribute('aria-hidden', String(!isOpen));
@@ -5965,6 +5969,11 @@ function toggleMobileSidebar(forceOpen) {
   const overlay = document.getElementById('sidebarOverlay');
   const toggle = document.getElementById('mobileToggle');
   if (!sidebar) return;
+  if (isMobileNavViewport()) {
+    closeCollapsedNavFlyout();
+    document.body.classList.remove('sidebar-rail-active');
+    sidebar.classList.remove('nav-rail-active');
+  }
   
   const shouldOpen = typeof forceOpen === 'boolean' ? forceOpen : !sidebar.classList.contains('mobile-open');
   const syncA11y = open => {

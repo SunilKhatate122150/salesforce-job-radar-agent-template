@@ -5,7 +5,7 @@ import './data/navigation.js';
 import './data/salesforceContent.js';
 import './data/studyAnalytics.js';
 import './data/careerIntelligence.js';
-import '../app.js?v=20260523-responsive-shell';
+import '../app.js?v=20260525-menu-fix';
 import './ui-shell.js';
 import '../code-practice.js';
 
