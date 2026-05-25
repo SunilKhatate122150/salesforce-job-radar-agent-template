@@ -24,14 +24,14 @@ self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
       console.log(`📦 PWA v${SW_VERSION}: Caching core assets...`);
-      // Cache core assets, but don't fail install if fonts are blocked
-      return cache.addAll(CORE_ASSETS).then(() => {
-        return Promise.allSettled(
-          FONT_ASSETS.map(url => cache.add(url).catch(() => {
-            console.warn(`⚠️ PWA: Could not cache external asset: ${url}`);
-          }))
-        );
-      });
+      const allAssets = [...CORE_ASSETS, ...FONT_ASSETS];
+      return Promise.allSettled(
+        allAssets.map(url => 
+          cache.add(url)
+            .then(() => console.log(`  Cached: ${url}`))
+            .catch((err) => console.warn(`⚠️ PWA: Could not cache asset ${url}:`, err.message))
+        )
+      );
     })
   );
 });

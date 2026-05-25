@@ -475,7 +475,7 @@ export default async function(req, res) {
   }
 
   try {
-    let { slug } = req.query;
+    let { slug } = req.query || {};
     let path = '';
     if (slug) {
       path = Array.isArray(slug) ? slug.join('/') : slug;
