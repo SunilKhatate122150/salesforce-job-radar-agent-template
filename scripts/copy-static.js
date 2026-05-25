@@ -38,6 +38,16 @@ if (fs.existsSync(srcStyles)) {
   console.warn(`Source styles folder does not exist: ${srcStyles}`);
 }
 
+// Copy assets folder
+const srcAssets = path.resolve('assets');
+const destAssets = path.resolve('dist/assets');
+if (fs.existsSync(srcAssets)) {
+  console.log(`Copying ${srcAssets} to ${destAssets}...`);
+  copyDir(srcAssets, destAssets);
+} else {
+  console.warn(`Source assets folder does not exist: ${srcAssets}`);
+}
+
 // Copy static root files
 const filesToCopy = ['favicon.ico', 'manifest.json', 'sw.js'];
 filesToCopy.forEach(file => {
