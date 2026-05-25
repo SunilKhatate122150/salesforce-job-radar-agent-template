@@ -5,7 +5,6 @@ import path from 'path';
 import { User, UserProfile, JobRecord, StudySession, TaskStatus } from '../src/models/models.js';
 import { TursoDB } from '../src/db/turso_driver.js';
 import {
-  mergeDashboardJobs,
   readSupabaseJobAlertRows,
   readSupabaseTrackerJobs
 } from '../src/jobs/dashboardJobs.js';
@@ -52,11 +51,13 @@ import {
   runCodePracticeChecks
 } from '../src/services/codePracticeService.js';
 import {
-  applyJobStatusOverrides,
   buildJobAnalyticsPayload,
   buildJobListPayload,
   buildJobRadarPayload,
-  buildJobStatusUpdate
+  buildJobRadarRecords,
+  buildJobStatusUpdate,
+  loadJobStatusOverrides,
+  saveJobStatusOverrideRecord
 } from '../src/services/jobRadarService.js';
 import { applyRateLimit } from '../src/api/rateLimit.js';
 import { parseJsonBody, sanitizeApiBody } from '../src/api/requestSanitizer.js';
@@ -211,25 +212,16 @@ function readBody(req) {
 }
 
 async function getJobStatusOverrides(userId) {
-  if (!userId) return {};
-  let supabaseStatuses = {};
-  try {
-    const payload = await readJobStatusState(userId);
-    supabaseStatuses = payload?.statuses || payload || {};
-  } catch (err) {
-    console.warn('[STATUS] Supabase status read skipped:', err.message);
-  }
-
-  let mongoStatuses = {};
-  if (mongoose.connection.readyState === 1) {
-    const profile = await UserProfile.findOne({ userId }).select('jobRadarStatuses').lean();
-    mongoStatuses = profile?.jobRadarStatuses || {};
-  }
-
-  return {
-    ...supabaseStatuses,
-    ...mongoStatuses
-  };
+  return loadJobStatusOverrides({
+    userId,
+    readState: () => readJobStatusState(userId),
+    readMongoStatuses: async () => {
+      if (mongoose.connection.readyState !== 1) return {};
+      const profile = await UserProfile.findOne({ userId }).select('jobRadarStatuses').lean();
+      return profile?.jobRadarStatuses || {};
+    },
+    onWarn: (label, err) => console.warn(`[STATUS] ${label} skipped:`, err.message)
+  });
 }
 
 function getStateTableName() {
@@ -264,43 +256,29 @@ async function writeJobStatusState(userId, payload) {
 }
 
 async function saveJobStatusOverride(userId, statusKey, statusPayload) {
-  let wroteMongo = false;
-  let wroteState = false;
-
-  if (mongoose.connection.readyState === 1) {
-    await UserProfile.findOneAndUpdate(
-      { userId },
-      {
-        $set: {
-          userId,
-          [`jobRadarStatuses.${statusKey}`]: statusPayload
-        }
-      },
-      { upsert: true, new: true }
-    );
-    wroteMongo = true;
-  }
-
-  try {
-    const payload = await readJobStatusState(userId);
-    const statuses = payload?.statuses && typeof payload.statuses === 'object'
-      ? payload.statuses
-      : {};
-    statuses[statusKey] = statusPayload;
-    wroteState = await writeJobStatusState(userId, {
-      statuses,
-      updatedAt: statusPayload.updatedAt,
-      source: 'vercel-api'
-    });
-  } catch (err) {
-    console.warn('[STATUS] Supabase status write skipped:', err.message);
-  }
-
-  return {
-    wroteMongo,
-    wroteState,
-    stored: wroteMongo || wroteState
-  };
+  return saveJobStatusOverrideRecord({
+    userId,
+    statusKey,
+    statusPayload,
+    source: 'vercel-api',
+    writeMongoStatus: async () => {
+      if (mongoose.connection.readyState !== 1) return false;
+      await UserProfile.findOneAndUpdate(
+        { userId },
+        {
+          $set: {
+            userId,
+            [`jobRadarStatuses.${statusKey}`]: statusPayload
+          }
+        },
+        { upsert: true, new: true }
+      );
+      return true;
+    },
+    readState: () => readJobStatusState(userId),
+    writeState: ({ payload }) => writeJobStatusState(userId, payload),
+    onWarn: (label, err) => console.warn(`[STATUS] ${label} skipped:`, err.message)
+  });
 }
 
 function readDataJson(fileName, fallback = {}) {
@@ -701,16 +679,27 @@ export default async function(req, res) {
     if (path === 'dashboard/summary' && req.method === 'GET') {
       const { profile: loadedProfile } = await loadHybridProfile(userId, 'dashboard/summary');
       const profile = loadedProfile || { userId };
-      const [tursoJobs, mongoJobs, studySessions, fallbackReleases] = await Promise.all([
+      const [tursoJobs, mongoJobs, trackerJobs, alertJobs, statusOverrides, studySessions, fallbackReleases] = await Promise.all([
         safeTursoRead('dashboard/summary jobs', () => TursoDB.getJobs(userId, 160), []),
         safeMongoRead('dashboard/summary jobs', () => JobRecord.find(mongoJobQuery(userId)).sort({ updatedAt: -1, createdAt: -1 }).limit(220).lean(), []),
+        readSupabaseTrackerJobs(),
+        readSupabaseJobAlertRows(180),
+        getJobStatusOverrides(userId),
         safeMongoRead('dashboard/summary study', () => StudySession.find({ userId }).sort({ startTime: -1 }).limit(120).lean(), []),
         Promise.resolve(readDataJson('salesforce-releases.json', { activeRelease: {}, items: [] }))
       ]);
       const allReleases = await readReleaseCenterPayload(fallbackReleases);
       const summary = buildDashboardSummary({
         profile,
-        jobs: mergeDashboardJobs(tursoJobs, mongoJobs),
+        jobs: buildJobRadarRecords({
+          tursoJobs,
+          mongoJobs,
+          trackerJobs,
+          alertJobs,
+          statusOverrides,
+          includeTurso: true,
+          limit: 220
+        }),
         studySessions,
         releases: allReleases,
         activityLog: []
@@ -943,31 +932,31 @@ export default async function(req, res) {
       const { profile } = await loadHybridProfile(userId, 'profile/match');
 
       // Get Jobs from both tiers
-      const [tursoJobs, mongoJobs, trackerJobs, alertJobs] = await Promise.all([
+      const [tursoJobs, mongoJobs, trackerJobs, alertJobs, statusOverrides] = await Promise.all([
         safeTursoRead('profile/match jobs', () => TursoDB.getJobAnalytics(userId), []),
         safeMongoRead('profile/match jobs', () => JobRecord.find(mongoJobQuery(userId)).lean(), []),
         readSupabaseTrackerJobs(),
-        readSupabaseJobAlertRows(180)
+        readSupabaseJobAlertRows(180),
+        getJobStatusOverrides(userId)
       ]);
-      const allJobs = mergeDashboardJobs(tursoJobs, mongoJobs, trackerJobs, alertJobs);
+      const allJobs = buildJobRadarRecords({
+        tursoJobs,
+        mongoJobs,
+        trackerJobs,
+        alertJobs,
+        statusOverrides,
+        includeTurso: true,
+        limit: 220
+      });
 
       console.log(`[MATCH] Analyzing ${allJobs.length} total jobs for ${userId}`);
       const filtered = allJobs.filter(j => (j.match_score || 0) >= 60);
-      
-      const topMatchedSkills = {};
-      const topMissingSkills = {};
-      filtered.forEach(j => {
-        const matched = typeof j.matched_skills === 'string' ? JSON.parse(j.matched_skills || '[]') : (j.matched_skills || []);
-        const missing = typeof j.missing_skills === 'string' ? JSON.parse(j.missing_skills || '[]') : (j.missing_skills || []);
-        matched.forEach(s => topMatchedSkills[s] = (topMatchedSkills[s] || 0) + 1);
-        missing.forEach(s => topMissingSkills[s] = (topMissingSkills[s] || 0) + 1);
-      });
-      const sortSkills = (obj) => Object.entries(obj).sort((a,b) => b[1] - a[1]).slice(0, 10).map(([k,v]) => ({ _id: k, count: v }));
+      const analytics = buildJobAnalyticsPayload(filtered);
       return res.status(200).json({ 
         exists: !!profile, 
         profile, 
-        matched_skills: sortSkills(topMatchedSkills), 
-        missing_skills: sortSkills(topMissingSkills),
+        matched_skills: analytics.topMatched,
+        missing_skills: analytics.topMissing,
         storageSource: 'Unified Hybrid'
       });
     }
@@ -1024,16 +1013,22 @@ export default async function(req, res) {
     }
 
     if (path === 'jobs/analytics') {
-      const [tursoJobs, mongoJobs, trackerJobs, alertJobs] = await Promise.all([
+      const [tursoJobs, mongoJobs, trackerJobs, alertJobs, statusOverrides] = await Promise.all([
         safeTursoRead('jobs/analytics', () => TursoDB.getJobAnalytics(userId), []),
         safeMongoRead('jobs/analytics', () => JobRecord.find(mongoJobQuery(userId)).lean(), []),
         readSupabaseTrackerJobs(),
-        readSupabaseJobAlertRows(180)
+        readSupabaseJobAlertRows(180),
+        getJobStatusOverrides(userId)
       ]);
-      const combined = applyJobStatusOverrides(
-        mergeDashboardJobs([...tursoJobs, ...mongoJobs, ...trackerJobs, ...alertJobs]),
-        await getJobStatusOverrides(userId)
-      );
+      const combined = buildJobRadarRecords({
+        tursoJobs,
+        mongoJobs,
+        trackerJobs,
+        alertJobs,
+        statusOverrides,
+        includeTurso: true,
+        limit: 220
+      });
       console.log(`[ANALYTICS] Hybrid Merging ${combined.length} records for ${userId}`);
       return res.status(200).json(buildJobAnalyticsPayload(combined));
     }
@@ -1180,7 +1175,7 @@ export default async function(req, res) {
       );
       const allSessions = mergeStudyHistory(tursoSessions, mongoSessions, 1000);
       
-      const [mongoJobs, tursoJobs, trackerJobs, alertJobs] = await Promise.all([
+      const [mongoJobs, tursoJobs, trackerJobs, alertJobs, statusOverrides] = await Promise.all([
         safeMongoRead(
           'summary/jobs mongo',
           () => JobRecord.find(mongoJobQuery(userId)).sort({ createdAt: -1 }).limit(1000).lean(),
@@ -1188,9 +1183,18 @@ export default async function(req, res) {
         ),
         safeTursoRead('summary/jobs turso', () => TursoDB.getJobAnalytics(userId), []),
         readSupabaseTrackerJobs(),
-        readSupabaseJobAlertRows(180)
+        readSupabaseJobAlertRows(180),
+        getJobStatusOverrides(userId)
       ]);
-      const allJobs = mergeDashboardJobs(mongoJobs, tursoJobs, trackerJobs, alertJobs);
+      const allJobs = buildJobRadarRecords({
+        mongoJobs,
+        tursoJobs,
+        trackerJobs,
+        alertJobs,
+        statusOverrides,
+        includeTurso: true,
+        limit: 1000
+      });
       
       console.log(`[SUMMARY] Hybrid Analyzing ${allSessions.length} sessions and ${allJobs.length} jobs`);
       

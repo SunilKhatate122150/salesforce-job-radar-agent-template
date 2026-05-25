@@ -43,6 +43,8 @@ Google ID token verification is centralized in `src/auth/session.js` and shared 
 
 The current private profile model also supports `codingPractice`, `questionAttempts`, `mockInterviewSessions`, `releaseStudyActions`, `dailyStudyPlan`, `userSettings`, and `notes`. Local-only fallbacks follow the same `sfjr:${userId}:featureName` pattern.
 
+Job Radar board payloads, analytics, list views, dashboard-summary jobs, and status overrides share tested logic in `src/services/jobRadarService.js`. Status persistence remains user-scoped and can use Mongo profile fields plus Supabase state without trusting client-owned identifiers.
+
 Study history, task completion, retention updates, and daily summaries share tested logic in `src/services/studyService.js` so local and Vercel routes stay aligned.
 Profile import, save normalization, hybrid Mongo/Turso profile merge, and roadmap generation share tested logic in `src/services/profileService.js`. When Mongo is unavailable in local dev, profile fallback data is stored by user in `.cache/profile-cache.json`; the old `.cache/profile-sync.json` path is treated only as a legacy migration source.
 

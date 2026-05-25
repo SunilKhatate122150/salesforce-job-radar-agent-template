@@ -8,7 +8,6 @@ import { StudySession, TaskStatus, User, JobRecord, UserProfile } from './models
 import { spawn } from 'child_process';
 import { attemptAutoApply } from './tools/autoApply.js';
 import {
-  mergeDashboardJobs,
   readSupabaseJobAlertRows,
   readSupabaseTrackerJobs
 } from './jobs/dashboardJobs.js';
@@ -54,10 +53,12 @@ import {
   runCodePracticeChecks
 } from './services/codePracticeService.js';
 import {
-  applyJobStatusOverrides,
   buildJobAnalyticsPayload,
   buildJobRadarPayload,
-  buildJobStatusUpdate
+  buildJobRadarRecords,
+  buildJobStatusUpdate,
+  loadJobStatusOverrides,
+  saveJobStatusOverrideRecord
 } from './services/jobRadarService.js';
 import { parseJsonBody } from './api/requestSanitizer.js';
 import { apiError, apiSuccess, sendNodeJson, unauthorizedResponse } from './api/apiResponse.js';
@@ -92,25 +93,16 @@ function readDataJson(fileName, fallback = {}) {
 }
 
 async function getJobStatusOverrides(userId) {
-  if (!userId) return {};
-  let supabaseStatuses = {};
-  try {
-    const payload = await readJobStatusState(userId);
-    supabaseStatuses = payload?.statuses || payload || {};
-  } catch (err) {
-    console.warn('[STATUS] Supabase status read skipped:', err.message);
-  }
-
-  let mongoStatuses = {};
-  if (mongoose.connection.readyState === 1) {
-    const profile = await UserProfile.findOne({ userId }).select('jobRadarStatuses').lean();
-    mongoStatuses = profile?.jobRadarStatuses || {};
-  }
-
-  return {
-    ...supabaseStatuses,
-    ...mongoStatuses
-  };
+  return loadJobStatusOverrides({
+    userId,
+    readState: () => readJobStatusState(userId),
+    readMongoStatuses: async () => {
+      if (mongoose.connection.readyState !== 1) return {};
+      const profile = await UserProfile.findOne({ userId }).select('jobRadarStatuses').lean();
+      return profile?.jobRadarStatuses || {};
+    },
+    onWarn: (label, err) => console.warn(`[STATUS] ${label} skipped:`, err.message)
+  });
 }
 
 function getStateTableName() {
@@ -145,43 +137,29 @@ async function writeJobStatusState(userId, payload) {
 }
 
 async function saveJobStatusOverride(userId, statusKey, statusPayload) {
-  let wroteMongo = false;
-  let wroteState = false;
-
-  if (mongoose.connection.readyState === 1) {
-    await UserProfile.findOneAndUpdate(
-      { userId },
-      {
-        $set: {
-          userId,
-          [`jobRadarStatuses.${statusKey}`]: statusPayload
-        }
-      },
-      { upsert: true, new: true }
-    );
-    wroteMongo = true;
-  }
-
-  try {
-    const payload = await readJobStatusState(userId);
-    const statuses = payload?.statuses && typeof payload.statuses === 'object'
-      ? payload.statuses
-      : {};
-    statuses[statusKey] = statusPayload;
-    wroteState = await writeJobStatusState(userId, {
-      statuses,
-      updatedAt: statusPayload.updatedAt,
-      source: 'local-web-server'
-    });
-  } catch (err) {
-    console.warn('[STATUS] Supabase status write skipped:', err.message);
-  }
-
-  return {
-    stored: wroteMongo || wroteState,
-    mongo: wroteMongo,
-    supabase: wroteState
-  };
+  return saveJobStatusOverrideRecord({
+    userId,
+    statusKey,
+    statusPayload,
+    source: 'local-web-server',
+    writeMongoStatus: async () => {
+      if (mongoose.connection.readyState !== 1) return false;
+      await UserProfile.findOneAndUpdate(
+        { userId },
+        {
+          $set: {
+            userId,
+            [`jobRadarStatuses.${statusKey}`]: statusPayload
+          }
+        },
+        { upsert: true, new: true }
+      );
+      return true;
+    },
+    readState: () => readJobStatusState(userId),
+    writeState: ({ payload }) => writeJobStatusState(userId, payload),
+    onWarn: (label, err) => console.warn(`[STATUS] ${label} skipped:`, err.message)
+  });
 }
 
 function readBody(req) {
@@ -541,15 +519,20 @@ export default async function handler(req, res) {
         res.end(JSON.stringify(payload));
       }
       else if (url === '/api/jobs/analytics' && method === 'GET') {
-        const [mongoJobs, trackerJobs, alertJobs] = await Promise.all([
+        const [mongoJobs, trackerJobs, alertJobs, statusOverrides] = await Promise.all([
           isMongoConnected ? JobRecord.find({ userId }).lean() : [],
           readSupabaseTrackerJobs(),
-          readSupabaseJobAlertRows(180)
+          readSupabaseJobAlertRows(180),
+          getJobStatusOverrides(userId)
         ]);
-        const records = applyJobStatusOverrides(
-          mergeDashboardJobs(mongoJobs, trackerJobs, alertJobs),
-          await getJobStatusOverrides(userId)
-        );
+        const records = buildJobRadarRecords({
+          mongoJobs,
+          trackerJobs,
+          alertJobs,
+          statusOverrides,
+          includeTurso: false,
+          limit: 220
+        });
         res.writeHead(200, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify(buildJobAnalyticsPayload(records)));
       }
@@ -583,19 +566,24 @@ export default async function handler(req, res) {
         res.end(JSON.stringify(summary));
       }
       else if (url === '/api/dashboard/summary' && method === 'GET') {
-        const [profile, mongoJobs, trackerJobs, alertJobs, studySessions] = await Promise.all([
+        const [profile, mongoJobs, trackerJobs, alertJobs, statusOverrides, studySessions] = await Promise.all([
           isMongoConnected ? UserProfile.findOne({ userId }).lean() : null,
           isMongoConnected ? JobRecord.find({ userId }).sort({ updatedAt: -1, createdAt: -1 }).limit(220).lean() : [],
           readSupabaseTrackerJobs(),
           readSupabaseJobAlertRows(180),
+          getJobStatusOverrides(userId),
           isMongoConnected ? StudySession.find({ userId }).sort({ startTime: -1 }).limit(120).lean() : []
         ]);
         const fallbackReleases = readDataJson('salesforce-releases.json', { activeRelease: {}, items: [] });
         const allReleases = await readReleaseCenterPayload(fallbackReleases);
-        const jobs = applyJobStatusOverrides(
-          mergeDashboardJobs(mongoJobs, trackerJobs, alertJobs),
-          await getJobStatusOverrides(userId)
-        );
+        const jobs = buildJobRadarRecords({
+          mongoJobs,
+          trackerJobs,
+          alertJobs,
+          statusOverrides,
+          includeTurso: false,
+          limit: 220
+        });
         const summary = buildDashboardSummary({
           profile: profile || { userId },
           jobs,

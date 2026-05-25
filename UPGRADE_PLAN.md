@@ -16,7 +16,9 @@
 - Added `src/services/jobRadarService.js` for shared Job Radar status normalization, override matching, dashboard payload shaping, analytics aggregation, and list response building.
 - Rewired Vercel and local Job Radar endpoints to the shared service while keeping Mongo, Turso, and Supabase reads/writes owned by each route layer.
 - Removed local hardcoded analytics counts so `/api/jobs/analytics` now reflects the actual merged jobs, missing skills, matched skills, and top companies.
-- Added `test/jobRadarService.test.js` covering status updates, encoded/raw status overrides, source counts, storage-capacity labels, analytics aliases, and list payloads.
+- Added injected status persistence helpers so Vercel and local servers now share status-map merge/write behavior while still using their own storage clients.
+- Dashboard summary, profile matching, analytics, and study-summary job inputs now use the same status-aware `buildJobRadarRecords` path as the main board.
+- Added `test/jobRadarService.test.js` coverage for status updates, encoded/raw status overrides, source counts, storage-capacity labels, analytics aliases, list payloads, state payload preservation, and unsafe-key filtering.
 - Next backend split target: continue thinning release/profile/study route orchestration and move remaining browser monolith work behind focused tests.
 
 ## 2026-05-16 Backend Stability Addendum

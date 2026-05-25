@@ -16,6 +16,8 @@
 |---|---|---|---|
 | Job Radar route duplication | Vercel and local API servers duplicated status normalization, override lookup, dashboard response shaping, and analytics aggregation. | Added a shared `jobRadarService` and rewired both route surfaces to use the same status, jobs, analytics, and list payload builders. | `src/services/jobRadarService.js`, `api/router.js`, `src/webServer.js`, `test/jobRadarService.test.js` |
 | Local analytics drift | Local `/api/jobs/analytics` returned fixed Data Cloud/Agentforce and company counts instead of counts from the merged jobs. | Local analytics now uses the same actual merged-job aggregation as Vercel, including snake_case and camelCase aliases expected by the UI. | `src/webServer.js`, `src/services/jobRadarService.js` |
+| Status persistence drift | Vercel and local servers still assembled Supabase/Mongo status maps separately and did not sanitize persisted override maps in one place. | Added shared injected status-store helpers that merge Supabase/Mongo overrides, keep previous statuses on write, normalize statuses, and drop unsafe object keys. | `src/services/jobRadarService.js`, `api/router.js`, `src/webServer.js`, `test/jobRadarService.test.js` |
+| Dashboard summary job drift | Vercel dashboard summaries used a smaller job merge path than the main Job Radar board, so tracker/alert/status-overridden jobs could be missing from command-center analytics. | Dashboard summary, profile matching, analytics, and summary jobs now use the same status-aware `buildJobRadarRecords` path as the board. | `api/router.js`, `src/webServer.js`, `src/services/jobRadarService.js` |
 
 ## 2026-05-16 Backend Stability Upgrade
 
@@ -104,8 +106,8 @@ The app still has several legacy monoliths. Safe splits completed so far include
 
 ## Verification Steps
 
-- `npm run check:syntax` — passed for 113 JavaScript files.
-- `npm test` — passed 90/90 tests.
+- `npm run check:syntax` — passed for 131 JavaScript files.
+- `npm test` — passed 104/104 tests.
 - `npm run responsive:verify` — passed mobile 320/390/430, tablet 768/1024, and desktop 1365/1440 checks with no horizontal document overflow, no console errors, valid 320px login fit, valid mobile drawer open/Escape close, 44px mobile touch targets, Job Radar flyout/search/filter/pagination checks, valid mobile Job Radar status selector, and 80px desktop collapsed sidebar.
 - `npm run api:verify` — verifies `GET /api/health`, `GET /api/code-practice/challenges`, `GET /api/client-config`, and unauthenticated 401 protection for sampled private job, profile, study, scan, save, and status routes.
 - Vercel header tests — verify the global Content Security Policy includes required Google/auth/font/profile-image allowances and blocks object embeds.

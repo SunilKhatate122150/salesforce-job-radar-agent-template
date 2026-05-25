@@ -90,6 +90,144 @@ export function buildJobStatusUpdate({ routeId = '', payload = {}, now = new Dat
   };
 }
 
+function isPlainObject(value) {
+  return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
+}
+
+function isUnsafeObjectKey(value) {
+  return ['__proto__', 'prototype', 'constructor'].includes(String(value || ''));
+}
+
+export function normalizeJobStatusOverrideMap(overrides = {}) {
+  if (!isPlainObject(overrides)) return {};
+  const normalized = {};
+  for (const [key, value] of Object.entries(overrides)) {
+    if (!key || isUnsafeObjectKey(key) || !isPlainObject(value)) continue;
+    const status = normalizeBoardStatus(value.status);
+    const updatedAt = value.updatedAt || value.statusUpdatedAt || '';
+    const appliedAt = status === 'applied' ? (value.appliedAt || updatedAt) : (value.appliedAt || '');
+    normalized[key] = {
+      ...value,
+      status,
+      updatedAt,
+      appliedAt
+    };
+  }
+  return normalized;
+}
+
+function extractStateStatuses(payload = {}) {
+  if (!isPlainObject(payload)) return {};
+  if (isPlainObject(payload.statuses)) return payload.statuses;
+  const { updatedAt, source, generatedAt, success, error, ...possibleStatuses } = payload;
+  return possibleStatuses;
+}
+
+export function mergeJobStatusOverrides(statePayload = {}, mongoStatuses = {}) {
+  return {
+    ...normalizeJobStatusOverrideMap(extractStateStatuses(statePayload)),
+    ...normalizeJobStatusOverrideMap(mongoStatuses)
+  };
+}
+
+export function buildJobStatusStatePayload({
+  existingPayload = {},
+  statusKey = '',
+  statusPayload = {},
+  source = 'job-radar-api'
+} = {}) {
+  const safeKey = String(statusKey || '').trim();
+  if (!safeKey || isUnsafeObjectKey(safeKey)) {
+    return { ok: false, error: 'Missing job status key' };
+  }
+  const statuses = normalizeJobStatusOverrideMap(extractStateStatuses(existingPayload));
+  statuses[safeKey] = normalizeJobStatusOverrideMap({ [safeKey]: statusPayload })[safeKey] || statusPayload;
+  return {
+    ok: true,
+    payload: {
+      statuses,
+      updatedAt: statuses[safeKey]?.updatedAt || new Date().toISOString(),
+      source
+    }
+  };
+}
+
+export async function loadJobStatusOverrides({
+  userId,
+  readState,
+  readMongoStatuses,
+  onWarn = () => {}
+} = {}) {
+  if (!userId) return {};
+
+  let statePayload = {};
+  if (typeof readState === 'function') {
+    try {
+      statePayload = await readState(userId);
+    } catch (err) {
+      onWarn('Supabase status read', err);
+    }
+  }
+
+  let mongoStatuses = {};
+  if (typeof readMongoStatuses === 'function') {
+    try {
+      mongoStatuses = await readMongoStatuses(userId);
+    } catch (err) {
+      onWarn('Mongo status read', err);
+    }
+  }
+
+  return mergeJobStatusOverrides(statePayload, mongoStatuses);
+}
+
+export async function saveJobStatusOverrideRecord({
+  userId,
+  statusKey,
+  statusPayload,
+  writeMongoStatus,
+  readState,
+  writeState,
+  source = 'job-radar-api',
+  onWarn = () => {}
+} = {}) {
+  let wroteMongo = false;
+  let wroteState = false;
+
+  if (userId && typeof writeMongoStatus === 'function') {
+    try {
+      wroteMongo = Boolean(await writeMongoStatus({ userId, statusKey, statusPayload }));
+    } catch (err) {
+      onWarn('Mongo status write', err);
+    }
+  }
+
+  if (userId && typeof writeState === 'function') {
+    try {
+      const existingPayload = typeof readState === 'function' ? await readState(userId) : {};
+      const statePayload = buildJobStatusStatePayload({
+        existingPayload,
+        statusKey,
+        statusPayload,
+        source
+      });
+      if (statePayload.ok) {
+        wroteState = Boolean(await writeState({ userId, payload: statePayload.payload }));
+      }
+    } catch (err) {
+      onWarn('Supabase status write', err);
+    }
+  }
+
+  return {
+    stored: wroteMongo || wroteState,
+    mongo: wroteMongo,
+    supabase: wroteState,
+    wroteMongo,
+    wroteState
+  };
+}
+
 function normalizeSourceJobs(records = [], sourceLabel = '') {
   return records.map(job => sourceLabel ? normalizeDashboardJob(job, sourceLabel) : job);
 }

@@ -5,8 +5,12 @@ import {
   buildJobAnalyticsPayload,
   buildJobListPayload,
   buildJobRadarPayload,
+  buildJobRadarRecords,
+  buildJobStatusStatePayload,
   buildJobStatusUpdate,
-  encodeStatusKey
+  encodeStatusKey,
+  loadJobStatusOverrides,
+  saveJobStatusOverrideRecord
 } from '../src/services/jobRadarService.js';
 
 test('job radar service normalizes status update payloads', () => {
@@ -163,4 +167,87 @@ test('job radar service builds filtered list payloads', () => {
   assert.equal(payload.success, true);
   assert.equal(payload.jobs.length, 1);
   assert.equal(payload.jobs[0].status, 'offer');
+});
+
+test('job radar service safely merges persisted status overrides', async () => {
+  const encoded = encodeStatusKey('job-1');
+  const overrides = await loadJobStatusOverrides({
+    userId: 'user-a',
+    readState: async () => ({
+      statuses: {
+        [encoded]: { status: 'follow_up', updatedAt: '2026-05-16T04:00:00.000Z' },
+        '__proto__': { status: 'applied' }
+      }
+    }),
+    readMongoStatuses: async () => ({
+      [encoded]: { status: 'applied', updatedAt: '2026-05-16T05:00:00.000Z' }
+    })
+  });
+
+  assert.equal(overrides[encoded].status, 'applied');
+  assert.equal(overrides[encoded].appliedAt, '2026-05-16T05:00:00.000Z');
+  assert.equal(Object.prototype.polluted, undefined);
+});
+
+test('job radar service builds status state payloads without losing previous statuses', () => {
+  const firstKey = encodeStatusKey('job-1');
+  const secondKey = encodeStatusKey('job-2');
+  const state = buildJobStatusStatePayload({
+    existingPayload: {
+      statuses: {
+        [firstKey]: { status: 'applied', updatedAt: '2026-05-16T05:00:00.000Z' }
+      }
+    },
+    statusKey: secondKey,
+    statusPayload: { status: 'ignored', updatedAt: '2026-05-16T06:00:00.000Z' },
+    source: 'test'
+  });
+
+  assert.equal(state.ok, true);
+  assert.equal(state.payload.source, 'test');
+  assert.equal(state.payload.statuses[firstKey].status, 'applied');
+  assert.equal(state.payload.statuses[secondKey].status, 'rejected');
+});
+
+test('job radar service saves status overrides through injected stores', async () => {
+  const writes = [];
+  const key = encodeStatusKey('job-1');
+  const result = await saveJobStatusOverrideRecord({
+    userId: 'user-a',
+    statusKey: key,
+    statusPayload: { status: 'applied', updatedAt: '2026-05-16T07:00:00.000Z' },
+    source: 'unit-test',
+    writeMongoStatus: async payload => {
+      writes.push({ kind: 'mongo', payload });
+      return true;
+    },
+    readState: async () => ({ statuses: {} }),
+    writeState: async payload => {
+      writes.push({ kind: 'state', payload });
+      return true;
+    }
+  });
+
+  assert.equal(result.stored, true);
+  assert.equal(result.mongo, true);
+  assert.equal(result.supabase, true);
+  assert.equal(writes.length, 2);
+  assert.equal(writes[1].payload.payload.statuses[key].status, 'applied');
+});
+
+test('job radar records power dashboard summaries with statuses and newest first', () => {
+  const older = '2026-05-10T00:00:00.000Z';
+  const newer = '2026-05-16T00:00:00.000Z';
+  const records = buildJobRadarRecords({
+    mongoJobs: [{ job_hash: 'old', title: 'Old Role', company: 'Acme', updatedAt: older }],
+    trackerJobs: [{ id: 'new', title: 'New Role', company: 'Beta', updatedAt: newer }],
+    statusOverrides: {
+      new: { status: 'interview', updatedAt: newer }
+    },
+    includeTurso: false
+  });
+
+  assert.equal(records[0].id, 'new');
+  assert.equal(records[0].status, 'interview');
+  assert.equal(records[1].job_hash, 'old');
 });
