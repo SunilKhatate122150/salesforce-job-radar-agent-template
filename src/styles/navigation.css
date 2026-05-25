@@ -576,18 +576,7 @@
   }
 
   body.sidebar-collapsed #sidebar .nav-group-chevron {
-    position: absolute;
-    right: -5px;
-    bottom: -5px;
-    width: 17px;
-    height: 17px;
-    display: inline-flex !important;
-    border-radius: 6px;
-    color: #bfdbfe;
-    border-color: rgba(96, 165, 250, 0.36);
-    background: rgba(15, 23, 42, 0.96);
-    box-shadow: 0 0 0 1px rgba(2, 6, 23, 0.9), 0 8px 18px rgba(0, 0, 0, 0.35);
-    transform: none;
+    display: none !important;
   }
 
   body.sidebar-collapsed #sidebar .nav-group-toggle[aria-expanded="true"] .nav-group-chevron {
@@ -1068,12 +1057,7 @@ body:not(.sidebar-collapsed) #sidebar .sidebar-branding {
   }
 
   html body.sidebar-collapsed #sidebar .nav-group-chevron {
-    position: absolute !important;
-    right: -4px !important;
-    bottom: -4px !important;
-    width: 17px !important;
-    height: 17px !important;
-    display: inline-flex !important;
+    display: none !important;
   }
 }
 
