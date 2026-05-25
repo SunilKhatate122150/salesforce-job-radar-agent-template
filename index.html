@@ -84,7 +84,11 @@
       } catch (err) {
         if (status) {
           status.hidden = false;
-          status.textContent = 'Google Sign-In is not configured. Check GOOGLE_CLIENT_ID in the deployment environment.';
+          if (err.message.indexOf('not configured') !== -1) {
+            status.textContent = 'Google Sign-In is not configured. Please ensure GOOGLE_CLIENT_ID is set in your .env or deployment environment and restart the server.';
+          } else {
+            status.textContent = err.message + ' (Check your network/adblocker or console logs for details).';
+          }
         }
         console.error('[AUTH] Google Sign-In init failed:', err.message);
       }
