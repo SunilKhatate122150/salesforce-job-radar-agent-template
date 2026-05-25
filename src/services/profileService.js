@@ -1,4 +1,4 @@
-import { PDFParse } from 'pdf-parse';
+import PDFParser from 'pdf2json';
 
 const PROFILE_SKILL_BANK = [
   'Salesforce',
@@ -314,20 +314,36 @@ export function buildHybridProfile({ tursoProfile = null, mongoProfile = null } 
   };
 }
 
+function parsePdfBuffer(buffer) {
+  return new Promise((resolve, reject) => {
+    const pdfParser = new PDFParser(null, 1);
+    pdfParser.on("pdfParser_dataError", errData => {
+      reject(new Error(errData.parserError || 'PDF parsing error'));
+    });
+    pdfParser.on("pdfParser_dataReady", () => {
+      try {
+        resolve(pdfParser.getRawTextContent());
+      } catch (err) {
+        reject(err);
+      }
+    });
+    pdfParser.parseBuffer(buffer);
+  });
+}
+
 export async function parseProfileResumePdf(base64Data, existingProfile = null, userId, readDataJson = () => ({})) {
   if (!base64Data) {
     throw new Error('Base64 resume data is required');
   }
   
   const buffer = Buffer.from(base64Data, 'base64');
-  const parser = new PDFParse({ data: buffer });
-  const result = await parser.getText();
+  const text = await parsePdfBuffer(buffer);
   
-  if (!result || !result.text) {
+  if (!text) {
     throw new Error('Failed to extract text from PDF resume');
   }
   
-  const extracted = extractProfileImportFields(result.text);
+  const extracted = extractProfileImportFields(text);
   const profile = stripPersistenceFields(existingProfile || {});
   
   const nextProfile = {
