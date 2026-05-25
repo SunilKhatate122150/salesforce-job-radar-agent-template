@@ -39,7 +39,8 @@ import {
   buildImportedProfile,
   buildPremiumRoadmap,
   normalizeProfileSavePayload,
-  topicConfigName
+  topicConfigName,
+  parseProfileResumePdf
 } from './services/profileService.js';
 import {
   buildCodePracticeAttempt,
@@ -730,6 +731,34 @@ export default async function handler(req, res) {
         else writeLocalProfile(userId, nextProfile);
         res.writeHead(200, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ success: true, extractedData: extracted, intelligence }));
+      }
+      else if (url === '/api/profile/parse-resume' && method === 'POST') {
+        const payload = await readJsonRequest(req);
+        const { base64 } = payload || {};
+        if (!base64) {
+          res.writeHead(400, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ success: false, error: 'Base64 resume data is required' }));
+          return;
+        }
+        const existing = isMongoConnected ? await UserProfile.findOne({ userId }).lean() : readLocalProfile(userId);
+        try {
+          const { extractedData, profile: nextProfile } = await parseProfileResumePdf(
+            base64,
+            existing,
+            userId,
+            readDataJson
+          );
+          if (isMongoConnected) {
+            await UserProfile.findOneAndUpdate({ userId }, nextProfile, { upsert: true, new: true });
+          } else {
+            writeLocalProfile(userId, nextProfile);
+          }
+          res.writeHead(200, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ success: true, extractedData }));
+        } catch (err) {
+          res.writeHead(500, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ success: false, error: err.message }));
+        }
       }
       else if (url === '/api/roadmap' && method === 'GET') {
         const profile = isMongoConnected ? await UserProfile.findOne({ userId }).lean() : readLocalProfile(userId);

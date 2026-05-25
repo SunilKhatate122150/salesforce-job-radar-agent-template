@@ -37,7 +37,8 @@ import {
   buildImportedProfile,
   buildPremiumRoadmap,
   normalizeProfileSavePayload,
-  topicConfigName
+  topicConfigName,
+  parseProfileResumePdf
 } from '../src/services/profileService.js';
 import {
   buildCodePracticeAttempt,
@@ -871,27 +872,24 @@ export default async function(req, res) {
 
     if (path === 'profile/parse-resume' && req.method === 'POST') {
       console.log(`[PROFILE] Parsing Resume for ${userId}`);
-      // In a full production system, we would use pdf-parse here.
-      // For this industrial template, we simulate the AI extraction.
+      const body = readBody(req);
+      const { base64 } = body || {};
+      if (!base64) {
+        return res.status(400).json({ success: false, error: 'Base64 resume data is required' });
+      }
       
       const { profile: loadedProfile } = await loadHybridProfile(userId, 'profile/parse-resume');
-      const profile = loadedProfile || {};
-      
-      // Merge new extracted skills with existing
-      const currentSkills = new Set(profile.skills || []);
-      ['Salesforce CPQ', 'Lightning Web Components', 'REST/SOAP API', 'Data Cloud', 'Copado', 'Service Cloud'].forEach(s => currentSkills.add(s));
-      
-      const extractedData = {
-        skills: Array.from(currentSkills),
-        experienceYears: 4.5,
-        currentRole: 'Senior Salesforce Developer'
-      };
+      const { extractedData, profile: nextProfile } = await parseProfileResumePdf(
+        base64,
+        loadedProfile,
+        userId,
+        readDataJson
+      );
 
-      const nextProfile = { ...profile, ...extractedData, userId, updatedAt: new Date() };
       const [mongoStored, tursoStored] = await Promise.all([
         safeMongoWrite('profile/parse-resume', () => UserProfile.findOneAndUpdate(
           { userId },
-          { ...extractedData, updatedAt: new Date() },
+          nextProfile,
           { upsert: true, new: true }
         )),
         safeTursoWrite('profile/parse-resume', () => TursoDB.saveProfile(userId, nextProfile))

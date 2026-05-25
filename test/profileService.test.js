@@ -7,7 +7,8 @@ import {
   buildPremiumRoadmap,
   extractProfileImportFields,
   normalizeProfileSavePayload,
-  sanitizeImportText
+  sanitizeImportText,
+  parseProfileResumePdf
 } from '../src/services/profileService.js';
 
 function fixtureReader(name, fallback) {
@@ -146,3 +147,30 @@ test('roadmap builder adds designation topics and scoped release focus', () => {
   assert.deepEqual(roadmap.releaseFocus.items.map(item => item.id), ['dev_release']);
   assert.deepEqual(roadmap.trailheadResources.map(item => item.id), ['trail_apex']);
 });
+
+test('parseProfileResumePdf parses base64 PDF and extracts fields', async () => {
+  const fs = await import('fs');
+  const path = await import('path');
+  
+  const pdfPath = path.resolve(process.cwd(), 'Sunil_Khatate_SFDC_2026.pdf');
+  if (!fs.existsSync(pdfPath)) {
+    // If the file is not found (e.g. running in custom CI contexts), skip this integration part
+    return;
+  }
+  const buffer = fs.readFileSync(pdfPath);
+  const base64Data = buffer.toString('base64');
+  
+  const result = await parseProfileResumePdf(
+    base64Data,
+    { skills: ['Flow'] },
+    'test-user',
+    fixtureReader
+  );
+  
+  assert.equal(result.extractedData.experienceYears, 4);
+  assert.equal(result.extractedData.skills.includes('Apex'), true);
+  assert.equal(result.profile.userId, 'test-user');
+  assert.equal(result.profile.skills.includes('Flow'), true); // preserved existing
+  assert.equal(result.profile.skills.includes('Apex'), true); // added parsed
+});
+

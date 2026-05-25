@@ -1794,45 +1794,62 @@ window.handleResumeUpload = async function(event) {
   btn.disabled = true;
   btn.style.opacity = '0.8';
 
-  try {
-    // We send a request to our backend parser endpoint
-    const res = await apiFetch('/api/profile/parse-resume', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ filename: file.name }) // Passing filename just for mock context
-    });
+  const reader = new FileReader();
+  reader.onload = async function() {
+    try {
+      const base64Data = reader.result.split(',')[1];
+      const res = await apiFetch('/api/profile/parse-resume', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ base64: base64Data, filename: file.name })
+      });
 
-    if (res.ok) {
-      const data = await res.json();
-      if (data.success) {
-        showToast('Resume parsed successfully! Skills extracted.', 'green');
-        
-        // Force refresh UI
-        cachedUserProfile = null;
-        await loadUserProfile();
-        await loadJobIntelligence();
-        
-        const profilePage = document.getElementById('profile_match');
-        if (profilePage && profilePage.classList.contains('active')) {
-          if (cachedUserProfile) renderProfileMatchPage(cachedUserProfile);
+      if (res.ok) {
+        const data = await res.json();
+        if (data.success) {
+          showToast('Resume parsed successfully! Skills extracted.', 'green');
+          
+          // Force refresh UI
+          cachedUserProfile = null;
+          await loadUserProfile();
+          await loadJobIntelligence();
+          
+          const profilePage = document.getElementById('profile_match');
+          if (profilePage && profilePage.classList.contains('active')) {
+            if (cachedUserProfile) renderProfileMatchPage(cachedUserProfile);
+          }
+        } else {
+          showToast(data.error || 'Failed to parse resume.', 'red');
         }
+      } else {
+        const errPayload = await getApiErrorPayload(res);
+        showToast(errPayload.error || 'Failed to parse resume.', 'red');
       }
-    } else {
-      showToast('Failed to parse resume.', 'red');
+    } catch (e) {
+      console.error('Resume upload failed', e);
+      showToast('Error uploading resume.', 'red');
+    } finally {
+      btn.innerHTML = '✅ Parsed Successfully';
+      btn.style.background = 'rgba(16,185,129,0.2)';
+      setTimeout(() => {
+        btn.innerHTML = originalHtml;
+        btn.disabled = false;
+        btn.style.opacity = '1';
+        btn.style.background = 'rgba(16,185,129,0.1)';
+      }, 3000);
+      event.target.value = '';
     }
-  } catch (e) {
-    console.error('Resume upload failed', e);
-    showToast('Error uploading resume.', 'red');
-  } finally {
-    btn.innerHTML = '✅ Parsed Successfully';
-    btn.style.background = 'rgba(16,185,129,0.2)';
-    setTimeout(() => {
-      btn.innerHTML = originalHtml;
-      btn.disabled = false;
-      btn.style.opacity = '1';
-      btn.style.background = 'rgba(16,185,129,0.1)';
-    }, 3000);
-  }
+  };
+
+  reader.onerror = function() {
+    showToast('Failed to read resume file', 'red');
+    btn.innerHTML = originalHtml;
+    btn.disabled = false;
+    btn.style.opacity = '1';
+    event.target.value = '';
+  };
+
+  reader.readAsDataURL(file);
 };
 
 // =============================================

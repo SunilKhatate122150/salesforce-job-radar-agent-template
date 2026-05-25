@@ -1,3 +1,7 @@
+import { createRequire } from 'module';
+const require = createRequire(import.meta.url);
+const { PDFParse } = require('pdf-parse');
+
 const PROFILE_SKILL_BANK = [
   'Salesforce',
   'Apex',
@@ -311,3 +315,45 @@ export function buildHybridProfile({ tursoProfile = null, mongoProfile = null } 
     source: tursoProfile ? 'Turso (Primary)' : (mongoProfile ? 'MongoDB (Legacy)' : 'None')
   };
 }
+
+export async function parseProfileResumePdf(base64Data, existingProfile = null, userId, readDataJson = () => ({})) {
+  if (!base64Data) {
+    throw new Error('Base64 resume data is required');
+  }
+  
+  const buffer = Buffer.from(base64Data, 'base64');
+  const parser = new PDFParse({ data: buffer });
+  const result = await parser.getText();
+  
+  if (!result || !result.text) {
+    throw new Error('Failed to extract text from PDF resume');
+  }
+  
+  const extracted = extractProfileImportFields(result.text);
+  const profile = stripPersistenceFields(existingProfile || {});
+  
+  const nextProfile = {
+    ...profile,
+    userId,
+    skills: mergeUnique(extracted.skills, profile.skills),
+    certifications: mergeUnique(extracted.certifications, profile.certifications),
+    experienceYears: extracted.experienceYears || profile.experienceYears || 1,
+    currentDesignation: extracted.currentDesignation || profile.currentDesignation || profile.currentRole,
+    targetDesignation: profile.targetDesignation || profile.targetRole || extracted.currentDesignation,
+    currentRole: extracted.currentDesignation || profile.currentRole || profile.currentDesignation,
+    targetRole: profile.targetRole || profile.targetDesignation || extracted.currentDesignation,
+    uiMode: profile.uiMode || 'modern',
+    profileImports: [
+      ...(profile.profileImports || []).slice(-4),
+      { source: 'pdf_resume', text: extracted.rawText, importedAt: new Date() }
+    ],
+    updatedAt: new Date()
+  };
+  
+  const intelligence = buildPremiumRoadmap(nextProfile, readDataJson);
+  nextProfile.roadmapSnapshot = intelligence.roadmap;
+  nextProfile.releaseFocus = intelligence.releaseFocus;
+  
+  return { extractedData: extracted, profile: nextProfile, intelligence };
+}
+
