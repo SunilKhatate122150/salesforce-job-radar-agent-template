@@ -1296,8 +1296,9 @@ body:not(.sidebar-collapsed) #sidebar .sidebar-branding {
   html body.sidebar-collapsed #sidebar .nav-item .count {
     position: absolute !important;
     top: -3px !important;
-    right: -4px !important;
+    right: -2px !important;
     min-width: 16px !important;
+    width: auto !important;
     height: 16px !important;
     padding: 0 4px !important;
     display: inline-flex !important;
@@ -1311,6 +1312,7 @@ body:not(.sidebar-collapsed) #sidebar .sidebar-branding {
     line-height: 1 !important;
     box-shadow: 0 0 0 2px var(--color-surface, #09101e) !important;
     z-index: 2;
+    white-space: nowrap !important;
   }
 
   html body.sidebar-collapsed #sidebar .nav-group-label,
