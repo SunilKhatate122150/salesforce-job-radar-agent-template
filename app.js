@@ -4527,6 +4527,24 @@ async function fetchLeaderboard() {
   }
 }
 
+function getPageRouteElement(pageId) {
+  if (!pageId) return null;
+
+  const firstMatch = document.getElementById(pageId);
+  if (firstMatch && firstMatch.classList && firstMatch.classList.contains('page')) {
+    return firstMatch;
+  }
+
+  try {
+    const escapedId = window.CSS && typeof window.CSS.escape === 'function'
+      ? window.CSS.escape(String(pageId))
+      : String(pageId).replace(/([ #;?%&,.+*~':"!^$[\]()=>|/@])/g, '\\$1');
+    return document.querySelector(`.page#${escapedId}`) || firstMatch;
+  } catch (err) {
+    return firstMatch;
+  }
+}
+
 // --- DYNAMIC PAGE LOADING ENGINE (v1411 Modular) ---
 async function ensurePageLoaded(pageId) {
     // List of pages that should be loaded dynamically
@@ -4552,7 +4570,7 @@ async function ensurePageLoaded(pageId) {
     }
 
     console.log(`%c 🔍 [LOADER] Checking if modular page is loaded: ${pageId}`, 'color: #a855f7; font-weight: bold;');
-    const pageEl = document.getElementById(pageId);
+    const pageEl = getPageRouteElement(pageId);
     if (!pageEl) {
         console.error(`%c ERROR [LOADER] CRITICAL: Element not found in DOM for modular page: #${pageId}`, 'color: #ef4444; font-weight: bold;');
         return false;
@@ -4619,7 +4637,7 @@ async function showPage(id) {
   
   document.querySelectorAll('.nav-item').forEach(function(n) { n.classList.remove('active'); });
   
-  let page = document.getElementById(id);
+  let page = getPageRouteElement(id);
   let isIndustrial = false;
   const hasLoadedPageContent = () => Boolean(
     page &&

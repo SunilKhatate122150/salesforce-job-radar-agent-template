@@ -91,6 +91,26 @@ test('navigation items are grouped by core/scenario and resolve to content', () 
   });
 });
 
+test('company pages avoid route id collisions and use safe router lookups', () => {
+  const indexHtml = fs.readFileSync('index.html', 'utf8');
+  const companyHtml = fs.readFileSync('pages/company_interviews.html', 'utf8');
+  const companyIqHtml = fs.readFileSync('pages/company_iq.html', 'utf8');
+  const appJs = fs.readFileSync('app.js', 'utf8');
+
+  ['company_iq', 'mobigic_pwc'].forEach(id => {
+    assert.match(indexHtml, new RegExp(`<div id="${id}" class="page"`), `${id} has an index route wrapper`);
+    assert.doesNotMatch(companyHtml, new RegExp(`id="${id}"`), `${id} is not duplicated inside combined company content`);
+    assert.match(companyHtml, new RegExp(`data-route-content="${id}"`), `${id} remains marked as a content section`);
+  });
+  assert.doesNotMatch(companyHtml, /id="company_interviews"/);
+  assert.doesNotMatch(companyHtml, /onclick="onclick=/);
+  assert.doesNotMatch(companyIqHtml, /onclick="onclick=/);
+
+  assert.match(appJs, /function getPageRouteElement\(pageId\)/);
+  assert.match(appJs, /const pageEl = getPageRouteElement\(pageId\);/);
+  assert.match(appJs, /let page = getPageRouteElement\(id\);/);
+});
+
 test('scenario-only upgrades expose practical deep-dive question banks', () => {
   const { SFJR_SALESFORCE_CONTENT } = loadBrowserData('src/data/salesforceContent.js');
   [

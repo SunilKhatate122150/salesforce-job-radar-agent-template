@@ -24,7 +24,7 @@ public class LoanTriggerHandler extends TriggerHandler {
 <div class="tip-box"><div class="tip-label">Interview answer</div><p>Say: 'I enforce one trigger per object in every project. Execution order is controlled within the handler class &mdash; the order method calls are made is explicit and fully predictable.'</p></div>
 
 </div></div>
-<div class="qa-block"><div class="qa-question" onclick="onclick=toggleQA(this)"><span class="qa-q-text">How do you handle bulk insert/update operations efficiently in triggers?</span><span class="qa-q-label lbl-apex">ARAGO</span><span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span></div><div class="qa-answer">
+<div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How do you handle bulk insert/update operations efficiently in triggers?</span><span class="qa-q-label lbl-apex">ARAGO</span><span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span></div><div class="qa-answer">
 <p class="ans-p">Core rule: <b>never put SOQL or DML inside a for loop</b>. Always process the full Trigger.new batch collectively.</p>
 <pre class="code">// BAD &mdash; hits 101-query limit with 101 records
 for (Loan__c l : Trigger.new) {
@@ -499,4 +499,3 @@ String status = raw.containsKey('loanStatus') ? (String)raw.get('loanStatus') : 
 <div class="qa-block"><div class="qa-question" onclick="toggleQA(this)"><span class="qa-q-text">How do you implement roll-up summary on a Lookup relationship?</span><span class="qa-q-label lbl-apex">ARAGO</span><span class="qa-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:10px;height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></span></div><div class="qa-answer">
 <p class="ans-p">Use an Apex Trigger or Flow to aggregate child records and update the parent lookup field.</p>
 </div></div>
-
