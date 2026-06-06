@@ -6352,7 +6352,11 @@ button:active,
 }
 
 #mainHeader .mobile-toggle {
-  display: inline-flex !important;
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: center !important;
+  align-items: center !important;
+  gap: 5px !important;
   width: 44px !important;
   height: 44px !important;
   min-width: 44px !important;

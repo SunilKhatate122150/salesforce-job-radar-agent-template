@@ -129,9 +129,10 @@ function stringToColor(str) {
 function generateInitialsAvatar(name) {
   const parts = (name || 'User').split(' ');
   const initials = parts.length > 1 
-    ? (parts[0][0] + parts[parts.length-1][0]).toUpperCase()
+    ? (parts[0][0] + (parts[parts.length-1][0] || '')).toUpperCase()
     : parts[0].substring(0, 2).toUpperCase();
-  return `data:image/svg+xml;base64,${btoa(`<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"><rect width="100" height="100" fill="rgba(59,130,246,0.1)"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" font-family="sans-serif" font-size="40" font-weight="700" fill="#3b82f6">${initials}</text></svg>`)}`;
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"><rect width="100" height="100" fill="rgba(59,130,246,0.1)"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" font-family="sans-serif" font-size="40" font-weight="700" fill="#3b82f6">${initials}</text></svg>`;
+  return `data:image/svg+xml,${encodeURIComponent(svg)}`;
 }
 
 function renderUserProfile(user) {
@@ -158,7 +159,10 @@ function renderUserProfile(user) {
   if (dropName) dropName.textContent = user.name;
   if (dropEmail) dropEmail.textContent = user.email;
   if (sidebarWrap) sidebarWrap.style.display = 'flex';
-  if (sidebarPic) sidebarPic.src = profilePic || generateInitialsAvatar(user.name);
+  if (sidebarPic) {
+    sidebarPic.src = profilePic || generateInitialsAvatar(user.name);
+    sidebarPic.onerror = function() { this.src = generateInitialsAvatar(user.name); };
+  }
   if (sidebarName) sidebarName.textContent = user.name;
   if (sidebarEmail) sidebarEmail.textContent = user.email;
 }
