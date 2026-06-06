@@ -5932,8 +5932,20 @@ function syncSidebarViewportMode() {
       overlay.style.display = 'none';
       overlay.setAttribute('aria-hidden', 'true');
     }
+    
+    // Restore collapsed/expanded state for desktop
+    const storedRaw = getScopedItem('sidebar_collapsed', localStorage.getItem('job_radar_sidebar_collapsed') || 'false');
+    const userToggledSidebar = localStorage.getItem('sfjr_sidebar_user_toggled') === 'true';
+    const storedCollapsed = userToggledSidebar && window.innerWidth >= 1280 && storedRaw === 'true';
+    document.body.classList.toggle('sidebar-collapsed', storedCollapsed);
+    sidebar.classList.toggle('collapsed', storedCollapsed);
+    syncSidebarRailFlyoutMode();
     return;
   }
+
+  // Ensure collapsed state is removed on mobile viewports
+  document.body.classList.remove('sidebar-collapsed');
+  sidebar.classList.remove('collapsed');
 
   closeCollapsedNavFlyout();
   document.body.classList.remove('sidebar-rail-active');
@@ -5991,6 +6003,8 @@ function toggleMobileSidebar(forceOpen) {
     closeCollapsedNavFlyout();
     document.body.classList.remove('sidebar-rail-active');
     sidebar.classList.remove('nav-rail-active');
+    document.body.classList.remove('sidebar-collapsed');
+    sidebar.classList.remove('collapsed');
   }
   
   const shouldOpen = typeof forceOpen === 'boolean' ? forceOpen : !sidebar.classList.contains('mobile-open');

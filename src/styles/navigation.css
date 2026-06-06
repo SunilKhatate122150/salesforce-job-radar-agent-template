@@ -1693,6 +1693,7 @@ html body #floatDropdownMenu.floating-dropdown {
   box-sizing: border-box !important;
   max-width: min(240px, calc(100vw - 24px)) !important;
   right: max(12px, env(safe-area-inset-right, 0px)) !important;
+  background: var(--surface-opaque, var(--color-surface, #111827)) !important;
 }
 
 @media (max-width: 900px) {
@@ -2014,6 +2015,7 @@ html body #profile_match .start-prep {
 
   html body #sidebar.mobile-open .sidebar-nav-dynamic {
     display: flex !important;
+    flex-direction: column !important;
     align-items: stretch !important;
     gap: 8px !important;
     padding: 0 10px 18px !important;
