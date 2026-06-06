@@ -3,6 +3,14 @@
 **Generated:** 2026-05-06  
 **Codebase Version:** v1412 → v1413 (post-audit + big upgrade)
 
+## 2026-06-06 Career Readiness Cockpit Addendum
+
+- Added `buildCareerReadinessCockpit` to `src/data/careerIntelligence.js` to score profile proof, market fit, study momentum, and career momentum from existing app state.
+- Added cross-realm-safe date normalization for browser intelligence helpers so VM tests, browser code, and service calls handle injected dates consistently.
+- Rendered a new Readiness Cockpit panel inside the Career Operating System with score breakdowns, best role signal, next study lever, risk flags, and a 48-hour sprint plan.
+- Added responsive styles in `src/styles/career-upgrades.css` and bumped the stylesheet cache key in `index.html`.
+- Added focused tests for rich readiness data and empty setup-state risk behavior.
+
 ## 2026-05-16 Code Practice Service Addendum
 
 - Added `src/services/codePracticeService.js` as the shared deterministic code-practice service for challenge filtering, file-name sanitization, file prompt caps, static/test scoring, AI review parsing, evaluation response shaping, and attempt progress updates.

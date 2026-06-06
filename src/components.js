@@ -355,6 +355,137 @@ function renderCareerUpgradeCommandCenter(profile, jobs, study) {
   `;
 }
 
+function getCareerReadinessAction(item) {
+  const route = componentEscapeJsArg(item?.route || 'profile_match');
+  if (item?.id === 'radar-scan') {
+    return "if (typeof triggerJobScan === 'function') triggerJobScan(); else showPage('job_radar')";
+  }
+  return `showPage('${route}')`;
+}
+
+function renderCareerReadinessComponent(component) {
+  const score = Math.max(0, Math.min(100, Number(component?.score || 0)));
+  return `
+    <div class="readiness-component">
+      <div class="readiness-component-head">
+        <span>${componentEscapeHtml(component?.label || 'Signal')}</span>
+        <strong>${score}%</strong>
+      </div>
+      <div class="readiness-meter" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${score}">
+        <span style="--readiness-value:${score}%"></span>
+      </div>
+      <em>${componentEscapeHtml(component?.detail || 'Waiting for more signal')}</em>
+    </div>
+  `;
+}
+
+function renderCareerReadinessCockpit(profile, jobs, study) {
+  const intelligence = getCareerIntelligence();
+  if (typeof intelligence.buildCareerReadinessCockpit !== 'function') return '';
+  const progress = (typeof globalStudyData !== 'undefined' ? globalStudyData : window.globalStudyData) || {};
+  const cockpit = intelligence.buildCareerReadinessCockpit({
+    profile,
+    jobs: jobs?.jobs || [],
+    progress,
+    bookmarks: (typeof userBookmarks !== 'undefined' ? userBookmarks : window.userBookmarks) || [],
+    releases: (typeof premiumReleaseCache !== 'undefined' ? premiumReleaseCache : window.premiumReleaseCache) || {},
+    activityLog: (typeof activityLog !== 'undefined' ? activityLog : window.activityLog) || []
+  });
+  const score = Math.max(0, Math.min(100, Number(cockpit.overallScore || 0)));
+  const risks = Array.isArray(cockpit.risks) ? cockpit.risks : [];
+  const sprint = Array.isArray(cockpit.sprint) ? cockpit.sprint : [];
+  const bestJob = cockpit.bestJob;
+  const nextTopic = cockpit.nextTopic || {};
+  const sourceHealth = cockpit.sourceHealth || {};
+
+  return `
+    <section class="career-readiness-cockpit career-upgrade-panel card-standard animate-reveal" style="--reveal-index:2">
+      <div class="career-upgrade-head readiness-head">
+        <div>
+          <span class="career-os-kicker">Readiness Cockpit</span>
+          <h3>${componentEscapeHtml(cockpit.stage || 'Setup needed')} for ${componentEscapeHtml(cockpit.targetRole || 'Salesforce Developer')}</h3>
+          <p>Signals from profile proof, market fit, study momentum, and release awareness.</p>
+        </div>
+        <div class="readiness-score ${componentEscapeAttr(cockpit.tone || 'amber')}" style="--readiness-score:${score}">
+          <span>Score</span>
+          <strong data-countup="true" data-count-up="${score}" data-count-target="${score}" data-count-suffix="%">${score}%</strong>
+        </div>
+      </div>
+
+      <div class="readiness-layout">
+        <div class="readiness-breakdown" aria-label="Readiness score breakdown">
+          ${(cockpit.components || []).map(renderCareerReadinessComponent).join('')}
+        </div>
+
+        <div class="readiness-spotlight">
+          <article>
+            <span class="career-os-kicker">Best Role Signal</span>
+            ${bestJob ? `
+              <h4>${componentEscapeHtml(bestJob.company)}</h4>
+              <p>${componentEscapeHtml(bestJob.role)} - ${componentEscapeHtml(bestJob.location)}</p>
+              <div class="readiness-chip-row">
+                <span>${componentEscapeHtml(bestJob.score)}% match</span>
+                <span>${componentEscapeHtml(sourceHealth.status || 'idle')}</span>
+              </div>
+            ` : `
+              <h4>No role signal yet</h4>
+              <p>Run a Job Radar scan to benchmark your target role against current postings.</p>
+              <div class="readiness-chip-row"><span>${componentEscapeHtml(sourceHealth.status || 'not run')}</span></div>
+            `}
+          </article>
+          <article>
+            <span class="career-os-kicker">Next Study Lever</span>
+            <h4>${componentEscapeHtml(nextTopic.label || 'Apex/LWC interview fundamentals')}</h4>
+            <p>${componentEscapeHtml(nextTopic.reason || 'Study the highest-signal gap before the next application push.')}</p>
+            <button type="button" class="career-os-link-btn" onclick="showPage('${componentEscapeJsArg(nextTopic.topicId || 'study_tracker')}')">Start topic</button>
+          </article>
+        </div>
+
+        <div class="readiness-risks">
+          <div class="readiness-column-title">
+            <span class="career-os-kicker">Risk Flags</span>
+            <strong>${risks.length || 0}</strong>
+          </div>
+          ${risks.length ? risks.map(risk => `
+            <article class="readiness-risk ${componentEscapeAttr(risk.severity || 'medium')}">
+              <div>
+                <h4>${componentEscapeHtml(risk.title)}</h4>
+                <p>${componentEscapeHtml(risk.detail)}</p>
+              </div>
+              <button type="button" class="career-os-link-btn" onclick="showPage('${componentEscapeJsArg(risk.route || 'profile_match')}')">${componentEscapeHtml(risk.actionLabel || 'Review')}</button>
+            </article>
+          `).join('') : `
+            <div class="readiness-clear-state">
+              <strong>No blocking risks</strong>
+              <span>Keep the radar fresh and finish one focused study block today.</span>
+            </div>
+          `}
+        </div>
+      </div>
+
+      <div class="readiness-sprint">
+        <div class="career-seven-day-title">
+          <span class="career-os-kicker">48 Hour Sprint</span>
+          <strong>${componentEscapeHtml(cockpit.signals?.todayStudyMinutes || 0)}m studied today - ${componentEscapeHtml(cockpit.signals?.highFitJobs || 0)} high-fit roles</strong>
+        </div>
+        <div class="readiness-sprint-list">
+          ${sprint.map((item, index) => `
+            <article class="readiness-sprint-card ${componentEscapeAttr(item.priority || 'medium')} ${item.complete ? 'complete' : ''}" style="--reveal-index:${index + 3}">
+              <div class="readiness-sprint-meta">
+                <span>${componentEscapeHtml(item.priority || 'medium')}</span>
+                <b>${componentEscapeHtml(item.metric || '')}</b>
+              </div>
+              <h4>${componentEscapeHtml(item.title)}</h4>
+              <p>${componentEscapeHtml(item.detail)}</p>
+              <button type="button" class="career-os-link-btn" onclick="${getCareerReadinessAction(item)}">${componentEscapeHtml(item.actionLabel || 'Open')}</button>
+            </article>
+          `).join('')}
+        </div>
+      </div>
+    </section>
+  `;
+}
+
 function getCareerOsFocus(profile, jobs) {
   const topics = Array.isArray(profile.studyPlanTopics) ? profile.studyPlanTopics : [];
   const missing = Array.isArray(profile.missingSkills) ? profile.missingSkills : [];
@@ -742,6 +873,7 @@ function renderProfileMatchPage(profile) {
     </section>
 
     ${renderCareerUpgradeCommandCenter(profile, jobs, study)}
+    ${renderCareerReadinessCockpit(profile, jobs, study)}
 
     <div class="career-os-grid">
       <section id="careerOsJobRadarSummary" class="career-os-panel job-radar-summary card-standard animate-reveal ${radarStatusClass}" style="--reveal-index:1">
@@ -2489,6 +2621,7 @@ Object.assign(window, {
   renderCareerOsInfoMetric,
   renderCareerOsMetric,
   renderCareerOsPrepBars,
+  renderCareerReadinessCockpit,
   renderCareerUpgradeCommandCenter,
   renderCockpitList,
   renderDevelopment,
@@ -2525,4 +2658,3 @@ Object.assign(window, {
   syncMobileBoardStageNav,
   timeAgo,
 });
-

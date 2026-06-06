@@ -13,10 +13,36 @@
     return String(value).trim() || fallback;
   }
 
+  function clampNumber(value, min = 0, max = 100) {
+    const number = Number(value);
+    if (!Number.isFinite(number)) return min;
+    return Math.max(min, Math.min(max, number));
+  }
+
+  function uniqueTexts(values, limit = 12) {
+    const seen = new Set();
+    const output = [];
+    asArray(values).forEach(value => {
+      const text = typeof value === 'string'
+        ? asText(value)
+        : asText(value?.name || value?.skill || value?.topic || value?.label || value?.title);
+      const key = text.toLowerCase();
+      if (!text || seen.has(key)) return;
+      seen.add(key);
+      output.push(text);
+    });
+    return output.slice(0, limit);
+  }
+
   function parseDate(value) {
     if (!value) return null;
     const parsed = new Date(value);
     return Number.isNaN(parsed.getTime()) ? null : parsed;
+  }
+
+  function normalizeNow(value) {
+    if (value instanceof Date && !Number.isNaN(value.getTime())) return value;
+    return parseDate(value) || new Date();
   }
 
   function jobDateCandidates(job) {
@@ -208,7 +234,7 @@
   }
 
   function buildTodayCommandCenter(input = {}) {
-    const now = input.now instanceof Date ? input.now : new Date();
+    const now = normalizeNow(input.now);
     const profile = input.profile || {};
     const progress = input.progress || {};
     const bookmarks = asArray(input.bookmarks);
@@ -388,6 +414,277 @@
     };
   }
 
+  function getStudyReadinessSignals(progress = {}, now = new Date()) {
+    const sessions = asArray(progress.sessions || progress.studySessions);
+    const topics = progress.topics && typeof progress.topics === 'object' ? progress.topics : {};
+    const todayKey = now.toISOString().slice(0, 10);
+    const sevenDaysAgo = now.getTime() - (7 * DAY_MS);
+    const topicValues = Object.values(topics).filter(Boolean);
+    const confidenceValues = topicValues
+      .map(topic => Number(topic.confidenceScore || topic.confidence || topic.mastery || 0))
+      .filter(value => Number.isFinite(value) && value > 0);
+
+    const todaySeconds = sessions.reduce((sum, session) => {
+      const dateText = asText(session?.date || session?.startDate);
+      const startedAt = parseDate(session?.startTime || session?.startedAt || session?.createdAt);
+      const sessionKey = dateText || (startedAt ? startedAt.toISOString().slice(0, 10) : '');
+      return sessionKey === todayKey ? sum + Number(session?.duration || session?.durationSeconds || 0) : sum;
+    }, 0);
+
+    const recentSessions = sessions.filter(session => {
+      const date = parseDate(session?.endTime || session?.startTime || session?.createdAt || session?.date);
+      return date && date.getTime() >= sevenDaysAgo;
+    });
+
+    const topicSeconds = topicValues.reduce((sum, topic) => sum + Number(topic?.totalSeconds || topic?.duration || 0), 0);
+    const sessionSeconds = sessions.reduce((sum, session) => sum + Number(session?.duration || session?.durationSeconds || 0), 0);
+    const studiedTopics = topicValues.filter(topic =>
+      Number(topic?.totalSeconds || topic?.duration || 0) > 0 ||
+      /revised|mastered|complete/i.test(asText(topic?.status))
+    ).length;
+
+    return {
+      todaySeconds,
+      totalSeconds: topicSeconds + sessionSeconds,
+      recentSessions: recentSessions.length,
+      studiedTopics,
+      averageConfidence: confidenceValues.length
+        ? Math.round(confidenceValues.reduce((sum, value) => sum + value, 0) / confidenceValues.length)
+        : 0
+    };
+  }
+
+  function summarizeRecommendedJob(job) {
+    if (!job) return null;
+    return {
+      id: asText(job.id || job.job_hash || job._id),
+      company: asText(job.company || job.org || job.employer, 'Target company'),
+      role: asText(job.role || job.title || job.position, 'Salesforce role'),
+      score: scoreJob(job),
+      location: asText(job.loc || job.location || job.city, 'Location not listed'),
+      reason: asText(job.why_apply || job.reason || job.summary, 'Strongest available Job Radar signal.')
+    };
+  }
+
+  function summarizeRecommendedTopic(topic, fallback = 'Apex/LWC interview fundamentals') {
+    if (!topic) {
+      return { label: fallback, topicId: 'study_tracker', reason: 'Keeps core interview readiness moving.' };
+    }
+    if (typeof topic === 'string') {
+      return {
+        label: topic,
+        topicId: topic.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '') || 'study_tracker',
+        reason: 'High-signal gap from your profile or job matches.'
+      };
+    }
+    const label = asText(topic.topic || topic.name || topic.title || topic.topicId, fallback);
+    return {
+      label,
+      topicId: asText(topic.topicId || topic.id || label.toLowerCase().replace(/[^a-z0-9]+/g, '_'), 'study_tracker'),
+      reason: asText(topic.reason || topic.desc || topic.description, 'Recommended from your roadmap and market gaps.')
+    };
+  }
+
+  function buildRisk(title, detail, severity = 'medium', route = 'profile_match', actionLabel = 'Review') {
+    return { id: title.toLowerCase().replace(/[^a-z0-9]+/g, '-'), title, detail, severity, route, actionLabel };
+  }
+
+  function buildSprintItem(id, title, detail, route, priority = 'medium', actionLabel = 'Open', metric = '', complete = false) {
+    return { id, title, detail, route, priority, actionLabel, metric, complete };
+  }
+
+  function buildCareerReadinessCockpit(input = {}) {
+    const now = normalizeNow(input.now);
+    const profile = input.profile || {};
+    const progress = input.progress || {};
+    const jobs = asArray(input.jobs);
+    const bookmarks = asArray(input.bookmarks);
+    const releases = input.releases || {};
+    const releaseItems = asArray(releases.personalizedItems || releases.items);
+    const skills = uniqueTexts(profile.skills, 18);
+    const certifications = uniqueTexts(profile.certifications || profile.certs, 10);
+    const missingSkills = uniqueTexts(profile.missingSkills || profile.skillGaps || profile.gaps, 12);
+    const roadmapTopics = asArray(profile.studyPlanTopics || profile.roadmapTopics);
+    const targetRole = asText(profile.targetRole || profile.targetDesignation, 'Salesforce Developer');
+    const experienceYears = clampNumber(profile.experienceYears || profile.yearsOfExperience || 0, 0, 20);
+    const jobSummary = summarizeJobs(jobs, now);
+    const sourceHealth = buildJobSourceHealth(jobs, input.activityLog || [], now);
+    const studySignals = getStudyReadinessSignals(progress, now);
+    const weakTopics = pickWeakTopics(profile, progress, jobSummary.sorted);
+    const bestJob = summarizeRecommendedJob(jobSummary.highFit[0] || jobSummary.fresh[0] || jobSummary.todo[0] || jobSummary.sorted[0]);
+    const nextTopic = summarizeRecommendedTopic(
+      weakTopics[0] || roadmapTopics[0] || missingSkills[0],
+      missingSkills[0] || 'Apex/LWC interview fundamentals'
+    );
+
+    const profileScore = clampNumber(
+      (skills.length * 6) +
+      (certifications.length * 9) +
+      (targetRole ? 12 : 0) +
+      (experienceYears ? 10 : 0) +
+      Math.min(18, roadmapTopics.length * 3) -
+      (missingSkills.length * 3),
+      0,
+      100
+    );
+    const marketScore = clampNumber(
+      (jobSummary.highFit.length * 20) +
+      (jobSummary.fresh.length * 10) +
+      (jobSummary.applied.length * 8) +
+      (jobSummary.interview.length * 14) +
+      (jobSummary.resumeReady.length ? 10 : 0) +
+      (sourceHealth.status === 'healthy' ? 12 : sourceHealth.status === 'degraded' ? 4 : 0),
+      jobs.length ? 8 : 0,
+      100
+    );
+    const studyScore = clampNumber(
+      Math.min(36, studySignals.todaySeconds / 60) +
+      Math.min(22, studySignals.totalSeconds / 1800) +
+      Math.min(18, studySignals.recentSessions * 4) +
+      Math.min(14, studySignals.studiedTopics * 2) +
+      Math.min(10, studySignals.averageConfidence / 10),
+      0,
+      100
+    );
+    const momentumScore = clampNumber(
+      (bookmarks.length * 4) +
+      (releaseItems.length * 5) +
+      (jobSummary.applied.length * 8) +
+      (jobSummary.interview.length * 14) +
+      (jobSummary.resumeReady.length * 6) +
+      (sourceHealth.jobsAdded ? 8 : 0),
+      0,
+      100
+    );
+    const overallScore = Math.round(
+      (profileScore * 0.25) +
+      (marketScore * 0.3) +
+      (studyScore * 0.25) +
+      (momentumScore * 0.2)
+    );
+
+    const stage = overallScore >= 85
+      ? 'Interview-ready'
+      : overallScore >= 70
+        ? 'Market-ready'
+        : overallScore >= 50
+          ? 'Building traction'
+          : 'Setup needed';
+    const tone = overallScore >= 75 ? 'green' : overallScore >= 50 ? 'amber' : 'red';
+
+    const risks = [];
+    if (skills.length < 4) {
+      risks.push(buildRisk('Profile signal is thin', 'Import or edit your profile so role matching has enough Salesforce evidence.', 'high', 'profile_match', 'Update profile'));
+    }
+    if (!jobs.length) {
+      risks.push(buildRisk('Job Radar has no market sample', 'Run a scan before deciding which skills or companies to prioritize.', 'high', 'job_radar', 'Run scan'));
+    } else if (sourceHealth.status === 'stale') {
+      risks.push(buildRisk('Job data is getting stale', 'Refresh sources so your application queue reflects current postings.', 'medium', 'job_radar', 'Refresh radar'));
+    } else if (sourceHealth.status === 'degraded') {
+      risks.push(buildRisk('Some job sources need attention', 'Provider failures were detected in recent activity. Review source health before applying heavily.', 'medium', 'job_radar', 'Check sources'));
+    }
+    if (missingSkills.length >= 3) {
+      risks.push(buildRisk('Skill gaps are clustered', `Lead with ${missingSkills.slice(0, 3).join(', ')} in this sprint.`, 'medium', 'study_tracker', 'Start study'));
+    }
+    if (studySignals.todaySeconds < 1200) {
+      risks.push(buildRisk('No focused study block yet', 'Complete at least one 20 minute block before applications or mock interviews.', 'medium', 'study_tracker', 'Start timer'));
+    }
+    if (jobSummary.highFit.length && !jobSummary.applied.length && !jobSummary.interview.length) {
+      risks.push(buildRisk('High-fit roles need conversion', 'Move one strong match from review to applied after tailoring the resume notes.', 'high', 'job_radar', 'Apply now'));
+    }
+
+    const sprint = [
+      jobs.length
+        ? buildSprintItem(
+          'radar-apply',
+          bestJob ? `Advance ${bestJob.company}` : 'Advance top Job Radar roles',
+          bestJob ? `${bestJob.role} is your strongest visible market signal right now.` : 'Review high-fit and fresh roles before they age out.',
+          'job_radar',
+          jobSummary.highFit.length ? 'high' : 'medium',
+          'Open radar',
+          `${jobSummary.highFit.length} high fit`,
+          jobSummary.applied.length > 0
+        )
+        : buildSprintItem('radar-scan', 'Run a Job Radar scan', 'Create a fresh market sample before changing the study plan.', 'job_radar', 'high', 'Scan roles', '0 jobs'),
+      buildSprintItem(
+        'study-focus',
+        `Study ${nextTopic.label}`,
+        nextTopic.reason,
+        nextTopic.topicId || 'study_tracker',
+        missingSkills.length ? 'high' : 'medium',
+        'Start study',
+        `${Math.round(studySignals.todaySeconds / 60)}m today`,
+        studySignals.todaySeconds >= 1200
+      ),
+      buildSprintItem(
+        'profile-proof',
+        jobSummary.resumeReady.length ? 'Finish resume proof points' : 'Strengthen profile proof points',
+        jobSummary.resumeReady.length
+          ? `${jobSummary.resumeReady.length} role${jobSummary.resumeReady.length === 1 ? '' : 's'} has resume action items waiting.`
+          : 'Add quantified Apex, LWC, Flow, integration, or support outcomes to improve matching.',
+        'profile_match',
+        skills.length < 4 || jobSummary.resumeReady.length ? 'high' : 'medium',
+        'Update profile',
+        `${skills.length} skills`,
+        skills.length >= 6
+      ),
+      buildSprintItem(
+        'mock-interview',
+        'Run one mock interview rep',
+        `Use ${targetRole} prompts and include one project tradeoff, metric, and risk.`,
+        'ai_interview',
+        overallScore >= 65 ? 'medium' : 'low',
+        'Practice',
+        stage,
+        false
+      )
+    ];
+
+    if (releaseItems[0]) {
+      sprint.push(buildSprintItem(
+        'release-brief',
+        `Turn ${asText(releaseItems[0].category, 'release')} into an answer`,
+        asText(releaseItems[0].interviewAngle || releaseItems[0].whyMatters, 'Convert a release note into a crisp implementation story.'),
+        releaseItems[0].topicId || 'salesforce_releases',
+        'low',
+        'Study release',
+        `${releaseItems.length} updates`,
+        false
+      ));
+    }
+
+    return {
+      generatedAt: now.toISOString(),
+      targetRole,
+      overallScore,
+      stage,
+      tone,
+      components: [
+        { id: 'profile', label: 'Profile', score: Math.round(profileScore), detail: `${skills.length} skills, ${certifications.length} certs` },
+        { id: 'market', label: 'Market', score: Math.round(marketScore), detail: `${jobSummary.highFit.length} high-fit, ${jobSummary.fresh.length} fresh` },
+        { id: 'study', label: 'Study', score: Math.round(studyScore), detail: `${Math.round(studySignals.todaySeconds / 60)}m today` },
+        { id: 'momentum', label: 'Momentum', score: Math.round(momentumScore), detail: `${bookmarks.length} bookmarks, ${releaseItems.length} releases` }
+      ],
+      sourceHealth,
+      signals: {
+        skills: skills.length,
+        certifications: certifications.length,
+        missingSkills,
+        jobsTracked: jobs.length,
+        highFitJobs: jobSummary.highFit.length,
+        resumeReadyJobs: jobSummary.resumeReady.length,
+        todayStudyMinutes: Math.round(studySignals.todaySeconds / 60),
+        recentStudySessions: studySignals.recentSessions,
+        releaseItems: releaseItems.length,
+        bookmarks: bookmarks.length
+      },
+      bestJob,
+      nextTopic,
+      risks: risks.slice(0, 4),
+      sprint: sprint.slice(0, 5)
+    };
+  }
+
   function searchCareerContent(query, input = {}) {
     const term = asText(query).toLowerCase();
     if (!term) return [];
@@ -431,6 +728,7 @@
     buildStudyRoadmap,
     buildReleaseStudyActions,
     createMockInterviewSession,
+    buildCareerReadinessCockpit,
     summarizeMockInterviewSessions,
     searchCareerContent
   };

@@ -58,6 +58,58 @@ test('browser career intelligence supports source health and user dashboard acti
   assert.equal(command.nextSevenDays.length, 7);
 });
 
+test('career readiness cockpit scores market, study, profile, and sprint signals', () => {
+  const ci = loadBrowserCareerIntelligence();
+  const cockpit = ci.buildCareerReadinessCockpit({
+    profile: {
+      targetRole: 'Senior Salesforce Developer',
+      experienceYears: 5,
+      skills: ['Apex', 'LWC', 'Flow', 'SOQL', 'Integration', 'Security'],
+      certifications: ['Platform Developer I'],
+      missingSkills: ['Data Cloud', 'Agentforce'],
+      studyPlanTopics: [{ topic: 'Data Cloud identity resolution', topicId: 'fde_dc_concept', reason: 'Market gap' }]
+    },
+    jobs: [
+      { id: 'a', status: 'todo', company: 'Acme', role: 'Senior Salesforce Developer', createdAt: '2026-05-14T01:00:00.000Z', apply_link: 'https://example.com/a', score: 91, resume_actions: ['Add integration metric'] },
+      { id: 'b', status: 'applied', company: 'Beta', role: 'LWC Developer', updatedAt: '2026-05-13T01:00:00.000Z', apply_link: 'https://example.com/b', score: 78 }
+    ],
+    progress: {
+      sessions: [{ date: '2026-05-14', duration: 1800 }],
+      topics: {
+        apex: { totalSeconds: 3600, confidenceScore: 82, status: 'mastered' },
+        lwc: { totalSeconds: 2400, confidenceScore: 74, status: 'revised' }
+      }
+    },
+    bookmarks: [{ topic: 'async' }],
+    releases: { items: [{ category: 'Agentforce', title: 'Agent action testing', interviewAngle: 'Explain testing guardrails', topicId: 'fde_ag_concept' }] },
+    activityLog: [{ text: 'Synced 2 new jobs and refreshed 8 existing cards.', type: 'success', timestamp: '2026-05-14T02:00:00.000Z' }],
+    now: new Date('2026-05-14T08:00:00.000Z')
+  });
+
+  assert.ok(cockpit.overallScore >= 50);
+  assert.equal(cockpit.components.length, 4);
+  assert.equal(cockpit.bestJob.company, 'Acme');
+  assert.equal(cockpit.nextTopic.label, 'Data Cloud');
+  assert.equal(cockpit.signals.resumeReadyJobs, 1);
+  assert.equal(cockpit.sprint[0].id, 'radar-apply');
+  assert.equal(cockpit.sourceHealth.status, 'healthy');
+});
+
+test('career readiness cockpit gives useful setup risks before data exists', () => {
+  const ci = loadBrowserCareerIntelligence();
+  const cockpit = ci.buildCareerReadinessCockpit({
+    profile: {},
+    jobs: [],
+    progress: {},
+    now: new Date('2026-05-14T08:00:00.000Z')
+  });
+
+  assert.equal(cockpit.stage, 'Setup needed');
+  assert.equal(cockpit.sprint[0].id, 'radar-scan');
+  assert.ok(cockpit.risks.some(risk => /profile/i.test(risk.title)));
+  assert.ok(cockpit.risks.some(risk => /Job Radar/i.test(risk.title)));
+});
+
 test('release study actions and mock interview sessions are structured', () => {
   const actions = buildReleaseStudyActions({
     items: [

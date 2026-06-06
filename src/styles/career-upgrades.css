@@ -248,6 +248,252 @@
   line-height: 1.5;
 }
 
+.career-readiness-cockpit {
+  background:
+    linear-gradient(135deg, rgba(16, 185, 129, 0.09), transparent 34%),
+    linear-gradient(315deg, rgba(59, 130, 246, 0.08), transparent 42%),
+    color-mix(in srgb, var(--card, #111827), transparent 2%);
+}
+
+.readiness-head p {
+  max-width: 720px;
+  margin: 6px 0 0;
+  color: var(--muted, #9fb7d8);
+  font-size: 0.84rem;
+  line-height: 1.5;
+}
+
+.readiness-score {
+  width: 118px;
+  height: 118px;
+  flex: 0 0 118px;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(148, 163, 184, 0.22);
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at center, var(--card, #111827) 0 56%, transparent 57%),
+    conic-gradient(#10b981 calc(var(--readiness-score, 0) * 1%), rgba(148, 163, 184, 0.16) 0);
+  box-shadow: inset 0 0 0 8px rgba(2, 6, 23, 0.42);
+}
+
+.readiness-score.amber {
+  background:
+    radial-gradient(circle at center, var(--card, #111827) 0 56%, transparent 57%),
+    conic-gradient(#f59e0b calc(var(--readiness-score, 0) * 1%), rgba(148, 163, 184, 0.16) 0);
+}
+
+.readiness-score.red {
+  background:
+    radial-gradient(circle at center, var(--card, #111827) 0 56%, transparent 57%),
+    conic-gradient(#ef4444 calc(var(--readiness-score, 0) * 1%), rgba(148, 163, 184, 0.16) 0);
+}
+
+.readiness-score span,
+.readiness-score strong {
+  grid-area: 1 / 1;
+}
+
+.readiness-score span {
+  margin-top: -30px;
+  color: var(--muted, #9fb7d8);
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.62rem;
+  text-transform: uppercase;
+}
+
+.readiness-score strong {
+  margin-top: 18px;
+  color: var(--text, #f8fbff);
+  font-size: 1.35rem;
+}
+
+.readiness-layout {
+  display: grid;
+  grid-template-columns: minmax(220px, 0.9fr) minmax(280px, 1.1fr) minmax(260px, 1fr);
+  gap: 14px;
+  margin-top: 18px;
+}
+
+.readiness-breakdown,
+.readiness-spotlight,
+.readiness-risks,
+.readiness-sprint-card {
+  min-width: 0;
+}
+
+.readiness-breakdown,
+.readiness-spotlight,
+.readiness-risks {
+  display: grid;
+  gap: 10px;
+}
+
+.readiness-component,
+.readiness-spotlight article,
+.readiness-risk,
+.readiness-clear-state,
+.readiness-sprint-card {
+  border: 1px solid color-mix(in srgb, var(--border, #24344f), transparent 10%);
+  border-radius: 14px;
+  background: rgba(15, 23, 42, 0.5);
+}
+
+.readiness-component {
+  padding: 12px;
+}
+
+.readiness-component-head,
+.readiness-sprint-meta,
+.readiness-column-title,
+.readiness-chip-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.readiness-component-head span,
+.readiness-sprint-meta span {
+  color: var(--muted, #9fb7d8);
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.64rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.readiness-component-head strong,
+.readiness-column-title strong,
+.readiness-sprint-meta b {
+  color: var(--text, #f8fbff);
+  font-size: 0.78rem;
+}
+
+.readiness-meter {
+  height: 8px;
+  margin: 9px 0 7px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgba(148, 163, 184, 0.16);
+}
+
+.readiness-meter span {
+  display: block;
+  width: var(--readiness-value, 0);
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #38bdf8, #10b981);
+}
+
+.readiness-component em {
+  display: block;
+  color: var(--muted, #9fb7d8);
+  font-size: 0.72rem;
+  font-style: normal;
+  line-height: 1.35;
+}
+
+.readiness-spotlight article,
+.readiness-risk,
+.readiness-clear-state,
+.readiness-sprint-card {
+  padding: 14px;
+}
+
+.readiness-spotlight h4,
+.readiness-risk h4,
+.readiness-sprint-card h4,
+.readiness-clear-state strong {
+  margin: 6px 0;
+  color: var(--text, #f8fbff);
+  line-height: 1.25;
+}
+
+.readiness-spotlight p,
+.readiness-risk p,
+.readiness-sprint-card p,
+.readiness-clear-state span {
+  margin: 0 0 12px;
+  color: var(--muted, #9fb7d8);
+  font-size: 0.78rem;
+  line-height: 1.5;
+}
+
+.readiness-chip-row {
+  justify-content: flex-start;
+  flex-wrap: wrap;
+}
+
+.readiness-chip-row span {
+  border: 1px solid rgba(59, 130, 246, 0.24);
+  border-radius: 999px;
+  background: rgba(59, 130, 246, 0.08);
+  color: #bfdbfe;
+  font-size: 0.7rem;
+  padding: 5px 8px;
+}
+
+.readiness-column-title {
+  padding: 0 2px 2px;
+}
+
+.readiness-risk {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) max-content;
+  align-items: center;
+  gap: 12px;
+  border-left: 3px solid #f59e0b;
+}
+
+.readiness-risk.high {
+  border-left-color: #ef4444;
+}
+
+.readiness-risk.low {
+  border-left-color: #38bdf8;
+}
+
+.readiness-sprint {
+  margin-top: 18px;
+  padding-top: 16px;
+  border-top: 1px solid color-mix(in srgb, var(--border, #24344f), transparent 18%);
+}
+
+.readiness-sprint-list {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.readiness-sprint-card {
+  display: flex;
+  min-height: 186px;
+  flex-direction: column;
+}
+
+.readiness-sprint-card .career-os-link-btn {
+  margin-top: auto;
+  align-self: flex-start;
+}
+
+.readiness-sprint-card.high {
+  border-color: rgba(239, 68, 68, 0.34);
+}
+
+.readiness-sprint-card.medium {
+  border-color: rgba(245, 158, 11, 0.32);
+}
+
+.readiness-sprint-card.low {
+  border-color: rgba(56, 189, 248, 0.3);
+}
+
+.readiness-sprint-card.complete {
+  border-color: rgba(16, 185, 129, 0.38);
+  background: rgba(16, 185, 129, 0.08);
+}
+
 .cp-quality-grid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -339,6 +585,11 @@
 [data-theme="light"] .career-day-card,
 [data-theme="light"] .career-track-card,
 [data-theme="light"] .job-source-health,
+[data-theme="light"] .readiness-component,
+[data-theme="light"] .readiness-spotlight article,
+[data-theme="light"] .readiness-risk,
+[data-theme="light"] .readiness-clear-state,
+[data-theme="light"] .readiness-sprint-card,
 [data-theme="light"] .cp-quality-card {
   background: rgba(255, 255, 255, 0.72);
 }
@@ -361,6 +612,18 @@
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
+  .readiness-layout {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .readiness-risks {
+    grid-column: 1 / -1;
+  }
+
+  .readiness-sprint-list {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .job-source-health {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -381,8 +644,24 @@
   .release-study-grid,
   .career-seven-day-grid,
   .career-track-grid,
+  .readiness-layout,
+  .readiness-sprint-list,
   .cp-quality-grid {
     grid-template-columns: 1fr;
+  }
+
+  .readiness-score {
+    width: 104px;
+    height: 104px;
+    flex-basis: 104px;
+  }
+
+  .readiness-risk {
+    grid-template-columns: 1fr;
+  }
+
+  .readiness-sprint-card {
+    min-height: 0;
   }
 
   .career-day-card {

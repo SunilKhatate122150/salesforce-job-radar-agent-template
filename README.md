@@ -22,6 +22,7 @@ Industrial-grade Salesforce career intelligence platform with job tracking, inte
 
 - **Job Radar Dashboard** — Kanban board for Salesforce job tracking with status overrides
 - **Today Command Center** — user-specific study focus, weak topics, job actions, release actions, and a next-seven-days plan
+- **Readiness Cockpit** — weighted career score, risk flags, best role/topic recommendations, and a 48-hour sprint plan
 - **AI Profile Matching** — Resume skill extraction and job market intelligence
 - **Career Roadmap** — Experience-based study plan with designation targeting
 - **Interview Prep** — 40+ topic modules (Apex, LWC, Integration, Security, etc.)
