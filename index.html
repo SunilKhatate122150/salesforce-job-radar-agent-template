@@ -25,7 +25,7 @@
   <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700&display=swap">
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=Plus+Jakarta+Sans:wght@400;600;700&family=Syne:wght@400;600;700;800&family=JetBrains+Mono:wght@400;500&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="styles.css?v=20260514-google-login">
-<link rel="stylesheet" href="responsive.css?v=20260523-responsive-shell">
+<link rel="stylesheet" href="responsive.css?v=20260606-mobile-fix">
 <link rel="stylesheet" href="src/styles/navigation.css?v=20260525-menu-fix">
 <link rel="stylesheet" href="src/styles/career-upgrades.css?v=20260514-career-upgrade">
   <script>
@@ -1081,7 +1081,7 @@
 
 <!-- Outreach Tracker Modal (Phase 3F) -->
 <div class="modal-overlay" id="outreachModal" style="display:none;">
-  <div class="modal-box" style="width: 400px;">
+  <div class="modal-box" style="width: min(400px, calc(100vw - 28px));">
     <div class="modal-header">
       <span>Outreach Record</span>
       <button onclick="closeModal('outreachModal')">&times;</button>
@@ -1107,7 +1107,7 @@
 
 <!-- Interview Coach Modal (Phase 3D) -->
 <div class="modal-overlay" id="coachModal" style="display:none;">
-  <div class="modal-box" style="width: 550px; height: 80vh; display: flex; flex-direction: column;">
+  <div class="modal-box" style="width: min(550px, calc(100vw - 28px)); height: 80vh; display: flex; flex-direction: column;">
     <div class="modal-header">
       <span>AI Interview Coach</span>
       <button onclick="closeModal('coachModal')">&times;</button>

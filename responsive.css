@@ -2727,3 +2727,590 @@ select,
     font-size: 0.8em;
   }
 }
+
+/* ============================================================
+   MOBILE RESPONSIVENESS HARDENING v2 — June 2026
+   Comprehensive fix pass for phones and small devices.
+   ============================================================ */
+
+/* ---- 1. GLOBAL OVERFLOW PREVENTION ---- */
+*,
+*::before,
+*::after {
+  max-width: 100%;
+}
+
+/* Exempt certain elements that legitimately need overflow */
+svg, img, video, canvas,
+.CodeMirror, .CodeMirror *,
+#sidebar, #loginOverlay,
+.job-details-flyout, .job-flyout-panel,
+[style*="position: fixed"], [style*="position:fixed"] {
+  max-width: none;
+}
+
+/* ---- 2. SIDEBAR SIZING ON NARROW PHONES ---- */
+@media (max-width: 768px) {
+  :root {
+    --sidebar-w: min(280px, calc(100vw - 48px));
+  }
+
+  html body #sidebar {
+    width: min(280px, calc(100vw - 48px)) !important;
+    min-width: 0 !important;
+    max-width: calc(100vw - 48px) !important;
+  }
+}
+
+/* ---- 3. MODAL CONTAINERS — RESPONSIVE FIT ---- */
+.modal-overlay {
+  padding: 14px !important;
+  box-sizing: border-box !important;
+}
+
+.modal-box,
+.premium-modal-box {
+  width: min(720px, calc(100vw - 28px)) !important;
+  max-width: calc(100vw - 28px) !important;
+  max-height: calc(100dvh - 32px) !important;
+  overflow-y: auto !important;
+  box-sizing: border-box !important;
+}
+
+#syncModal > div {
+  width: min(450px, calc(100vw - 28px)) !important;
+  max-width: calc(100vw - 28px) !important;
+  max-height: calc(100dvh - 32px) !important;
+  overflow-y: auto !important;
+  box-sizing: border-box !important;
+}
+
+#confidenceModal > div {
+  width: min(400px, calc(100vw - 28px)) !important;
+  max-width: calc(100vw - 28px) !important;
+  box-sizing: border-box !important;
+}
+
+@media (max-width: 480px) {
+  .modal-box,
+  .premium-modal-box {
+    border-radius: 16px !important;
+    padding: 1.2rem !important;
+  }
+
+  .modal-header {
+    padding: 12px 16px !important;
+  }
+
+  #syncModal > div {
+    padding: 1.4rem !important;
+    border-radius: 20px !important;
+  }
+
+  #confidenceModal > div {
+    padding: 1.4rem !important;
+    border-radius: 20px !important;
+  }
+
+  #confidenceModal > div > div[style*="grid-template-columns"] {
+    grid-template-columns: 1fr !important;
+    gap: 8px !important;
+  }
+
+  #confidenceModal button {
+    padding: 12px !important;
+    min-height: 54px !important;
+  }
+}
+
+/* ---- 4. SUMMARY BAR CHIPS — PREVENT HORIZONTAL OVERFLOW ---- */
+.summary-bar {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  gap: 8px !important;
+  overflow: visible !important;
+}
+
+.sum-chip {
+  flex: 1 1 auto !important;
+  min-width: 0 !important;
+  white-space: nowrap !important;
+  text-align: center !important;
+}
+
+@media (max-width: 480px) {
+  .summary-bar {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 8px !important;
+  }
+}
+
+@media (max-width: 340px) {
+  .summary-bar {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+/* ---- 5. PREMIUM ONBOARDING GRID — STACK ON MOBILE ---- */
+@media (max-width: 640px) {
+  .premium-onboarding-grid {
+    grid-template-columns: 1fr !important;
+    gap: 14px !important;
+  }
+
+  .premium-onboarding-grid select,
+  .premium-onboarding-grid input {
+    min-height: 44px !important;
+    font-size: 16px !important; /* Prevents iOS zoom on focus */
+  }
+
+  .premium-onboarding-actions {
+    flex-direction: column !important;
+    gap: 10px !important;
+  }
+
+  .premium-onboarding-actions button {
+    width: 100% !important;
+    min-height: 48px !important;
+  }
+
+  .premium-onboarding-panel {
+    padding: 16px !important;
+    border-radius: 16px !important;
+  }
+
+  .premium-panel-head h3 {
+    font-size: 1rem !important;
+  }
+}
+
+/* ---- 6. FLOATING TIMER — AVOID COVERING CONTENT ---- */
+@media (max-width: 640px) {
+  #floatingTimer {
+    bottom: calc(10px + env(safe-area-inset-bottom, 0px)) !important;
+    right: 10px !important;
+    left: auto !important;
+    max-width: calc(100vw - 20px) !important;
+    padding: 5px 8px !important;
+    font-size: 0.7rem !important;
+    border-radius: 10px !important;
+    z-index: 9000 !important;
+  }
+
+  #floatingTimer .ft-topic {
+    display: none !important;
+  }
+
+  #floatingTimer .ft-time {
+    font-size: 0.75rem !important;
+  }
+}
+
+/* ---- 7. STUDY TRACKER — CHART/GRAPH OVERFLOW ---- */
+#study_tracker canvas,
+#study_tracker .chart-container,
+.tracker-chart-wrap {
+  max-width: 100% !important;
+  height: auto !important;
+}
+
+@media (max-width: 640px) {
+  .study-time-chart,
+  .tracker-chart-wrap,
+  #study_tracker > div {
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+  }
+
+  .tracker-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .tracker-card {
+    min-width: 0 !important;
+  }
+}
+
+/* ---- 8. TIMETABLE LAYOUT — MOBILE FRIENDLY ---- */
+@media (max-width: 640px) {
+  #timetableContainer .timetable-item {
+    margin-left: 1.5rem !important;
+    padding: 0.8rem !important;
+  }
+
+  .timetable-time {
+    font-size: 0.7rem !important;
+  }
+
+  .timetable-title {
+    font-size: 0.82rem !important;
+  }
+}
+
+/* ---- 9. CODE PRACTICE — EDITOR SIZING ---- */
+@media (max-width: 640px) {
+  .code-practice-shell {
+    min-width: 0 !important;
+    overflow-x: hidden !important;
+  }
+
+  #code_practice .cp-layout,
+  #code_practice .cp-split {
+    flex-direction: column !important;
+    height: auto !important;
+    min-height: 0 !important;
+  }
+
+  #code_practice .cp-editor-pane,
+  #code_practice .cp-preview-pane {
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    min-height: 200px !important;
+    flex: none !important;
+  }
+
+  #code_practice .cp-toolbar {
+    flex-wrap: wrap !important;
+    gap: 6px !important;
+    padding: 8px !important;
+  }
+
+  #code_practice .cp-toolbar button,
+  #code_practice .cp-toolbar select {
+    min-height: 38px !important;
+    font-size: 0.75rem !important;
+  }
+
+  #code_practice .cp-badge-bar {
+    flex-wrap: wrap !important;
+    gap: 6px !important;
+    overflow: visible !important;
+  }
+}
+
+/* ---- 10. HEADER ZONE — PREVENT OVERLAP ON SMALL SCREENS ---- */
+@media (max-width: 380px) {
+  #mainHeader {
+    grid-template-columns: 40px minmax(0, 1fr) minmax(60px, max-content) !important;
+    column-gap: 4px !important;
+    padding: 0 6px !important;
+  }
+
+  #mainHeader .ui-mode-toggle {
+    min-width: 48px !important;
+    height: 26px !important;
+    font-size: 0.55rem !important;
+    padding: 0 6px !important;
+    margin-right: 2px !important;
+  }
+
+  #mainHeader .theme-toggle-btn {
+    width: 28px !important;
+    height: 28px !important;
+    min-width: 28px !important;
+    min-height: 28px !important;
+    padding: 4px !important;
+  }
+
+  #mainHeader .profile-pill {
+    padding: 2px 2px 2px 4px !important;
+    gap: 4px !important;
+  }
+
+  #mainHeader .profile-pill img {
+    width: 24px !important;
+    height: 24px !important;
+  }
+
+  #headerTitle {
+    font-size: 0.68rem !important;
+    max-width: 110px !important;
+  }
+}
+
+/* ---- 11. LOGIN OVERLAY — TOUCH-FRIENDLY ON PHONES ---- */
+@media (max-width: 480px) {
+  #loginOverlay > div {
+    padding: 2rem 1.2rem !important;
+    border-radius: 24px !important;
+  }
+
+  #loginOverlay h1 {
+    font-size: 1.4rem !important;
+    margin-bottom: 0.5rem !important;
+  }
+
+  #loginOverlay p {
+    font-size: 0.82rem !important;
+  }
+
+  #loginOverlay .login-mode-panel {
+    padding: 10px !important;
+    border-radius: 12px !important;
+  }
+
+  #loginOverlay .login-mode-toggle {
+    gap: 10px !important;
+    min-height: 48px !important;
+  }
+
+  #loginOverlay .login-mode-toggle input[type="checkbox"] {
+    min-width: 40px !important;
+    min-height: 22px !important;
+  }
+
+  #loginOverlay .login-mode-copy strong {
+    font-size: 0.82rem !important;
+  }
+
+  #loginOverlay .login-mode-copy small {
+    font-size: 0.7rem !important;
+    line-height: 1.3 !important;
+  }
+
+  /* Icon container on login */
+  #loginOverlay > div > div:first-child {
+    width: 56px !important;
+    height: 56px !important;
+    border-radius: 16px !important;
+    margin-bottom: 1rem !important;
+  }
+
+  #loginOverlay > div > div:first-child svg {
+    width: 28px !important;
+    height: 28px !important;
+  }
+}
+
+/* ---- 12. PROFILE MATCH PAGE — MOBILE CARD LAYOUT ---- */
+@media (max-width: 640px) {
+  #profile_match .page-title {
+    font-size: 1.15rem !important;
+  }
+
+  .sync-cta-grid.premium-source-grid {
+    grid-template-columns: 1fr !important;
+    gap: 12px !important;
+  }
+
+  .sync-card-premium {
+    padding: 20px 16px !important;
+    min-height: 200px !important;
+    border-radius: 16px !important;
+  }
+
+  .sync-icon-box {
+    width: 48px !important;
+    height: 48px !important;
+    border-radius: 12px !important;
+    margin-bottom: 12px !important;
+  }
+
+  .sync-title {
+    font-size: 0.95rem !important;
+  }
+
+  .sync-desc {
+    font-size: 0.75rem !important;
+    max-width: 100% !important;
+    margin-bottom: 16px !important;
+  }
+
+  .sync-btn-premium {
+    max-width: 100% !important;
+    min-height: 44px !important;
+    font-size: 0.8rem !important;
+    padding: 10px 16px !important;
+    border-radius: 10px !important;
+  }
+}
+
+/* ---- 13. PAGE CONTENT — ENSURE VISIBLE BELOW FIXED HEADER ---- */
+@media (max-width: 768px) {
+  /* The fixed mobile header is 60px. Ensure page content is not hidden beneath it. */
+  .page.active {
+    padding-top: calc(60px + 16px) !important;
+  }
+
+  /* Job Radar has its own header handling */
+  #job_radar.page.active {
+    padding-top: 60px !important;
+  }
+
+  /* Ensure body scrolls properly */
+  body {
+    -webkit-text-size-adjust: 100% !important;
+    text-size-adjust: 100% !important;
+  }
+}
+
+/* ---- 14. STUDY HISTORY & AI INTERVIEW — MOBILE ---- */
+@media (max-width: 640px) {
+  #study_history .page-header,
+  #ai_interview .page-header {
+    gap: 8px !important;
+  }
+
+  .history-tabs {
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    scrollbar-width: none !important;
+    flex-wrap: nowrap !important;
+    white-space: nowrap !important;
+    gap: 6px !important;
+  }
+
+  .history-tabs::-webkit-scrollbar {
+    display: none;
+  }
+
+  .history-tab {
+    flex: 0 0 auto !important;
+    min-height: 38px !important;
+    white-space: nowrap !important;
+    font-size: 0.72rem !important;
+    padding: 6px 12px !important;
+  }
+
+  #coachChat > div {
+    max-width: 92% !important;
+    font-size: 0.82rem !important;
+  }
+}
+
+/* ---- 15. TOUCH-TARGET HARDENING (all buttons, links, interactive elements) ---- */
+@media (pointer: coarse) {
+  button,
+  [role="button"],
+  .nav-item,
+  .qa-question,
+  select,
+  [tabindex="0"] {
+    min-height: 44px !important;
+  }
+
+  input[type="text"],
+  input[type="email"],
+  input[type="password"],
+  input[type="search"],
+  input[type="url"],
+  input[type="tel"],
+  input[type="number"],
+  textarea,
+  select {
+    min-height: 44px !important;
+    font-size: max(16px, 1em) !important; /* Prevent iOS auto-zoom */
+  }
+
+  /* Confidence modal buttons need bigger touch targets */
+  #confidenceModal button {
+    min-height: 54px !important;
+  }
+}
+
+/* ---- 16. LANDSCAPE PHONE FIX — PREVENT CONTENT CUT OFF ---- */
+@media (max-height: 500px) and (max-width: 900px) {
+  #loginOverlay {
+    overflow-y: auto !important;
+    padding: 16px !important;
+    align-items: flex-start !important;
+  }
+
+  #loginOverlay > div {
+    margin: 16px auto !important;
+  }
+
+  #mainHeader {
+    height: 44px !important;
+    min-height: 44px !important;
+  }
+
+  .page {
+    padding-top: calc(44px + 12px) !important;
+  }
+
+  #job_radar.page {
+    padding-top: 44px !important;
+  }
+}
+
+/* ---- 17. GENERAL GRID RESILIENCE ---- */
+.profile-metrics-grid,
+.profile-grid,
+.universal-grid,
+.sync-cta-grid {
+  min-width: 0 !important;
+}
+
+@media (max-width: 480px) {
+  .profile-metrics-grid,
+  .profile-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .premium-roadmap-grid {
+    grid-template-columns: 1fr !important;
+    gap: 12px !important;
+  }
+
+  /* Daily progress bar text */
+  .daily-progress-row,
+  [style*="justify-content:space-between"][style*="font-size:0.7rem"] {
+    flex-wrap: wrap !important;
+    gap: 4px !important;
+  }
+}
+
+/* ---- 18. FLOATING DROPDOWN ON MOBILE ---- */
+@media (max-width: 480px) {
+  .floating-dropdown {
+    width: min(240px, calc(100vw - 24px)) !important;
+    right: 8px !important;
+  }
+
+  .fd-header {
+    padding: 12px !important;
+  }
+
+  .fd-item {
+    padding: 10px 12px !important;
+    min-height: 44px !important;
+  }
+}
+
+/* ---- 19. BOOKMARKS & SEARCH RESULTS PAGES ---- */
+@media (max-width: 640px) {
+  #bookmarks_page .bookmark-card,
+  #searchPage .rich-search-result {
+    padding: 12px !important;
+    border-radius: 10px !important;
+  }
+
+  .search-actions {
+    flex-direction: column !important;
+  }
+
+  .search-actions button {
+    width: 100% !important;
+    min-height: 44px !important;
+  }
+}
+
+/* ---- 20. SAFE AREA INSETS (IPHONE NOTCH / DYNAMIC ISLAND) ---- */
+@supports (padding-bottom: env(safe-area-inset-bottom)) {
+  @media (max-width: 768px) {
+    .page {
+      padding-bottom: calc(80px + env(safe-area-inset-bottom, 0px)) !important;
+    }
+
+    #floatingTimer {
+      bottom: calc(10px + env(safe-area-inset-bottom, 0px)) !important;
+    }
+
+    #mainHeader {
+      padding-top: env(safe-area-inset-top, 0px) !important;
+    }
+  }
+}
