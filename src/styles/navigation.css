@@ -1568,6 +1568,8 @@ body:not(.sidebar-collapsed) #sidebar .sidebar-branding {
     min-width: 44px !important;
     min-height: 44px !important;
     pointer-events: auto !important;
+    border: none !important;
+    background: transparent !important;
   }
 
   html body #mainHeader .header-zone-left,
@@ -2025,7 +2027,7 @@ html body #profile_match .start-prep {
   html body #sidebar.mobile-open .nav-config-section.is-open,
   html body #sidebar.mobile-open .nav-config-section.is-flyout-open {
     width: 100% !important;
-    margin: 0 0 8px !important;
+    margin: 0 !important;
     overflow: hidden !important;
     border-color: rgba(96, 165, 250, 0.18) !important;
     background: rgba(15, 23, 42, 0.5) !important;

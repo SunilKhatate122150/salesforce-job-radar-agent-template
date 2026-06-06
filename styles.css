@@ -6362,8 +6362,8 @@ button:active,
   min-width: 44px !important;
   min-height: 44px !important;
   border-radius: 10px !important;
-  border: 1px solid var(--color-border, rgba(148, 163, 184, 0.18)) !important;
-  background: color-mix(in srgb, var(--color-surface, #111827) 84%, transparent) !important;
+  border: none !important;
+  background: transparent !important;
 }
 
 .modal-x-btn {
