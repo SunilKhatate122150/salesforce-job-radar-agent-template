@@ -68,16 +68,24 @@
 
 #sidebar .search-wrap {
   padding: 10px 12px !important;
+  margin-bottom: 4px !important;
 }
 
 #sidebar #searchInput {
   min-height: 38px;
   border-radius: 10px !important;
   padding-left: 32px !important;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+#sidebar #searchInput:focus {
+  border-color: var(--blue) !important;
+  background: rgba(59, 130, 246, 0.06) !important;
+  box-shadow: 0 0 12px rgba(59, 130, 246, 0.25) !important;
 }
 
 #sidebar .nav-recent-panel {
-  margin: 8px 12px 14px !important;
+  margin: 12px 12px 14px !important;
   padding: 10px !important;
   border-radius: 8px;
   border-color: rgba(96, 165, 250, 0.16) !important;

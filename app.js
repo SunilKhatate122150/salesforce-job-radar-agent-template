@@ -5995,7 +5995,6 @@ window.addEventListener('hashchange', () => {
 });
 
 function toggleMobileSidebar(forceOpen) {
-  syncSidebarStickyOffset();
   const sidebar = document.getElementById('sidebar');
   const overlay = document.getElementById('sidebarOverlay');
   const toggle = document.getElementById('mobileToggle');
@@ -6039,6 +6038,10 @@ function toggleMobileSidebar(forceOpen) {
     sidebar.classList.add('mobile-open');
     document.body.classList.add('nav-open');
     syncA11y(true);
+    if (typeof syncSidebarStickyOffset === 'function') {
+      syncSidebarStickyOffset();
+      setTimeout(syncSidebarStickyOffset, 50);
+    }
     if (overlay) {
       overlay.style.display = 'block';
       requestAnimationFrame(() => { overlay.style.opacity = '1'; });

@@ -254,7 +254,6 @@ export function toggleSidebar() {
 }
 
 export function toggleMobileSidebar(forceOpen) {
-  if (typeof window.syncSidebarStickyOffset === 'function') window.syncSidebarStickyOffset();
   const sidebar = document.getElementById('sidebar');
   const overlay = document.getElementById('sidebarOverlay');
   const toggle = document.getElementById('mobileToggle');
@@ -299,6 +298,10 @@ export function toggleMobileSidebar(forceOpen) {
     sidebar.classList.add('mobile-open');
     document.body.classList.add('nav-open');
     syncA11y(true);
+    if (typeof window.syncSidebarStickyOffset === 'function') {
+      window.syncSidebarStickyOffset();
+      setTimeout(window.syncSidebarStickyOffset, 50);
+    }
     if (overlay) {
       overlay.style.display = 'block';
       requestAnimationFrame(() => { overlay.style.opacity = '1'; });
