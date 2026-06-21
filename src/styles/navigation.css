@@ -260,15 +260,17 @@
   min-height: 40px;
   display: flex;
   align-items: center;
-  gap: 9px;
+  gap: 10px;
   border: 0;
   text-align: left;
   cursor: pointer;
-  background: rgba(15, 23, 42, 0.38) !important;
-  color: #bac8e6 !important;
+  background: rgba(15, 23, 42, 0.15) !important;
+  color: var(--text-soft) !important;
   border-left: 3px solid transparent !important;
   box-shadow: none !important;
-  transition: background 0.16s ease, color 0.16s ease, border-color 0.16s ease;
+  transition: all var(--motion-fast) var(--ease-out-expo) !important;
+  border-radius: 8px !important;
+  margin: 2px 0 !important;
 }
 
 .nav-item-icon,
@@ -320,15 +322,18 @@
 }
 
 #sidebar .nav-config-section .nav-item:hover {
-  background: rgba(30, 41, 59, 0.88) !important;
-  color: #e5edff !important;
-  border-left-color: rgba(59, 130, 246, 0.55) !important;
+  background: rgba(59, 130, 246, 0.08) !important;
+  color: var(--text) !important;
+  border-left-color: rgba(59, 130, 246, 0.4) !important;
+  padding-left: 14px !important;
 }
 
 #sidebar .nav-config-section .nav-item.active {
-  background: linear-gradient(90deg, rgba(37, 99, 235, 0.26), rgba(15, 23, 42, 0.82)) !important;
-  color: #f8fbff !important;
-  border-left-color: #3b82f6 !important;
+  background: linear-gradient(90deg, rgba(59, 130, 246, 0.15) 0%, transparent 100%) !important;
+  color: var(--text) !important;
+  border-left-color: var(--blue) !important;
+  box-shadow: inset 2px 0 0 var(--blue) !important;
+  font-weight: 600 !important;
 }
 
 #sidebar .nav-config-section .nav-item .count {

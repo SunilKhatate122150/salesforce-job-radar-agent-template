@@ -282,6 +282,9 @@ svg {
   --ease-in-out-sine: cubic-bezier(0.45, 0, 0.55, 1);
   --sidebar-w: 280px;
   --header-h: 60px;
+  --glass-bg: rgba(255, 255, 255, 0.03);
+  --glass-border: rgba(255, 255, 255, 0.08);
+  --primary-glow: rgba(59, 130, 246, 0.35);
   
   /* Typography Scale */
   --fs-xs: 0.7rem;
@@ -317,6 +320,9 @@ html.theme-light {
   --muted: #475569;
   
   --blue-glow: rgba(59, 130, 246, 0.15);
+  --glass-bg: rgba(0, 0, 0, 0.02);
+  --glass-border: rgba(0, 0, 0, 0.06);
+  --primary-glow: rgba(37, 99, 235, 0.15);
 }
 
 * {
@@ -888,8 +894,18 @@ p,
 
 .page.active {
   display: block !important;
-  opacity: 1;
-  transform: translateY(0) scale(1);
+  animation: pageFadeIn var(--motion-med) var(--ease-out-expo) forwards;
+}
+
+@keyframes pageFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(12px) scale(0.99);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
 
 @keyframes float {
@@ -1733,22 +1749,22 @@ pre.code .num {
 }
 
 .tracker-card {
-  background: linear-gradient(145deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01));
-  border: 1px solid rgba(255,255,255,0.05);
-  border-radius: 16px;
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-lg);
   padding: 1.5rem;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all var(--motion-med) var(--ease-out-expo);
   position: relative;
   overflow: hidden;
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  box-shadow: var(--shadow-sm);
 }
 
 .tracker-card:hover {
-  border-color: rgba(59,130,246,0.3);
-  transform: translateY(-4px);
-  box-shadow: 0 10px 30px rgba(0,0,0,0.4), 0 0 15px rgba(59,130,246,0.1);
+  border-color: rgba(59, 130, 246, 0.4);
+  transform: translateY(-6px) scale(1.02);
+  box-shadow: var(--shadow-md), 0 0 25px rgba(59, 130, 246, 0.2);
 }
 
 .tracker-card::before {
@@ -1831,12 +1847,23 @@ pre.code .num {
 }
 
 .suggestion-card {
-  background: var(--card);
-  border: 1px solid var(--border);
-  border-left: 3px solid var(--amber);
-  border-radius: 12px;
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-left: 4px solid var(--amber);
+  border-radius: var(--radius-md);
   padding: 1rem 1.2rem;
   margin-bottom: 0.8rem;
+  transition: all var(--motion-med) var(--ease-out-expo);
+  box-shadow: var(--shadow-sm);
+  backdrop-filter: blur(8px);
+}
+
+.suggestion-card:hover {
+  transform: translateX(4px);
+  border-color: var(--glass-border);
+  border-left-color: var(--blue);
+  background: rgba(255, 255, 255, 0.05);
+  box-shadow: var(--shadow-md);
 }
 
 .suggestion-icon {
@@ -1889,23 +1916,23 @@ pre.code .num {
 }
 
 .stat-box {
-  background: linear-gradient(145deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01));
-  border: 1px solid rgba(255,255,255,0.05);
-  border-radius: 16px;
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-lg);
   padding: 1.2rem;
   flex: 1;
   min-width: 150px;
   text-align: center;
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-  transition: transform 0.3s, box-shadow 0.3s, border-color 0.3s;
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  box-shadow: var(--shadow-sm);
+  transition: transform var(--motion-med) var(--ease-out-expo), box-shadow var(--motion-med) var(--ease-out-expo), border-color var(--motion-med) var(--ease-out-expo);
 }
 
 .stat-box:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 25px rgba(0,0,0,0.2);
-  border-color: rgba(59,130,246,0.3);
+  transform: translateY(-4px) scale(1.02);
+  box-shadow: var(--shadow-md), 0 0 20px rgba(59, 130, 246, 0.15);
+  border-color: rgba(59, 130, 246, 0.4);
 }
 
 .stat-value {
@@ -2007,29 +2034,32 @@ pre.code .num {
   bottom: 20px;
   right: 24px;
   z-index: 99999;
-  background: rgba(23, 29, 46, 0.95);
-  backdrop-filter: blur(12px);
-  border: 1px solid var(--border2);
-  border-radius: 14px;
-  padding: 8px 14px;
+  background: var(--glass-bg);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--glass-border);
+  border-radius: 9999px;
+  padding: 8px 18px;
   display: none;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
   font-family: 'IBM Plex Mono', monospace;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
-  transition: all 0.3s;
+  box-shadow: var(--shadow-md), 0 0 20px rgba(0, 0, 0, 0.3);
+  transition: all var(--motion-med) var(--ease-out-expo);
   cursor: default;
 }
 
 #floatingTimer:hover {
-  border-color: var(--blue);
-  box-shadow: 0 4px 24px rgba(79, 142, 247, 0.15);
+  transform: translateY(-2px);
+  border-color: rgba(59, 130, 246, 0.4);
+  box-shadow: var(--shadow-lg), 0 0 25px rgba(59, 130, 246, 0.2);
 }
 
 #floatingTimer .ft-topic {
-  font-size: 0.68rem;
-  color: var(--muted);
-  max-width: 120px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--text-soft);
+  max-width: 140px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -2041,50 +2071,56 @@ pre.code .num {
   background: linear-gradient(135deg, var(--blue), var(--cyan));
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
-  min-width: 60px;
+  min-width: 65px;
   text-align: center;
+  letter-spacing: -0.5px;
 }
 
 #floatingTimer .ft-btn {
-  width: 28px;
-  height: 28px;
+  width: 30px;
+  height: 30px;
   border-radius: 50%;
-  border: 1px solid var(--border2);
-  background: var(--card);
+  border: 1px solid var(--glass-border);
+  background: rgba(255, 255, 255, 0.05);
   color: var(--text);
   font-size: 0.75rem;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.15s;
+  transition: all var(--motion-fast) var(--ease-out-expo);
 }
 
 #floatingTimer .ft-btn:hover {
   border-color: var(--blue);
-  background: var(--card2);
+  background: rgba(59, 130, 246, 0.15);
+  transform: scale(1.08);
 }
 
 #floatingTimer .ft-btn.playing {
   border-color: var(--green);
   color: var(--green);
+  box-shadow: 0 0 10px rgba(16, 185, 129, 0.2);
 }
 
 #floatingTimer .ft-btn.paused {
   border-color: var(--amber);
   color: var(--amber);
+  box-shadow: 0 0 10px rgba(245, 158, 11, 0.2);
 }
 
 #floatingTimer .ft-dot {
-  width: 6px;
-  height: 6px;
+  width: 8px;
+  height: 8px;
   border-radius: 50%;
   background: var(--green);
-  animation: pulse 2s infinite;
+  box-shadow: 0 0 8px var(--green);
+  animation: pulse 2.5s infinite;
 }
 
 #floatingTimer .ft-dot.paused {
   background: var(--amber);
+  box-shadow: 0 0 8px var(--amber);
   animation: none;
 }
 
