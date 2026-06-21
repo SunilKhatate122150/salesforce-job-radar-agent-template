@@ -3,6 +3,11 @@ import { apiFetch } from './api.js';
 
 export let cachedUserProfile = null;
 
+const originalLoadUserProfile = (typeof window !== 'undefined' && window.loadUserProfile !== loadUserProfile) ? window.loadUserProfile : null;
+const originalUpdateProfileStrengthMeter = (typeof window !== 'undefined' && window.updateProfileStrengthMeter !== updateProfileStrengthMeter) ? window.updateProfileStrengthMeter : null;
+const originalBuildStaticPremiumRoadmap = (typeof window !== 'undefined' && window.buildStaticPremiumRoadmap !== buildStaticPremiumRoadmap) ? window.buildStaticPremiumRoadmap : null;
+
+
 export function getCachedUserProfile() {
   return cachedUserProfile;
 }
@@ -15,8 +20,8 @@ export function setCachedUserProfile(profile) {
 }
 
 export async function loadUserProfile() {
-  if (typeof window.loadUserProfile === 'function') {
-    return await window.loadUserProfile();
+  if (typeof originalLoadUserProfile === 'function') {
+    return await originalLoadUserProfile();
   }
   
   try {
@@ -47,14 +52,14 @@ export async function loadUserProfile() {
 }
 
 export function updateProfileStrengthMeter() {
-  if (typeof window.updateProfileStrengthMeter === 'function') {
-    return window.updateProfileStrengthMeter();
+  if (typeof originalUpdateProfileStrengthMeter === 'function') {
+    return originalUpdateProfileStrengthMeter();
   }
 }
 
 export function buildStaticPremiumRoadmap(profile) {
-  if (typeof window.buildStaticPremiumRoadmap === 'function') {
-    return window.buildStaticPremiumRoadmap(profile);
+  if (typeof originalBuildStaticPremiumRoadmap === 'function') {
+    return originalBuildStaticPremiumRoadmap(profile);
   }
 }
 

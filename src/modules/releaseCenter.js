@@ -3,9 +3,12 @@ import { apiFetch } from './api.js';
 
 let premiumReleaseCache = null;
 
+// Capture the existing window.loadReleaseCenter before we overwrite it
+const originalLoadReleaseCenter = (typeof window !== 'undefined' && window.loadReleaseCenter !== loadReleaseCenter) ? window.loadReleaseCenter : null;
+
 export async function loadReleaseCenter(force = false) {
-  if (typeof window.loadReleaseCenter === 'function') {
-    return await window.loadReleaseCenter(force);
+  if (typeof originalLoadReleaseCenter === 'function') {
+    return await originalLoadReleaseCenter(force);
   }
   
   if (premiumReleaseCache && !force) return premiumReleaseCache;
