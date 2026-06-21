@@ -10,6 +10,7 @@
     "dev": "vite",
     "build": "vite build && node scripts/copy-static.js",
     "preview": "vite preview",
+    "lint": "eslint \"src/**/*.js\" \"api/**/*.js\" --fix",
     "doctor": "node src/tools/doctor.js",
     "doctor:cloud": "node src/tools/cloudDoctor.js",
     "check:syntax": "node src/tools/checkSyntax.js",

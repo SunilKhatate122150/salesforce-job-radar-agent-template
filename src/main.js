@@ -10,9 +10,15 @@ import './ui-shell.js';
 import '../code-practice.js';
 
 // Application Feature Modules
+import './modules/api.js';
+import './modules/toast.js';
 import './modules/auth.js';
 import './modules/router.js';
+import './modules/navigation.js';
 import './modules/studyTracker.js';
 import './modules/jobRadar.js';
 import './modules/profile.js';
 import './modules/theme.js';
+import './modules/releaseCenter.js';
+import './modules/commandCenter.js';
+import './modules/mockInterview.js';
