@@ -1185,7 +1185,11 @@
     window.setSfjrTheme(theme);
     if (btn && !btn.dataset.themeBound) {
       btn.dataset.themeBound = 'true';
-      btn.addEventListener('click', window.toggleSfjrTheme);
+      btn.addEventListener('click', function() {
+        if (typeof window.toggleSfjrTheme === 'function') {
+          window.toggleSfjrTheme();
+        }
+      });
     }
   })();
 </script>
