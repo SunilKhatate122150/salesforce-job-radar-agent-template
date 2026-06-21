@@ -4465,7 +4465,8 @@ function switchTrackerTab(tabId) {
   // Update Buttons
   document.querySelectorAll('.tracker-tab').forEach(btn => {
     btn.classList.remove('active');
-    if (btn.getAttribute('onclick').includes(tabId)) btn.classList.add('active');
+    const onclickVal = btn.getAttribute('onclick');
+    if (onclickVal && onclickVal.includes(tabId)) btn.classList.add('active');
   });
   
   // Update Content
@@ -7126,6 +7127,7 @@ Object.assign(window, {
   updateStudyStreak,
   updateSyncModalUI,
   updateTrackerUI,
+  renderTrackerUI: oldUpdateTrackerUI,
   userBookmarks,
   userRetention,
   writePremiumProfileDraft,
