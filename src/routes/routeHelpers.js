@@ -227,3 +227,36 @@ export async function checkAndArchiveOverflow(userId) {
     console.error('[Vacuum] Error during automatic archival:', e.message);
   }
 }
+
+export async function buildConnectivityDetails() {
+  const details = {
+    mongo: { connected: isMongoConnected() },
+    turso: { connected: false, checked: false },
+    supabase: { connected: false, checked: false }
+  };
+
+  if (process.env.TURSO_URL || process.env.TURSO_DATABASE_URL) {
+    details.turso.checked = true;
+    try {
+      await TursoDB.execute('SELECT 1 AS ok');
+      details.turso.connected = true;
+    } catch (err) {
+      details.turso.error = err.message;
+    }
+  }
+
+  if (isSupabaseEnabled()) {
+    details.supabase.checked = true;
+    try {
+      const { error } = await supabase
+        .from(getStateTableName())
+        .select('state_key')
+        .limit(1);
+      if (error) throw error;
+      details.supabase.connected = true;
+    } catch (err) {
+      details.supabase.error = err.message;
+    }
+  }
+  return details;
+}
