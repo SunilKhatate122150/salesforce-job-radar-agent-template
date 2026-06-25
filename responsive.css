@@ -3140,6 +3140,7 @@ svg, img, video, canvas,
   }
 
   /* Job Radar has its own header handling */
+  #job_radar.page,
   #job_radar.page.active {
     padding-top: 60px !important;
   }
@@ -3337,8 +3338,7 @@ svg, img, video, canvas,
     right: 0 !important;
     z-index: 2000 !important;
   }
-  #job_radar.page,
-  #job_radar.page.active {
+  #job_radar.page {
     padding-top: 60px !important;
   }
 }

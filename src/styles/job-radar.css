@@ -2155,7 +2155,7 @@ body:has(#job_radar.active) #headerTitle {
   gap: 16px !important;
   padding: 0 20px !important;
   position: sticky !important;
-  top: var(--header-h, 48px) !important;
+  top: 0 !important;
   z-index: 30 !important;
   overflow: visible !important;
   width: 100% !important;
@@ -4075,7 +4075,7 @@ body:has(#job_radar.active) .activity-log-panel .log-entry {
 
   #job_radar.page,
   #job_radar.page.active {
-    padding-top: 0 !important;
+    padding-top: 60px !important;
   }
 }
 
