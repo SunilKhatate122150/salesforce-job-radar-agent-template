@@ -338,7 +338,7 @@ body {
   overflow: hidden;
   background: var(--bg);
   color: var(--text);
-  font-family: 'Outfit', 'Plus Jakarta Sans', sans-serif;
+  font-family: var(--font-body), sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -600,7 +600,7 @@ p,
   padding: 0.55rem 0.8rem 0.55rem 32px;
   font-size: 0.8rem;
   color: var(--text);
-  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-family: var(--font-body), sans-serif;
   outline: none;
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
@@ -3194,9 +3194,9 @@ pre.code .num {
    v1413  -  Responsive hardening & collapsed-section fix */
 
 :root {
-  --app-font-body: 'Outfit', 'Plus Jakarta Sans', sans-serif;
-  --app-font-display: 'Syne', 'Plus Jakarta Sans', sans-serif;
-  --app-font-mono: 'JetBrains Mono', 'IBM Plex Mono', monospace;
+  --app-font-body: 'Satoshi', 'Inter', sans-serif;
+  --app-font-display: 'Instrument Serif', 'Georgia', serif;
+  --app-font-mono: 'IBM Plex Mono', monospace;
   --sidebar-w: 280px;
 }
 
@@ -5430,7 +5430,7 @@ body.ui-classic .career-os-panel {
   background: hsla(var(--surface-h), var(--surface-s), 10%, 0.2);
 }
 .sidebar-brand-title {
-  font-family: 'Syne', sans-serif;
+  font-family: var(--app-font-body), sans-serif;
   font-size: 1.1rem;
   font-weight: 800;
   color: white;
@@ -5465,7 +5465,7 @@ body.ui-classic .career-os-panel {
   padding: 10px;
   font-size: 0.75rem;
   font-weight: 700;
-  font-family: 'Outfit', sans-serif;
+  font-family: var(--app-font-body), sans-serif;
   background: hsla(var(--surface-h), var(--surface-s), 20%, 0.4);
   border: 1px solid var(--border);
   border-radius: 12px;
@@ -6545,7 +6545,7 @@ body.ui-classic .premium-roadmap-shell {
 #totalStudyTime,
 #todayTime,
 .tracker-time {
-  font-family: "IBM Plex Mono", "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace !important;
+  font-family: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace !important;
   font-variant-numeric: tabular-nums !important;
   letter-spacing: 0 !important;
 }
@@ -6636,4 +6636,14 @@ body.light-theme #sidebar .nav-group-label {
   word-break: normal !important;
   overflow-wrap: normal !important;
   white-space: normal !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-delay: 0s !important;
+    animation-duration: 0s !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0s !important;
+    scroll-behavior: auto !important;
+  }
 }
