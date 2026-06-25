@@ -241,7 +241,7 @@ window.handleCredentialResponse = function(response) {
 
 window.processGAuth = async function(response) {
   const token = response.credential;
-  const loginMode = getLoginUiModeIntent() || currentUiMode || 'modern';
+  const loginMode = 'modern';
   sessionStorage.setItem('sf_login_ui_mode_intent', loginMode);
   applyUiMode(loginMode);
   localStorage.setItem('google_auth_token', token);
