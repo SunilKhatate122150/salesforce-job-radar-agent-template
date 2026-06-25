@@ -1,0 +1,793 @@
+/* ============================================================================
+   LOGIN HERO — Salesforce Job Radar
+   Landing / login page styles. Replaces inline styles with proper classes.
+   Design tokens: references design-system vars from styles.css / navigation.css
+   ============================================================================ */
+
+/* ---------------------------------------------------------------------------
+   §1  ANIMATED MESH BACKGROUND
+   --------------------------------------------------------------------------- */
+
+.login-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 99999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg, #090b10);
+  overflow: hidden;
+  isolation: isolate; /* stacking-context for children */
+}
+
+/* --- Mesh gradient blobs -------------------------------------------------- */
+
+.login-mesh-bg {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+  z-index: 0;
+}
+
+.login-mesh-bg::before,
+.login-mesh-bg::after {
+  content: "";
+  position: absolute;
+  border-radius: 50%;
+  will-change: transform;
+  mix-blend-mode: screen;
+}
+
+/* Blob 1 — large navy, top-left */
+.login-mesh-bg::before {
+  width: 800px;
+  height: 800px;
+  top: -18%;
+  left: -12%;
+  background: radial-gradient(
+    circle at center,
+    oklch(0.28 0.06 250) 0%,
+    transparent 70%
+  );
+  animation: meshDrift1 20s ease-in-out infinite;
+}
+
+/* Blob 2 — indigo/violet, bottom-right */
+.login-mesh-bg::after {
+  width: 700px;
+  height: 700px;
+  bottom: -15%;
+  right: -10%;
+  background: radial-gradient(
+    circle at center,
+    oklch(0.32 0.12 280) 0%,
+    transparent 70%
+  );
+  animation: meshDrift2 25s ease-in-out infinite;
+}
+
+/* Blob 3 — we use an extra child element */
+.login-mesh-blob3 {
+  position: absolute;
+  width: 500px;
+  height: 500px;
+  bottom: -8%;
+  left: 50%;
+  translate: -50% 0;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle at center,
+    oklch(0.26 0.10 310) 0%,
+    transparent 70%
+  );
+  mix-blend-mode: screen;
+  pointer-events: none;
+  animation: meshDrift3 30s ease-in-out infinite;
+  will-change: transform;
+}
+
+@keyframes meshDrift1 {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  25%      { transform: translate(60px, 40px) scale(1.06); }
+  50%      { transform: translate(-30px, 80px) scale(0.96); }
+  75%      { transform: translate(40px, -20px) scale(1.03); }
+}
+
+@keyframes meshDrift2 {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  33%      { transform: translate(-50px, -40px) scale(1.08); }
+  66%      { transform: translate(30px, 50px) scale(0.94); }
+}
+
+@keyframes meshDrift3 {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  40%      { transform: translate(40px, -30px) scale(1.05); }
+  70%      { transform: translate(-20px, 20px) scale(0.97); }
+}
+
+/* --- Floating particles --------------------------------------------------- */
+
+.login-particles {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.login-particle {
+  position: absolute;
+  border-radius: 50%;
+  background: white;
+  will-change: transform, opacity;
+}
+
+.login-particle:nth-child(1) {
+  width: 4px; height: 4px;
+  top: 14%;  left: 22%;
+  opacity: 0.10;
+  animation: particleFloat1 14s ease-in-out infinite;
+}
+.login-particle:nth-child(2) {
+  width: 3px; height: 3px;
+  top: 68%;  left: 78%;
+  opacity: 0.08;
+  animation: particleFloat2 18s ease-in-out infinite;
+}
+.login-particle:nth-child(3) {
+  width: 5px; height: 5px;
+  top: 42%;  left: 10%;
+  opacity: 0.12;
+  animation: particleFloat3 12s ease-in-out infinite;
+}
+.login-particle:nth-child(4) {
+  width: 3px; height: 3px;
+  top: 80%;  left: 40%;
+  opacity: 0.06;
+  animation: particleFloat4 20s ease-in-out infinite;
+}
+.login-particle:nth-child(5) {
+  width: 6px; height: 6px;
+  top: 25%;  left: 85%;
+  opacity: 0.05;
+  animation: particleFloat5 16s ease-in-out infinite;
+}
+.login-particle:nth-child(6) {
+  width: 4px; height: 4px;
+  top: 55%;  left: 55%;
+  opacity: 0.15;
+  animation: particleFloat6 8s ease-in-out infinite;
+}
+
+@keyframes particleFloat1 {
+  0%, 100% { transform: translate(0, 0); }
+  50%      { transform: translate(30px, -40px); }
+}
+@keyframes particleFloat2 {
+  0%, 100% { transform: translate(0, 0); }
+  50%      { transform: translate(-20px, 35px); }
+}
+@keyframes particleFloat3 {
+  0%, 100% { transform: translate(0, 0); }
+  50%      { transform: translate(45px, 20px); }
+}
+@keyframes particleFloat4 {
+  0%, 100% { transform: translate(0, 0); }
+  50%      { transform: translate(-15px, -50px); }
+}
+@keyframes particleFloat5 {
+  0%, 100% { transform: translate(0, 0); }
+  50%      { transform: translate(25px, 30px); }
+}
+@keyframes particleFloat6 {
+  0%, 100% { transform: translate(0, 0); }
+  50%      { transform: translate(-35px, -20px); }
+}
+
+/* ---------------------------------------------------------------------------
+   §2  LOGIN CARD
+   --------------------------------------------------------------------------- */
+
+.login-card {
+  position: relative;
+  z-index: 2;
+  max-width: 460px;
+  width: 92%;
+  padding: 3rem 2rem;
+  background: hsla(222, 47%, 12%, 0.6);
+  backdrop-filter: blur(30px);
+  -webkit-backdrop-filter: blur(30px);
+  border-radius: 32px;
+  border: 1px solid hsla(222, 100%, 50%, 0.12);
+  text-align: center;
+  overflow: hidden;
+  box-shadow:
+    0 40px 100px -20px rgba(0, 0, 0, 0.8),
+    0 0 40px rgba(59, 130, 246, 0.08);
+  animation: loginCardEnter var(--motion-slow, 400ms) var(--ease-out-expo, cubic-bezier(0.16, 1, 0.3, 1)) both;
+}
+
+@keyframes loginCardEnter {
+  from {
+    opacity: 0;
+    transform: translateY(24px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* Decorative radial glow (top-right corner) */
+.login-card-glow {
+  position: absolute;
+  top: -60px;
+  right: -60px;
+  width: 220px;
+  height: 220px;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle at center,
+    hsla(222, 100%, 55%, 0.15) 0%,
+    transparent 70%
+  );
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ---------------------------------------------------------------------------
+   §3  LOGO
+   --------------------------------------------------------------------------- */
+
+.login-logo {
+  position: relative;
+  z-index: 1;
+  width: 72px;
+  height: 72px;
+  margin: 0 auto 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 20px;
+  background: linear-gradient(
+    135deg,
+    var(--blue, #3b82f6),
+    var(--violet, #8b5cf6)
+  );
+  box-shadow:
+    0 8px 32px -4px rgba(59, 130, 246, 0.35),
+    0 0 0 1px rgba(255, 255, 255, 0.08);
+  animation: loginFloat 6s ease-in-out infinite;
+}
+
+.login-logo svg {
+  width: 36px;
+  height: 36px;
+  color: white;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+}
+
+.login-logo img {
+  width: 36px;
+  height: 36px;
+  object-fit: contain;
+}
+
+@keyframes loginFloat {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-8px); }
+}
+
+/* Pulse ring behind logo */
+.login-logo-pulse {
+  position: absolute;
+  inset: -10px;
+  border-radius: 24px;
+  border: 2px solid var(--blue, #3b82f6);
+  opacity: 0;
+  pointer-events: none;
+  animation: logoPulseRing 3s ease-out infinite;
+  z-index: -1;
+}
+
+@keyframes logoPulseRing {
+  0% {
+    opacity: 0.4;
+    transform: scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.6);
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   §4  TITLE & SUBTITLE
+   --------------------------------------------------------------------------- */
+
+.login-title {
+  position: relative;
+  z-index: 1;
+  font-family: var(--font-body, 'Satoshi', sans-serif);
+  font-size: 2.25rem;
+  font-weight: 800;
+  letter-spacing: -1px;
+  line-height: 1.15;
+  margin: 0 0 0.75rem;
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 1) 30%,
+    rgba(148, 163, 184, 0.8) 100%
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.login-subtitle {
+  position: relative;
+  z-index: 1;
+  font-family: var(--font-body, 'Satoshi', sans-serif);
+  font-size: 0.95rem;
+  font-weight: 400;
+  color: rgba(255, 255, 255, 0.6);
+  line-height: 1.5;
+  margin: 0 auto 1.75rem;
+  max-width: 340px;
+}
+
+/* Live-status pulsing dot */
+.login-live-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--green, #10b981);
+  vertical-align: middle;
+  margin-left: 8px;
+  animation: loginPulse 2s ease-in-out infinite;
+  box-shadow: 0 0 6px var(--green, #10b981);
+}
+
+@keyframes loginPulse {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.5;
+    transform: scale(0.85);
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   §5  FEATURE SHOWCASE CARDS (NEW)
+   --------------------------------------------------------------------------- */
+
+.login-features {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 1.5rem;
+  margin-bottom: 1.75rem;
+}
+
+.login-feature-card {
+  width: 140px;
+  padding: 1rem;
+  text-align: center;
+  background: hsla(222, 47%, 15%, 0.4);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid hsla(222, 100%, 50%, 0.08);
+  border-radius: var(--radius-lg, 14px);
+  transition:
+    transform var(--motion-med, 250ms) var(--ease-out-expo, cubic-bezier(0.16, 1, 0.3, 1)),
+    border-color var(--motion-med, 250ms) ease,
+    box-shadow var(--motion-med, 250ms) ease;
+  cursor: default;
+}
+
+.login-feature-card:hover {
+  transform: translateY(-4px);
+  border-color: hsla(222, 100%, 50%, 0.18);
+  box-shadow: 0 12px 32px -8px rgba(59, 130, 246, 0.12);
+}
+
+.login-feature-icon {
+  width: 36px;
+  height: 36px;
+  margin: 0 auto 0.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  font-size: 1rem;
+  line-height: 1;
+}
+
+/* Icon gradient variants */
+.login-feature-icon--blue {
+  background: linear-gradient(135deg, var(--blue, #3b82f6), var(--cyan, #06b6d4));
+  color: white;
+}
+
+.login-feature-icon--green {
+  background: linear-gradient(135deg, var(--green, #10b981), var(--cyan, #06b6d4));
+  color: white;
+}
+
+.login-feature-icon--violet {
+  background: linear-gradient(135deg, var(--violet, #8b5cf6), var(--blue, #3b82f6));
+  color: white;
+}
+
+.login-feature-icon--amber {
+  background: linear-gradient(135deg, var(--amber, #f59e0b), var(--red, #ef4444));
+  color: white;
+}
+
+.login-feature-label {
+  font-family: var(--font-body, 'Satoshi', sans-serif);
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.92);
+  margin: 0 0 0.2rem;
+  letter-spacing: 0.01em;
+  line-height: 1.3;
+}
+
+.login-feature-desc {
+  font-family: var(--font-body, 'Satoshi', sans-serif);
+  font-size: 0.6rem;
+  font-weight: 400;
+  color: rgba(255, 255, 255, 0.4);
+  line-height: 1.4;
+  margin: 0;
+}
+
+/* Staggered entrance for feature cards */
+.login-feature-card:nth-child(1) { animation: featureCardIn 0.5s var(--ease-out-expo) 0.15s both; }
+.login-feature-card:nth-child(2) { animation: featureCardIn 0.5s var(--ease-out-expo) 0.25s both; }
+.login-feature-card:nth-child(3) { animation: featureCardIn 0.5s var(--ease-out-expo) 0.35s both; }
+
+@keyframes featureCardIn {
+  from {
+    opacity: 0;
+    transform: translateY(12px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   §6  GOOGLE SIGN-IN & STATUS BAR
+   --------------------------------------------------------------------------- */
+
+.login-google-shell {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  justify-content: center;
+  margin-top: 0.5rem;
+}
+
+.login-status-bar {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin-top: 1.25rem;
+  padding: 0.5rem 1rem;
+  font-family: var(--font-mono, 'IBM Plex Mono', monospace);
+  font-size: 0.65rem;
+  color: var(--muted, #64748b);
+  background: hsla(222, 47%, 12%, 0.4);
+  border-radius: var(--radius-md, 10px);
+  border: 1px solid var(--border, rgba(255, 255, 255, 0.08));
+}
+
+.login-status-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--green, #10b981);
+  flex-shrink: 0;
+  animation: loginPulse 2s ease-in-out infinite;
+}
+
+/* ---------------------------------------------------------------------------
+   §7  LOGIN MODE PANEL
+   (External class — not duplicated here. Reference only.)
+   .login-mode-panel { … defined elsewhere … }
+   --------------------------------------------------------------------------- */
+
+/* ---------------------------------------------------------------------------
+   §8  LIGHT THEME OVERRIDES
+   --------------------------------------------------------------------------- */
+
+[data-theme="light"] .login-overlay {
+  background: linear-gradient(
+    160deg,
+    #f0f4ff 0%,
+    #e8ecf4 40%,
+    #dfe3ed 100%
+  );
+}
+
+[data-theme="light"] .login-mesh-bg::before {
+  background: radial-gradient(
+    circle at center,
+    oklch(0.88 0.04 240) 0%,
+    transparent 70%
+  );
+}
+
+[data-theme="light"] .login-mesh-bg::after {
+  background: radial-gradient(
+    circle at center,
+    oklch(0.86 0.06 280) 0%,
+    transparent 70%
+  );
+}
+
+[data-theme="light"] .login-mesh-blob3 {
+  background: radial-gradient(
+    circle at center,
+    oklch(0.84 0.05 310) 0%,
+    transparent 70%
+  );
+}
+
+[data-theme="light"] .login-particle {
+  background: var(--blue, #3b82f6);
+}
+
+[data-theme="light"] .login-card {
+  background: hsla(222, 30%, 98%, 0.75);
+  border-color: hsla(222, 40%, 70%, 0.25);
+  box-shadow:
+    0 40px 100px -20px rgba(0, 0, 0, 0.12),
+    0 0 40px rgba(59, 130, 246, 0.06);
+}
+
+[data-theme="light"] .login-card-glow {
+  background: radial-gradient(
+    circle at center,
+    hsla(222, 100%, 70%, 0.1) 0%,
+    transparent 70%
+  );
+}
+
+[data-theme="light"] .login-title {
+  background: linear-gradient(
+    180deg,
+    #0f172a 30%,
+    #475569 100%
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+}
+
+[data-theme="light"] .login-subtitle {
+  color: rgba(15, 23, 42, 0.6);
+}
+
+[data-theme="light"] .login-feature-card {
+  background: hsla(222, 30%, 95%, 0.5);
+  border-color: hsla(222, 40%, 70%, 0.18);
+}
+
+[data-theme="light"] .login-feature-card:hover {
+  border-color: hsla(222, 60%, 60%, 0.3);
+  box-shadow: 0 12px 32px -8px rgba(59, 130, 246, 0.1);
+}
+
+[data-theme="light"] .login-feature-label {
+  color: rgba(15, 23, 42, 0.88);
+}
+
+[data-theme="light"] .login-feature-desc {
+  color: rgba(15, 23, 42, 0.45);
+}
+
+[data-theme="light"] .login-status-bar {
+  background: hsla(222, 30%, 95%, 0.5);
+  border-color: hsla(222, 40%, 70%, 0.2);
+  color: #475569;
+}
+
+[data-theme="light"] .login-live-dot {
+  box-shadow: 0 0 6px rgba(16, 185, 129, 0.4);
+}
+
+/* ---------------------------------------------------------------------------
+   §9  REDUCED MOTION
+   --------------------------------------------------------------------------- */
+
+@media (prefers-reduced-motion: reduce) {
+  .login-mesh-bg::before,
+  .login-mesh-bg::after,
+  .login-mesh-blob3,
+  .login-particle,
+  .login-logo,
+  .login-logo-pulse,
+  .login-live-dot,
+  .login-status-dot,
+  .login-card,
+  .login-feature-card,
+  .login-feature-card:nth-child(1),
+  .login-feature-card:nth-child(2),
+  .login-feature-card:nth-child(3) {
+    animation: none !important;
+  }
+
+  .login-card {
+    opacity: 1;
+    transform: none;
+  }
+
+  .login-feature-card {
+    opacity: 1;
+    transform: none;
+  }
+
+  .login-logo-pulse {
+    display: none;
+  }
+
+  .login-particles {
+    display: none;
+  }
+
+  .login-feature-card {
+    transition: none;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   §10  RESPONSIVE
+   --------------------------------------------------------------------------- */
+
+/* — Tablet & smaller ——————————————————————————— */
+@media (max-width: 768px) {
+  .login-card {
+    padding: 2.25rem 1.5rem;
+    border-radius: 24px;
+    max-width: 400px;
+  }
+
+  .login-logo {
+    width: 60px;
+    height: 60px;
+    border-radius: 16px;
+    margin-bottom: 1.25rem;
+  }
+
+  .login-logo svg,
+  .login-logo img {
+    width: 30px;
+    height: 30px;
+  }
+
+  .login-logo-pulse {
+    inset: -8px;
+    border-radius: 20px;
+  }
+
+  .login-title {
+    font-size: 1.85rem;
+    letter-spacing: -0.5px;
+  }
+
+  .login-subtitle {
+    font-size: 0.88rem;
+    max-width: 300px;
+  }
+
+  .login-features {
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .login-feature-card {
+    width: min(260px, 85%);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    text-align: left;
+    padding: 0.75rem 1rem;
+  }
+
+  .login-feature-icon {
+    margin: 0;
+    flex-shrink: 0;
+  }
+
+  .login-feature-card:hover {
+    transform: translateY(-2px);
+  }
+
+  /* Shrink mesh blobs on smaller screens */
+  .login-mesh-bg::before { width: 500px; height: 500px; }
+  .login-mesh-bg::after  { width: 450px; height: 450px; }
+  .login-mesh-blob3      { width: 350px; height: 350px; }
+}
+
+/* — Phone ————————————————————————————————————— */
+@media (max-width: 480px) {
+  .login-card {
+    padding: 1.75rem 1.25rem;
+    border-radius: 20px;
+    width: 96%;
+  }
+
+  .login-card-glow {
+    width: 140px;
+    height: 140px;
+    top: -40px;
+    right: -40px;
+  }
+
+  .login-logo {
+    width: 52px;
+    height: 52px;
+    border-radius: 14px;
+    margin-bottom: 1rem;
+  }
+
+  .login-logo svg,
+  .login-logo img {
+    width: 26px;
+    height: 26px;
+  }
+
+  .login-title {
+    font-size: 1.55rem;
+    letter-spacing: -0.3px;
+  }
+
+  .login-subtitle {
+    font-size: 0.82rem;
+    margin-bottom: 1.25rem;
+    max-width: 260px;
+  }
+
+  .login-features {
+    gap: 8px;
+    margin-top: 1.25rem;
+    margin-bottom: 1.25rem;
+  }
+
+  .login-feature-card {
+    width: 100%;
+    padding: 0.6rem 0.85rem;
+    border-radius: var(--radius-md, 10px);
+  }
+
+  .login-feature-icon {
+    width: 30px;
+    height: 30px;
+    font-size: 0.85rem;
+  }
+
+  .login-status-bar {
+    font-size: 0.58rem;
+    padding: 0.4rem 0.75rem;
+  }
+
+  /* Reduce mesh further */
+  .login-mesh-bg::before { width: 350px; height: 350px; }
+  .login-mesh-bg::after  { width: 300px; height: 300px; }
+  .login-mesh-blob3      { width: 250px; height: 250px; }
+}

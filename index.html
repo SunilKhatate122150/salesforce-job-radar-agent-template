@@ -23,11 +23,13 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700&display=swap">
-  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=Plus+Jakarta+Sans:wght@400;600;700&family=Syne:wght@400;600;700;800&family=JetBrains+Mono:wght@400;500&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=Plus+Jakarta+Sans:wght@400;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="styles.css?v=20260606-mobile-fix-v3">
 <link rel="stylesheet" href="responsive.css?v=20260606-mobile-fix-v3">
 <link rel="stylesheet" href="src/styles/navigation.css?v=20260606-mobile-fix-v3">
 <link rel="stylesheet" href="src/styles/career-upgrades.css?v=20260606-readiness-cockpit">
+<link rel="stylesheet" href="src/styles/login-hero.css?v=20260606-login-hero">
+<link rel="stylesheet" href="src/styles/dashboard-home.css?v=20260606-dashboard-home">
   <script>
     window._sfjrClientConfigPromise = null;
     window.loadClientConfig = function() {
@@ -105,14 +107,45 @@
 <div id="sidebarOverlay" aria-hidden="true"></div>
 
 <!-- LOGIN OVERLAY -->
-<div id="loginOverlay" style="position:fixed; top:0; left:0; width:100%; height:100%; background: radial-gradient(circle at 0% 0%, hsla(222, 100%, 15%, 1) 0%, hsla(222, 55%, 6%, 1) 50%, hsla(280, 100%, 10%, 1) 100%); z-index: 99999; display: flex; flex-direction: column; align-items: center; justify-content: center; color: white; backdrop-filter: blur(20px);">
-  <div style="background: hsla(222, 47%, 12%, 0.6); backdrop-filter: blur(30px); padding: 3rem 2rem; border-radius: 40px; border: 1px solid hsla(222, 100%, 50%, 0.15); text-align: center; max-width: 440px; width: 92%; box-shadow: 0 40px 100px -20px rgba(0,0,0,0.8), 0 0 40px rgba(59, 130, 246, 0.1); position: relative; overflow: hidden;">
-    <div style="position: absolute; top: -50px; right: -50px; width: 150px; height: 150px; background: radial-gradient(circle, hsla(222, 100%, 50%, 0.1), transparent 70%); filter: blur(20px);"></div>
-    <div style="width: 72px; height: 72px; background: linear-gradient(135deg, #3b82f6, #8b5cf6); border-radius: 20px; margin: 0 auto 1.5rem; display: flex; align-items: center; justify-content: center; box-shadow: 0 15px 30px rgba(59, 130, 246, 0.4); animation: float 6s ease-in-out infinite;">
+<div id="loginOverlay" class="login-overlay">
+  <div class="login-mesh-bg">
+    <div class="login-mesh-blob3"></div>
+  </div>
+  <!-- Floating dots/particles -->
+  <div class="login-particles">
+    <div class="login-particle" style="top: 15%; left: 10%; width: 4px; height: 4px; animation-delay: 0s;"></div>
+    <div class="login-particle" style="top: 40%; left: 80%; width: 6px; height: 6px; animation-delay: 2s;"></div>
+    <div class="login-particle" style="top: 75%; left: 20%; width: 3px; height: 3px; animation-delay: 4s;"></div>
+    <div class="login-particle" style="top: 85%; left: 70%; width: 5px; height: 5px; animation-delay: 1s;"></div>
+    <div class="login-particle" style="top: 25%; left: 60%; width: 4px; height: 4px; animation-delay: 3s;"></div>
+  </div>
+
+  <div class="login-card">
+    <div class="login-card-glow"></div>
+    <div class="login-logo">
       <svg viewBox="0 0 24 24" fill="white" style="width: 36px; height: 36px;"><path d="M13 10V3L4 14H11V21L20 10H13Z"/></svg>
     </div>
-    <h1 style="font-size: 2.25rem; font-weight: 800; margin-bottom: 0.75rem; font-family: 'Syne', sans-serif; letter-spacing: -1px; background: linear-gradient(135deg, #fff 0%, #94a3b8 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Job Radar AI</h1>
-    <p style="margin-bottom: 2rem; color: rgba(255,255,255,0.6); font-size: 0.95rem; line-height: 1.5; font-family: 'Outfit', sans-serif;">Industrial Salesforce Career Hub.<br>High-fidelity tracking & intelligence.</p>
+    <h1 class="login-title">Job Radar AI <span class="login-live-dot" style="display:inline-block; width:8px; height:8px; border-radius:50%; background:#10b981; margin-left:6px; vertical-align:middle;"></span></h1>
+    <p class="login-subtitle">Industrial Salesforce Career Hub.<br>High-fidelity tracking & intelligence.</p>
+
+    <!-- Showcase Cards -->
+    <div class="login-features">
+      <div class="login-feature-card">
+        <div class="login-feature-icon" style="background: linear-gradient(135deg, #3b82f6, #1d4ed8);">📊</div>
+        <div class="login-feature-label">Dashboard OS</div>
+        <div class="login-feature-desc">All prep & readiness metrics in one feed.</div>
+      </div>
+      <div class="login-feature-card">
+        <div class="login-feature-icon" style="background: linear-gradient(135deg, #10b981, #059669);">🔍</div>
+        <div class="login-feature-label">Job Radar</div>
+        <div class="login-feature-desc">Automated match against job postings.</div>
+      </div>
+      <div class="login-feature-card">
+        <div class="login-feature-icon" style="background: linear-gradient(135deg, #8b5cf6, #6d28d9);">🎙️</div>
+        <div class="login-feature-label">AI Coach</div>
+        <div class="login-feature-desc">Interactive simulated Salesforce interviews.</div>
+      </div>
+    </div>
 
     <div class="login-mode-panel">
       <div class="login-mode-heading">Choose Login Experience</div>
@@ -135,11 +168,11 @@
       </div>
     </div>
     <p id="googleSignInStatus" hidden style="margin:0 0 1rem; color:#fca5a5; font-size:0.78rem; line-height:1.4;"></p>
-        <div id="syncStatus" style="display:none; margin-top:2.5rem; padding-top:1.25rem; border-top:1px solid rgba(255,255,255,0.06); align-items:center; justify-content:center; gap:8px;">
-        <svg viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.2)" stroke-width="2" style="width:14px;"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+    <div id="syncStatus" class="login-status-bar" style="display:none;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
         <span style="font-size:0.6rem; color:rgba(255,255,255,0.2); font-weight:700; letter-spacing:1.5px; text-transform:uppercase;">Secure Cloud Sync Active</span>
     </div>
-    <div id="syncStatusPreLogin" style="display:flex; margin-top:2.5rem; padding-top:1.25rem; border-top:1px solid rgba(255,255,255,0.06); align-items:center; justify-content:center; gap:8px;">
+    <div id="syncStatusPreLogin" class="login-status-bar" style="display:flex;">
         <span style="font-size:0.6rem; color:rgba(255,255,255,0.5); font-weight:700; letter-spacing:1.5px; text-transform:uppercase;">🔒 Sign in to enable cloud sync</span>
     </div>
   </div>
@@ -369,6 +402,128 @@
       </div>
     </div>
   </header>
+
+<!-- DASHBOARD HOME PAGE -->
+<div id="dashboard_home" class="page">
+  <div class="dash-hero">
+    <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem;">
+      <div>
+        <h2 class="dash-hero-greeting" id="dashHeroGreeting">Welcome, Trailblazer!</h2>
+        <span class="dash-hero-date" id="dashHeroDate">June 25, 2026</span>
+        <p class="dash-hero-tagline">Master your Salesforce career radar, keep up your learning streaks, and explore curated job matches.</p>
+      </div>
+      <div class="dash-streak-badge" id="dashStreakBadge">
+        <span id="dashStreakVal">0</span> Day Streak
+      </div>
+    </div>
+  </div>
+
+  <div class="dash-metrics">
+    <!-- Metric 1: Streak -->
+    <div class="dash-metric-tile dash-metric-tile--streak">
+      <div class="dash-metric-icon" style="color: var(--amber);">🔥</div>
+      <p class="dash-metric-label">Study Streak</p>
+      <h3 class="dash-metric-value" id="dashMetricStreak">0</h3>
+      <span class="dash-metric-trend" style="color: var(--muted);">Active learning</span>
+    </div>
+
+    <!-- Metric 2: Job Matches -->
+    <div class="dash-metric-tile dash-metric-tile--jobs">
+      <div class="dash-metric-icon" style="color: var(--blue);">💼</div>
+      <p class="dash-metric-label">Job Radar</p>
+      <h3 class="dash-metric-value" id="dashMetricJobs">0</h3>
+      <span class="dash-metric-trend" style="color: var(--muted);">New jobs match</span>
+    </div>
+
+    <!-- Metric 3: Study Progress -->
+    <div class="dash-metric-tile dash-metric-tile--study">
+      <div class="dash-metric-icon" style="color: var(--color-primary);">📚</div>
+      <p class="dash-metric-label">Questions Studied</p>
+      <h3 class="dash-metric-value" id="dashMetricStudy">0</h3>
+      <span class="dash-metric-trend" style="color: var(--muted);">Topics completed</span>
+    </div>
+
+    <!-- Metric 4: Readiness -->
+    <div class="dash-metric-tile dash-metric-tile--readiness">
+      <div class="dash-metric-icon" style="color: var(--green);">🎯</div>
+      <p class="dash-metric-label">Readiness Score</p>
+      <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 0.5rem;">
+        <h3 class="dash-metric-value" id="dashMetricReadiness" style="margin: 0;">0%</h3>
+        <div class="dash-ring">
+          <svg>
+            <circle class="dash-ring-track" cx="24" cy="24" r="20" />
+            <circle class="dash-ring-fill" id="dashRingFill" cx="24" cy="24" r="20" />
+          </svg>
+          <div class="dash-ring-text" id="dashRingText">0%</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="dash-actions">
+    <button onclick="showPage('schedule')" class="dash-action-btn dash-action-btn--study">
+      📖 Study Plan
+    </button>
+    <button onclick="showPage('profile_match')" class="dash-action-btn dash-action-btn--jobs">
+      ⚙️ Career Setup
+    </button>
+    <button onclick="showPage('interview_coach')" class="dash-action-btn dash-action-btn--interview">
+      🎙️ Interview Coach
+    </button>
+    <button onclick="showPage('code_practice')" class="dash-action-btn dash-action-btn--code">
+      💻 Code Practice
+    </button>
+  </div>
+
+  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 1.5rem;" id="dashGridTwoCol">
+    <!-- Today's Focus -->
+    <div class="dash-focus">
+      <div class="dash-focus-header">
+        <h3 class="dash-focus-title">💡 Today's Focus</h3>
+      </div>
+      <div class="dash-focus-items" id="dashFocusItems">
+        <div class="dash-focus-item">
+          <div class="dash-focus-left">
+            <span class="dash-focus-dot dash-focus-dot--study"></span>
+            <span class="dash-focus-text">Setup your Career Intelligence roadmap</span>
+          </div>
+          <span class="dash-focus-tag">High</span>
+        </div>
+        <div class="dash-focus-item">
+          <div class="dash-focus-left">
+            <span class="dash-focus-dot dash-focus-dot--jobs"></span>
+            <span class="dash-focus-text">Import your profile or PDF Resume</span>
+          </div>
+          <span class="dash-focus-tag">Action</span>
+        </div>
+        <div class="dash-focus-item">
+          <div class="dash-focus-left">
+            <span class="dash-focus-dot dash-focus-dot--review"></span>
+            <span class="dash-focus-text">Start a mock interview session</span>
+          </div>
+          <span class="dash-focus-tag">Recommended</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Recent Activity Feed -->
+    <div class="dash-focus" style="border-left-color: var(--blue);">
+      <div class="dash-activity-header">
+        <h3 class="dash-activity-title">🔄 Recent Activity</h3>
+      </div>
+      <div class="dash-activity-list" id="dashActivityList">
+        <div class="dash-activity-item">
+          <span class="dash-activity-time">Just now</span>
+          <p class="dash-activity-text">Logged in to Salesforce Job Radar Premium Hub.</p>
+        </div>
+        <div class="dash-activity-item">
+          <span class="dash-activity-time">Welcome</span>
+          <p class="dash-activity-text">Explore the brand new dashboard home and start mastering Apex/LWC.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
 
 <!-- PROFILE MATCHING PAGE -->
 <div id="profile_match" class="page">

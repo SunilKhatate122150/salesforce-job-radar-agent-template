@@ -33,6 +33,7 @@
       label: 'Home & Dashboard',
       description: 'Private workspace, daily plan, progress, bookmarks, releases, and Job Radar.',
       items: [
+        i('dashboard_home', 'Dashboard Home', ['dashboard', 'home', 'main'], 'Core', { requiresAuth: true }),
         i('profile_match', 'Agent Dashboard', ['dashboard', 'profile', 'home'], 'Core', { requiresAuth: true }),
         i('schedule', 'Daily Study Schedule', ['plan', 'today', 'study'], 'Core', { requiresAuth: true }),
         i('study_tracker', 'Progress Tracker', ['progress', 'analytics'], 'Core', { requiresAuth: true }),

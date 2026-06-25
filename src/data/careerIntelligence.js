@@ -378,14 +378,14 @@
     });
   }
 
-  function createMockInterviewSession(input = {}) {
+  function createMockInterviewSession(input = {}, userId = 'guest') {
     const answers = asArray(input.answers);
     const questions = asArray(input.questions);
     const answered = answers.filter(answer => asText(answer.answerText || answer.text).length > 20).length;
     const score = questions.length ? Math.round((answered / questions.length) * 100) : 0;
     return {
       id: input.id || `mock_${Date.now()}`,
-      userId: asText(input.userId, 'guest'),
+      userId: asText(userId || input.userId, 'guest'),
       role: asText(input.role, 'Salesforce Developer'),
       company: asText(input.company, 'General'),
       topic: asText(input.topic, 'Apex/LWC'),

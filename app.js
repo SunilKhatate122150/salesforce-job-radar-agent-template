@@ -266,7 +266,7 @@ window.processGAuth = async function(response) {
       
       renderUserProfile(currentUser);
       syncDashboard();
-      showPage(loginMode === 'classic' ? 'schedule' : 'profile_match');
+      showPage(loginMode === 'classic' ? 'schedule' : 'dashboard_home');
     } else {
       showToast('Authentication failed: ' + (data.error || 'Check Google Client ID'), true);
     }
@@ -4719,6 +4719,10 @@ async function showPage(id) {
           }
         }, 5 * 60 * 1000);
     }
+    if (id === 'dashboard_home') {
+        console.log('🏠 [NAV] Rendering Dashboard Home...');
+        renderDashboardHome();
+    }
 	    if (id === 'profile_match') { 
 	        console.log('👤 [NAV] Analyzing Profile Match...');
 	        const loadingEl = document.getElementById('profileMatchLoading');
@@ -5264,7 +5268,7 @@ document.addEventListener('visibilitychange', function() {
   if (!isAuthed) return;
 
   const hashTab = decodeURIComponent(location.hash.replace(/^#/, ''));
-  const lastTab = hashTab || getScopedItem('last_active_tab', 'schedule', 'last_active_tab');
+  const lastTab = hashTab || getScopedItem('last_active_tab', currentUiMode === 'classic' ? 'schedule' : 'dashboard_home', 'last_active_tab');
   showPage(lastTab);
   
   // Full dashboard sync on page reload — ensures timetable, daily summary,
@@ -5713,6 +5717,180 @@ function renderStreakBadge() {
   if (floatBadge) {
     floatBadge.style.display = current > 0 ? 'flex' : 'none';
     if (floatVal) floatVal.textContent = current;
+  }
+
+  // Update Dashboard elements
+  const dashBadge = document.getElementById('dashStreakBadge');
+  const dashBadgeVal = document.getElementById('dashStreakVal');
+  const dashTileVal = document.getElementById('dashMetricStreak');
+  if (dashBadge) {
+    dashBadge.style.display = current > 0 ? 'inline-flex' : 'none';
+    if (dashBadgeVal) dashBadgeVal.textContent = current;
+    if (current >= 7) {
+      dashBadge.classList.add('dash-streak-badge--milestone');
+    } else {
+      dashBadge.classList.remove('dash-streak-badge--milestone');
+    }
+  }
+  if (dashTileVal) {
+    dashTileVal.textContent = current;
+  }
+}
+
+async function renderDashboardHome() {
+  console.log('🏠 [NAV] Rendering Dashboard Home...');
+  
+  // 1. Update Greeting Hero
+  const greetEl = document.getElementById('dashHeroGreeting');
+  if (greetEl) {
+    const name = currentUser ? (currentUser.displayName || currentUser.name || 'Trailblazer') : 'Trailblazer';
+    greetEl.textContent = `Welcome, ${name}!`;
+  }
+  
+  // 2. Update Date
+  const dateEl = document.getElementById('dashHeroDate');
+  if (dateEl) {
+    dateEl.textContent = new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+  }
+
+  // 3. Streak badge and tile
+  const streakVal = studyStreak.current || 0;
+  const streakBadges = document.querySelectorAll('#dashStreakVal');
+  streakBadges.forEach(el => el.textContent = streakVal);
+  const streakTileVal = document.getElementById('dashMetricStreak');
+  if (streakTileVal) {
+    streakTileVal.textContent = streakVal;
+  }
+  const dashStreakBadge = document.getElementById('dashStreakBadge');
+  if (dashStreakBadge) {
+    dashStreakBadge.style.display = streakVal > 0 ? 'inline-flex' : 'none';
+    if (streakVal >= 7) {
+      dashStreakBadge.classList.add('dash-streak-badge--milestone');
+    } else {
+      dashStreakBadge.classList.remove('dash-streak-badge--milestone');
+    }
+  }
+
+  // 4. Job Radar matched count
+  const jobsTileVal = document.getElementById('dashMetricJobs');
+  if (jobsTileVal) {
+    const jobCount = window.allJobRecords ? window.allJobRecords.length : 0;
+    jobsTileVal.textContent = jobCount;
+  }
+
+  // 5. Questions studied & readiness score
+  try {
+    const data = globalStudyData || await getStudyData();
+    const analytics = getStudyAnalytics();
+    const liveContext = currentTrackedPage ? { topicId: currentTrackedPage, seconds: getCurrentElapsed() } : null;
+    const now = new Date();
+    const today = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0') + '-' + String(now.getDate()).padStart(2,'0');
+    const totals = analytics.calculateStudyTotals
+      ? analytics.calculateStudyTotals(data, topicConfig, liveContext, today)
+      : { allTopics: Object.keys(topicConfig), totalSeconds: 0, totalSessionCount: 0, topicsStudied: 0, todaySeconds: 0 };
+    
+    const studiedCount = totals.topicsStudied || 0;
+    const studyTileVal = document.getElementById('dashMetricStudy');
+    if (studyTileVal) {
+      studyTileVal.textContent = studiedCount;
+    }
+    
+    // Readiness Score
+    const totalTopics = totals.allTopics?.length || Object.keys(topicConfig).length || 1;
+    const readinessScore = Math.min(100, Math.round((studiedCount / totalTopics) * 100));
+    
+    const readinessTileVal = document.getElementById('dashMetricReadiness');
+    if (readinessTileVal) {
+      readinessTileVal.textContent = `${readinessScore}%`;
+    }
+    
+    const ringFill = document.getElementById('dashRingFill');
+    const ringText = document.getElementById('dashRingText');
+    if (ringText) {
+      ringText.textContent = `${readinessScore}%`;
+    }
+    if (ringFill) {
+      const offset = 126 - (readinessScore / 100) * 126;
+      ringFill.style.setProperty('--dashoffset', offset);
+      ringFill.style.strokeDashoffset = offset;
+    }
+  } catch (e) {
+    console.error('[DASHBOARD] Failed to compute study totals:', e);
+  }
+
+  // 6. Dynamic Focus Items (based on profile missing skills)
+  const focusItemsContainer = document.getElementById('dashFocusItems');
+  if (focusItemsContainer && cachedUserProfile) {
+    let focusHtml = '';
+    const missingSkills = cachedUserProfile.missingSkills || [];
+    const studyPlan = cachedUserProfile.studyPlanTopics || [];
+    
+    if (missingSkills.length > 0) {
+      focusHtml += `
+        <div class="dash-focus-item">
+          <div class="dash-focus-left">
+            <span class="dash-focus-dot dash-focus-dot--study"></span>
+            <span class="dash-focus-text">Bridge key skill gap: <b>${missingSkills[0]}</b></span>
+          </div>
+          <span class="dash-focus-tag">High</span>
+        </div>
+      `;
+    }
+    if (studyPlan.length > 0) {
+      focusHtml += `
+        <div class="dash-focus-item">
+          <div class="dash-focus-left">
+            <span class="dash-focus-dot dash-focus-dot--jobs"></span>
+            <span class="dash-focus-text">Next target topic: <b>${studyPlan[0].topic || studyPlan[0].name}</b></span>
+          </div>
+          <span class="dash-focus-tag">Plan</span>
+        </div>
+      `;
+    }
+    focusHtml += `
+      <div class="dash-focus-item">
+        <div class="dash-focus-left">
+          <span class="dash-focus-dot dash-focus-dot--review"></span>
+          <span class="dash-focus-text">Run a mock interview simulator session</span>
+        </div>
+        <span class="dash-focus-tag">Coach</span>
+      </div>
+    `;
+    focusItemsContainer.innerHTML = focusHtml;
+  }
+
+  // 7. Dynamic Activity Feed
+  const activityContainer = document.getElementById('dashActivityList');
+  if (activityContainer) {
+    let activityHtml = '';
+    const nowStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    
+    activityHtml += `
+      <div class="dash-activity-item">
+        <span class="dash-activity-time">${nowStr}</span>
+        <p class="dash-activity-text">Logged in to Salesforce Job Radar Premium Hub.</p>
+      </div>
+    `;
+    
+    if (studyStreak.current > 0) {
+      activityHtml += `
+        <div class="dash-activity-item">
+          <span class="dash-activity-time">Active Streak</span>
+          <p class="dash-activity-text">You are on a <b>${studyStreak.current}-day</b> study streak! Keep it up!</p>
+        </div>
+      `;
+    }
+
+    if (window.allJobRecords && window.allJobRecords.length > 0) {
+      activityHtml += `
+        <div class="dash-activity-item">
+          <span class="dash-activity-time">Job Radar</span>
+          <p class="dash-activity-text">Found <b>${window.allJobRecords.length}</b> matched jobs in your pipeline.</p>
+        </div>
+      `;
+    }
+    
+    activityContainer.innerHTML = activityHtml;
   }
 }
 

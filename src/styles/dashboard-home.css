@@ -1,0 +1,551 @@
+/* ============================================================================
+   DASHBOARD HOME — Salesforce Job Radar
+   Main landing view stylesheet after successful login.
+   ============================================================================ */
+
+/* ---------------------------------------------------------------------------
+   §1  HERO GREETING CARD
+   --------------------------------------------------------------------------- */
+.dash-hero {
+  position: relative;
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.06), rgba(139, 92, 246, 0.06));
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(59, 130, 246, 0.12);
+  border-radius: var(--radius-xl, 16px);
+  padding: 2rem 2.5rem;
+  overflow: hidden;
+  margin-bottom: 2rem;
+}
+
+.dash-hero::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background: linear-gradient(to bottom, var(--blue, #3b82f6), var(--color-primary-active, #8b5cf6));
+}
+
+.dash-hero-greeting {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: var(--text, #f8fafc);
+  margin: 0;
+}
+
+.dash-hero-date {
+  font-size: 0.8rem;
+  color: var(--muted, #64748b);
+  font-family: var(--font-mono, 'IBM Plex Mono', monospace);
+  margin-top: 0.25rem;
+  display: block;
+}
+
+.dash-hero-tagline {
+  font-size: 0.9rem;
+  color: var(--muted, #64748b);
+  margin-top: 8px;
+  max-width: 600px;
+}
+
+/* ---------------------------------------------------------------------------
+   §2  METRIC TILES (4-Column Grid)
+   --------------------------------------------------------------------------- */
+.dash-metrics {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+  margin-top: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.dash-metric-tile {
+  background: var(--surface, #111827);
+  border: 1px solid var(--border, rgba(255,255,255,0.08));
+  border-radius: var(--radius-lg, 12px);
+  padding: 1.25rem 1.5rem;
+  position: relative;
+  overflow: hidden;
+  transition: transform var(--motion-med, 250ms), box-shadow var(--motion-med, 250ms);
+}
+
+.dash-metric-tile:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+  border-color: rgba(59, 130, 246, 0.2);
+}
+
+/* Tile border-left accents */
+.dash-metric-tile--streak {
+  border-left: 3px solid var(--amber, #f59e0b);
+}
+.dash-metric-tile--jobs {
+  border-left: 3px solid var(--blue, #3b82f6);
+}
+.dash-metric-tile--study {
+  border-left: 3px solid var(--color-primary, #60a5fa);
+}
+.dash-metric-tile--readiness {
+  border-left: 3px solid var(--green, #10b981);
+}
+
+.dash-metric-icon {
+  position: absolute;
+  top: 1.25rem;
+  right: 1.5rem;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.dash-metric-value {
+  font-size: 2rem;
+  font-weight: 800;
+  color: var(--text, #f8fafc);
+  line-height: 1.2;
+  margin: 0.5rem 0 0.25rem 0;
+  font-variant-numeric: tabular-nums;
+  animation: countUp 0.5s ease-out forwards;
+}
+
+@keyframes countUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.dash-metric-label {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--muted, #64748b);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin: 0;
+}
+
+.dash-metric-trend {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.65rem;
+  font-weight: 600;
+  margin-top: 4px;
+}
+
+.dash-metric-trend--up {
+  color: var(--green, #10b981);
+}
+
+.dash-metric-trend--down {
+  color: var(--red, #ef4444);
+}
+
+/* ---------------------------------------------------------------------------
+   §3  READINESS RING (Circular Progress)
+   --------------------------------------------------------------------------- */
+.dash-ring {
+  position: relative;
+  width: 48px;
+  height: 48px;
+}
+
+.dash-ring svg {
+  transform: rotate(-90deg);
+  width: 100%;
+  height: 100%;
+}
+
+.dash-ring-track {
+  fill: none;
+  stroke: rgba(255, 255, 255, 0.08);
+  stroke-width: 4;
+}
+
+.dash-ring-fill {
+  fill: none;
+  stroke: var(--green, #10b981);
+  stroke-width: 4;
+  stroke-linecap: round;
+  stroke-dasharray: 126; /* 2 * PI * 20 */
+  stroke-dashoffset: 126;
+  animation: ringFill 1s var(--transition-slow) forwards;
+}
+
+@keyframes ringFill {
+  to {
+    stroke-dashoffset: var(--dashoffset, 0);
+  }
+}
+
+.dash-ring-text {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--text, #f8fafc);
+}
+
+/* ---------------------------------------------------------------------------
+   §4  QUICK ACTION BUTTONS
+   --------------------------------------------------------------------------- */
+.dash-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 1.5rem;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.dash-action-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0.75rem 1.25rem;
+  border-radius: var(--radius-md, 8px);
+  font-weight: 600;
+  font-size: 0.82rem;
+  cursor: pointer;
+  transition: all var(--motion-med, 250ms) cubic-bezier(0.16, 1, 0.3, 1);
+  text-decoration: none;
+}
+
+.dash-action-btn--study {
+  background: rgba(59, 130, 246, 0.08);
+  border: 1px solid rgba(59, 130, 246, 0.15);
+  color: var(--blue, #3b82f6);
+}
+.dash-action-btn--study:hover {
+  background: rgba(59, 130, 246, 0.15);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.15);
+}
+
+.dash-action-btn--jobs {
+  background: rgba(16, 185, 129, 0.08);
+  border: 1px solid rgba(16, 185, 129, 0.15);
+  color: var(--green, #10b981);
+}
+.dash-action-btn--jobs:hover {
+  background: rgba(16, 185, 129, 0.15);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.15);
+}
+
+.dash-action-btn--interview {
+  background: rgba(139, 92, 246, 0.08);
+  border: 1px solid rgba(139, 92, 246, 0.15);
+  color: #a78bfa;
+}
+.dash-action-btn--interview:hover {
+  background: rgba(139, 92, 246, 0.15);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(139, 92, 246, 0.15);
+}
+
+.dash-action-btn--code {
+  background: rgba(6, 182, 212, 0.08);
+  border: 1px solid rgba(6, 182, 212, 0.15);
+  color: #22d3ee;
+}
+.dash-action-btn--code:hover {
+  background: rgba(6, 182, 212, 0.15);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(6, 182, 212, 0.15);
+}
+
+/* ---------------------------------------------------------------------------
+   §5  TODAY'S FOCUS CARD
+   --------------------------------------------------------------------------- */
+.dash-focus {
+  background: var(--surface, #111827);
+  border: 1px solid var(--border, rgba(255,255,255,0.08));
+  border-left: 3px solid var(--amber, #f59e0b);
+  border-radius: var(--radius-lg, 12px);
+  padding: 1.5rem;
+  margin-top: 1.5rem;
+}
+
+.dash-focus-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+}
+
+.dash-focus-title {
+  font-size: 0.95rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text, #f8fafc);
+  margin: 0;
+}
+
+.dash-focus-items {
+  display: flex;
+  flex-direction: column;
+}
+
+.dash-focus-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 0;
+  border-bottom: 1px solid var(--border, rgba(255,255,255,0.08));
+}
+
+.dash-focus-item:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.dash-focus-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.dash-focus-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+}
+
+.dash-focus-dot--study { background: var(--blue, #3b82f6); }
+.dash-focus-dot--jobs { background: var(--green, #10b981); }
+.dash-focus-dot--review { background: var(--amber, #f59e0b); }
+
+.dash-focus-text {
+  font-size: 0.85rem;
+  color: var(--text, #f8fafc);
+}
+
+.dash-focus-tag {
+  font-size: 0.65rem;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--muted, #64748b);
+}
+
+/* ---------------------------------------------------------------------------
+   §6  RECENT ACTIVITY FEED
+   --------------------------------------------------------------------------- */
+.dash-activity {
+  margin-top: 1.5rem;
+}
+
+.dash-activity-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+}
+
+.dash-activity-title {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--text, #f8fafc);
+  margin: 0;
+}
+
+.dash-activity-link {
+  font-size: 0.8rem;
+  color: var(--blue, #3b82f6);
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.dash-activity-link:hover {
+  text-decoration: underline;
+}
+
+.dash-activity-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.dash-activity-item {
+  position: relative;
+  padding: 0 0 1.25rem 1.5rem;
+  border-left: 2px solid var(--border, rgba(255,255,255,0.08));
+}
+
+.dash-activity-item:last-child {
+  border-left: 2px solid transparent;
+  padding-bottom: 0;
+}
+
+.dash-activity-item::before {
+  content: "";
+  position: absolute;
+  left: -6px;
+  top: 4px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--border, rgba(255,255,255,0.08));
+  border: 2px solid var(--bg, #090b10);
+  z-index: 1;
+}
+
+.dash-activity-item:first-child::before {
+  background: var(--blue, #3b82f6);
+}
+
+.dash-activity-time {
+  font-size: 0.65rem;
+  color: var(--muted, #64748b);
+  font-family: var(--font-mono, 'IBM Plex Mono', monospace);
+  margin-bottom: 2px;
+  display: block;
+}
+
+.dash-activity-text {
+  font-size: 0.85rem;
+  color: var(--text, #f8fafc);
+  line-height: 1.4;
+  margin: 0;
+}
+
+/* ---------------------------------------------------------------------------
+   §7  STREAK BADGE
+   --------------------------------------------------------------------------- */
+.dash-streak-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.15), rgba(239, 68, 68, 0.1));
+  border: 1px solid rgba(245, 158, 11, 0.25);
+  border-radius: 20px;
+  padding: 4px 12px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--amber, #f59e0b);
+}
+
+.dash-streak-badge::before {
+  content: "🔥";
+}
+
+.dash-streak-badge--milestone {
+  box-shadow: 0 0 12px rgba(245, 158, 11, 0.2);
+  border-color: rgba(245, 158, 11, 0.5);
+  animation: pulseGold 2s infinite alternate;
+}
+
+@keyframes pulseGold {
+  from { box-shadow: 0 0 8px rgba(245, 158, 11, 0.1); }
+  to { box-shadow: 0 0 16px rgba(245, 158, 11, 0.35); }
+}
+
+/* ---------------------------------------------------------------------------
+   §8  LIGHT THEME OVERRIDES
+   --------------------------------------------------------------------------- */
+[data-theme="light"] .dash-hero {
+  background: linear-gradient(135deg, rgba(37, 99, 235, 0.05), rgba(139, 92, 246, 0.05));
+  border-color: rgba(37, 99, 235, 0.15);
+}
+
+[data-theme="light"] .dash-metric-tile {
+  background: var(--surface, #ffffff);
+  border-color: var(--border, rgba(0,0,0,0.1));
+}
+
+[data-theme="light"] .dash-metric-tile:hover {
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.05);
+}
+
+[data-theme="light"] .dash-metric-icon {
+  background: rgba(0, 0, 0, 0.03);
+}
+
+[data-theme="light"] .dash-ring-track {
+  stroke: rgba(0, 0, 0, 0.05);
+}
+
+[data-theme="light"] .dash-focus {
+  background: var(--surface, #ffffff);
+  border-color: var(--border, rgba(0,0,0,0.1));
+}
+
+[data-theme="light"] .dash-focus-item {
+  border-color: var(--border, rgba(0,0,0,0.1));
+}
+
+[data-theme="light"] .dash-activity-item {
+  border-color: var(--border, rgba(0,0,0,0.1));
+}
+
+[data-theme="light"] .dash-activity-item::before {
+  border-color: var(--bg, #f7f5f1);
+  background: var(--border, rgba(0,0,0,0.1));
+}
+
+/* ---------------------------------------------------------------------------
+   §9  REDUCED MOTION
+   --------------------------------------------------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+  .dash-metric-tile {
+    transition: none;
+  }
+  .dash-metric-value {
+    animation: none;
+  }
+  .dash-ring-fill {
+    animation: none;
+    stroke-dashoffset: var(--dashoffset, 0);
+  }
+  .dash-streak-badge--milestone {
+    animation: none;
+  }
+  .dash-action-btn {
+    transition: none;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   §10 RESPONSIVE Breakpoints
+   --------------------------------------------------------------------------- */
+@media (max-width: 1100px) {
+  .dash-metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 768px) {
+  .dash-hero {
+    padding: 1.5rem;
+  }
+  .dash-hero-greeting {
+    font-size: 1.5rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .dash-metrics {
+    grid-template-columns: 1fr;
+  }
+  .dash-actions {
+    flex-direction: column;
+  }
+  .dash-action-btn {
+    width: 100%;
+    justify-content: center;
+  }
+}

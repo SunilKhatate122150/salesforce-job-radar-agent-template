@@ -236,8 +236,11 @@ test('job radar service saves status overrides through injected stores', async (
 });
 
 test('job radar records power dashboard summaries with statuses and newest first', () => {
-  const older = '2026-05-10T00:00:00.000Z';
-  const newer = '2026-05-16T00:00:00.000Z';
+  const now = new Date();
+  const olderDate = new Date(now.getTime() - 2 * 86400000);
+  const newerDate = new Date(now.getTime() - 1 * 86400000);
+  const older = olderDate.toISOString();
+  const newer = newerDate.toISOString();
   const records = buildJobRadarRecords({
     mongoJobs: [{ job_hash: 'old', title: 'Old Role', company: 'Acme', updatedAt: older }],
     trackerJobs: [{ id: 'new', title: 'New Role', company: 'Beta', updatedAt: newer }],
