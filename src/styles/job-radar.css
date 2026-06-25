@@ -3762,7 +3762,7 @@ body:has(#job_radar.active) .activity-log-panel .log-entry {
 
 @media (max-width: 640px) {
   #job_radar .mobile-stage-select {
-    min-height: 44px !important;
+    min-height: 48px !important;
   }
 
   #job_radar .kanban-board-v3.mobile-stage-mode {

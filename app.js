@@ -6226,10 +6226,17 @@ function toggleMobileSidebar(forceOpen) {
       setTimeout(() => { overlay.style.display = 'none'; }, 300);
     }
     document.body.style.overflow = '';
-    if (lastSidebarTrigger && typeof lastSidebarTrigger.focus === 'function') {
-      lastSidebarTrigger.focus();
-      lastSidebarTrigger = null;
+    const triggerToFocus = (lastSidebarTrigger && typeof lastSidebarTrigger.focus === 'function')
+      ? lastSidebarTrigger
+      : document.getElementById('mobileToggle');
+    if (triggerToFocus && typeof triggerToFocus.focus === 'function') {
+      try {
+        triggerToFocus.focus({ preventScroll: true });
+      } catch (e) {
+        triggerToFocus.focus();
+      }
     }
+    lastSidebarTrigger = null;
   } else {
     lastSidebarTrigger = document.activeElement;
     sidebar.classList.add('mobile-open');
