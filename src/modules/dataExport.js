@@ -56,3 +56,16 @@ function downloadCSV(rows, filename) {
     window.showToast(`📥 Exported to ${filename} successfully!`, false);
   }
 }
+
+export function exportHistoryCsv() {
+  if (typeof window.getStudyData === 'function') {
+    const studyData = window.getStudyData() || {};
+    exportStudyHistoryToCSV(studyData.topics || {});
+  } else if (window.globalStudyData) {
+    exportStudyHistoryToCSV(window.globalStudyData.topics || {});
+  }
+}
+
+export function exportJobsCsv() {
+  exportJobRadarPipelineToCSV(window.pipelineJobs || []);
+}

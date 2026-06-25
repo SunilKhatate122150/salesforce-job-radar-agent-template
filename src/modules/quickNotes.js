@@ -142,3 +142,11 @@ function injectNoteModal() {
 
   document.body.appendChild(modal);
 }
+
+export function toggleQuickNotes() {
+  const modal = document.getElementById('addNoteModal');
+  if (modal) {
+    const isVisible = modal.style.display === 'flex';
+    modal.style.display = isVisible ? 'none' : 'flex';
+  }
+}
