@@ -177,14 +177,8 @@
   stroke-width: 4;
   stroke-linecap: round;
   stroke-dasharray: 126; /* 2 * PI * 20 */
-  stroke-dashoffset: 126;
-  animation: ringFill 1s var(--transition-slow) forwards;
-}
-
-@keyframes ringFill {
-  to {
-    stroke-dashoffset: var(--dashoffset, 0);
-  }
+  stroke-dashoffset: var(--dashoffset, 126);
+  transition: stroke-dashoffset 0.8s ease-in-out;
 }
 
 .dash-ring-text {

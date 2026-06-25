@@ -352,9 +352,9 @@
 
       <!-- NOTIFICATION BELL -->
       <div style="position: relative; display: inline-block;">
-        <button type="button" id="notifBellBtn" class="theme-toggle-btn" aria-label="Notifications" title="Notifications" style="position: relative; background: transparent; border: none; font-size: 1.1rem; cursor: pointer; display: flex; align-items: center; justify-content: center; width: 38px; height: 38px; border-radius: 50%;">
+        <button type="button" id="notifBellBtn" class="theme-toggle-btn" aria-label="Notifications" title="Notifications" style="position: relative;">
           🔔
-          <span id="notifBadge" style="position: absolute; top: 0px; right: 0px; width: 15px; height: 15px; background: var(--red, #ef4444); color: white; font-size: 0.6rem; font-weight: 700; border-radius: 50%; display: none; align-items: center; justify-content: center; border: 1.5px solid var(--surface, #111827);">0</span>
+          <span id="notifBadge" style="position: absolute; top: -2px; right: -2px; width: 16px; height: 16px; background: var(--red, #ef4444); color: white; font-size: 0.62rem; font-weight: 700; border-radius: 50%; display: none; align-items: center; justify-content: center; border: 1.5px solid var(--surface, #111827); z-index: 2;">0</span>
         </button>
         <!-- Dropdown panel -->
         <div id="notifDropdownPanel" style="display: none; position: absolute; right: 0; top: 120%; width: 280px; background: var(--surface, #111827); border: 1px solid var(--border, rgba(255,255,255,0.08)); border-radius: var(--radius-lg, 12px); box-shadow: var(--shadow-lg); z-index: 12000; max-height: 380px; overflow-y: auto;">
