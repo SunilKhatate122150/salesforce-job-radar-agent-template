@@ -1743,19 +1743,31 @@ function renderBoard() {
     }
   });
 
-  // Handle List View (v1415)
+  // Handle List & Timeline Views (v1415)
   const viewPref = localStorage.getItem('job_radar_view') || 'kanban';
   const listViewContainer = document.getElementById('radar-list-view');
   const kanbanContainer = document.querySelector('.kanban-board-v3');
+  const timelineViewContainer = document.getElementById('radar-timeline-view');
   
   if (listViewContainer && kanbanContainer) {
     if (viewPref === 'list') {
       kanbanContainer.style.display = 'none';
+      if (timelineViewContainer) timelineViewContainer.style.display = 'none';
       listViewContainer.style.display = 'block';
       renderBoardListView(searchTerm, filter);
+    } else if (viewPref === 'timeline') {
+      kanbanContainer.style.display = 'none';
+      listViewContainer.style.display = 'none';
+      if (timelineViewContainer) {
+        timelineViewContainer.style.display = 'block';
+        if (typeof window.renderJobTimeline === 'function') {
+          window.renderJobTimeline('timelineContainer', window.pipelineJobs || []);
+        }
+      }
     } else {
       kanbanContainer.style.display = 'flex';
       listViewContainer.style.display = 'none';
+      if (timelineViewContainer) timelineViewContainer.style.display = 'none';
     }
   }
 

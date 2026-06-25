@@ -445,12 +445,11 @@ function clampPremiumExperience(value) {
 }
 
 function normalizeUiMode(mode) {
-  return mode === 'classic' ? 'classic' : 'modern';
+  return 'modern';
 }
 
 function getLoginUiModeIntent() {
-  const mode = sessionStorage.getItem('sf_login_ui_mode_intent');
-  return mode === 'classic' || mode === 'modern' ? mode : null;
+  return 'modern';
 }
 
 function syncLoginUiModeControls(mode = currentUiMode) {
@@ -3657,18 +3656,19 @@ window.toggleRadarView = function(view) {
   // Update toggle buttons visually
   const kanbanBtn = document.getElementById('viewToggleKanban');
   const listBtn = document.getElementById('viewToggleList');
-  if (kanbanBtn && listBtn) {
-    if (view === 'kanban') {
-      kanbanBtn.classList.add('active');
-      kanbanBtn.style.opacity = '1';
-      listBtn.classList.remove('active');
-      listBtn.style.opacity = '0.5';
-    } else {
-      listBtn.classList.add('active');
-      listBtn.style.opacity = '1';
-      kanbanBtn.classList.remove('active');
-      kanbanBtn.style.opacity = '0.5';
-    }
+  const timelineBtn = document.getElementById('viewToggleTimeline');
+  
+  if (kanbanBtn) {
+    kanbanBtn.classList.toggle('active', view === 'kanban');
+    kanbanBtn.style.opacity = view === 'kanban' ? '1' : '0.5';
+  }
+  if (listBtn) {
+    listBtn.classList.toggle('active', view === 'list');
+    listBtn.style.opacity = view === 'list' ? '1' : '0.5';
+  }
+  if (timelineBtn) {
+    timelineBtn.classList.toggle('active', view === 'timeline');
+    timelineBtn.style.opacity = view === 'timeline' ? '1' : '0.5';
   }
   
   // Re-render board with new view preference
@@ -4485,6 +4485,11 @@ function switchTrackerTab(tabId) {
   if (tabId === 'tab_leaderboard') {
     fetchLeaderboard();
   }
+  if (tabId === 'tab_heatmap') {
+    if (typeof window.renderSkillHeatmap === 'function') {
+      window.renderSkillHeatmap('heatmapContainer', globalStudyData || {}, cachedUserProfile || {}, window.pipelineJobs || []);
+    }
+  }
 }
 
 async function fetchLeaderboard() {
@@ -4722,6 +4727,14 @@ async function showPage(id) {
     if (id === 'dashboard_home') {
         console.log('🏠 [NAV] Rendering Dashboard Home...');
         renderDashboardHome();
+    }
+    if (id === 'weekly_report') {
+        console.log('📈 [NAV] Rendering Weekly Report...');
+        if (typeof window.renderWeeklyReport === 'function') {
+          const streak = typeof window.loadStreak === 'function' ? window.loadStreak(getCurrentUserId() || 'guest') : studyStreak;
+          const streakVal = streak.currentStreak !== undefined ? streak.currentStreak : (studyStreak.current || 0);
+          window.renderWeeklyReport('weeklyReportContainer', globalStudyData.sessions || [], cachedUserProfile || {}, window.pipelineJobs || [], streakVal, document.getElementById('dashMetricReadiness')?.textContent || '0');
+        }
     }
 	    if (id === 'profile_match') { 
 	        console.log('👤 [NAV] Analyzing Profile Match...');
@@ -5270,6 +5283,12 @@ document.addEventListener('visibilitychange', function() {
   const hashTab = decodeURIComponent(location.hash.replace(/^#/, ''));
   const lastTab = hashTab || getScopedItem('last_active_tab', currentUiMode === 'classic' ? 'schedule' : 'dashboard_home', 'last_active_tab');
   showPage(lastTab);
+  
+  // Initialize dynamic modules
+  const userId = getCurrentUserId() || 'guest';
+  if (typeof window.initKeyboardShortcuts === 'function') window.initKeyboardShortcuts();
+  if (typeof window.initNotificationCenter === 'function') window.initNotificationCenter(userId);
+  if (typeof window.initQuickNotes === 'function') window.initQuickNotes(userId);
   
   // Full dashboard sync on page reload — ensures timetable, daily summary,
   // jobs, history, and profile are all loaded (same as fresh login flow)

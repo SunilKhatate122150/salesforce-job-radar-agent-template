@@ -22,3 +22,32 @@ import './modules/theme.js';
 import './modules/releaseCenter.js';
 import './modules/commandCenter.js';
 import './modules/mockInterview.js';
+
+// Phase 2 Modules
+import { checkAndUpdateStreak, loadStreak, saveStreak } from './modules/streak.js';
+import { renderSkillHeatmap, calculateSkillScores } from './modules/skillHeatmap.js';
+import { renderWeeklyReport, generateWeeklyReport } from './modules/weeklyReport.js';
+import { initNotificationCenter, addNotification } from './modules/notificationCenter.js';
+import { initKeyboardShortcuts, toggleShortcutsModal } from './modules/shortcuts.js';
+import { exportHistoryCsv, exportJobsCsv } from './modules/dataExport.js';
+import { renderJobTimeline } from './modules/jobTimeline.js';
+import { initQuickNotes, toggleQuickNotes } from './modules/quickNotes.js';
+
+Object.assign(window, {
+  checkAndUpdateStreak,
+  loadStreak,
+  saveStreak,
+  renderSkillHeatmap,
+  calculateSkillScores,
+  renderWeeklyReport,
+  generateWeeklyReport,
+  initNotificationCenter,
+  addNotification,
+  initKeyboardShortcuts,
+  toggleShortcutsModal,
+  exportHistoryCsv,
+  exportJobsCsv,
+  renderJobTimeline,
+  initQuickNotes,
+  toggleQuickNotes
+});

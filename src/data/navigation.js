@@ -37,6 +37,7 @@
         i('profile_match', 'Agent Dashboard', ['dashboard', 'profile', 'home'], 'Core', { requiresAuth: true }),
         i('schedule', 'Daily Study Schedule', ['plan', 'today', 'study'], 'Core', { requiresAuth: true }),
         i('study_tracker', 'Progress Tracker', ['progress', 'analytics'], 'Core', { requiresAuth: true }),
+        i('weekly_report', 'Weekly Progress Report', ['report', 'weekly', 'metrics'], 'Core', { requiresAuth: true }),
         i('study_history', 'Study History', ['history', 'sessions'], 'Core', { requiresAuth: true }),
         i('bookmarks_page', 'Bookmarked Q&A', ['bookmarks', 'saved'], 'Core', { badgeSource: 'bookmarks', requiresAuth: true }),
         i('salesforce_releases', 'Salesforce Releases', ['release', 'salesforce updates'], 'Core', { badgeSource: 'release', requiresAuth: true }),

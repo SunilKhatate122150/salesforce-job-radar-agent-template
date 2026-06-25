@@ -1,0 +1,80 @@
+/* ============================================================================
+   JOB RADAR TIMELINE CSS
+   ============================================================================ */
+
+.timeline-container {
+  position: relative;
+  max-width: 600px;
+  margin: 1.5rem auto;
+  padding-left: 2.5rem;
+}
+
+.timeline-line {
+  position: absolute;
+  left: 10px;
+  top: 8px;
+  bottom: 8px;
+  width: 2px;
+  background: var(--border, rgba(255,255,255,0.08));
+}
+
+.timeline-card-item {
+  position: relative;
+  margin-bottom: 1.5rem;
+  animation: timelineSlideIn 0.35s ease-out forwards;
+}
+
+@keyframes timelineSlideIn {
+  from {
+    opacity: 0;
+    transform: translateX(-12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.timeline-node {
+  position: absolute;
+  left: -35px;
+  top: 8px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--border, rgba(255,255,255,0.08));
+  border: 3px solid var(--bg, #090b10);
+  z-index: 2;
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.02);
+}
+
+.timeline-node--todo { background: var(--muted, #64748b); }
+.timeline-node--applied { background: var(--blue, #3b82f6); }
+.timeline-node--interview { background: var(--amber, #f59e0b); }
+.timeline-node--offer { background: var(--green, #10b981); }
+.timeline-node--rejected { background: var(--red, #ef4444); }
+
+.timeline-card-content {
+  background: var(--surface, #111827);
+  border: 1px solid var(--border, rgba(255,255,255,0.08));
+  border-radius: var(--radius-lg, 12px);
+  padding: 1.25rem;
+  transition: border-color var(--motion-med, 250ms);
+}
+
+.timeline-card-content:hover {
+  border-color: rgba(59, 130, 246, 0.2);
+}
+
+.timeline-status-badge {
+  font-size: 0.65rem;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 4px;
+}
+
+.timeline-status-badge--todo { background: rgba(100, 116, 139, 0.1); color: var(--muted); }
+.timeline-status-badge--applied { background: rgba(59, 130, 246, 0.1); color: var(--blue); }
+.timeline-status-badge--interview { background: rgba(245, 158, 11, 0.1); color: var(--amber); }
+.timeline-status-badge--offer { background: rgba(16, 185, 129, 0.1); color: var(--green); }
+.timeline-status-badge--rejected { background: rgba(239, 68, 68, 0.1); color: var(--red); }
