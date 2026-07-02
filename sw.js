@@ -1,5 +1,5 @@
-// Service Worker v1413 — Enhanced caching with auto-versioning
-const SW_VERSION = '1413';
+// Service Worker v1414 — Enhanced caching with auto-versioning
+const SW_VERSION = '1414';
 const CACHE_NAME = `sf-prep-v${SW_VERSION}-${new Date().toISOString().slice(0,10).replace(/-/g,'')}`;
 
 const CORE_ASSETS = [

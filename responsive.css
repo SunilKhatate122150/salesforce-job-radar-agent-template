@@ -675,8 +675,7 @@ table {
   height: 96px !important;
 }
 
-@media (max-width: 1100px) {
-  #job_radar .radar-v3-header,
+@media (min-width: 901px) and (max-width: 1100px) {
   #job_radar .analytics-bar-v3,
   #job_radar .radar-tabs,
   #job_radar .filter-bar {
@@ -685,6 +684,8 @@ table {
   }
 
   #job_radar .radar-v3-header {
+    position: sticky !important;
+    top: 60px !important;
     height: auto !important;
     min-height: 0 !important;
     flex-wrap: wrap !important;
@@ -1075,7 +1076,7 @@ table {
 
 /* Radar viewport fit: remove the duplicate top offset and give Kanban cards
    enough real working space on laptop-sized browser windows. */
-@media (min-width: 769px) {
+@media (min-width: 901px) {
   #job_radar {
     --jr-shell-h: 48px;
     --jr-header-h: 54px;
@@ -1186,7 +1187,7 @@ table {
   }
 }
 
-@media (min-width: 769px) and (max-width: 1100px) {
+@media (min-width: 901px) and (max-width: 1100px) {
   #job_radar {
     overflow-y: auto !important;
   }
@@ -1205,7 +1206,7 @@ table {
   }
 }
 
-@media (min-width: 769px) and (max-height: 700px) {
+@media (min-width: 901px) and (max-height: 700px) {
   #job_radar {
     --jr-header-h: 44px;
     --jr-analytics-h: 36px;
@@ -2384,7 +2385,7 @@ textarea:focus-visible,
   }
 }
 
-@media (min-width: 768px) and (max-width: 1023px) {
+@media (min-width: 901px) and (max-width: 1023px) {
   .page {
     padding: 18px 20px 88px !important;
   }
@@ -3338,7 +3339,43 @@ svg, img, video, canvas,
     right: 0 !important;
     z-index: 2000 !important;
   }
-  #job_radar.page {
+  html body {
+    --header-h: 60px !important;
+    overflow: visible !important;
+  }
+  html body #main,
+  html body #main:has(#job_radar.active) {
+    overflow: visible !important;
+    overflow-x: visible !important;
+    overflow-y: visible !important;
+  }
+  html body #main #job_radar {
+    overflow: visible !important;
+    overflow-x: visible !important;
+    overflow-y: visible !important;
+  }
+  html body #main #job_radar .radar-cockpit {
+    width: auto !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    box-sizing: border-box !important;
+  }
+  #job_radar.page,
+  #job_radar.page.active {
     padding-top: 60px !important;
+    animation: none !important;
+    transform: none !important;
+  }
+  html body #main #job_radar .radar-v3-header {
+    position: sticky !important;
+    top: 60px !important;
+    height: auto !important;
+    min-height: 0 !important;
+    z-index: 200 !important;
+  }
+  html body #main #job_radar .analytics-bar-v3,
+  html body #main #job_radar .filter-bar {
+    position: sticky !important;
+    z-index: 29 !important;
   }
 }

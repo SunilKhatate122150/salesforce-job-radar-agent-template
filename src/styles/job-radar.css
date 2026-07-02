@@ -3055,7 +3055,7 @@ body:has(#job_radar.active) #headerTitle {
   #job_radar .radar-v3-header,
   #job_radar .analytics-bar-v3,
   #job_radar .filter-bar {
-    position: static !important;
+    position: sticky !important;
   }
 
   #job_radar .analytics-bar-v3,

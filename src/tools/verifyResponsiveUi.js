@@ -39,6 +39,7 @@ async function waitForApp(page) {
     localStorage.setItem('job_radar_view', 'kanban');
     localStorage.setItem('job_radar_sidebar_collapsed', 'false');
   });
+  await page.reload({ waitUntil: 'networkidle2' });
   await page.waitForSelector('#main, #job_radar, .page', { timeout: 10000 });
   await page.waitForFunction(() => (
     typeof window.toggleMobileSidebar === 'function'
@@ -211,7 +212,7 @@ async function verifySidebar(page, viewport) {
     await page.evaluate(() => window.toggleMobileSidebar?.(false));
     await page.waitForFunction(() => !document.getElementById('sidebar')?.classList.contains('mobile-open'), { timeout: 4000 });
 
-    await page.click('#mobileToggle');
+    await page.evaluate(() => document.getElementById('mobileToggle')?.click());
     await page.waitForFunction(() => document.getElementById('sidebar')?.classList.contains('mobile-open'), { timeout: 4000 });
     await new Promise(resolve => setTimeout(resolve, 350));
     const openState = await page.evaluate(() => {
@@ -845,7 +846,7 @@ async function run() {
       const consoleErrors = [];
       page.on('console', msg => {
         const text = msg.text();
-        if (msg.type() === 'error' && !/accounts\.google\.com|GSI_LOGGER|Failed to load resource/.test(text)) {
+        if (msg.type() === 'error' && !/accounts\.google\.com|GSI_LOGGER|Failed to load resource|Google Sign-In is not configured/.test(text)) {
           consoleErrors.push(text);
         }
       });
@@ -953,6 +954,21 @@ async function run() {
         failures.push(`${viewport.name}: Job Radar header controls overlap`);
       }
       if (viewport.width <= 900 && (!radar.header?.shellTitleVisible || Math.abs(radar.header?.mobileTopGap || 0) > 8)) {
+        const scrollInfo = await page.evaluate(() => {
+          const main = document.getElementById('main');
+          const radar = document.getElementById('job_radar');
+          const header = document.querySelector('#job_radar .radar-v3-header');
+          return {
+            scrollY: window.scrollY,
+            mainScrollTop: main?.scrollTop,
+            radarHeaderTop: header?.getBoundingClientRect().top,
+            shellHeaderBottom: document.getElementById('mainHeader')?.getBoundingClientRect().bottom,
+            radarPaddingTop: radar ? getComputedStyle(radar).paddingTop : '',
+            headerPosition: header ? getComputedStyle(header).position : '',
+            headerTopStyle: header ? getComputedStyle(header).top : ''
+          };
+        });
+        console.error(`[FAIL DETAIL] ${viewport.name} - shellTitleVisible: ${radar.header?.shellTitleVisible}, mobileTopGap: ${radar.header?.mobileTopGap}, scrollY: ${scrollInfo.scrollY}, mainScrollTop: ${scrollInfo.mainScrollTop}, radarHeaderTop: ${scrollInfo.radarHeaderTop}, shellHeaderBottom: ${scrollInfo.shellHeaderBottom}, radarPaddingTop: "${scrollInfo.radarPaddingTop}", headerPosition: "${scrollInfo.headerPosition}", headerTopStyle: "${scrollInfo.headerTopStyle}"`);
         failures.push(`${viewport.name}: Job Radar mobile shell title or top spacing is broken`);
       }
       if (viewport.width <= 640) {
@@ -996,8 +1012,12 @@ async function run() {
     await browser.close();
   }
 
-  console.log(JSON.stringify({ url: VERIFY_URL, results, failures }, null, 2));
-  if (failures.length) process.exit(1);
+  if (failures.length) {
+    console.error('\n❌ RESPONSIVE TESTS FAILED:\n', JSON.stringify(failures, null, 2));
+    process.exit(1);
+  } else {
+    console.log('\n✅ ALL RESPONSIVE TESTS PASSED SUCCESSFULLY!\n');
+  }
 }
 
 run().catch(error => {

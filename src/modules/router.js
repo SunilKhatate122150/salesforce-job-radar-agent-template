@@ -1,7 +1,19 @@
 // Router & Navigation Shell Module (Vite)
 import { checkAuth, signOut } from './auth.js';
+import { SFJR_NAVIGATION } from '../data/navigation.js';
 
 export let isNavigating = false;
+
+if (typeof window !== 'undefined') {
+  window.getNavigationLabel = function(id) {
+    if (id === 'job_radar') return 'Job Radar';
+    for (const group of SFJR_NAVIGATION) {
+      const item = group.items.find(i => i.id === id);
+      if (item) return item.label;
+    }
+    return '';
+  };
+}
 let lastSidebarTrigger = null;
 const NAV_MOBILE_MAX_WIDTH = 900;
 
@@ -17,6 +29,14 @@ export function setIsNavigating(val) {
 }
 
 export async function showPage(id) {
+  const headerTitle = document.getElementById('headerTitle');
+  if (headerTitle) {
+    if (id === 'job_radar') {
+      headerTitle.textContent = 'Job Radar';
+    } else {
+      headerTitle.textContent = (window.topicConfig && window.topicConfig[id]?.name) || (typeof window.getNavigationLabel === 'function' ? window.getNavigationLabel(id) : '') || 'SF Prep Guide';
+    }
+  }
   if (isNavigating && id !== 'topic_viewer') return; 
   setIsNavigating(true);
   
@@ -204,11 +224,7 @@ export async function showPage(id) {
       }
     }
 
-    // UI Updates
-    const headerTitle = document.getElementById('headerTitle');
-    if (headerTitle && window.topicConfig) {
-      headerTitle.textContent = window.topicConfig[id]?.name || (typeof window.getNavigationLabel === 'function' ? window.getNavigationLabel(id) : '') || 'SF Prep Guide';
-    }
+
     if (location.hash !== `#${id}`) {
       history.replaceState({ page: id }, '', `#${encodeURIComponent(id)}`);
     }
@@ -217,6 +233,9 @@ export async function showPage(id) {
     
     const mainEl = document.getElementById('main');
     if (mainEl) mainEl.scrollTop = 0;
+    if (typeof window !== 'undefined') {
+      window.scrollTo(0, 0);
+    }
     if (typeof window.formatIsoTimestampsIn === 'function') {
       window.formatIsoTimestampsIn(page);
       setTimeout(() => window.formatIsoTimestampsIn(page), 250);
