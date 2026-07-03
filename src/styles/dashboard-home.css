@@ -67,6 +67,7 @@
   padding: 1.25rem 1.5rem;
   position: relative;
   overflow: hidden;
+  cursor: pointer;
   transition: transform var(--motion-med, 250ms), box-shadow var(--motion-med, 250ms);
 }
 

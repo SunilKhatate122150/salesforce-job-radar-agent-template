@@ -3047,15 +3047,20 @@ body:has(#job_radar.active) #headerTitle {
   }
 }
 
-@media (max-width: 760px) {
+@media (max-width: 900px) {
   #job_radar {
-    overflow: auto;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    height: auto !important;
+    min-height: 0 !important;
   }
 
   #job_radar .radar-v3-header,
   #job_radar .analytics-bar-v3,
+  #job_radar .radar-tabs,
   #job_radar .filter-bar {
-    position: sticky !important;
+    position: static !important;
+    top: auto !important;
   }
 
   #job_radar .analytics-bar-v3,
@@ -3659,15 +3664,7 @@ body:has(#job_radar.active) .activity-log-panel .log-entry {
   }
 }
 
-@media (max-width: 760px) {
-  #job_radar .radar-v3-header,
-  #job_radar .analytics-bar-v3,
-  #job_radar .radar-tabs,
-  #job_radar .filter-bar {
-    position: static !important;
-    top: auto !important;
-  }
-}
+/* Note: Sticky-to-static positioning for mobile viewports is handled in the max-width: 900px query. */
 
 /* --- JOB TABLE LIST VIEW (v1415) --- */
 .radar-list-view {
@@ -3907,7 +3904,7 @@ body:has(#job_radar.active) .activity-log-panel .log-entry {
   }
 }
 
-@media (max-width: 760px) {
+@media (max-width: 900px) {
   #job_radar {
     width: 100% !important;
     max-width: 100vw !important;

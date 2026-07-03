@@ -420,7 +420,7 @@
 
   <div class="dash-metrics">
     <!-- Metric 1: Streak -->
-    <div class="dash-metric-tile dash-metric-tile--streak">
+    <div class="dash-metric-tile dash-metric-tile--streak" onclick="showPage('study_history')" role="button" tabindex="0" aria-label="Study Streak: view history">
       <div class="dash-metric-icon" style="color: var(--amber);">🔥</div>
       <p class="dash-metric-label">Study Streak</p>
       <h3 class="dash-metric-value" id="dashMetricStreak">0</h3>
@@ -428,7 +428,7 @@
     </div>
 
     <!-- Metric 2: Job Matches -->
-    <div class="dash-metric-tile dash-metric-tile--jobs">
+    <div class="dash-metric-tile dash-metric-tile--jobs" onclick="showPage('job_radar')" role="button" tabindex="0" aria-label="Job Radar: view matches">
       <div class="dash-metric-icon" style="color: var(--blue);">💼</div>
       <p class="dash-metric-label">Job Radar</p>
       <h3 class="dash-metric-value" id="dashMetricJobs">0</h3>
@@ -436,7 +436,7 @@
     </div>
 
     <!-- Metric 3: Study Progress -->
-    <div class="dash-metric-tile dash-metric-tile--study">
+    <div class="dash-metric-tile dash-metric-tile--study" onclick="showPage('study_tracker')" role="button" tabindex="0" aria-label="Questions Studied: view progress tracker">
       <div class="dash-metric-icon" style="color: var(--color-primary);">📚</div>
       <p class="dash-metric-label">Questions Studied</p>
       <h3 class="dash-metric-value" id="dashMetricStudy">0</h3>
@@ -444,7 +444,7 @@
     </div>
 
     <!-- Metric 4: Readiness -->
-    <div class="dash-metric-tile dash-metric-tile--readiness">
+    <div class="dash-metric-tile dash-metric-tile--readiness" onclick="showPage('profile_match')" role="button" tabindex="0" aria-label="Readiness Score: view agent dashboard">
       <div class="dash-metric-icon" style="color: var(--green);">🎯</div>
       <p class="dash-metric-label">Readiness Score</p>
       <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 0.5rem;">
