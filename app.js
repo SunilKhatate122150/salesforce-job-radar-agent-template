@@ -591,469 +591,7 @@ window.toggleSidebar = function() {
   if (typeof renderBoard === 'function') renderBoard();
 };
 
-function hydratePremiumSetupForm(profile = {}) {
-  const hydratedProfile = mergePremiumDraftProfile(profile);
-  const expEl = document.getElementById('premiumExperienceYears');
-  const targetEl = document.getElementById('premiumTargetDesignation');
-  const currentEl = document.getElementById('premiumCurrentDesignation');
-  const skillsEl = document.getElementById('premiumSkills');
-  
-  // Use both experienceYears and yearsOfExperience for maximum compatibility
-  const expValue = hydratedProfile.experienceYears ?? hydratedProfile.yearsOfExperience ?? 1;
-  if (expEl) expEl.value = String(clampPremiumExperience(expValue));
-  
-  if (targetEl && (hydratedProfile.targetDesignation || hydratedProfile.targetRole)) {
-    const targetValue = hydratedProfile.targetDesignation || hydratedProfile.targetRole;
-    ensurePremiumTargetOption(targetEl, targetValue);
-    targetEl.value = targetValue;
-  }
-  if (currentEl) currentEl.value = hydratedProfile.currentDesignation || hydratedProfile.currentRole || '';
-  if (skillsEl) skillsEl.value = Array.isArray(hydratedProfile.skills) ? hydratedProfile.skills.join(', ') : '';
-}
-
-function ensurePremiumTargetOption(selectEl, value) {
-  const label = String(value || '').trim();
-  if (!selectEl || !label) return;
-  const hasOption = Array.from(selectEl.options || []).some(option => option.value === label || option.textContent.trim() === label);
-  if (hasOption) return;
-  const option = document.createElement('option');
-  option.value = label;
-  option.textContent = label;
-  selectEl.appendChild(option);
-}
-
-function readPremiumFormProfile(base = {}) {
-  const expEl = document.getElementById('premiumExperienceYears');
-  const targetEl = document.getElementById('premiumTargetDesignation');
-  const currentEl = document.getElementById('premiumCurrentDesignation');
-  const skillsEl = document.getElementById('premiumSkills');
-  const targetDesignation = targetEl?.value || base.targetDesignation || base.targetRole || 'Salesforce Developer';
-  const currentDesignation = currentEl?.value?.trim() || base.currentDesignation || base.currentRole || '';
-  return {
-    ...(base || {}),
-    experienceYears: clampPremiumExperience(expEl?.value || base.experienceYears || base.yearsOfExperience || 1),
-    targetDesignation,
-    targetRole: targetDesignation,
-    currentDesignation,
-    currentRole: currentDesignation,
-    skills: skillsEl ? normalizeCsvInput(skillsEl.value) : normalizeCsvInput(Array.isArray(base.skills) ? base.skills.join(', ') : ''),
-    uiMode: currentUiMode
-  };
-}
-
-function getPremiumDraftStorageKey() {
-  return scopedStorageKey('premium_profile_draft:v1');
-}
-
-function readPremiumProfileDraft() {
-  try {
-    const raw = localStorage.getItem(getPremiumDraftStorageKey());
-    if (!raw) return null;
-    const draft = JSON.parse(raw);
-    return draft && typeof draft === 'object' ? draft : null;
-  } catch (err) {
-    return null;
-  }
-}
-
-function writePremiumProfileDraft(profile) {
-  const normalized = {
-    experienceYears: clampPremiumExperience(profile?.experienceYears || profile?.yearsOfExperience || 1),
-    targetDesignation: profile?.targetDesignation || profile?.targetRole || 'Salesforce Developer',
-    targetRole: profile?.targetDesignation || profile?.targetRole || 'Salesforce Developer',
-    currentDesignation: profile?.currentDesignation || profile?.currentRole || '',
-    currentRole: profile?.currentDesignation || profile?.currentRole || '',
-    skills: normalizeCsvInput(Array.isArray(profile?.skills) ? profile.skills.join(', ') : (profile?.skills || '')),
-    uiMode: currentUiMode,
-    updatedAt: new Date().toISOString()
-  };
-  try {
-    localStorage.setItem(getPremiumDraftStorageKey(), JSON.stringify(normalized));
-  } catch (err) {
-    console.warn('[PREMIUM] Could not persist local dashboard draft:', err.message);
-  }
-  return normalized;
-}
-
-function clearPremiumProfileDraft() {
-  try {
-    localStorage.removeItem(getPremiumDraftStorageKey());
-  } catch (err) {
-    // Best effort only.
-  }
-}
-
-function mergePremiumDraftProfile(profile = {}) {
-  const draft = readPremiumProfileDraft();
-  if (!draft) return profile || {};
-  const targetDesignation = draft.targetDesignation || draft.targetRole;
-  const currentDesignation = draft.currentDesignation || draft.currentRole;
-  return {
-    ...(profile || {}),
-    ...draft,
-    targetDesignation,
-    targetRole: targetDesignation,
-    currentDesignation,
-    currentRole: currentDesignation,
-    skills: Array.isArray(draft.skills) ? draft.skills : normalizeCsvInput(draft.skills || '')
-  };
-}
-
-function scoreDesignationLabel(normalized, label) {
-  const normalizedLabel = String(label || '').toLowerCase().trim();
-  if (!normalizedLabel) return 0;
-  if (normalized === normalizedLabel) return 10000 + normalizedLabel.length;
-  if (normalized.includes(normalizedLabel)) return 1000 + normalizedLabel.length;
-  if (normalizedLabel.includes(normalized)) return 500 + normalized.length;
-  return 0;
-}
-
-function inferStaticDesignation(rawDesignation, designationsData = {}) {
-  const value = String(rawDesignation || '').trim();
-  const designations = designationsData.designations || [];
-  if (!value) return designations[0] || null;
-  const normalized = value.toLowerCase();
-  const ranked = designations.map(item => {
-    const labels = [item.label, ...(item.aliases || [])].map(label => String(label || '').toLowerCase());
-    return { item, score: Math.max(...labels.map(label => scoreDesignationLabel(normalized, label))) };
-  }).filter(match => match.score > 0).sort((a, b) => b.score - a.score);
-  return ranked[0]?.item || {
-    id: normalized.replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '') || 'custom_designation',
-    label: value,
-    track: 'Custom',
-    primaryTopicIds: []
-  };
-}
-
-async function loadStaticPremiumData() {
-  if (premiumStaticDataCache) return premiumStaticDataCache;
-  const [roadmaps, designations, releases, trailhead] = await Promise.all([
-    fetch('/data/career-roadmaps.json').then(res => {
-      if (!res.ok) throw new Error('career roadmaps unavailable');
-      return res.json();
-    }),
-    fetch('/data/designation-map.json').then(res => {
-      if (!res.ok) throw new Error('designation map unavailable');
-      return res.json();
-    }),
-    fetch('/data/salesforce-releases.json').then(res => {
-      if (!res.ok) throw new Error('release data unavailable');
-      return res.json();
-    }),
-    fetch('/data/trailhead-resources.json').then(res => {
-      if (!res.ok) throw new Error('Trailhead resources unavailable');
-      return res.json();
-    })
-  ]);
-  premiumStaticDataCache = { roadmaps, designations, releases, trailhead };
-  return premiumStaticDataCache;
-}
-
-async function buildStaticPremiumRoadmap(profile = {}) {
-  const { roadmaps, designations, releases, trailhead } = await loadStaticPremiumData();
-  const experienceYears = clampPremiumExperience(profile.experienceYears || profile.yearsOfExperience || 1);
-  const designation = inferStaticDesignation(
-    profile.targetDesignation || profile.targetRole || profile.currentDesignation || profile.currentRole,
-    designations
-  );
-  const baseRoadmap = roadmaps.years?.[String(experienceYears)] || roadmaps.years?.['1'] || {};
-  const roadmapTopicIds = new Set(baseRoadmap.topicIds || []);
-  const mergedTopics = [...(baseRoadmap.topics || [])];
-
-  for (const topicId of designation?.primaryTopicIds || []) {
-    if (!roadmapTopicIds.has(topicId)) {
-      mergedTopics.push({
-        topicId,
-        topic: topicConfigName(topicId),
-        category: designation?.track || 'Designation',
-        priority: 'medium',
-        estimatedHours: 6,
-        reason: `Added because it is important for ${designation?.label || 'the selected designation'}.`
-      });
-      roadmapTopicIds.add(topicId);
-    }
-  }
-
-  const releaseCategories = new Set(baseRoadmap.releaseFocus || []);
-  const releaseItems = (releases.items || []).filter(item => {
-    const levelMatch = (item.experienceLevels || []).includes(experienceYears);
-    const categoryMatch = releaseCategories.has(item.category);
-    const designationMatch = (item.designations || []).some(d =>
-      String(d).toLowerCase() === String(designation?.label || '').toLowerCase()
-    );
-    return levelMatch && (categoryMatch || designationMatch);
-  });
-  const topicSet = new Set(mergedTopics.map(topic => topic.topicId));
-  const resources = (trailhead.resources || []).filter(resource => {
-    const yearMatch = (resource.recommendedYears || []).includes(experienceYears);
-    const topicMatch = (resource.topicIds || []).some(topicId => topicSet.has(topicId));
-    return yearMatch && topicMatch;
-  });
-
-  return {
-    success: true,
-    previewMode: true,
-    experienceYears,
-    designation,
-    roadmap: {
-      ...baseRoadmap,
-      topics: mergedTopics,
-      topicIds: Array.from(roadmapTopicIds)
-    },
-    releaseFocus: {
-      activeRelease: releases.activeRelease || {},
-      items: releaseItems.length ? releaseItems : (releases.items || []).filter(item =>
-        (item.experienceLevels || []).includes(experienceYears)
-      ).slice(0, 6)
-    },
-    trailheadResources: resources.slice(0, 8),
-    generatedAt: new Date().toISOString()
-  };
-}
-
-async function refreshPremiumRoadmapMount() {
-  const mount = document.getElementById('premiumRoadmapMount');
-  if (mount) mount.innerHTML = '<div class="premium-loading">Refreshing roadmap preview...</div>';
-  premiumRoadmapCache = null;
-  premiumReleaseCache = null;
-  try {
-    const currentDraft = readPremiumFormProfile(cachedUserProfile || {});
-    writePremiumProfileDraft(currentDraft);
-    cachedUserProfile = cachedUserProfile ? { ...cachedUserProfile, ...currentDraft } : { ...currentDraft, isPreviewProfile: true };
-    const data = await buildStaticPremiumRoadmap(currentDraft);
-    premiumRoadmapCache = data;
-    if (mount) mount.innerHTML = renderPremiumRoadmapSection(data) + renderPremiumReleaseFocusSection(data);
-    const profilePage = document.getElementById('profile_match');
-    if (profilePage && profilePage.classList.contains('active')) {
-      updateSidebarProfileStatus(currentDraft);
-      updateSyncModalUI(currentDraft);
-    }
-  } catch (err) {
-    console.warn('[PREMIUM] Preview refresh failed:', err.message);
-    if (mount) mount.innerHTML = '<div class="premium-empty">Roadmap preview is unavailable right now.</div>';
-  }
-}
-
-function bindPremiumPreviewControls() {
-  if (premiumPreviewBound) return;
-  premiumPreviewBound = true;
-  ['premiumExperienceYears', 'premiumTargetDesignation', 'premiumCurrentDesignation', 'premiumSkills'].forEach(id => {
-    const el = document.getElementById(id);
-    if (!el) return;
-    const eventName = el.tagName === 'INPUT' ? 'input' : 'change';
-    el.addEventListener(eventName, () => {
-      writePremiumProfileDraft(readPremiumFormProfile(cachedUserProfile || {}));
-      clearTimeout(premiumPreviewTimer);
-      premiumPreviewTimer = setTimeout(refreshPremiumRoadmapMount, 180);
-    });
-  });
-}
-
-window.savePremiumProfileSetup = async function() {
-  const triggerBtn = typeof event !== 'undefined' && event?.currentTarget instanceof HTMLButtonElement ? event.currentTarget : document.querySelector('.premium-onboarding-actions .premium-primary-btn');
-  const expEl = document.getElementById('premiumExperienceYears');
-  const targetEl = document.getElementById('premiumTargetDesignation');
-  const currentEl = document.getElementById('premiumCurrentDesignation');
-  const skillsEl = document.getElementById('premiumSkills');
-  const payload = {
-    ...(cachedUserProfile || {}),
-    experienceYears: clampPremiumExperience(expEl ? expEl.value : 1),
-    targetDesignation: targetEl ? targetEl.value : 'Salesforce Developer',
-    targetRole: targetEl ? targetEl.value : 'Salesforce Developer',
-    currentDesignation: currentEl ? currentEl.value.trim() : '',
-    currentRole: currentEl ? currentEl.value.trim() : '',
-    skills: normalizeCsvInput(skillsEl ? skillsEl.value : ''),
-    uiMode: currentUiMode
-  };
-
-  const originalText = triggerBtn ? triggerBtn.textContent : '';
-  try {
-    if (triggerBtn) {
-      triggerBtn.disabled = true;
-      triggerBtn.innerHTML = '<span class="loading-spinner sm" aria-hidden="true"></span> Generating...';
-    }
-    const res = await apiFetch('/api/profile/save', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
-    });
-    if (!res.ok) throw new Error('Profile save failed');
-    cachedUserProfile = payload;
-    clearPremiumProfileDraft();
-    premiumRoadmapCache = null;
-    premiumReleaseCache = null;
-    showToast('Premium roadmap generated for your experience level.', 'green');
-    await loadUserProfile();
-    await loadPremiumRoadmap(true);
-    await loadReleaseCenter(true);
-    showPage('profile_match');
-  } catch (e) {
-    console.error('[PREMIUM] Setup save failed:', e);
-    cachedUserProfile = { ...payload, isPreviewProfile: true };
-    writePremiumProfileDraft(payload);
-    premiumRoadmapCache = null;
-    premiumReleaseCache = null;
-    renderProfileMatchPage(cachedUserProfile);
-    await loadReleaseCenter(true).catch(() => {});
-    showToast('Roadmap preview generated. Sign in with Google to save it.', 'green');
-  } finally {
-    if (triggerBtn) {
-      triggerBtn.disabled = false;
-      triggerBtn.textContent = originalText || 'Generate My Roadmap';
-    }
-  }
-};
-
-function ensureProfileImportModal() {
-  if (document.getElementById('profileImportModal')) return;
-  document.body.insertAdjacentHTML('beforeend', `
-    <div id="profileImportModal" class="premium-modal" onclick="if(event.target === this) closeProfileImport()" style="display:none;">
-      <div class="premium-modal-box" role="dialog" aria-modal="true" aria-labelledby="profileImportTitle">
-        <button class="premium-modal-close" onclick="closeProfileImport()" aria-label="Close">&times;</button>
-        <div class="premium-eyebrow">Safe Profile Import</div>
-        <h2 id="profileImportTitle">Import Profile Text</h2>
-        <p class="premium-note">Paste resume, LinkedIn profile text, or Naukri profile text. Do not paste passwords, OTPs, or private account secrets.</p>
-        <textarea id="profileImportText" rows="10" maxlength="5000" placeholder="Example: Salesforce Developer with 3 years of Apex, LWC, Flow, SOQL, integrations, current role, target role, certifications, project highlights, and preferred locations."></textarea>
-        <div class="profile-import-feedback">
-          <p id="profileImportError" class="profile-import-error" role="alert" aria-live="polite"></p>
-          <span id="profileImportCount">0 / 5000 chars</span>
-        </div>
-        <input type="hidden" id="profileImportSource" value="manual">
-        <div class="premium-modal-actions">
-          <button id="profileImportSubmitBtn" class="premium-primary-btn" onclick="submitProfileImport()">Analyze & Save</button>
-          <button class="premium-secondary-btn" onclick="closeProfileImport()">Cancel</button>
-        </div>
-      </div>
-    </div>
-  `);
-  const textEl = document.getElementById('profileImportText');
-  if (textEl) {
-    textEl.addEventListener('input', updateProfileImportFeedback);
-  }
-}
-
-function updateProfileImportFeedback(message = '') {
-  const textEl = document.getElementById('profileImportText');
-  const errorEl = document.getElementById('profileImportError');
-  const countEl = document.getElementById('profileImportCount');
-  const length = textEl ? textEl.value.length : 0;
-  if (countEl) countEl.textContent = `${length} / 5000 chars`;
-  if (errorEl) errorEl.textContent = message;
-}
-
-window.openProfileImport = function(source = 'manual') {
-  ensureProfileImportModal();
-  const modal = document.getElementById('profileImportModal');
-  const title = document.getElementById('profileImportTitle');
-  const sourceEl = document.getElementById('profileImportSource');
-  const textEl = document.getElementById('profileImportText');
-  const label = source === 'linkedin' ? 'LinkedIn Profile Import' : source === 'naukri' ? 'Naukri Profile Import' : 'Manual Profile Import';
-  if (title) title.textContent = label;
-  if (sourceEl) sourceEl.value = source;
-  if (textEl) textEl.value = '';
-  updateProfileImportFeedback('');
-  if (modal) {
-    modal.style.display = 'flex';
-    modal.setAttribute('aria-hidden', 'false');
-  }
-  setTimeout(() => textEl?.focus(), 0);
-};
-
-window.closeProfileImport = function() {
-  const modal = document.getElementById('profileImportModal');
-  if (modal) {
-    modal.style.display = 'none';
-    modal.setAttribute('aria-hidden', 'true');
-  }
-};
-
-window.submitProfileImport = async function() {
-  const textEl = document.getElementById('profileImportText');
-  const sourceEl = document.getElementById('profileImportSource');
-  const profileText = textEl ? textEl.value.trim() : '';
-  if (!profileText) {
-    updateProfileImportFeedback('Please paste your profile or resume text before analyzing.');
-    if (textEl) textEl.focus();
-    return;
-  }
-  updateProfileImportFeedback('');
-  const submitBtn = document.getElementById('profileImportSubmitBtn');
-  const originalText = submitBtn ? submitBtn.textContent : '';
-  try {
-    if (submitBtn) {
-      submitBtn.disabled = true;
-      submitBtn.innerHTML = '<span class="loading-spinner sm" aria-hidden="true"></span> Analyzing...';
-    }
-    const res = await apiFetch('/api/profile/import', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        source: sourceEl ? sourceEl.value : 'manual',
-        text: profileText,
-        targetDesignation: document.getElementById('premiumTargetDesignation')?.value || cachedUserProfile?.targetDesignation
-      })
-    });
-    const data = await res.json();
-    if (!res.ok || data.success === false) throw new Error(data.error || 'Import failed');
-    closeProfileImport();
-    premiumRoadmapCache = null;
-    premiumReleaseCache = null;
-    showToast('Profile import analyzed safely.', 'green');
-    await loadUserProfile();
-    await loadPremiumRoadmap(true);
-    await loadReleaseCenter(true);
-  } catch (e) {
-    console.error('[PREMIUM] Import failed:', e);
-    updateProfileImportFeedback('Profile import failed. Try a smaller text sample.');
-    showToast('Profile import failed. Try a smaller text sample.', 'red');
-  } finally {
-    if (submitBtn) {
-      submitBtn.disabled = false;
-      submitBtn.textContent = originalText || 'Analyze & Save';
-    }
-  }
-};
-
-async function loadPremiumRoadmap(force = false) {
-  if (premiumRoadmapCache && !force) return premiumRoadmapCache;
-  const profileForPreview = readPremiumFormProfile(cachedUserProfile || {});
-  try {
-    const res = await apiFetch('/api/roadmap?cb=' + Date.now());
-    if (!res.ok) throw new Error('Roadmap API unavailable');
-    premiumRoadmapCache = await res.json();
-  } catch (err) {
-    console.warn('[PREMIUM] Using local curated roadmap preview:', err.message);
-    premiumRoadmapCache = await buildStaticPremiumRoadmap(profileForPreview);
-  }
-  return premiumRoadmapCache;
-}
-
-async function loadReleaseCenter(force = false) {
-  if (premiumReleaseCache && !force) return premiumReleaseCache;
-  try {
-    const res = await apiFetch('/api/releases/current?cb=' + Date.now());
-    if (!res.ok) throw new Error('Release API unavailable');
-    premiumReleaseCache = await res.json();
-  } catch (err) {
-    console.warn('[RELEASES] Using local curated release preview:', err.message);
-    const [{ releases }, intelligence] = await Promise.all([
-      loadStaticPremiumData(),
-      buildStaticPremiumRoadmap(readPremiumFormProfile(cachedUserProfile || {}))
-    ]);
-    premiumReleaseCache = {
-      success: true,
-      previewMode: true,
-      activeRelease: releases.activeRelease || {},
-      items: releases.items || [],
-      personalizedItems: intelligence.releaseFocus?.items || [],
-      experienceYears: intelligence.experienceYears,
-      designation: intelligence.designation
-    };
-  }
-  renderReleaseCenterPage(premiumReleaseCache);
-  renderRecentTopicsPanel();
-  return premiumReleaseCache;
-}
+/* Profile form handlers, draft storage, static roadmap compiler, and release loader split to src/modules/profile.js and releaseCenter.js */
 
 function getCurrentUserId() {
   const raw = currentUser?.id || currentUser?.googleId || currentUser?.email || 'guest';
@@ -7075,11 +6613,9 @@ Object.assign(window, {
   apiFetch,
   applyUiMode,
   baseSeconds,
-  bindPremiumPreviewControls,
   buildJobMarketIntelligenceFromJobs,
   buildLocalJobMarketIntelligence,
   buildPipelineJobFromRecord,
-  buildStaticPremiumRoadmap,
   cachedHistories,
   cachedUserProfile,
   callAi,
@@ -7089,7 +6625,6 @@ Object.assign(window, {
   clampPremiumExperience,
   clearAndSyncJobs,
   clearLog,
-  clearPremiumProfileDraft,
   clientStateLoadedFor,
   closeCollapsedNavFlyout,
   closeHistoryModal,
@@ -7110,8 +6645,6 @@ Object.assign(window, {
   ensureCollapsedNavFlyout,
   ensureNavigationTopicConfig,
   ensurePageLoaded,
-  ensurePremiumTargetOption,
-  ensureProfileImportModal,
   escapeHtml,
   exportLog,
   featureStylesheetPromises,
@@ -7147,7 +6680,6 @@ Object.assign(window, {
   getNavIconKey,
   getNavigationLabel,
   getNavigationQuestionCount,
-  getPremiumDraftStorageKey,
   getProbabilityMeta,
   getRecentTopicItems,
   getScopedItem,
@@ -7160,8 +6692,6 @@ Object.assign(window, {
   goToResult,
   hydrateHistoryFilter,
   hydrateInterviewRoom,
-  hydratePremiumSetupForm,
-  inferStaticDesignation,
   initKeyboardShortcuts,
   interviewMessages,
   isBookmarked,
@@ -7179,18 +6709,12 @@ Object.assign(window, {
   loadJobRadarMarketIntelligence,
   loadKnowledgeData,
   loadMockInterviewHistory,
-  loadPremiumRoadmap,
-  loadReleaseCenter,
-  loadStaticPremiumData,
   loadUserProfile,
   loadUserScopedClientState,
   logActivity,
   mapRecordStatusToBoardStatus,
-  mergePremiumDraftProfile,
   migrateLegacyUserStorage,
-  normalizeCsvInput,
   normalizeProbability,
-  normalizeUiMode,
   oldUpdateTrackerUI,
   openAIAssistant,
   openAddJobModal,
@@ -7204,19 +6728,11 @@ Object.assign(window, {
   pausedElapsed,
   persistUiMode,
   positionCollapsedNavFlyout,
-  premiumPreviewBound,
-  premiumPreviewTimer,
-  premiumReleaseCache,
-  premiumRoadmapCache,
-  premiumStaticDataCache,
   priorityClass,
   readAllLocalJobRadarJobs,
   readJsonStorage,
-  readPremiumFormProfile,
-  readPremiumProfileDraft,
   readScopedJson,
   recentTopicsPage,
-  refreshPremiumRoadmapMount,
   refreshSearchIndex,
   reminderInterval,
   removeScopedPrefix,
@@ -7254,7 +6770,6 @@ Object.assign(window, {
   saveSession,
   scheduleReminders,
   scopedStorageKey,
-  scoreDesignationLabel,
   searchContent,
   searchData,
   selectEmailType,
@@ -7327,7 +6842,6 @@ Object.assign(window, {
   updateJobRadarSummary,
   updateJobScanProgress,
   updateJobStatus,
-  updateProfileImportFeedback,
   updateProfileStrengthMeter,
   updateSidebarActiveState,
   updateSidebarProfileStatus,
@@ -7337,6 +6851,5 @@ Object.assign(window, {
   renderTrackerUI: oldUpdateTrackerUI,
   userBookmarks,
   userRetention,
-  writePremiumProfileDraft,
   writeScopedJson,
 });
