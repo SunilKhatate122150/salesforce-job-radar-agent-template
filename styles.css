@@ -3609,9 +3609,7 @@ body {
     padding: calc(60px + 16px) 14px 80px 14px !important;
   }
 
-  #job_radar.page {
-    padding-top: 0 !important;
-  }
+
 
   /* Text size consistency for mobile */
   .page-title {

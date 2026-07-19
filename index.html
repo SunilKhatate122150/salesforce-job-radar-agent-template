@@ -3,15 +3,15 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Salesforce Job Radar Agent — Career Intelligence & Interview Prep</title>
-  <meta name="description" content="Industrial-grade Salesforce career intelligence hub. Track job opportunities, study for interviews, manage your career roadmap, and master Salesforce development with AI-powered tools.">
+  <title>SF Radar — Career Intelligence</title>
+  <meta name="description" content="SF Radar - Industrial-grade Salesforce career intelligence hub. Track job opportunities, study for interviews, and manage your career roadmap.">
   <link rel="icon" href="/assets/icons/favicon.svg" type="image/svg+xml">
   <link rel="manifest" href="/manifest.json">
   <meta name="theme-color" content="#0b0d12">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="apple-mobile-web-app-title" content="SF Prep">
+  <meta name="apple-mobile-web-app-title" content="SF Radar">
   <!-- Fontshare - body font -->
   <link href="https://api.fontshare.com/v2/css?f[]=satoshi@300,400,500,700&display=swap" rel="stylesheet">
 
@@ -124,7 +124,7 @@
     <div class="login-logo">
       <svg viewBox="0 0 24 24" fill="white" style="width: 36px; height: 36px;"><path d="M13 10V3L4 14H11V21L20 10H13Z"/></svg>
     </div>
-    <h1 class="login-title">Job Radar AI <span class="login-live-dot" style="display:inline-block; width:8px; height:8px; border-radius:50%; background:#10b981; margin-left:6px; vertical-align:middle;"></span></h1>
+    <h1 class="login-title">SF Radar <span class="login-live-dot" style="display:inline-block; width:8px; height:8px; border-radius:50%; background:#10b981; margin-left:6px; vertical-align:middle;"></span></h1>
     <p class="login-subtitle">Industrial Salesforce Career Hub.<br>High-fidelity tracking & intelligence.</p>
 
     <!-- Showcase Cards -->
@@ -169,7 +169,7 @@
 <aside id="sidebar" role="dialog" aria-modal="true" aria-label="Salesforce preparation navigation">
     <div class="sidebar-branding sidebar-header">
       <div id="brandingContainer" class="branding-container">
-        <h1 id="appTitle">Job Radar AI</h1>
+        <h1 id="appTitle">SF Radar</h1>
         <p id="appSubtitle">Salesforce Intelligence</p>
       </div>
       <button type="button" class="sidebar-toggle-btn desktop-sidebar-toggle" id="sidebarToggle" onclick="toggleSidebar()" aria-label="Collapse sidebar" aria-controls="sidebar" aria-expanded="true" title="Toggle navigation">
@@ -341,7 +341,7 @@
     </div>
 
     <div class="header-zone-center">
-      <div id="headerTitle">SF Prep Guide</div>
+      <div id="headerTitle">SF Radar</div>
     </div>
 
     <div class="header-zone-right">
@@ -411,6 +411,24 @@
         <h2 class="dash-hero-greeting" id="dashHeroGreeting">Welcome, Trailblazer!</h2>
         <span class="dash-hero-date" id="dashHeroDate">June 25, 2026</span>
         <p class="dash-hero-tagline">Master your Salesforce career radar, keep up your learning streaks, and explore curated job matches.</p>
+        <div class="dash-hero-experience-selector" style="margin-top: 1rem; display: flex; align-items: center; gap: 8px; background: rgba(255, 255, 255, 0.05); padding: 8px 12px; border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.1); width: fit-content; backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);">
+          <span style="font-size: 0.8rem; color: var(--muted, #94a3b8); font-weight: 500; display: flex; align-items: center; gap: 4px;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px; height:14px; color: var(--blue);"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
+            Experience Level:
+          </span>
+          <select id="homeExperienceYears" onchange="updateHomeExperienceLevel(this.value)" style="background: transparent; color: var(--text, #f8fafc); border: none; outline: none; font-family: inherit; font-size: 0.8rem; font-weight: 600; cursor: pointer; padding: 0 4px;">
+            <option value="1">1 Year - Foundation</option>
+            <option value="2">2 Years - Junior Builder</option>
+            <option value="3">3 Years - Core Developer</option>
+            <option value="4">4 Years - Mid-Level Developer</option>
+            <option value="5">5 Years - Senior Developer</option>
+            <option value="6">6 Years - Lead Developer</option>
+            <option value="7">7 Years - Technical Lead</option>
+            <option value="8">8 Years - Architect-Ready</option>
+            <option value="9">9 Years - Principal Engineer</option>
+            <option value="10">10 Years - Architect / Engineering Lead</option>
+          </select>
+        </div>
       </div>
       <div class="dash-streak-badge" id="dashStreakBadge">
         <span id="dashStreakVal">0</span> Day Streak
@@ -1144,7 +1162,7 @@
 <footer style="width: 100% !important; position: relative !important; margin-top: auto !important; height: 60px; display: flex; align-items: center; justify-content: center; gap: 8px; background: transparent; padding-bottom: env(safe-area-inset-bottom); border-top: 1px solid var(--border);">
   <div style="font-size: 0.65rem; color: var(--muted); display: flex; align-items: center; gap: 6px; opacity: 0.6;">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:12px; height:12px; opacity:0.3;"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-    <span style="letter-spacing: 0.5px; font-weight: 600;">Salesforce Career Intelligence</span>
+    <span style="letter-spacing: 0.5px; font-weight: 600;">SF Radar &bull; Career Intelligence</span>
     <span style="opacity: 0.2;">&bull;</span>
     <span style="letter-spacing: 0.5px;">Private study workspace</span>
   </div>

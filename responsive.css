@@ -1342,6 +1342,12 @@ table {
   #job_radar .jcard-v3:focus-within .jcard-actions {
     display: none !important;
   }
+  #job_radar .jcard-v3.jcard-expanded .jcard-actions {
+    display: flex !important;
+  }
+  #job_radar .jcard-actions-toggle {
+    display: inline-block !important;
+  }
 }
 
 /* Header collision fix: keep the title centered without letting it overlap the

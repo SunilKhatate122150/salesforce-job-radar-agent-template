@@ -73,6 +73,90 @@ let userRetention = {};
 let currentRetentionTopicId = null;
 let sessionFeedbackProvided = new Set(); 
 
+const staticRoadmapTopicMap = {
+  "1": ["admin", "security", "flows_guide", "apex", "soql", "triggers", "lwc", "intro", "behavioral"],
+  "2": ["apex", "triggers", "soql", "lwc", "flows_guide", "security", "scenario", "mock"],
+  "3": ["apex", "adv_apex", "lwc", "integration", "async", "security", "platform", "scenario"],
+  "4": ["integration", "platform", "async", "adv_apex", "security_full", "design", "sc_arch", "company_interviews"],
+  "5": ["adv_apex", "design", "integration", "async", "lwc", "security_full", "sc_arch", "sf_official"],
+  "6": ["design", "sc_arch", "security_full", "adv_lwc", "async", "integration", "sf_onsite", "speaking"],
+  "7": ["sc_arch", "adv_lwc", "design", "sf_onsite", "platform", "integration", "vocab", "behavioral"],
+  "8": ["sc_arch", "design", "integration", "security_full", "sf_official", "sf_onsite", "salary", "vocab"],
+  "9": ["sc_arch", "integration", "security_full", "sf_onsite", "salary", "behavioral", "mock", "comm"],
+  "10": ["sc_arch", "integration", "security_full", "sf_onsite", "salary", "behavioral", "mock", "comm"]
+};
+
+function getActiveTopicConfig() {
+  const profile = cachedUserProfile || {};
+  const years = String(profile.experienceYears || profile.yearsOfExperience || 1);
+  let allowedIds = staticRoadmapTopicMap[years] || staticRoadmapTopicMap["1"];
+  
+  if (window.premiumStaticDataCache?.roadmaps?.years?.[years]) {
+    allowedIds = window.premiumStaticDataCache.roadmaps.years[years].topicIds || allowedIds;
+  }
+  
+  const filtered = {};
+  for (const id in topicConfig) {
+    const cfg = topicConfig[id];
+    if (cfg.noTimer || cfg.group === 'General' || allowedIds.includes(id)) {
+      filtered[id] = cfg;
+    }
+  }
+  return filtered;
+}
+window.getActiveTopicConfig = getActiveTopicConfig;
+
+async function updateHomeExperienceLevel(years) {
+  const value = parseInt(years);
+  if (isNaN(value)) return;
+
+  const homeExpEl = document.getElementById('homeExperienceYears');
+  if (homeExpEl) homeExpEl.value = String(value);
+  const premiumExpEl = document.getElementById('premiumExperienceYears');
+  if (premiumExpEl) premiumExpEl.value = String(value);
+
+  const currentProfile = cachedUserProfile || {};
+  const payload = {
+    ...currentProfile,
+    experienceYears: value,
+    targetDesignation: currentProfile.targetDesignation || 'Salesforce Developer',
+    targetRole: currentProfile.targetDesignation || 'Salesforce Developer',
+    uiMode: currentUiMode || 'modern'
+  };
+
+  try {
+    const res = await apiFetch('/api/profile/save', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    if (!res.ok) throw new Error('Profile save failed');
+    cachedUserProfile = payload;
+    if (typeof window.clearPremiumProfileDraft === 'function') window.clearPremiumProfileDraft();
+    window.premiumRoadmapCache = null;
+    window.premiumReleaseCache = null;
+    showToast('Experience level updated to ' + value + ' Years.', 'green');
+    await loadUserProfile();
+    if (typeof window.loadPremiumRoadmap === 'function') await window.loadPremiumRoadmap(true);
+    if (typeof window.loadReleaseCenter === 'function') await window.loadReleaseCenter(true);
+    
+    renderDashboardHome();
+    updateTrackerUI(true);
+  } catch (e) {
+    console.error('[PROFILE] Home experience save failed:', e);
+    cachedUserProfile = { ...payload, isPreviewProfile: true };
+    if (typeof window.writePremiumProfileDraft === 'function') window.writePremiumProfileDraft(payload);
+    window.premiumRoadmapCache = null;
+    window.premiumReleaseCache = null;
+    if (typeof window.renderProfileMatchPage === 'function') window.renderProfileMatchPage(cachedUserProfile);
+    if (typeof window.loadReleaseCenter === 'function') await window.loadReleaseCenter(true).catch(() => {});
+    showToast('Local preview updated. Sign in to save.', 'green');
+    renderDashboardHome();
+    updateTrackerUI(true);
+  }
+}
+window.updateHomeExperienceLevel = updateHomeExperienceLevel;
+
 // --- JOB RADAR PIPELINE STATE (v1399) ---
 window.pipelineJobs = [];
 window.activityLog = [];
@@ -386,7 +470,10 @@ async function apiFetch(url, options = {}) {
   })();
   const isPublicApi = window.RadarCloud?.isPublicApi
     ? window.RadarCloud.isPublicApi(url, method)
-    : (path === '/api/auth/google' || path === '/api/health' || (method === 'GET' && path === '/api/code-practice/challenges'));
+    : (path === '/api/auth/google' ||
+      path === '/api/health' ||
+      (method === 'GET' && path === '/api/client-config') ||
+      (method === 'GET' && path === '/api/code-practice/challenges'));
   const hasToken = token && token !== 'null' && token !== 'undefined';
   if (!hasToken && path.startsWith('/api/') && !isPublicApi) {
     return new Response(JSON.stringify({ success: false, error: 'login_required' }), {
@@ -1994,7 +2081,14 @@ async function fetchWithTimeout(resource, options = {}) {
       return String(resource || '').split('?')[0];
     }
   })();
-  if ((!token || token === 'null' || token === 'undefined') && path.startsWith('/api/')) {
+  const method = String(options.method || 'GET').toUpperCase();
+  const isPublicApi = window.RadarCloud?.isPublicApi
+    ? window.RadarCloud.isPublicApi(resource, method)
+    : (path === '/api/auth/google' ||
+      path === '/api/health' ||
+      (method === 'GET' && path === '/api/client-config') ||
+      (method === 'GET' && path === '/api/code-practice/challenges'));
+  if ((!token || token === 'null' || token === 'undefined') && path.startsWith('/api/') && !isPublicApi) {
     return new Response(JSON.stringify({ success: false, error: 'login_required', completedTasks: [] }), {
       status: 401,
       headers: { 'Content-Type': 'application/json', 'X-Local-Auth-State': 'login_required' }
@@ -2307,7 +2401,7 @@ window.updateCourseTargets = function() {
     const targets = analytics.calculateCourseTargets
       ? analytics.calculateCourseTargets(
         data,
-        topicConfig,
+        getActiveTopicConfig(),
         currentTrackedPage ? { topicId: currentTrackedPage, seconds: getCurrentElapsed() } : null,
         document.getElementById('studyDeadlineDays')?.value
       )
@@ -2360,7 +2454,7 @@ function getTopicStatus(topicId, data) {
     return analytics.getTopicStatus(
       topicId,
       data,
-      topicConfig,
+      getActiveTopicConfig(),
       currentTrackedPage ? { topicId: currentTrackedPage, seconds: getCurrentElapsed() } : null
     );
   }
@@ -2387,7 +2481,7 @@ function getSuggestionIcon(type) {
 function generateSuggestions(data) {
   const analytics = getStudyAnalytics();
   const models = analytics.buildSuggestionModels
-    ? analytics.buildSuggestionModels(data, topicConfig)
+    ? analytics.buildSuggestionModels(data, getActiveTopicConfig())
     : [{ icon: 'target', text: '<b>Start studying!</b> Open any topic to begin.', priority: 'MEDIUM', cls: 'priority-medium' }];
   return models.map(function(s) {
     return {
@@ -2747,7 +2841,7 @@ function renderTableView(container, dates, histories) {
 function renderAnalyticsView(container, dates, histories) {
   const analytics = getStudyAnalytics();
   const analyticsData = analytics.buildHistoryTopicAnalytics
-    ? analytics.buildHistoryTopicAnalytics(dates, histories, topicConfig)
+    ? analytics.buildHistoryTopicAnalytics(dates, histories, getActiveTopicConfig())
     : { topicStats: {}, topicDetails: {}, sortedTopics: [], totalTime: 0, cards: [] };
   const topicStats = analyticsData.topicStats;
   const topicDetails = analyticsData.topicDetails;
@@ -2864,8 +2958,8 @@ async function updateTrackerUI(useCache = false) {
   const now = new Date();
   const today = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0') + '-' + String(now.getDate()).padStart(2,'0');
   const totals = analytics.calculateStudyTotals
-    ? analytics.calculateStudyTotals(data, topicConfig, liveContext, today)
-    : { allTopics: Object.keys(topicConfig), totalSeconds: 0, totalSessionCount: 0, topicsStudied: 0, todaySeconds: 0 };
+    ? analytics.calculateStudyTotals(data, getActiveTopicConfig(), liveContext, today)
+    : { allTopics: Object.keys(getActiveTopicConfig()), totalSeconds: 0, totalSessionCount: 0, topicsStudied: 0, todaySeconds: 0 };
   var allTopics = totals.allTopics;
   var totalSeconds = totals.totalSeconds;
   var totalSessionCount = totals.totalSessionCount;
@@ -2878,14 +2972,14 @@ async function updateTrackerUI(useCache = false) {
   if (card && content) {
     card.style.display = 'block';
     const studyHrs = (todaySeconds / 3600).toFixed(2);
-    const activeTopic = currentTrackedPage ? topicConfig[currentTrackedPage].name : 'None';
+    const activeTopic = currentTrackedPage ? (getActiveTopicConfig()[currentTrackedPage]?.name || currentTrackedPage) : 'None';
     
     content.innerHTML = `
       <div style="display:flex; align-items:center; gap:8px; margin-bottom:10px;">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;color:var(--blue);"><path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"></path><path d="m12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z"></path><path d="M9 12H4s.55-3.03 2-5c1.62-2.2 5-3 5-3"></path><path d="M12 15v5s3.03-.55 5-2c2.2-1.62 3-5 3-5"></path></svg>
         <span><b>Real-time Update:</b> You've studied for <b>${studyHrs} hours</b> today.</span>
       </div>
-      ${currentTrackedPage ? `<div style="display:flex; align-items:center; gap:8px; margin-bottom:5px;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;color:var(--green);"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg> Currently focusing on: <b style="color:var(--green);">${activeTopic}</b></div>` : ''}
+      ${currentTrackedPage ? `<div style="display:flex; align-items:center; gap:8px; margin-bottom:5px;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;color:var(--green);"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></svg> Currently focusing on: <b style="color:var(--green);">${activeTopic}</b></div>` : ''}
       <div style="color:var(--blue); font-size:0.7rem; margin-top:8px; display:flex; align-items:center; gap:4px;">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;"><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07M8.46 8.46a5 5 0 0 0 0 7.07M4.93 4.93a10 10 0 0 0 0 14.14"></path><circle cx="12" cy="12" r="3"></circle></svg>
         Live cloud-syncing active...
@@ -2902,7 +2996,7 @@ async function updateTrackerUI(useCache = false) {
   var chartEl = document.getElementById('timeChart');
   if (chartEl) {
     const chartRows = analytics.buildTopicChartRows
-      ? analytics.buildTopicChartRows(data, topicConfig, liveContext)
+      ? analytics.buildTopicChartRows(data, getActiveTopicConfig(), liveContext)
       : [];
     var chartHtml = chartRows.map(function(row) {
       var active = row.active ? ' <span style="color:var(--green);font-size:0.6rem;"> LIVE</span>' : '';
@@ -2920,7 +3014,7 @@ async function updateTrackerUI(useCache = false) {
   var gridEl = document.getElementById('trackerGrid');
   if (gridEl) {
     const trackerRows = analytics.buildTrackerRows
-      ? analytics.buildTrackerRows(data, topicConfig, liveContext)
+      ? analytics.buildTrackerRows(data, getActiveTopicConfig(), liveContext)
       : [];
     var gridHtml = trackerRows.map(function(row) {
       var last = row.lastStudied ? new Date(row.lastStudied).toLocaleDateString() : 'Never';
@@ -5336,6 +5430,13 @@ async function renderDashboardHome() {
   }
 
   // 5. Questions studied & readiness score
+  if (cachedUserProfile) {
+    const homeExpEl = document.getElementById('homeExperienceYears');
+    if (homeExpEl) {
+      homeExpEl.value = String(cachedUserProfile.experienceYears || cachedUserProfile.yearsOfExperience || 1);
+    }
+  }
+
   try {
     const data = globalStudyData || await getStudyData();
     const analytics = getStudyAnalytics();
@@ -5343,8 +5444,8 @@ async function renderDashboardHome() {
     const now = new Date();
     const today = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0') + '-' + String(now.getDate()).padStart(2,'0');
     const totals = analytics.calculateStudyTotals
-      ? analytics.calculateStudyTotals(data, topicConfig, liveContext, today)
-      : { allTopics: Object.keys(topicConfig), totalSeconds: 0, totalSessionCount: 0, topicsStudied: 0, todaySeconds: 0 };
+      ? analytics.calculateStudyTotals(data, getActiveTopicConfig(), liveContext, today)
+      : { allTopics: Object.keys(getActiveTopicConfig()), totalSeconds: 0, totalSessionCount: 0, topicsStudied: 0, todaySeconds: 0 };
     
     const studiedCount = totals.topicsStudied || 0;
     const studyTileVal = document.getElementById('dashMetricStudy');
@@ -5353,7 +5454,7 @@ async function renderDashboardHome() {
     }
     
     // Readiness Score
-    const totalTopics = totals.allTopics?.length || Object.keys(topicConfig).length || 1;
+    const totalTopics = totals.allTopics?.length || Object.keys(getActiveTopicConfig()).length || 1;
     const readinessScore = Math.min(100, Math.round((studiedCount / totalTopics) * 100));
     
     const readinessTileVal = document.getElementById('dashMetricReadiness');

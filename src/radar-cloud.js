@@ -41,6 +41,7 @@
     const verb = String(method || 'GET').toUpperCase();
     return path === '/api/auth/google' ||
       path === '/api/health' ||
+      (verb === 'GET' && path === '/api/client-config') ||
       (verb === 'GET' && path === '/api/code-practice/challenges');
   }
 

@@ -1,7 +1,7 @@
 {
-  "name": "Salesforce Job Radar Agent",
-  "short_name": "Job Radar",
-  "description": "Industrial-Grade Salesforce Career Intelligence & Interview Prep Platform",
+  "name": "SF Radar",
+  "short_name": "SF Radar",
+  "description": "SF Radar - Industrial-Grade Salesforce Career Intelligence & Interview Prep Platform",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#0b0d12",

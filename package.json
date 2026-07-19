@@ -1,5 +1,5 @@
 {
-  "name": "salesforce-job-radar-agent",
+  "name": "sf-radar",
   "version": "1.0.0",
   "description": "Automated Salesforce Job Radar Agent with Naukri and LinkedIn alerts",
   "type": "module",

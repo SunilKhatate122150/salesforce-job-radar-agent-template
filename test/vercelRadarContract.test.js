@@ -1,5 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import fs from "node:fs";
 
 import {
   buildClientConfig,
@@ -170,4 +171,21 @@ test("Radar API contract keeps job data routes protected", () => {
   assert.equal(isPublicApiPath("/api/jobs", "GET"), false);
   assert.equal(isPublicApiPath("/api/jobs/analytics", "GET"), false);
   assert.equal(isPublicApiPath("/api/jobs/scan", "POST"), false);
+});
+
+test("browser API auth gates mirror public client-config contract", () => {
+  const browserFiles = [
+    "src/radar-cloud.js",
+    "src/modules/api.js",
+    "app.js"
+  ];
+
+  for (const file of browserFiles) {
+    const source = fs.readFileSync(file, "utf8");
+    assert.match(
+      source,
+      /GET['"]\s*&&\s*path === ['"]\/api\/client-config['"]/,
+      `${file} should allow unauthenticated GET /api/client-config`
+    );
+  }
 });

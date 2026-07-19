@@ -1500,6 +1500,20 @@ window.closeJobDetailsFlyout = function() {
   document.body.classList.remove('job-flyout-open');
 };
 
+window.toggleJobCardActions = function(event, jobId) {
+  event.stopPropagation();
+  const card = document.getElementById('card-' + jobId);
+  if (card) {
+    const isExpanded = card.classList.contains('jcard-expanded');
+    document.querySelectorAll('#job_radar .jcard-v3.jcard-expanded').forEach(c => {
+      c.classList.remove('jcard-expanded');
+    });
+    if (!isExpanded) {
+      card.classList.add('jcard-expanded');
+    }
+  }
+};
+
 window.handleJobCardKey = function(event, jobId) {
   if (event.key !== 'Enter' && event.key !== ' ') return;
   event.preventDefault();
@@ -1532,6 +1546,11 @@ if (!window.__jobCardDetailsClickBound) {
     if (moved <= 8) window.openJobDetailsFlyout(card.dataset.jobId);
   });
   document.addEventListener('click', event => {
+    if (!event.target.closest('#job_radar .jcard-v3')) {
+      document.querySelectorAll('#job_radar .jcard-v3.jcard-expanded').forEach(c => {
+        c.classList.remove('jcard-expanded');
+      });
+    }
     const card = getDetailsCardFromEvent(event);
     if (!card) return;
     window.openJobDetailsFlyout(card.dataset.jobId);
@@ -2145,6 +2164,7 @@ function renderJobCard(job) {
           </div>
         </div>
         <div class="score-chip" style="--score:${score};"><span class="score-chip-value">${score}%</span></div>
+        <button type="button" class="jcard-actions-toggle" onclick="toggleJobCardActions(event, '${idJs}')" aria-label="Toggle Actions" style="display:none; background:transparent; border:none; color:var(--muted); font-size:1.1rem; cursor:pointer; padding:4px; margin-left:4px; line-height:1; z-index:4;">⋮</button>
       </div>
       
       <div class="jcard-stage-row">

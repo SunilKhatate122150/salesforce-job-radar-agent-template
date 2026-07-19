@@ -14,7 +14,10 @@ export async function apiFetch(url, options = {}) {
   
   const isPublicApi = window.RadarCloud?.isPublicApi
     ? window.RadarCloud.isPublicApi(url, method)
-    : (path === '/api/auth/google' || path === '/api/health' || (method === 'GET' && path === '/api/code-practice/challenges'));
+    : (path === '/api/auth/google' ||
+      path === '/api/health' ||
+      (method === 'GET' && path === '/api/client-config') ||
+      (method === 'GET' && path === '/api/code-practice/challenges'));
   
   const hasToken = token && token !== 'null' && token !== 'undefined';
   if (!hasToken && path.startsWith('/api/') && !isPublicApi) {
@@ -65,7 +68,15 @@ export async function fetchWithTimeout(resource, options = {}) {
     }
   })();
   
-  if ((!token || token === 'null' || token === 'undefined') && path.startsWith('/api/')) {
+  const method = String(options.method || 'GET').toUpperCase();
+  const isPublicApi = window.RadarCloud?.isPublicApi
+    ? window.RadarCloud.isPublicApi(resource, method)
+    : (path === '/api/auth/google' ||
+      path === '/api/health' ||
+      (method === 'GET' && path === '/api/client-config') ||
+      (method === 'GET' && path === '/api/code-practice/challenges'));
+
+  if ((!token || token === 'null' || token === 'undefined') && path.startsWith('/api/') && !isPublicApi) {
     return new Response(JSON.stringify({ success: false, error: 'login_required', completedTasks: [] }), {
       status: 401,
       headers: { 'Content-Type': 'application/json', 'X-Local-Auth-State': 'login_required' }

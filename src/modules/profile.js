@@ -220,6 +220,7 @@ export async function loadStaticPremiumData() {
     })
   ]);
   premiumStaticDataCache = { roadmaps, designations, releases, trailhead };
+  window.premiumStaticDataCache = premiumStaticDataCache;
   return premiumStaticDataCache;
 }
 
