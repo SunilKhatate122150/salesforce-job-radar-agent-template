@@ -100,6 +100,11 @@
   <!-- app.js moved to bottom for performance and DOM stability -->
 </head>
 <body>
+<div class="liquid-glass-bg" aria-hidden="true">
+  <div class="fluid-blob blob-1"></div>
+  <div class="fluid-blob blob-2"></div>
+  <div class="fluid-blob blob-3"></div>
+</div>
 <a href="#main" class="skip-to-content" style="position:absolute;left:-9999px;top:0;z-index:999999;padding:8px 16px;background:var(--blue);color:#fff;font-weight:700;font-size:0.85rem;border-radius:0 0 8px 0;transition:left 0.2s;" onfocus="this.style.left='0'" onblur="this.style.left='-9999px'">Skip to main content</a>
 
 <!-- SIDEBAR OVERLAY -->
@@ -124,7 +129,7 @@
     <div class="login-logo">
       <svg viewBox="0 0 24 24" fill="white" style="width: 36px; height: 36px;"><path d="M13 10V3L4 14H11V21L20 10H13Z"/></svg>
     </div>
-    <h1 class="login-title">SF Radar <span class="login-live-dot" style="display:inline-block; width:8px; height:8px; border-radius:50%; background:#10b981; margin-left:6px; vertical-align:middle;"></span></h1>
+    <h1 class="login-title liquid-text">SF Radar <span class="login-live-dot" style="display:inline-block; width:8px; height:8px; border-radius:50%; background:#10b981; margin-left:6px; vertical-align:middle;"></span></h1>
     <p class="login-subtitle">Industrial Salesforce Career Hub.<br>High-fidelity tracking & intelligence.</p>
 
     <!-- Showcase Cards -->
@@ -169,7 +174,7 @@
 <aside id="sidebar" role="dialog" aria-modal="true" aria-label="Salesforce preparation navigation">
     <div class="sidebar-branding sidebar-header">
       <div id="brandingContainer" class="branding-container">
-        <h1 id="appTitle">SF Radar</h1>
+        <h1 id="appTitle" class="liquid-text">SF Radar</h1>
         <p id="appSubtitle">Salesforce Intelligence</p>
       </div>
       <button type="button" class="sidebar-toggle-btn desktop-sidebar-toggle" id="sidebarToggle" onclick="toggleSidebar()" aria-label="Collapse sidebar" aria-controls="sidebar" aria-expanded="true" title="Toggle navigation">
@@ -341,7 +346,7 @@
     </div>
 
     <div class="header-zone-center">
-      <div id="headerTitle">SF Radar</div>
+      <div id="headerTitle" class="liquid-text">SF Radar</div>
     </div>
 
     <div class="header-zone-right">
@@ -408,7 +413,7 @@
   <div class="dash-hero">
     <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem;">
       <div>
-        <h2 class="dash-hero-greeting" id="dashHeroGreeting">Welcome, Trailblazer!</h2>
+        <h2 class="dash-hero-greeting liquid-text" id="dashHeroGreeting">Welcome, Trailblazer!</h2>
         <span class="dash-hero-date" id="dashHeroDate">June 25, 2026</span>
         <p class="dash-hero-tagline">Master your Salesforce career radar, keep up your learning streaks, and explore curated job matches.</p>
         <div class="dash-hero-experience-selector" style="margin-top: 1rem; display: flex; align-items: center; gap: 8px; background: rgba(255, 255, 255, 0.05); padding: 8px 12px; border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.1); width: fit-content; backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);">
