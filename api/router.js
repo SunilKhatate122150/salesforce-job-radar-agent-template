@@ -49,11 +49,13 @@ import { handleGetSessions, handleSaveSession } from '../src/routes/mockIntervie
 import { handleKnowledge } from '../src/routes/knowledgeRoutes.js';
 
 export default async function(req, res) {
-  // CORS preflight handling for cross-origin requests
+  // Global CORS headers for cross-origin requests
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PATCH, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+
+  // CORS preflight handling
   if (req.method === 'OPTIONS') {
-    res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PATCH, OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
     res.setHeader('Access-Control-Max-Age', '86400');
     return res.status(204).end();
   }
@@ -146,7 +148,7 @@ export default async function(req, res) {
     if (path === 'profile/import' && req.method === 'POST') {
       return await handleProfileImport(req, res, userId);
     }
-    if (path === 'profile/sync-cloud' && req.method === 'POST') {
+    if ((path === 'profile/sync-cloud' || path === 'profile/sync') && req.method === 'POST') {
       return await handleProfileSyncCloud(req, res, userId);
     }
     if (path === 'profile/parse-resume' && req.method === 'POST') {
@@ -197,7 +199,7 @@ export default async function(req, res) {
     if (path === 'releases/latest' || path === 'releases/current') {
       return await handleReleasesLatest(req, res, userId);
     }
-    if (path === 'releases/study-actions' && req.method === 'GET') {
+    if (path === 'releases/study-actions') {
       return await handleReleasesStudyActions(req, res, userId);
     }
 
@@ -227,7 +229,7 @@ export default async function(req, res) {
     }
 
     // 10. KNOWLEDGE & TOPICS
-    if (path.startsWith('knowledge/')) {
+    if (path === 'knowledge' || path.startsWith('knowledge/')) {
       return await handleKnowledge(req, res, path);
     }
 

@@ -22,6 +22,8 @@ import './modules/theme.js';
 import './modules/releaseCenter.js';
 import './modules/commandCenter.js';
 import './modules/mockInterview.js';
+import './modules/macosDesktop.js';
+import './modules/spotlight.js';
 
 // Phase 2 Modules
 import { checkAndUpdateStreak, loadStreak, saveStreak } from './modules/streak.js';

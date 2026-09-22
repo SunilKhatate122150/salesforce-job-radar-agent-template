@@ -20,6 +20,12 @@
       ]
     },
     {
+      "source": "/api/code-practice/challenges",
+      "headers": [
+        { "key": "Cache-Control", "value": "public, max-age=1800, stale-while-revalidate=86400" }
+      ]
+    },
+    {
       "source": "/(.*)\\.css",
       "headers": [
         { "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }

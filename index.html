@@ -28,6 +28,7 @@
 <link rel="stylesheet" href="src/styles/dashboard-home.css?v=20260606-dashboard-home">
 <link rel="stylesheet" href="src/styles/skill-heatmap.css?v=20260606-skill-heatmap">
 <link rel="stylesheet" href="src/styles/job-timeline.css?v=20260606-job-timeline">
+<link rel="stylesheet" href="src/styles/macos-golden-gate.css?v=20260922-gg1">
 <link rel="stylesheet" href="responsive.css?v=20260626-upgrade-v1">
   <script>
     window._sfjrClientConfigPromise = null;
@@ -99,12 +100,201 @@
 
   <!-- app.js moved to bottom for performance and DOM stability -->
 </head>
-<body>
-<div class="liquid-glass-bg" aria-hidden="true">
-  <div class="fluid-blob blob-1"></div>
-  <div class="fluid-blob blob-2"></div>
-  <div class="fluid-blob blob-3"></div>
+<!-- macOS 27 Golden Gate Atmospheric Background -->
+<div class="macos-atmosphere" aria-hidden="true">
+  <div class="atmosphere-glow glow-golden-bridge"></div>
+  <div class="atmosphere-glow glow-dusk-sky"></div>
+  <div class="atmosphere-glow glow-pacific-mist"></div>
 </div>
+
+<!-- macOS 27 TOP MENU BAR -->
+<header class="macos-menu-bar" role="banner" aria-label="macOS System Menu Bar">
+  <div class="menu-bar-left">
+    <!-- Apple Menu -->
+    <button type="button" class="menu-bar-item menu-bar-apple" data-menu="appleDropdown" aria-label="Apple menu">
+      <svg viewBox="0 0 170 170" width="14" height="14" fill="currentColor"><path d="M150.37 130.25c-2.45 5.66-5.35 10.87-8.71 15.66-4.58 6.53-8.33 11.05-11.22 13.56-4.48 4.12-9.28 6.23-14.42 6.35-3.69 0-8.14-1.05-13.32-3.18-5.19-2.12-9.97-3.17-14.34-3.17-4.58 0-9.49 1.05-14.75 3.17-5.26 2.13-9.5 3.24-12.74 3.35-4.35.13-9.16-1.9-14.42-6.08-3.7-3.03-7.61-7.74-11.73-14.14-5.26-8.16-9.55-17.75-12.87-28.77-3.32-11.02-4.98-21.73-4.98-32.14 0-14.77 3.73-27.1 11.2-37.01 7.47-9.9 17.06-14.94 28.77-15.12 5.03 0 10.51 1.25 16.44 3.75 5.93 2.5 9.77 3.8 11.52 3.9 1.48 0 5.48-1.38 12.01-4.14 6.53-2.76 11.95-4.04 16.27-3.84 12.63.63 22.84 5.38 30.63 14.25-10.74 6.51-16 15.54-15.78 27.09.22 9.04 3.74 16.65 10.56 22.84 6.82 6.19 14.7 9.87 23.64 11.04-2.61 7.82-5.77 15.65-9.48 23.49zm-38.99-106.91c0-6.85 2.51-13.3 7.53-19.35 5.02-6.05 11.27-9.83 18.75-11.34.22 1.3.33 2.49.33 3.58 0 6.74-2.65 13.34-7.95 19.8-5.3 6.46-11.66 10.22-19.08 11.28-.43-1.3-.65-2.6-.65-3.97z"/></svg>
+    </button>
+    <div id="appleDropdown" class="macos-dropdown-menu">
+      <div class="macos-dropdown-item" onclick="alert('SF Radar — macOS 27 Golden Gate Edition\nVersion 27.0.4\nSalesforce Study & Career Intelligence Workstation')">About SF Radar</div>
+      <div class="macos-dropdown-divider"></div>
+      <div class="macos-dropdown-item" onclick="document.getElementById('macosCcToggle')?.click()">System Preferences...<span class="shortcut-key">⌘,</span></div>
+      <div class="macos-dropdown-item" onclick="document.getElementById('macosSpotlightBtn')?.click()">Spotlight Search<span class="shortcut-key">⌘K</span></div>
+      <div class="macos-dropdown-divider"></div>
+      <div class="macos-dropdown-item" onclick="signOut()">Lock / Sign Out<span class="shortcut-key">⇧⌘Q</span></div>
+    </div>
+
+    <!-- Active App Title -->
+    <button type="button" class="menu-bar-item menu-bar-app-name" data-menu="appDropdown">SF Radar</button>
+    <div id="appDropdown" class="macos-dropdown-menu">
+      <div class="macos-dropdown-item" onclick="showPage('dashboard_home')">Open Dashboard<span class="shortcut-key">⌘1</span></div>
+      <div class="macos-dropdown-item" onclick="triggerJobScan()">Run Global Job Scan<span class="shortcut-key">⌘R</span></div>
+      <div class="macos-dropdown-item" onclick="showPage('profile_match')">Agent Intelligence<span class="shortcut-key">⌘2</span></div>
+      <div class="macos-dropdown-divider"></div>
+      <div class="macos-dropdown-item" onclick="window.toggleSfjrTheme?.()">Toggle Dusk / Daylight</div>
+    </div>
+
+    <!-- File Menu -->
+    <button type="button" class="menu-bar-item" data-menu="fileDropdown">File</button>
+    <div id="fileDropdown" class="macos-dropdown-menu">
+      <div class="macos-dropdown-item" onclick="showPage('code_practice')">New Code Practice Drill</div>
+      <div class="macos-dropdown-item" onclick="showPage('ai_interview')">New AI Mock Session</div>
+      <div class="macos-dropdown-divider"></div>
+      <div class="macos-dropdown-item" onclick="exportHistoryCsv?.()">Export Study History (CSV)</div>
+      <div class="macos-dropdown-item" onclick="exportJobsCsv?.()">Export Job Leads (CSV)</div>
+    </div>
+
+    <!-- Study Menu -->
+    <button type="button" class="menu-bar-item menu-bar-study-menu" data-menu="studyDropdown">Study</button>
+    <div id="studyDropdown" class="macos-dropdown-menu">
+      <div class="macos-dropdown-item" onclick="showPage('study_tracker')">Study Progress Tracker</div>
+      <div class="macos-dropdown-item" onclick="showPage('schedule')">Daily Study Schedule</div>
+      <div class="macos-dropdown-item" onclick="showPage('weekly_report')">Weekly Report & Trends</div>
+      <div class="macos-dropdown-divider"></div>
+      <div class="macos-dropdown-item" onclick="showPage('adv_apex')">Advanced Apex & Limits</div>
+      <div class="macos-dropdown-item" onclick="showPage('adv_lwc')">Advanced LWC & State</div>
+      <div class="macos-dropdown-item" onclick="showPage('sc_agentforce')">Agentforce Architecture</div>
+    </div>
+
+    <!-- Jobs Menu -->
+    <button type="button" class="menu-bar-item menu-bar-jobs-menu" data-menu="jobsDropdown">Jobs</button>
+    <div id="jobsDropdown" class="macos-dropdown-menu">
+      <div class="macos-dropdown-item" onclick="showPage('job_radar')">Job Radar Dashboard</div>
+      <div class="macos-dropdown-item" onclick="triggerJobScan()">Scan Naukri & LinkedIn Leads</div>
+      <div class="macos-dropdown-item" onclick="showPage('profile_match')">ATS Resume Keyword Matcher</div>
+    </div>
+
+    <!-- View Menu -->
+    <button type="button" class="menu-bar-item menu-bar-view-menu" data-menu="viewDropdown">View</button>
+    <div id="viewDropdown" class="macos-dropdown-menu">
+      <div class="macos-dropdown-item" onclick="window.toggleSidebar?.()">Toggle Sidebar<span class="shortcut-key">⌘B</span></div>
+      <div class="macos-dropdown-item" onclick="document.getElementById('trafficLightZoom')?.click()">Enter Full Screen<span class="shortcut-key">⌃⌘F</span></div>
+      <div class="macos-dropdown-divider"></div>
+      <div class="macos-dropdown-item" onclick="document.getElementById('themeToggleBtn')?.click()">Toggle Light / Dark</div>
+    </div>
+
+    <!-- Help Menu -->
+    <button type="button" class="menu-bar-item menu-bar-help-menu" data-menu="helpDropdown">Help</button>
+    <div id="helpDropdown" class="macos-dropdown-menu">
+      <div class="macos-dropdown-item" onclick="window.open('https://developer.salesforce.com/docs', '_blank')">Official Salesforce Docs</div>
+      <div class="macos-dropdown-item" onclick="showPage('salesforce_releases')">Latest Release Pulse</div>
+      <div class="macos-dropdown-item" onclick="toggleShortcutsModal?.()">Keyboard Shortcuts<span class="shortcut-key">?</span></div>
+    </div>
+  </div>
+
+  <div class="menu-bar-right">
+    <!-- Active Study Timer -->
+    <div class="menu-bar-tray-chip" title="Active Study Session Timer" onclick="showPage('study_history')" style="cursor:pointer;">
+      <span style="color:var(--color-primary,#f97316);">⏱️</span>
+      <span id="menuBarTimer">00:00</span>
+    </div>
+
+    <!-- Streak Badge -->
+    <div class="menu-bar-tray-chip" title="Daily Trailblazer Streak" onclick="showPage('study_history')" style="cursor:pointer;">
+      <span>🔥</span>
+      <span id="menuBarStreak">0</span>d
+    </div>
+
+    <!-- Spotlight Search Trigger -->
+    <button type="button" class="menu-bar-item" id="macosSpotlightBtn" aria-label="Spotlight Search (Cmd+K)" title="Spotlight Search (⌘K)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:13px;height:13px;"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+      <span class="shortcut-key" style="margin-left:0; font-size:10px; opacity:0.8;">⌘K</span>
+    </button>
+
+    <!-- Control Center Toggle -->
+    <button type="button" class="menu-bar-item" id="macosCcToggle" aria-label="Control Center" title="Control Center">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" style="width:14px;height:14px;"><line x1="4" y1="21" x2="4" y2="14"></line><line x1="4" y1="10" x2="4" y2="3"></line><line x1="12" y1="21" x2="12" y2="12"></line><line x1="12" y1="8" x2="12" y2="3"></line><line x1="20" y1="21" x2="20" y2="16"></line><line x1="20" y1="12" x2="20" y2="3"></line><line x1="1" y1="14" x2="7" y2="14"></line><line x1="9" y1="8" x2="15" y2="8"></line><line x1="17" y1="16" x2="23" y2="16"></line></svg>
+    </button>
+
+    <!-- Notification Center Icon -->
+    <button type="button" class="menu-bar-item" onclick="document.getElementById('notifBellBtn')?.click()" aria-label="Notifications" title="Notifications">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px;"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
+    </button>
+
+    <!-- Live System Clock -->
+    <div id="macosClock" class="menu-bar-clock">Tue Sep 22 11:30 AM</div>
+  </div>
+</header>
+
+<!-- macOS 27 CONTROL CENTER PANEL -->
+<div id="macosControlCenter" class="macos-control-center-panel" role="dialog" aria-label="macOS Control Center">
+  <div class="cc-header">
+    <div class="cc-title">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" style="width:15px;height:15px;color:var(--color-primary,#f97316);"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+      Control Center
+    </div>
+    <span style="font-size:10px; font-weight:700; color:var(--color-primary,#f97316); text-transform:uppercase; letter-spacing:0.5px;">macOS 27</span>
+  </div>
+
+  <!-- Liquid Glass 2.0 Dynamic Slider -->
+  <div class="cc-tile">
+    <div class="cc-slider-label">
+      <span>Liquid Glass Refinement</span>
+      <span id="glassIntensityVal" style="color:var(--color-primary,#f97316);">75%</span>
+    </div>
+    <input type="range" id="glassIntensitySlider" class="cc-slider" min="15" max="100" value="75" aria-label="Adjust Liquid Glass Intensity">
+    <div style="display:flex; justify-content:space-between; font-size:9.5px; opacity:0.6;">
+      <span>Subtle Glass</span>
+      <span>Deep Frosted</span>
+    </div>
+  </div>
+
+  <!-- Golden Gate Theme Toggle -->
+  <div class="cc-tile">
+    <div class="cc-slider-label">
+      <span>Atmospheric Appearance</span>
+    </div>
+    <div class="cc-theme-switcher">
+      <button type="button" class="cc-theme-btn is-active" id="ccThemeDusk" onclick="window.setSfjrTheme?.('dark'); this.parentElement.querySelectorAll('.cc-theme-btn').forEach(b => b.classList.remove('is-active')); this.classList.add('is-active');">
+        <span>🌆</span> Dusk (Dark)
+      </button>
+      <button type="button" class="cc-theme-btn" id="ccThemeDay" onclick="window.setSfjrTheme?.('light'); this.parentElement.querySelectorAll('.cc-theme-btn').forEach(b => b.classList.remove('is-active')); this.classList.add('is-active');">
+        <span>☀️</span> Daylight (Light)
+      </button>
+    </div>
+  </div>
+
+  <!-- Accent Color Picker -->
+  <div class="cc-tile">
+    <div class="cc-slider-label">
+      <span>Signature Accent</span>
+    </div>
+    <div class="cc-accent-colors">
+      <div class="accent-dot is-active" data-accent-color="#f97316" title="Golden Gate Orange" style="background:#f97316;"></div>
+      <div class="accent-dot" data-accent-color="#f59e0b" title="Sunset Amber Gold" style="background:#f59e0b;"></div>
+      <div class="accent-dot" data-accent-color="#8b5cf6" title="Pacific Dusk Violet" style="background:#8b5cf6;"></div>
+      <div class="accent-dot" data-accent-color="#10b981" title="Marin Headlands Emerald" style="background:#10b981;"></div>
+    </div>
+  </div>
+
+  <!-- Focus Mode Toggle -->
+  <div class="cc-tile" style="flex-direction:row; justify-content:space-between; align-items:center;">
+    <div style="display:flex; align-items:center; gap:8px;">
+      <span style="font-size:16px;">🧘</span>
+      <div>
+        <div style="font-size:12px; font-weight:600;">Study Focus Mode</div>
+        <div style="font-size:10px; opacity:0.6;">Dim sidebars & ambient UI</div>
+      </div>
+    </div>
+    <input type="checkbox" id="focusModeToggle" style="cursor:pointer; width:16px; height:16px; accent-color:var(--color-primary,#f97316);">
+  </div>
+</div>
+
+<!-- macOS 27 SPOTLIGHT SEARCH MODAL (Cmd+K) -->
+<div id="macosSpotlightModal" class="macos-spotlight-backdrop" role="dialog" aria-modal="true" aria-label="Spotlight Search or Ask">
+  <div class="macos-spotlight-window">
+    <div class="spotlight-input-row">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+      <input type="text" id="macosSpotlightInput" class="spotlight-input" placeholder="Search topics, questions, jobs, or ask Siri AI..." autocomplete="off">
+      <span class="spotlight-badge">⌘K</span>
+    </div>
+    <div id="macosSpotlightResults" class="spotlight-results"></div>
+    <div class="spotlight-footer">
+      <span>Navigation: ↑ ↓ to browse • ↵ to open • esc to close</span>
+      <span style="color:var(--color-primary,#f97316); font-weight:600;">macOS 27 Intelligence</span>
+    </div>
+  </div>
+</div>
+
 <a href="#main" class="skip-to-content" style="position:absolute;left:-9999px;top:0;z-index:999999;padding:8px 16px;background:var(--blue);color:#fff;font-weight:700;font-size:0.85rem;border-radius:0 0 8px 0;transition:left 0.2s;" onfocus="this.style.left='0'" onblur="this.style.left='-9999px'">Skip to main content</a>
 
 <!-- SIDEBAR OVERLAY -->
@@ -173,6 +363,17 @@
 <!-- SIDEBAR -->
 <aside id="sidebar" role="dialog" aria-modal="true" aria-label="Salesforce preparation navigation">
     <div class="sidebar-branding sidebar-header">
+      <div class="macos-traffic-lights" aria-label="Window controls">
+        <button type="button" class="traffic-light traffic-light-close" id="trafficLightClose" title="Close / Sign out" aria-label="Close window">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M18 6L6 18M6 6l12 12"/></svg>
+        </button>
+        <button type="button" class="traffic-light traffic-light-minimize" id="trafficLightMin" title="Minimize / Collapse sidebar" aria-label="Minimize window">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 12h14"/></svg>
+        </button>
+        <button type="button" class="traffic-light traffic-light-zoom" id="trafficLightZoom" title="Zoom / Fullscreen" aria-label="Zoom window">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M7 17L17 7M7 7h10v10"/></svg>
+        </button>
+      </div>
       <div id="brandingContainer" class="branding-container">
         <h1 id="appTitle" class="liquid-text">SF Radar</h1>
         <p id="appSubtitle">Salesforce Intelligence</p>
@@ -1353,6 +1554,51 @@
   </div>
 
 </div><!-- end #main -->
+
+<!-- macOS 27 BOTTOM FLOATING DOCK -->
+<nav class="macos-dock" aria-label="macOS Application Dock">
+  <button type="button" class="dock-item is-active" data-page="dashboard_home" aria-label="Dashboard Home">
+    <span class="dock-icon">📊</span>
+    <span class="dock-tooltip">Dashboard</span>
+    <span class="dock-dot"></span>
+  </button>
+  <button type="button" class="dock-item" data-page="job_radar" aria-label="Job Radar">
+    <span class="dock-icon">📡</span>
+    <span class="dock-tooltip">Job Radar</span>
+    <span class="dock-dot"></span>
+  </button>
+  <button type="button" class="dock-item" data-page="study_tracker" aria-label="Study Tracker">
+    <span class="dock-icon">📚</span>
+    <span class="dock-tooltip">Study Tracker</span>
+    <span class="dock-dot"></span>
+  </button>
+  <button type="button" class="dock-item" data-page="code_practice" aria-label="Code Practice Lab">
+    <span class="dock-icon">⚡</span>
+    <span class="dock-tooltip">Code Lab</span>
+    <span class="dock-dot"></span>
+  </button>
+  <button type="button" class="dock-item" data-page="ai_interview" aria-label="AI Mock Interview">
+    <span class="dock-icon">🎙️</span>
+    <span class="dock-tooltip">AI Coach</span>
+    <span class="dock-dot"></span>
+  </button>
+  <button type="button" class="dock-item" data-page="salesforce_releases" aria-label="Salesforce Releases">
+    <span class="dock-icon">🚀</span>
+    <span class="dock-tooltip">Release Pulse</span>
+    <span class="dock-dot"></span>
+  </button>
+  <button type="button" class="dock-item" data-page="profile_match" aria-label="Agent Dashboard Profile">
+    <span class="dock-icon">👤</span>
+    <span class="dock-tooltip">Career Profile</span>
+    <span class="dock-dot"></span>
+  </button>
+  <div class="dock-divider"></div>
+  <button type="button" class="dock-item" id="dockItemSettings" aria-label="System Settings & Glass Controls">
+    <span class="dock-icon">⚙️</span>
+    <span class="dock-tooltip">Preferences</span>
+    <span class="dock-dot"></span>
+  </button>
+</nav>
 
 <script type="module" src="/src/main.js?v=20260525-menu-fix"></script>
 

@@ -1,0 +1,807 @@
+/* ============================================================
+   macOS 27 Golden Gate Design System & User Experience
+   Features:
+   - Golden Gate International Orange & Amber Gold Theme
+   - Liquid Glass 2.0 with User-Adjustable Transparency & Blur
+   - Global macOS Top Menu Bar with Live Clock & Dropdown Menus
+   - macOS 27 Control Center (Glass Slider, Accent Picker, Focus Mode)
+   - Window Traffic Light Controls (Close / Minimize / Zoom)
+   - macOS 27 Spotlight "Search or Ask" Overlay (Cmd+K)
+   - macOS Bottom Floating Dock with Magnification & Active Pips
+   ============================================================ */
+
+:root {
+  /* macOS 27 Golden Gate Signature Palette */
+  --gg-orange: #ff5e3a;
+  --gg-orange-glow: rgba(255, 94, 58, 0.4);
+  --gg-amber: #f59e0b;
+  --gg-amber-light: #fbbf24;
+  --gg-amber-glow: rgba(245, 158, 11, 0.35);
+  --gg-sunset-gradient: linear-gradient(135deg, #ff6b4a 0%, #f59e0b 50%, #fbbf24 100%);
+  --gg-dusk-base: #070a13;
+  --gg-dusk-surface: rgba(15, 23, 42, var(--glass-opacity, 0.72));
+  --gg-dusk-border: rgba(255, 255, 255, 0.12);
+  --gg-specular: inset 0 1px 0 rgba(255, 255, 255, 0.15);
+  
+  /* Liquid Glass 2.0 Dynamic Parameters */
+  --glass-blur: 24px;
+  --glass-opacity: 0.70;
+  --glass-saturate: 180%;
+  
+  /* Accent variable mapped to Golden Gate Orange */
+  --color-primary: #f97316;
+  --color-primary-hover: #fb923c;
+  --color-primary-active: #ea580c;
+  --blue: #f97316 !important;
+  --blue-hover: #fb923c !important;
+  --blue-dim: rgba(249, 115, 22, 0.15) !important;
+  --accent-glow: 0 0 20px rgba(249, 115, 22, 0.3);
+}
+
+[data-theme="light"],
+html[data-theme="light"] {
+  --gg-dusk-base: #f4f6fb;
+  --gg-dusk-surface: rgba(255, 255, 255, var(--glass-opacity, 0.82));
+  --gg-dusk-border: rgba(0, 0, 0, 0.08);
+  --gg-specular: inset 0 1px 0 rgba(255, 255, 255, 0.8);
+  --color-primary: #ea580c;
+  --color-primary-hover: #f97316;
+  --color-primary-active: #c2410c;
+  --blue: #ea580c !important;
+}
+
+/* 1. Golden Gate Atmosphere Background */
+.macos-atmosphere {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: -2;
+  overflow: hidden;
+  pointer-events: none;
+  background: radial-gradient(circle at 50% 120%, #1e110a 0%, #0c101d 45%, #05070e 100%);
+  transition: background 0.4s ease;
+}
+
+[data-theme="light"] .macos-atmosphere {
+  background: radial-gradient(circle at 50% 120%, #ffe9dc 0%, #f1f5fb 45%, #e8edf5 100%);
+}
+
+.atmosphere-glow {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(90px);
+  pointer-events: none;
+  mix-blend-mode: screen;
+}
+
+[data-theme="light"] .atmosphere-glow {
+  mix-blend-mode: multiply;
+  opacity: 0.25 !important;
+}
+
+.glow-golden-bridge {
+  width: 75vw;
+  height: 45vh;
+  bottom: -15vh;
+  left: 12vw;
+  background: radial-gradient(ellipse at center, rgba(234, 88, 12, 0.35) 0%, rgba(245, 158, 11, 0.18) 40%, transparent 75%);
+  animation: pulse-bridge-glow 14s infinite alternate ease-in-out;
+}
+
+.glow-dusk-sky {
+  width: 60vw;
+  height: 50vw;
+  top: -10vw;
+  right: -10vw;
+  background: radial-gradient(circle, rgba(168, 85, 247, 0.16) 0%, rgba(249, 115, 22, 0.12) 45%, transparent 70%);
+  animation: drift-dusk 25s infinite alternate ease-in-out;
+}
+
+.glow-pacific-mist {
+  width: 50vw;
+  height: 40vw;
+  top: 30vh;
+  left: -15vw;
+  background: radial-gradient(circle, rgba(14, 165, 233, 0.12) 0%, transparent 70%);
+  animation: drift-mist 20s infinite alternate ease-in-out;
+}
+
+@keyframes pulse-bridge-glow {
+  0% { transform: scale(1) translateY(0); opacity: 0.8; }
+  100% { transform: scale(1.1) translateY(-3vh); opacity: 1; }
+}
+
+@keyframes drift-dusk {
+  0% { transform: translate(0, 0); }
+  100% { transform: translate(-6vw, 4vh); }
+}
+
+@keyframes drift-mist {
+  0% { transform: translate(0, 0); }
+  100% { transform: translate(4vw, -5vh); }
+}
+
+/* 2. Global macOS Top Menu Bar */
+.macos-menu-bar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 32px;
+  background: var(--gg-dusk-surface);
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  border-bottom: 1px solid var(--gg-dusk-border);
+  box-shadow: var(--gg-specular), 0 2px 8px rgba(0, 0, 0, 0.25);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 14px;
+  z-index: 10050;
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--color-text, #f8fafc);
+  user-select: none;
+}
+
+.menu-bar-left,
+.menu-bar-right {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.menu-bar-item {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 8px;
+  border-radius: 5px;
+  cursor: pointer;
+  color: var(--color-text, #f8fafc);
+  transition: background 0.15s ease, color 0.15s ease;
+  border: none;
+  background: transparent;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.menu-bar-item:hover,
+.menu-bar-item.is-active {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+[data-theme="light"] .menu-bar-item:hover {
+  background: rgba(0, 0, 0, 0.08);
+}
+
+.menu-bar-apple {
+  font-size: 15px;
+  padding: 3px 6px;
+  display: inline-flex;
+  align-items: center;
+}
+
+.menu-bar-app-name {
+  font-weight: 700 !important;
+  color: var(--color-text, #f8fafc);
+  letter-spacing: -0.2px;
+}
+
+.menu-bar-tray-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 2px 8px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--gg-dusk-border);
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.menu-bar-clock {
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  font-size: 12px;
+  padding: 3px 8px;
+  border-radius: 5px;
+}
+
+/* macOS Menu Dropdowns */
+.macos-dropdown-menu {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  margin-top: 4px;
+  min-width: 210px;
+  background: var(--gg-dusk-surface);
+  backdrop-filter: blur(32px) saturate(200%);
+  -webkit-backdrop-filter: blur(32px) saturate(200%);
+  border: 1px solid var(--gg-dusk-border);
+  box-shadow: var(--gg-specular), 0 16px 36px rgba(0, 0, 0, 0.45);
+  border-radius: 8px;
+  padding: 5px;
+  display: none;
+  flex-direction: column;
+  z-index: 10100;
+}
+
+.macos-dropdown-menu.show {
+  display: flex;
+}
+
+.macos-dropdown-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 10px;
+  border-radius: 5px;
+  font-size: 12.5px;
+  color: var(--color-text, #f8fafc);
+  cursor: pointer;
+  text-decoration: none;
+  transition: background 0.12s ease;
+}
+
+.macos-dropdown-item:hover {
+  background: var(--color-primary, #f97316);
+  color: #ffffff !important;
+}
+
+.macos-dropdown-item:hover .shortcut-key {
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.shortcut-key {
+  font-size: 11px;
+  color: var(--color-text-muted, #94a3b8);
+  margin-left: 12px;
+}
+
+.macos-dropdown-divider {
+  height: 1px;
+  background: var(--gg-dusk-border);
+  margin: 4px 6px;
+}
+
+/* 3. macOS Window Chrome & Traffic Lights */
+.macos-traffic-lights {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 4px 6px;
+  margin-right: 8px;
+}
+
+.traffic-light {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  position: relative;
+  transition: transform 0.1s ease, filter 0.15s ease;
+  padding: 0;
+}
+
+.traffic-light:hover {
+  filter: brightness(0.9);
+}
+
+.traffic-light-close {
+  background: #ff5f56;
+  box-shadow: 0 0 1px rgba(0, 0, 0, 0.5);
+}
+
+.traffic-light-minimize {
+  background: #ffbd2e;
+  box-shadow: 0 0 1px rgba(0, 0, 0, 0.5);
+}
+
+.traffic-light-zoom {
+  background: #27c93f;
+  box-shadow: 0 0 1px rgba(0, 0, 0, 0.5);
+}
+
+.traffic-light svg {
+  opacity: 0;
+  transition: opacity 0.15s ease;
+  width: 7px;
+  height: 7px;
+  stroke: rgba(0, 0, 0, 0.65);
+}
+
+.macos-traffic-lights:hover .traffic-light svg {
+  opacity: 1;
+}
+
+/* Offset body for macOS Menu Bar */
+body {
+  padding-top: 32px !important;
+}
+
+#sidebar {
+  top: 32px !important;
+  height: calc(100vh - 32px) !important;
+}
+
+#mainHeader {
+  top: 32px !important;
+}
+
+/* 4. macOS 27 Control Center Panel */
+.macos-control-center-panel {
+  position: fixed;
+  top: 38px;
+  right: 12px;
+  width: 320px;
+  background: var(--gg-dusk-surface);
+  backdrop-filter: blur(36px) saturate(200%);
+  -webkit-backdrop-filter: blur(36px) saturate(200%);
+  border: 1px solid var(--gg-dusk-border);
+  box-shadow: var(--gg-specular), 0 20px 48px rgba(0, 0, 0, 0.55);
+  border-radius: 16px;
+  padding: 16px;
+  z-index: 10200;
+  display: none;
+  flex-direction: column;
+  gap: 14px;
+  animation: ccFadeIn 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.macos-control-center-panel.show {
+  display: flex;
+}
+
+@keyframes ccFadeIn {
+  from { opacity: 0; transform: translateY(-8px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.cc-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--gg-dusk-border);
+  padding-bottom: 10px;
+}
+
+.cc-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--color-text, #f8fafc);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.cc-tile {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--gg-dusk-border);
+  border-radius: 12px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+[data-theme="light"] .cc-tile {
+  background: rgba(0, 0, 0, 0.03);
+}
+
+.cc-slider-label {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-text, #f8fafc);
+}
+
+.cc-slider {
+  width: 100%;
+  height: 6px;
+  -webkit-appearance: none;
+  appearance: none;
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 4px;
+  outline: none;
+}
+
+[data-theme="light"] .cc-slider {
+  background: rgba(0, 0, 0, 0.15);
+}
+
+.cc-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #ffffff;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.3);
+  cursor: pointer;
+  border: 1px solid rgba(0,0,0,0.1);
+}
+
+.cc-theme-switcher {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.cc-theme-btn {
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--gg-dusk-border);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--color-text, #f8fafc);
+  font-size: 11.5px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: all 0.15s ease;
+}
+
+.cc-theme-btn.is-active {
+  background: var(--color-primary, #f97316);
+  border-color: var(--color-primary, #f97316);
+  color: #ffffff;
+}
+
+.cc-accent-colors {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 4px;
+}
+
+.accent-dot {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  cursor: pointer;
+  border: 2px solid transparent;
+  transition: transform 0.15s ease, border-color 0.15s ease;
+}
+
+.accent-dot:hover {
+  transform: scale(1.15);
+}
+
+.accent-dot.is-active {
+  border-color: #ffffff;
+  box-shadow: 0 0 8px currentColor;
+}
+
+/* 5. macOS 27 Spotlight Search Modal (Cmd+K) */
+.macos-spotlight-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  z-index: 10500;
+  display: none;
+  align-items: flex-start;
+  justify-content: center;
+  padding-top: 14vh;
+}
+
+.macos-spotlight-backdrop.show {
+  display: flex;
+}
+
+.macos-spotlight-window {
+  width: 620px;
+  max-width: 92vw;
+  background: var(--gg-dusk-surface);
+  backdrop-filter: blur(36px) saturate(200%);
+  -webkit-backdrop-filter: blur(36px) saturate(200%);
+  border: 1px solid var(--gg-dusk-border);
+  box-shadow: var(--gg-specular), 0 30px 70px rgba(0, 0, 0, 0.65);
+  border-radius: 16px;
+  overflow: hidden;
+  animation: spotlightPop 0.16s cubic-bezier(0.16, 1, 0.3, 1);
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif;
+}
+
+@keyframes spotlightPop {
+  from { opacity: 0; transform: scale(0.96) translateY(-10px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+.spotlight-input-row {
+  display: flex;
+  align-items: center;
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--gg-dusk-border);
+  gap: 12px;
+}
+
+.spotlight-input-row svg {
+  width: 20px;
+  height: 20px;
+  color: var(--color-primary, #f97316);
+  flex-shrink: 0;
+}
+
+.spotlight-input {
+  flex: 1;
+  background: transparent !important;
+  border: none !important;
+  outline: none !important;
+  font-size: 16px !important;
+  color: var(--color-text, #f8fafc) !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+}
+
+.spotlight-input::placeholder {
+  color: var(--color-text-faint, #64748b);
+}
+
+.spotlight-badge {
+  font-size: 11px;
+  font-weight: 700;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--gg-dusk-border);
+  border-radius: 4px;
+  padding: 2px 6px;
+  color: var(--color-text-muted, #cbd5e1);
+}
+
+.spotlight-results {
+  max-height: 380px;
+  overflow-y: auto;
+  padding: 8px;
+}
+
+.spotlight-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.12s ease;
+  color: var(--color-text, #f8fafc);
+}
+
+.spotlight-item:hover,
+.spotlight-item.is-selected {
+  background: var(--color-primary, #f97316);
+  color: #ffffff;
+}
+
+.spotlight-item:hover .spotlight-cat,
+.spotlight-item.is-selected .spotlight-cat {
+  color: rgba(255, 255, 255, 0.8);
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+.spotlight-cat {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-weight: 600;
+  padding: 2px 6px;
+  border-radius: 4px;
+  border: 1px solid var(--gg-dusk-border);
+  color: var(--color-text-muted, #94a3b8);
+}
+
+.spotlight-footer {
+  padding: 8px 16px;
+  border-top: 1px solid var(--gg-dusk-border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 11px;
+  color: var(--color-text-muted, #94a3b8);
+  background: rgba(0, 0, 0, 0.15);
+}
+
+/* 6. macOS Bottom Floating Dock */
+.macos-dock {
+  position: fixed;
+  bottom: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--gg-dusk-surface);
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  border: 1px solid var(--gg-dusk-border);
+  box-shadow: var(--gg-specular), 0 12px 32px rgba(0, 0, 0, 0.45);
+  border-radius: 20px;
+  padding: 6px 10px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  z-index: 10040;
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.25s ease;
+}
+
+.dock-item {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), background 0.15s ease;
+  border: none;
+  background: transparent;
+  color: var(--color-text, #f8fafc);
+  padding: 0;
+}
+
+.dock-item:hover {
+  transform: translateY(-8px) scale(1.18);
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.dock-icon {
+  font-size: 22px;
+  line-height: 1;
+}
+
+.dock-item.has-svg-icon svg {
+  width: 22px;
+  height: 22px;
+}
+
+.dock-tooltip {
+  position: absolute;
+  bottom: calc(100% + 10px);
+  background: var(--gg-dusk-surface);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--gg-dusk-border);
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--color-text, #f8fafc);
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  transform: translateY(4px);
+  transition: opacity 0.15s ease, transform 0.15s ease;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+}
+
+.dock-item:hover .dock-tooltip {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.dock-dot {
+  position: absolute;
+  bottom: 2px;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--color-primary, #f97316);
+  opacity: 0;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.dock-item.is-active .dock-dot {
+  opacity: 1;
+  transform: scale(1.2);
+  box-shadow: 0 0 4px var(--color-primary, #f97316);
+}
+
+.dock-divider {
+  width: 1px;
+  height: 28px;
+  background: var(--gg-dusk-border);
+  margin: 0 2px;
+}
+
+/* 7. Golden Gate Refined Liquid Glass Text & Cards */
+.liquid-text,
+.login-title,
+#headerTitle,
+#appTitle {
+  background: var(--gg-sunset-gradient) !important;
+  -webkit-background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
+  font-weight: 800 !important;
+  letter-spacing: -0.5px !important;
+}
+
+/* Frosted glass styling across components */
+.page,
+#sidebar,
+#mainHeader,
+.dash-metric-tile,
+.tracker-card,
+.suggestion-card,
+.jcard-v3,
+.login-card,
+.modal-overlay > div,
+.job-details-flyout,
+.nav-flyout-menu,
+.nav-group-container,
+.premium-onboarding-panel {
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate)) !important;
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate)) !important;
+  background-color: var(--gg-dusk-surface) !important;
+  border: 1px solid var(--gg-dusk-border) !important;
+  box-shadow: var(--gg-specular), 0 8px 32px 0 rgba(0, 0, 0, 0.35) !important;
+}
+
+/* Active card hover glows in Golden Gate Amber */
+.dash-metric-tile:hover,
+.tracker-card:hover,
+.jcard-v3:hover {
+  border-color: rgba(249, 115, 22, 0.4) !important;
+  box-shadow: var(--gg-specular), 0 12px 40px 0 rgba(249, 115, 22, 0.16) !important;
+  transform: translateY(-2px) !important;
+}
+
+/* Button & interactive states */
+.btn-primary,
+.cta-button {
+  background: var(--gg-sunset-gradient) !important;
+  color: #ffffff !important;
+  border: none !important;
+  box-shadow: 0 2px 10px rgba(249, 115, 22, 0.35) !important;
+}
+
+.btn-primary:hover,
+.cta-button:hover {
+  filter: brightness(1.08) !important;
+  transform: translateY(-1px) !important;
+  box-shadow: 0 4px 16px rgba(249, 115, 22, 0.45) !important;
+}
+
+/* Edge-to-edge sidebar style per macOS 27 */
+#sidebar {
+  border-right: 1px solid var(--gg-dusk-border) !important;
+}
+
+/* Focus mode for deep study sessions */
+body.study-focus-mode .macos-dock,
+body.study-focus-mode #sidebar {
+  opacity: 0.25;
+  transition: opacity 0.3s ease;
+}
+
+body.study-focus-mode .macos-dock:hover,
+body.study-focus-mode #sidebar:hover {
+  opacity: 1;
+}
+
+/* 8. Responsive Rules */
+@media (max-width: 768px) {
+  .macos-dock {
+    display: none !important;
+  }
+  
+  .macos-menu-bar .menu-bar-study-menu,
+  .macos-menu-bar .menu-bar-jobs-menu,
+  .macos-menu-bar .menu-bar-view-menu,
+  .macos-menu-bar .menu-bar-help-menu {
+    display: none !important;
+  }
+  
+  .menu-bar-clock {
+    display: none !important;
+  }
+}
