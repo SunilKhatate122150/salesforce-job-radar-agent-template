@@ -211,13 +211,31 @@ function updateActiveDockItem(pageId) {
 function setupTimerSync() {
   const menuTimer = document.getElementById('menuBarTimer');
   const ftTime = document.getElementById('ftTime');
-  if (!menuTimer || !ftTime) return;
+  const menuStreak = document.getElementById('menuBarStreak');
+  const floatStreak = document.getElementById('floatStreakVal');
+  const dashStreak = document.getElementById('dashStreakVal');
 
-  const observer = new MutationObserver(() => {
+  if (menuTimer && ftTime) {
+    const observer = new MutationObserver(() => {
+      menuTimer.textContent = ftTime.textContent || '00:00';
+    });
+    observer.observe(ftTime, { childList: true, characterData: true, subtree: true });
     menuTimer.textContent = ftTime.textContent || '00:00';
-  });
+  }
 
-  observer.observe(ftTime, { childList: true, characterData: true, subtree: true });
+  function syncStreak() {
+    if (!menuStreak) return;
+    const val = floatStreak?.textContent?.trim() || dashStreak?.textContent?.trim() || localStorage.getItem('sfjr_streak') || '0';
+    if (val) menuStreak.textContent = val;
+  }
+
+  syncStreak();
+  if (floatStreak) {
+    new MutationObserver(syncStreak).observe(floatStreak, { childList: true, characterData: true, subtree: true });
+  }
+  if (dashStreak) {
+    new MutationObserver(syncStreak).observe(dashStreak, { childList: true, characterData: true, subtree: true });
+  }
 }
 
 // Auto-run if DOM already loaded or on DOMContentLoaded

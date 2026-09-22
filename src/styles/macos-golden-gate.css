@@ -269,57 +269,100 @@ html[data-theme="light"] {
 }
 
 /* 3. macOS Window Chrome & Traffic Lights */
+#sidebar .sidebar-branding {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: flex-start !important;
+  justify-content: flex-start !important;
+  padding: 12px 14px 10px 14px !important;
+  position: sticky !important;
+  top: 0 !important;
+}
+
 .macos-traffic-lights {
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-  padding: 4px 6px;
-  margin-right: 8px;
+  display: inline-flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  gap: 8px !important;
+  width: auto !important;
+  height: 12px !important;
+  min-height: 12px !important;
+  max-height: 12px !important;
+  margin: 0 0 10px 0 !important;
+  padding: 0 !important;
+  flex-shrink: 0 !important;
 }
 
 .traffic-light {
-  width: 12px;
-  height: 12px;
-  border-radius: 50%;
-  border: none;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  position: relative;
-  transition: transform 0.1s ease, filter 0.15s ease;
-  padding: 0;
+  width: 12px !important;
+  height: 12px !important;
+  min-width: 12px !important;
+  min-height: 12px !important;
+  max-width: 12px !important;
+  max-height: 12px !important;
+  border-radius: 50% !important;
+  border: none !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  cursor: pointer !important;
+  position: relative !important;
+  transition: transform 0.1s ease, filter 0.15s ease !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  box-sizing: border-box !important;
+  flex-shrink: 0 !important;
+  line-height: 1 !important;
+  outline: none !important;
 }
 
 .traffic-light:hover {
-  filter: brightness(0.9);
+  filter: brightness(0.92) !important;
+  transform: scale(1.1) !important;
 }
 
 .traffic-light-close {
-  background: #ff5f56;
-  box-shadow: 0 0 1px rgba(0, 0, 0, 0.5);
+  background: #ff5f56 !important;
+  border: 1px solid #e0443e !important;
+  box-shadow: 0 0 1px rgba(0, 0, 0, 0.4) !important;
 }
 
 .traffic-light-minimize {
-  background: #ffbd2e;
-  box-shadow: 0 0 1px rgba(0, 0, 0, 0.5);
+  background: #ffbd2e !important;
+  border: 1px solid #dea123 !important;
+  box-shadow: 0 0 1px rgba(0, 0, 0, 0.4) !important;
 }
 
 .traffic-light-zoom {
-  background: #27c93f;
-  box-shadow: 0 0 1px rgba(0, 0, 0, 0.5);
+  background: #27c93f !important;
+  border: 1px solid #1aab29 !important;
+  box-shadow: 0 0 1px rgba(0, 0, 0, 0.4) !important;
 }
 
 .traffic-light svg {
-  opacity: 0;
-  transition: opacity 0.15s ease;
-  width: 7px;
-  height: 7px;
-  stroke: rgba(0, 0, 0, 0.65);
+  opacity: 0 !important;
+  transition: opacity 0.15s ease !important;
+  width: 7px !important;
+  height: 7px !important;
+  min-width: 7px !important;
+  min-height: 7px !important;
+  stroke: rgba(0, 0, 0, 0.7) !important;
+  display: block !important;
 }
 
 .macos-traffic-lights:hover .traffic-light svg {
-  opacity: 1;
+  opacity: 1 !important;
+}
+
+#sidebar .branding-container {
+  display: block !important;
+  width: 100% !important;
+}
+
+#sidebar #sidebarToggle {
+  position: absolute !important;
+  top: 10px !important;
+  right: 14px !important;
 }
 
 /* Offset body for macOS Menu Bar on Desktop only */
@@ -335,6 +378,12 @@ html[data-theme="light"] {
 
   #mainHeader {
     top: 32px !important;
+  }
+
+  /* Hide duplicate header buttons on desktop since they exist in the macOS menu bar */
+  #mainHeader .theme-toggle-btn,
+  #mainHeader #uiModeToggle {
+    display: none !important;
   }
 }
 
@@ -723,6 +772,44 @@ html[data-theme="light"] {
   height: 28px;
   background: var(--gg-dusk-border);
   margin: 0 2px;
+}
+
+/* Dock App Icons */
+.dock-app-icon {
+  width: 36px !important;
+  height: 36px !important;
+  border-radius: 9px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.25) !important;
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s !important;
+  pointer-events: none !important;
+}
+
+.dock-app-icon svg {
+  width: 18px !important;
+  height: 18px !important;
+}
+
+.dock-icon-dashboard { background: linear-gradient(135deg, #3b82f6 0%, #0284c7 100%) !important; }
+.dock-icon-radar     { background: linear-gradient(135deg, #f97316 0%, #ea580c 100%) !important; }
+.dock-icon-study     { background: linear-gradient(135deg, #10b981 0%, #059669 100%) !important; }
+.dock-icon-code      { background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%) !important; }
+.dock-icon-ai        { background: linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%) !important; }
+.dock-icon-release   { background: linear-gradient(135deg, #ec4899 0%, #f43f5e 100%) !important; }
+.dock-icon-profile   { background: linear-gradient(135deg, #0ea5e9 0%, #0369a1 100%) !important; }
+.dock-icon-settings  { background: linear-gradient(135deg, #64748b 0%, #475569 100%) !important; }
+
+/* Ensure page content scrolls above the bottom dock with comfortable clearance */
+@media (min-width: 901px) {
+  .page,
+  #main,
+  .study-history-container,
+  .kanban-board-v3,
+  .career-os-shell {
+    padding-bottom: 96px !important;
+  }
 }
 
 /* 7. Golden Gate Refined Liquid Glass Text & Cards */
