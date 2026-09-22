@@ -322,18 +322,30 @@ html[data-theme="light"] {
   opacity: 1;
 }
 
-/* Offset body for macOS Menu Bar */
-body {
-  padding-top: 32px !important;
+/* Offset body for macOS Menu Bar on Desktop only */
+@media (min-width: 901px) {
+  body {
+    padding-top: 32px !important;
+  }
+
+  #sidebar {
+    top: 32px !important;
+    height: calc(100vh - 32px) !important;
+  }
+
+  #mainHeader {
+    top: 32px !important;
+  }
 }
 
-#sidebar {
-  top: 32px !important;
-  height: calc(100vh - 32px) !important;
-}
-
-#mainHeader {
-  top: 32px !important;
+@media (max-width: 900px) {
+  .macos-menu-bar,
+  .macos-dock {
+    display: none !important;
+  }
+  .macos-control-center-panel {
+    top: 10px !important;
+  }
 }
 
 /* 4. macOS 27 Control Center Panel */
