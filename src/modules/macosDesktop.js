@@ -159,10 +159,19 @@ function setupTrafficLights() {
 
   if (zoomBtn) {
     zoomBtn.addEventListener('click', () => {
-      if (!document.fullscreenElement) {
-        document.documentElement.requestFullscreen?.().catch(() => {});
+      const isFull = document.fullscreenElement || document.webkitFullscreenElement;
+      if (!isFull) {
+        if (document.documentElement.requestFullscreen) {
+          document.documentElement.requestFullscreen().catch(() => {});
+        } else if (document.documentElement.webkitRequestFullscreen) {
+          document.documentElement.webkitRequestFullscreen();
+        }
       } else {
-        document.exitFullscreen?.().catch(() => {});
+        if (document.exitFullscreen) {
+          document.exitFullscreen().catch(() => {});
+        } else if (document.webkitExitFullscreen) {
+          document.webkitExitFullscreen();
+        }
       }
     });
   }
@@ -174,8 +183,12 @@ function setupDock() {
   dockItems.forEach(item => {
     item.addEventListener('click', () => {
       const pageId = item.getAttribute('data-page');
-      if (pageId && typeof window.showPage === 'function') {
-        window.showPage(pageId);
+      if (pageId) {
+        if (typeof window.showPage === 'function') {
+          window.showPage(pageId);
+        } else {
+          window.location.hash = pageId;
+        }
         updateActiveDockItem(pageId);
       }
     });
@@ -190,14 +203,30 @@ function setupDock() {
     });
   }
 
-  // Patch window.showPage to keep dock active indicator in sync
-  if (typeof window.showPage === 'function') {
+  // Sync dock item on hashchange
+  window.addEventListener('hashchange', () => {
+    const hash = window.location.hash.replace(/^#/, '');
+    if (hash) updateActiveDockItem(hash);
+  });
+
+  // Initial sync from hash
+  const initialHash = window.location.hash.replace(/^#/, '');
+  if (initialHash) updateActiveDockItem(initialHash);
+
+  // Hook window.showPage to keep dock active indicator in sync
+  hookShowPage();
+  setTimeout(hookShowPage, 500);
+}
+
+function hookShowPage() {
+  if (typeof window.showPage === 'function' && !window.showPage.__macosDockHooked) {
     const originalShowPage = window.showPage;
     window.showPage = function(pageId, ...args) {
       const res = originalShowPage.apply(this, [pageId, ...args]);
       updateActiveDockItem(pageId);
       return res;
     };
+    window.showPage.__macosDockHooked = true;
   }
 }
 
@@ -207,6 +236,8 @@ function updateActiveDockItem(pageId) {
     item.classList.toggle('is-active', item.getAttribute('data-page') === pageId);
   });
 }
+
+window.updateActiveDockItem = updateActiveDockItem;
 
 function setupTimerSync() {
   const menuTimer = document.getElementById('menuBarTimer');

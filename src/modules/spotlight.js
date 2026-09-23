@@ -24,6 +24,9 @@ export function initSpotlight() {
     spotlightBackdrop.classList.remove('show');
   }
 
+  window.openSpotlight = openSpotlight;
+  window.closeSpotlight = closeSpotlight;
+
   // Bind Openers
   spotlightBtn?.addEventListener('click', (e) => {
     e.stopPropagation();

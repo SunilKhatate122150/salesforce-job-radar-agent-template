@@ -354,15 +354,29 @@ html[data-theme="light"] {
   opacity: 1 !important;
 }
 
-#sidebar .branding-container {
+body:not(.sidebar-collapsed) #sidebar .branding-container {
   display: block !important;
   width: 100% !important;
 }
 
-#sidebar #sidebarToggle {
+body:not(.sidebar-collapsed) #sidebar #sidebarToggle {
   position: absolute !important;
   top: 10px !important;
   right: 14px !important;
+}
+
+/* Hide traffic lights and branding when sidebar is collapsed to 80px rail */
+html body.sidebar-collapsed #sidebar .macos-traffic-lights,
+html body.sidebar-collapsed #sidebar .branding-container,
+html body.sidebar-collapsed #sidebar #brandingContainer {
+  display: none !important;
+}
+
+html body.sidebar-collapsed #sidebar #sidebarToggle,
+html body.sidebar-collapsed #sidebar .desktop-sidebar-toggle {
+  position: static !important;
+  margin: 10px auto 0 !important;
+  display: inline-flex !important;
 }
 
 /* Offset body for macOS Menu Bar on Desktop only */
@@ -389,11 +403,13 @@ html[data-theme="light"] {
 
 @media (max-width: 900px) {
   .macos-menu-bar,
-  .macos-dock {
+  .macos-dock,
+  .macos-traffic-lights {
     display: none !important;
   }
   .macos-control-center-panel {
-    top: 10px !important;
+    top: 54px !important;
+    right: 10px !important;
   }
 }
 
@@ -403,6 +419,8 @@ html[data-theme="light"] {
   top: 38px;
   right: 12px;
   width: 320px;
+  max-width: calc(100vw - 24px);
+  box-sizing: border-box;
   background: var(--gg-dusk-surface);
   backdrop-filter: blur(36px) saturate(200%);
   -webkit-backdrop-filter: blur(36px) saturate(200%);
@@ -415,6 +433,14 @@ html[data-theme="light"] {
   flex-direction: column;
   gap: 14px;
   animation: ccFadeIn 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@media (max-width: 360px) {
+  .macos-control-center-panel {
+    right: 6px !important;
+    max-width: calc(100vw - 12px) !important;
+    padding: 12px !important;
+  }
 }
 
 .macos-control-center-panel.show {
@@ -887,20 +913,98 @@ body.study-focus-mode #sidebar:hover {
   opacity: 1;
 }
 
-/* 8. Responsive Rules */
-@media (max-width: 768px) {
+/* 8. Comprehensive Responsive Architecture & Z-Index Layering */
+
+/* Z-Index Hierarchy Layering */
+#loginOverlay {
+  z-index: 99999 !important;
+}
+
+.spotlight-overlay,
+.macos-spotlight-backdrop {
+  z-index: 25000 !important;
+}
+
+#syncModal,
+.modal-overlay,
+#confidenceModal,
+#shortcutsModal,
+#quickNotesModal {
+  z-index: 20000 !important;
+}
+
+.activity-log-panel {
+  z-index: 20010 !important;
+}
+
+.collapsed-nav-flyout,
+#collapsedNavFlyout {
+  z-index: 10060 !important;
+}
+
+/* Dock short screen safeguards */
+@media (max-height: 520px) {
   .macos-dock {
     display: none !important;
   }
-  
-  .macos-menu-bar .menu-bar-study-menu,
-  .macos-menu-bar .menu-bar-jobs-menu,
-  .macos-menu-bar .menu-bar-view-menu,
-  .macos-menu-bar .menu-bar-help-menu {
+}
+
+/* Mobile & Touch Responsive Adjustments (<= 900px) */
+@media (max-width: 900px) {
+  .macos-dock,
+  .macos-menu-bar,
+  .macos-traffic-lights {
     display: none !important;
   }
   
-  .menu-bar-clock {
+  .macos-control-center-panel {
+    top: 54px !important;
+    right: 10px !important;
+    max-width: calc(100vw - 20px) !important;
+  }
+}
+
+/* Phone screen adjustments (<= 640px) */
+@media (max-width: 640px) {
+  .macos-spotlight-backdrop {
+    padding-top: 18px !important;
+    padding-left: 10px !important;
+    padding-right: 10px !important;
+  }
+  
+  .macos-spotlight-window {
+    width: 100% !important;
+    max-width: 100% !important;
+    border-radius: 14px !important;
+  }
+  
+  .spotlight-results {
+    max-height: 52vh !important;
+  }
+  
+  .spotlight-footer {
+    padding: 8px 12px !important;
+    font-size: 10px !important;
+    flex-direction: column !important;
+    gap: 4px !important;
+    align-items: flex-start !important;
+  }
+}
+
+/* Compact desktop / tablet landscape adjustments (901px - 1100px) */
+@media (max-width: 1100px) and (min-width: 901px) {
+  .macos-menu-bar .menu-bar-help-menu {
     display: none !important;
+  }
+}
+
+@media (max-width: 980px) and (min-width: 901px) {
+  .macos-menu-bar .menu-bar-view-menu {
+    display: none !important;
+  }
+  
+  .macos-menu-bar .menu-bar-clock {
+    font-size: 11.5px !important;
+    padding: 2px 4px !important;
   }
 }
